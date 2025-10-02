@@ -1,0 +1,47 @@
+{
+  "name": "@onlyworlds/sdk",
+  "version": "2.0.1",
+  "description": "TypeScript SDK for the OnlyWorlds API - build world-building applications with type safety",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "onlyworlds",
+    "worldbuilding",
+    "api",
+    "sdk",
+    "typescript",
+    "rpg",
+    "ttrpg",
+    "game-development"
+  ],
+  "author": "OnlyWorlds",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OnlyWorlds/sdk.git"
+  },
+  "homepage": "https://onlyworlds.github.io/",
+  "bugs": {
+    "url": "https://github.com/OnlyWorlds/sdk/issues"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
