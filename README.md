@@ -54,32 +54,7 @@ await client.character.delete('element-id');
 - ✅ **Zero Runtime Overhead** - Type system has no runtime cost
 - ✅ **Modern ESM/CJS** - Supports both ES modules and CommonJS
 
-## Element Types
-
-The SDK provides full support for all OnlyWorlds elements:
-
-- **Character** - People, NPCs, protagonists
-- **Location** - Places, regions, buildings
-- **Object** - Items, artifacts, tools
-- **Creature** - Animals, monsters, beasts
-- **Species** - Races, types of beings
-- **Event** - Historical events, occurrences
-- **Ability** - Skills, powers, magic
-- **Trait** - Characteristics, attributes
-- **Family** - Family groups, lineages
-- **Institution** - Organizations, governments
-- **Collective** - Groups, teams, parties
-- **Construct** - Buildings, structures, concepts
-- **Language** - Languages, dialects
-- **Law** - Rules, regulations, customs
-- **Narrative** - Stories, tales, myths
-- **Phenomenon** - Natural phenomena, effects
-- **Title** - Ranks, positions, honors
-- **Zone** - Areas, territories, districts
-- **Relation** - Relationships between elements
-- **Map** - Visual maps with pins/markers
-- **Pin** - Location markers on maps
-- **Marker** - Additional map annotations
+   
 
 ## Type-Safe Relationships
 
@@ -93,24 +68,7 @@ const character: Character = {
   location: locationId  // Type-safe!
 };
 ```
-
-## Documentation
-
-For detailed documentation, examples, and API reference, visit:
-
-📚 **[https://onlyworlds.github.io/](https://onlyworlds.github.io/)**
-
-## API Authentication
-
-Get your API credentials from your OnlyWorlds account:
-
-1. Log in to [onlyworlds.com](https://onlyworlds.com)
-2. Go to your world settings
-3. Copy your API Key and PIN
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+ 
 
 ## License
 
