@@ -1,7 +1,7 @@
 # CLAUDE.md - OnlyWorlds TypeScript SDK
 
 ## Project Overview
-
+545689
 This is the **TypeScript SDK** for OnlyWorlds, an open-source framework for creating, storing, and exchanging structured world-building data.
 
 ### What is OnlyWorlds?

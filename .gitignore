@@ -30,3 +30,6 @@ npm-debug.log*
 # Testing
 coverage/
 .nyc_output/
+
+# AI Tools
+CLAUDE.md
