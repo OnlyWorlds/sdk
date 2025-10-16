@@ -76,6 +76,30 @@ class Resource<T, TInput> {
 }
 
 /**
+ * Special resource class for World endpoint
+ * The /world/ endpoint returns a single World object directly (not paginated)
+ * because API keys are world-scoped (one key = one world)
+ */
+class WorldResource {
+  constructor(private client: OnlyWorldsClient) {}
+
+  /**
+   * Get the world associated with the current API key
+   * Returns the world directly (not wrapped in pagination)
+   */
+  async get(): Promise<World> {
+    return this.client.request<World>('GET', '/world/');
+  }
+
+  /**
+   * Update the current world
+   */
+  async update(data: Partial<WorldInput>): Promise<World> {
+    return this.client.request<World>('PATCH', '/world/', { body: data });
+  }
+}
+
+/**
  * Main OnlyWorlds API client
  */
 export class OnlyWorldsClient {
@@ -83,7 +107,7 @@ export class OnlyWorldsClient {
   private headers: Record<string, string>;
 
   // Resource accessors
-  public worlds: Resource<World, WorldInput>;
+  public worlds: WorldResource;
   public abilities: Resource<Ability, AbilityInput>;
   public characters: Resource<Character, CharacterInput>;
   public collectives: Resource<Collective, CollectiveInput>;
@@ -116,7 +140,7 @@ export class OnlyWorldsClient {
     };
 
     // Initialize resources
-    this.worlds = new Resource<World, WorldInput>(this, 'world');
+    this.worlds = new WorldResource(this);
     this.abilities = new Resource<Ability, AbilityInput>(this, 'ability');
     this.characters = new Resource<Character, CharacterInput>(this, 'character');
     this.collectives = new Resource<Collective, CollectiveInput>(this, 'collective');
@@ -200,14 +224,6 @@ export class OnlyWorldsClient {
     }
 
     return response.json();
-  }
-
-  /**
-   * Get all worlds accessible with current credentials
-   * @deprecated Use client.worlds.list() instead for consistent API
-   */
-  async getWorlds(): Promise<ApiResponse<World>> {
-    return this.request<ApiResponse<World>>('GET', '/world/');
   }
 
   /**

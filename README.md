@@ -22,27 +22,29 @@ const client = new OnlyWorldsClient({
   baseUrl: 'https://onlyworlds.com'
 });
 
-// Fetch characters
-const characters = await client.character.list();
+// Get your world (API keys are world-scoped)
+const world = await client.worlds.get();
+
+// Fetch characters (paginated)
+const characters = await client.characters.list();
 
 // Create a new location
-const location = await client.location.create({
+const location = await client.locations.create({
   name: 'Dragon Peak',
   description: 'A treacherous mountain peak where dragons nest',
-  supertype: 'mountain',
-  climate: 'cold'
+  supertype: 'mountain'
 });
 
 // Get a specific element
-const character = await client.character.get('element-id');
+const character = await client.characters.get('element-id');
 
 // Update an element
-await client.character.update('element-id', {
+await client.characters.update('element-id', {
   name: 'Updated Name'
 });
 
 // Delete an element
-await client.character.delete('element-id');
+await client.characters.delete('element-id');
 ```
 
 ## Features
@@ -55,6 +57,43 @@ await client.character.delete('element-id');
 - ✅ **Modern ESM/CJS** - Supports both ES modules and CommonJS
 
    
+
+## API Reference
+
+### World Endpoint
+
+The `worlds` resource is special because API keys are world-scoped (one key = one world). The endpoint returns a single `World` object directly, not a paginated list.
+
+```typescript
+// Get your world
+const world = await client.worlds.get();
+
+// Update your world
+const updated = await client.worlds.update({
+  description: 'A dark fantasy realm'
+});
+```
+
+**Note**: The `worlds` resource only has `get()` and `update()` methods (no `list()`, `create()`, or `delete()`) because API keys are world-scoped.
+
+### Element Endpoints
+
+All other element types return paginated results:
+
+```typescript
+// List with pagination
+const response = await client.characters.list({
+  limit: 10,
+  offset: 0,
+  ordering: '-created_at',
+  search: 'dragon'
+});
+
+console.log(response.count);      // Total count
+console.log(response.results);    // Array of Characters
+console.log(response.next);       // URL for next page
+console.log(response.previous);   // URL for previous page
+```
 
 ## Type-Safe Relationships
 
