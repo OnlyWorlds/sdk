@@ -1,6 +1,6 @@
 {
   "name": "@onlyworlds/sdk",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "TypeScript SDK for the OnlyWorlds API - build world-building applications with type safety",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
