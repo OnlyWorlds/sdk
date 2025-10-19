@@ -56,7 +56,20 @@ class Resource<T, TInput> {
   ) {}
 
   async list(options?: ListOptions): Promise<ApiResponse<T>> {
-    return this.client.request<ApiResponse<T>>('GET', `/${this.elementType}/`, { params: options });
+    const response = await this.client.request<any>('GET', `/${this.elementType}/`, { params: options });
+
+    // Backend returns raw arrays, normalize to { count, results } format
+    if (Array.isArray(response)) {
+      return {
+        count: response.length,
+        next: null,
+        previous: null,
+        results: response
+      };
+    }
+
+    // Already in correct format (shouldn't happen per backend investigation)
+    return response as ApiResponse<T>;
   }
 
   async get(id: string): Promise<T> {
@@ -64,15 +77,31 @@ class Resource<T, TInput> {
   }
 
   async create(data: TInput): Promise<T> {
-    return this.client.request<T>('POST', `/${this.elementType}/`, { body: data });
+    // Auto-round coordinates for Pin elements (API requires integers)
+    const body = this.elementType === 'pin' ? this.roundPinCoordinates(data) : data;
+    return this.client.request<T>('POST', `/${this.elementType}/`, { body });
   }
 
   async update(id: string, data: Partial<TInput>): Promise<T> {
-    return this.client.request<T>('PATCH', `/${this.elementType}/${id}/`, { body: data });
+    // Auto-round coordinates for Pin elements (API requires integers)
+    const body = this.elementType === 'pin' ? this.roundPinCoordinates(data) : data;
+    return this.client.request<T>('PATCH', `/${this.elementType}/${id}/`, { body });
   }
 
   async delete(id: string): Promise<void> {
     return this.client.request<void>('DELETE', `/${this.elementType}/${id}/`);
+  }
+
+  /**
+   * Round Pin coordinates to integers (API requirement)
+   * @private
+   */
+  private roundPinCoordinates(data: any): any {
+    const rounded = { ...data };
+    if (typeof rounded.x === 'number') rounded.x = Math.round(rounded.x);
+    if (typeof rounded.y === 'number') rounded.y = Math.round(rounded.y);
+    if (typeof rounded.z === 'number') rounded.z = Math.round(rounded.z);
+    return rounded;
   }
 }
 
@@ -210,7 +239,21 @@ export class OnlyWorldsClient {
           // Try to parse as JSON for better error messages
           try {
             const errorJson = JSON.parse(errorText);
-            errorMessage += `: ${errorJson.detail || errorJson.error || errorText}`;
+
+            // Handle validation errors (array format)
+            if (Array.isArray(errorJson.detail)) {
+              const validationErrors = errorJson.detail
+                .map((err: any) => {
+                  const location = err.loc ? err.loc.join('.') : 'unknown';
+                  return `${location}: ${err.msg}`;
+                })
+                .join('; ');
+              errorMessage += `: ${validationErrors}`;
+            }
+            // Handle string/object error messages
+            else {
+              errorMessage += `: ${errorJson.detail || errorJson.error || errorText}`;
+            }
           } catch {
             errorMessage += `: ${errorText}`;
           }

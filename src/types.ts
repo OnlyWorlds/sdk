@@ -678,8 +678,25 @@ export interface Pin extends BaseElement {
   map?: ElementId<ElementType.Map>;
   element_type?: ElementType;
   element_id?: AnyElementId;
+
+  /**
+   * X coordinate on map (must be integer)
+   * The API requires integer values. Float coordinates from mouse events
+   * or calculations should be rounded: Math.round(x)
+   */
   x?: number;
+
+  /**
+   * Y coordinate on map (must be integer)
+   * The API requires integer values. Float coordinates from mouse events
+   * or calculations should be rounded: Math.round(y)
+   */
   y?: number;
+
+  /**
+   * Z coordinate for 3D positioning (must be integer)
+   * The API requires integer values. Float coordinates should be rounded: Math.round(z)
+   */
   z?: number;
 }
 
