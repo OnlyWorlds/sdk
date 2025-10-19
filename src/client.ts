@@ -23,6 +23,7 @@ import type {
   Trait, TraitInput,
   Zone, ZoneInput
 } from './types';
+import { TokenResource } from './token-resource';
 
 export interface OnlyWorldsConfig {
   apiKey: string;
@@ -108,6 +109,7 @@ export class OnlyWorldsClient {
 
   // Resource accessors
   public worlds: WorldResource;
+  public tokens: TokenResource;
   public abilities: Resource<Ability, AbilityInput>;
   public characters: Resource<Character, CharacterInput>;
   public collectives: Resource<Collective, CollectiveInput>;
@@ -141,6 +143,7 @@ export class OnlyWorldsClient {
 
     // Initialize resources
     this.worlds = new WorldResource(this);
+    this.tokens = new TokenResource(this);
     this.abilities = new Resource<Ability, AbilityInput>(this, 'ability');
     this.characters = new Resource<Character, CharacterInput>(this, 'character');
     this.collectives = new Resource<Collective, CollectiveInput>(this, 'collective');

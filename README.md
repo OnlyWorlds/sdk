@@ -52,11 +52,10 @@ await client.characters.delete('element-id');
 - ✅ **Full Type Safety** - Complete TypeScript definitions for all 22 OnlyWorlds element types
 - ✅ **Auto-Generated Types** - Types synchronized with the latest OnlyWorlds schema
 - ✅ **CRUD Operations** - Create, read, update, and delete operations for all elements
+- ✅ **Token Management** - Built-in support for OnlyWorlds token rating system
 - ✅ **Branded Types** - Compile-time safety for element relationships
 - ✅ **Zero Runtime Overhead** - Type system has no runtime cost
 - ✅ **Modern ESM/CJS** - Supports both ES modules and CommonJS
-
-   
 
 ## API Reference
 
@@ -107,7 +106,141 @@ const character: Character = {
   location: locationId  // Type-safe!
 };
 ```
- 
+
+## Token Management
+
+OnlyWorlds provides a token rating system for tracking API usage and enabling AI-powered features. Users get a daily token allowance (default: 10,000 tokens) that resets every day.
+
+### Working Reference Implementation
+
+See [base-tool/src/llm/token-service.ts](https://github.com/OnlyWorlds/base-tool) for the complete working implementation that this SDK enables.
+
+### Check Token Status
+
+```typescript
+// Get current token status
+const status = await client.tokens.getStatus();
+
+console.log(`Available: ${status.tokens_available_today}/${status.token_rating}`);
+console.log(`Used today: ${status.tokens_used_today}`);
+console.log(`Active sessions: ${status.sessions_active}`);
+console.log(`Last reset: ${status.last_reset}`);
+```
+
+### Consume Tokens
+
+Report token consumption when your tool uses AI features or other token-tracked services:
+
+```typescript
+// Report token usage
+const result = await client.tokens.consume({
+  amount: 500,
+  service: 'my_worldbuilding_tool',
+  metadata: {
+    feature: 'character_generation',
+    model: 'gpt-4',
+    prompt_tokens: 300,
+    completion_tokens: 200
+  }
+});
+
+// Check if consumption succeeded
+if (result.error) {
+  console.warn('Token warning:', result.error);
+}
+
+console.log(`Consumed ${result.tokens_consumed} tokens`);
+console.log(`${result.tokens_remaining} tokens remaining`);
+```
+
+**Important**: The API allows consumption even when exceeding available tokens (tracks as debt), but returns a warning in the `error` field.
+
+### Advanced: Encrypted API Key Access
+
+For tools that need direct OpenAI API access using OnlyWorlds tokens:
+
+```typescript
+// Get encrypted OpenAI key (requires 100+ tokens)
+const access = await client.tokens.getAccessKey();
+
+console.log('Session ID:', access.session_id);
+console.log('Expires:', access.expires_at);
+console.log('Available tokens:', access.tokens_available);
+
+// Decrypt the key client-side (see base-tool for full implementation)
+// 1. Derive decryption key from world ID using SHA-256
+// 2. Use 'fernet' npm package to decrypt
+// 3. Use decrypted OpenAI key for direct API calls
+// 4. Report usage with session_id
+
+// See base-tool/src/llm/token-service.ts:99-235 for complete example
+```
+
+**Full decryption implementation** (based on base-tool):
+
+```typescript
+import { fernet } from 'fernet';
+
+// Derive decryption key from world ID
+async function deriveKey(worldId: string): Promise<string> {
+  const salt = 'onlyworlds-token-api-2024-public-salt';
+  const keyMaterial = `${worldId}:${salt}`;
+  const encoder = new TextEncoder();
+  const data = encoder.encode(keyMaterial);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const base64 = btoa(String.fromCharCode(...hashArray));
+  return base64.replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+// Decrypt the API key
+async function decryptApiKey(encryptedKey: string, worldId: string): Promise<string> {
+  const derivedKey = await deriveKey(worldId);
+  const secret = new fernet.Secret(derivedKey);
+  const token = new fernet.Token({
+    secret: secret,
+    token: encryptedKey,
+    ttl: 0  // Don't enforce TTL client-side
+  });
+  return token.decode();
+}
+
+// Usage
+const world = await client.worlds.get();
+const access = await client.tokens.getAccessKey();
+const apiKey = await decryptApiKey(access.encrypted_key, world.id);
+
+// Use apiKey for OpenAI API calls, then report usage:
+await client.tokens.consume({
+  amount: tokensUsed,
+  sessionId: access.session_id,
+  service: 'direct_openai',
+  metadata: { model: 'gpt-4', /* ... */ }
+});
+```
+
+### Session Management
+
+```typescript
+// Revoke a specific session
+await client.tokens.revokeSession(sessionId);
+
+// Revoke all sessions (emergency cleanup)
+const result = await client.tokens.revokeAllSessions();
+console.log(`Revoked ${result.sessions_revoked} sessions`);
+```
+
+### Encryption Info
+
+Get public encryption details (no auth required):
+
+```typescript
+const info = await client.tokens.getEncryptionInfo();
+console.log('Algorithm:', info.algorithm);
+console.log('Key derivation:', info.key_derivation);
+console.log('Public salt:', info.salt);
+console.log(info.javascript_example);
+```
 
 ## License
 
