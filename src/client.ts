@@ -23,6 +23,7 @@ import type {
   Trait, TraitInput,
   Zone, ZoneInput
 } from './types';
+import { FIELD_SCHEMA } from './types';
 import { TokenResource } from './token-resource';
 
 export interface OnlyWorldsConfig {
@@ -77,14 +78,16 @@ class Resource<T, TInput> {
   }
 
   async create(data: TInput): Promise<T> {
-    // Auto-round coordinates for Pin elements (API requires integers)
-    const body = this.elementType === 'pin' ? this.roundPinCoordinates(data) : data;
+    // Prepare data: convert relations to _id/_ids format, round Pin coordinates
+    let body: any = OnlyWorldsClient.prepareRelations(data as Record<string, any>, this.elementType);
+    if (this.elementType === 'pin') body = this.roundPinCoordinates(body);
     return this.client.request<T>('POST', `/${this.elementType}/`, { body });
   }
 
   async update(id: string, data: Partial<TInput>): Promise<T> {
-    // Auto-round coordinates for Pin elements (API requires integers)
-    const body = this.elementType === 'pin' ? this.roundPinCoordinates(data) : data;
+    // Prepare data: convert relations to _id/_ids format, round Pin coordinates
+    let body: any = OnlyWorldsClient.prepareRelations(data as Record<string, any>, this.elementType);
+    if (this.elementType === 'pin') body = this.roundPinCoordinates(body);
     return this.client.request<T>('PATCH', `/${this.elementType}/${id}/`, { body });
   }
 
@@ -273,24 +276,77 @@ export class OnlyWorldsClient {
   }
 
   /**
-   * Helper to convert nested objects to _id/_ids format
+   * Helper to convert nested objects to _id/_ids format (legacy method)
+   * @deprecated Use prepareRelations instead - it's called automatically in create/update
    */
   static prepareInput<T extends Record<string, any>>(data: T): any {
     const result: any = { ...data };
-    
+
     for (const [key, value] of Object.entries(result)) {
-      // Convert single relationships
-      if (value && typeof value === 'object' && 'id' in value) {
+      // Convert single relationships (object with id)
+      if (value && typeof value === 'object' && !Array.isArray(value) && 'id' in value) {
         delete result[key];
         result[`${key}_id`] = value.id;
       }
-      // Convert multi relationships
+      // Convert multi relationships (array of objects with id)
       else if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && 'id' in value[0]) {
         delete result[key];
         result[`${key}_ids`] = value.map(item => item.id);
       }
     }
-    
+
+    return result;
+  }
+
+  /**
+   * Convert relation fields to API format (_id/_ids suffix)
+   *
+   * The OnlyWorlds API expects:
+   * - single_link fields: fieldname_id (e.g., birthplace_id)
+   * - multi_link fields: fieldname_ids (e.g., species_ids)
+   *
+   * This method auto-converts based on FIELD_SCHEMA:
+   * - { species: ["id1", "id2"] } → { species_ids: ["id1", "id2"] }
+   * - { birthplace: "location-id" } → { birthplace_id: "location-id" }
+   * - { species: [{id: "id1", name: "X"}] } → { species_ids: ["id1"] }
+   *
+   * Called automatically by create() and update() methods.
+   */
+  static prepareRelations<T extends Record<string, any>>(data: T, elementType: string): any {
+    const schema = FIELD_SCHEMA[elementType as keyof typeof FIELD_SCHEMA];
+    if (!schema) return data;
+
+    const result: any = { ...data };
+
+    for (const [key, value] of Object.entries(result)) {
+      const fieldDef = schema[key as keyof typeof schema] as { type: string } | undefined;
+
+      if (!fieldDef) continue;
+
+      if (fieldDef.type === 'single_link') {
+        delete result[key];
+        // Handle object with id, or raw ID string
+        if (value && typeof value === 'object' && 'id' in value) {
+          result[`${key}_id`] = value.id;
+        } else if (typeof value === 'string' || value === null) {
+          result[`${key}_id`] = value;
+        }
+      }
+      else if (fieldDef.type === 'multi_link') {
+        delete result[key];
+        if (Array.isArray(value)) {
+          // Handle array of objects with id, or array of ID strings
+          if (value.length > 0 && typeof value[0] === 'object' && 'id' in value[0]) {
+            result[`${key}_ids`] = value.map(item => item.id);
+          } else {
+            result[`${key}_ids`] = value; // Already array of IDs
+          }
+        } else {
+          result[`${key}_ids`] = []; // Treat null/undefined as empty array
+        }
+      }
+    }
+
     return result;
   }
 }

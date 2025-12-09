@@ -702,286 +702,289 @@ export interface Pin extends BaseElement {
 }
 
 /**
- * Input types for API requests (using _id and _ids suffixes)
+ * Input types for API requests
+ * Use field names without _id/_ids suffix - prepareRelations() handles conversion
  */
 export interface AbilityInput extends Omit<Ability, 'tradition' | 'source' | 'locus' | 'effects' | 'talents' | 'requisites' | 'instruments' | 'systems'> {
-  tradition_id?: string;
-  source_id?: string;
-  locus_id?: string;
-  effects_ids?: string[];
-  talents_ids?: string[];
-  requisites_ids?: string[];
-  instruments_ids?: string[];
-  systems_ids?: string[];
+  tradition?: string;
+  source?: string;
+  locus?: string;
+  effects?: string[];
+  talents?: string[];
+  requisites?: string[];
+  instruments?: string[];
+  systems?: string[];
 }
 
 export interface ObjectInput extends Omit<Object, 'parent_object' | 'location' | 'language' | 'materials' | 'technology' | 'effects' | 'abilities' | 'consumes' | 'affinities'> {
-  parent_object_id?: string;
-  location_id?: string;
-  language_id?: string;
-  materials_ids?: string[];
-  technology_ids?: string[];
-  effects_ids?: string[];
-  abilities_ids?: string[];
-  consumes_ids?: string[];
-  affinities_ids?: string[];
+  parent_object?: string;
+  location?: string;
+  language?: string;
+  materials?: string[];
+  technology?: string[];
+  effects?: string[];
+  abilities?: string[];
+  consumes?: string[];
+  affinities?: string[];
 }
 
 export interface CharacterInput extends Omit<Character, 'birthplace' | 'location' | 'species' | 'traits' | 'abilities' | 'languages' | 'objects' | 'institutions' | 'family' | 'friends' | 'rivals'> {
-  birthplace_id?: string;
-  location_id?: string;
-  species_ids?: string[];
-  traits_ids?: string[];
-  abilities_ids?: string[];
-  languages_ids?: string[];
-  objects_ids?: string[];
-  institutions_ids?: string[];
-  family_ids?: string[];
-  friends_ids?: string[];
-  rivals_ids?: string[];
+  // Single links - use field name, prepareRelations() adds _id suffix
+  birthplace?: string;
+  location?: string;
+  // Multi links - use field name, prepareRelations() adds _ids suffix
+  species?: string[];
+  traits?: string[];
+  abilities?: string[];
+  languages?: string[];
+  objects?: string[];
+  institutions?: string[];
+  family?: string[];
+  friends?: string[];
+  rivals?: string[];
 }
 
 export interface CollectiveInput extends Omit<Collective, 'operator' | 'equipment' | 'abilities' | 'symbolism' | 'species' | 'characters' | 'creatures' | 'phenomena'> {
-  operator_id?: string;
-  equipment_ids?: string[];
-  abilities_ids?: string[];
-  symbolism_ids?: string[];
-  species_ids?: string[];
-  characters_ids?: string[];
-  creatures_ids?: string[];
-  phenomena_ids?: string[];
+  operator?: string;
+  equipment?: string[];
+  abilities?: string[];
+  symbolism?: string[];
+  species?: string[];
+  characters?: string[];
+  creatures?: string[];
+  phenomena?: string[];
 }
 
 export interface ConstructInput extends Omit<Construct, 'founder' | 'custodian' | 'characters' | 'objects' | 'locations' | 'species' | 'creatures' | 'institutions' | 'traits' | 'collectives' | 'zones' | 'abilities' | 'phenomena' | 'languages' | 'families' | 'relations' | 'titles' | 'constructs' | 'events' | 'narratives'> {
-  founder_id?: string;
-  custodian_id?: string;
-  characters_ids?: string[];
-  objects_ids?: string[];
-  locations_ids?: string[];
-  species_ids?: string[];
-  creatures_ids?: string[];
-  institutions_ids?: string[];
-  traits_ids?: string[];
-  collectives_ids?: string[];
-  zones_ids?: string[];
-  abilities_ids?: string[];
-  phenomena_ids?: string[];
-  languages_ids?: string[];
-  families_ids?: string[];
-  relations_ids?: string[];
-  titles_ids?: string[];
-  constructs_ids?: string[];
-  events_ids?: string[];
-  narratives_ids?: string[];
+  founder?: string;
+  custodian?: string;
+  characters?: string[];
+  objects?: string[];
+  locations?: string[];
+  species?: string[];
+  creatures?: string[];
+  institutions?: string[];
+  traits?: string[];
+  collectives?: string[];
+  zones?: string[];
+  abilities?: string[];
+  phenomena?: string[];
+  languages?: string[];
+  families?: string[];
+  relations?: string[];
+  titles?: string[];
+  constructs?: string[];
+  events?: string[];
+  narratives?: string[];
 }
 
 export interface CreatureInput extends Omit<Creature, 'location' | 'zone' | 'species' | 'traits' | 'abilities' | 'languages' | 'actions'> {
-  location_id?: string;
-  zone_id?: string;
-  species_ids?: string[];
-  traits_ids?: string[];
-  abilities_ids?: string[];
-  languages_ids?: string[];
-  actions_ids?: string[];
+  location?: string;
+  zone?: string;
+  species?: string[];
+  traits?: string[];
+  abilities?: string[];
+  languages?: string[];
+  actions?: string[];
 }
 
 export interface EventInput extends Omit<Event, 'triggers' | 'characters' | 'objects' | 'locations' | 'species' | 'creatures' | 'institutions' | 'traits' | 'collectives' | 'zones' | 'abilities' | 'phenomena' | 'languages' | 'families' | 'relations' | 'titles' | 'constructs'> {
-  triggers_ids?: string[];
-  characters_ids?: string[];
-  objects_ids?: string[];
-  locations_ids?: string[];
-  species_ids?: string[];
-  creatures_ids?: string[];
-  institutions_ids?: string[];
-  traits_ids?: string[];
-  collectives_ids?: string[];
-  zones_ids?: string[];
-  abilities_ids?: string[];
-  phenomena_ids?: string[];
-  languages_ids?: string[];
-  families_ids?: string[];
-  relations_ids?: string[];
-  titles_ids?: string[];
-  constructs_ids?: string[];
+  triggers?: string[];
+  characters?: string[];
+  objects?: string[];
+  locations?: string[];
+  species?: string[];
+  creatures?: string[];
+  institutions?: string[];
+  traits?: string[];
+  collectives?: string[];
+  zones?: string[];
+  abilities?: string[];
+  phenomena?: string[];
+  languages?: string[];
+  families?: string[];
+  relations?: string[];
+  titles?: string[];
+  constructs?: string[];
 }
 
 export interface FamilyInput extends Omit<Family, 'traditions' | 'traits' | 'abilities' | 'languages' | 'ancestors' | 'estates' | 'governs' | 'heirlooms' | 'creatures'> {
-  traditions_ids?: string[];
-  traits_ids?: string[];
-  abilities_ids?: string[];
-  languages_ids?: string[];
-  ancestors_ids?: string[];
-  estates_ids?: string[];
-  governs_ids?: string[];
-  heirlooms_ids?: string[];
-  creatures_ids?: string[];
+  traditions?: string[];
+  traits?: string[];
+  abilities?: string[];
+  languages?: string[];
+  ancestors?: string[];
+  estates?: string[];
+  governs?: string[];
+  heirlooms?: string[];
+  creatures?: string[];
 }
 
 export interface InstitutionInput extends Omit<Institution, 'parent_institution' | 'zones' | 'objects' | 'creatures' | 'allies' | 'adversaries' | 'constructs'> {
-  parent_institution_id?: string;
-  zones_ids?: string[];
-  objects_ids?: string[];
-  creatures_ids?: string[];
-  allies_ids?: string[];
-  adversaries_ids?: string[];
-  constructs_ids?: string[];
+  parent_institution?: string;
+  zones?: string[];
+  objects?: string[];
+  creatures?: string[];
+  allies?: string[];
+  adversaries?: string[];
+  constructs?: string[];
 }
 
 export interface LanguageInput extends Omit<Language, 'classification' | 'spread' | 'dialects'> {
-  classification_id?: string;
-  spread_ids?: string[];
-  dialects_ids?: string[];
+  classification?: string;
+  spread?: string[];
+  dialects?: string[];
 }
 
 export interface LawInput extends Omit<Law, 'parent_law' | 'author' | 'penalties' | 'locations' | 'zones' | 'prohibitions' | 'adjudicators' | 'enforcers'> {
-  parent_law_id?: string;
-  author_id?: string;
-  penalties_ids?: string[];
-  locations_ids?: string[];
-  zones_ids?: string[];
-  prohibitions_ids?: string[];
-  adjudicators_ids?: string[];
-  enforcers_ids?: string[];
+  parent_law?: string;
+  author?: string;
+  penalties?: string[];
+  locations?: string[];
+  zones?: string[];
+  prohibitions?: string[];
+  adjudicators?: string[];
+  enforcers?: string[];
 }
 
 export interface LocationInput extends Omit<Location, 'parent_location' | 'primary_power' | 'governing_title' | 'zone' | 'rival' | 'partner' | 'populations' | 'secondary_powers' | 'founders' | 'cults' | 'delicacies' | 'extraction_methods' | 'extraction_goods' | 'industry_methods' | 'industry_goods' | 'extraction_markets' | 'industry_markets' | 'currencies' | 'buildings' | 'building_methods' | 'fighters' | 'defensive_objects'> {
-  parent_location_id?: string;
-  primary_power_id?: string;
-  governing_title_id?: string;
-  zone_id?: string;
-  rival_id?: string;
-  partner_id?: string;
-  populations_ids?: string[];
-  secondary_powers_ids?: string[];
-  founders_ids?: string[];
-  cults_ids?: string[];
-  delicacies_ids?: string[];
-  extraction_methods_ids?: string[];
-  extraction_goods_ids?: string[];
-  industry_methods_ids?: string[];
-  industry_goods_ids?: string[];
-  extraction_markets_ids?: string[];
-  industry_markets_ids?: string[];
-  currencies_ids?: string[];
-  buildings_ids?: string[];
-  building_methods_ids?: string[];
-  fighters_ids?: string[];
-  defensive_objects_ids?: string[];
+  parent_location?: string;
+  primary_power?: string;
+  governing_title?: string;
+  zone?: string;
+  rival?: string;
+  partner?: string;
+  populations?: string[];
+  secondary_powers?: string[];
+  founders?: string[];
+  cults?: string[];
+  delicacies?: string[];
+  extraction_methods?: string[];
+  extraction_goods?: string[];
+  industry_methods?: string[];
+  industry_goods?: string[];
+  extraction_markets?: string[];
+  industry_markets?: string[];
+  currencies?: string[];
+  buildings?: string[];
+  building_methods?: string[];
+  fighters?: string[];
+  defensive_objects?: string[];
 }
 
 export interface PhenomenonInput extends Omit<Phenomenon, 'system' | 'catalysts' | 'empowerments' | 'triggers' | 'wielders' | 'environments'> {
-  system_id?: string;
-  catalysts_ids?: string[];
-  empowerments_ids?: string[];
-  triggers_ids?: string[];
-  wielders_ids?: string[];
-  environments_ids?: string[];
+  system?: string;
+  catalysts?: string[];
+  empowerments?: string[];
+  triggers?: string[];
+  wielders?: string[];
+  environments?: string[];
 }
 
 export interface RelationInput extends Omit<Relation, 'actor' | 'characters' | 'objects' | 'locations' | 'species' | 'creatures' | 'institutions' | 'traits' | 'collectives' | 'zones' | 'abilities' | 'phenomena' | 'languages' | 'families' | 'titles' | 'constructs' | 'events' | 'narratives'> {
-  actor_id?: string;
-  characters_ids?: string[];
-  objects_ids?: string[];
-  locations_ids?: string[];
-  species_ids?: string[];
-  creatures_ids?: string[];
-  institutions_ids?: string[];
-  traits_ids?: string[];
-  collectives_ids?: string[];
-  zones_ids?: string[];
-  abilities_ids?: string[];
-  phenomena_ids?: string[];
-  languages_ids?: string[];
-  families_ids?: string[];
-  titles_ids?: string[];
-  constructs_ids?: string[];
-  events_ids?: string[];
-  narratives_ids?: string[];
+  actor?: string;
+  characters?: string[];
+  objects?: string[];
+  locations?: string[];
+  species?: string[];
+  creatures?: string[];
+  institutions?: string[];
+  traits?: string[];
+  collectives?: string[];
+  zones?: string[];
+  abilities?: string[];
+  phenomena?: string[];
+  languages?: string[];
+  families?: string[];
+  titles?: string[];
+  constructs?: string[];
+  events?: string[];
+  narratives?: string[];
 }
 
 export interface SpeciesInput extends Omit<Species, 'parent_species' | 'nourishment' | 'reproduction' | 'adaptations' | 'traits' | 'locations' | 'zones' | 'affinities'> {
-  parent_species_id?: string;
-  nourishment_ids?: string[];
-  reproduction_ids?: string[];
-  adaptations_ids?: string[];
-  traits_ids?: string[];
-  locations_ids?: string[];
-  zones_ids?: string[];
-  affinities_ids?: string[];
+  parent_species?: string;
+  nourishment?: string[];
+  reproduction?: string[];
+  adaptations?: string[];
+  traits?: string[];
+  locations?: string[];
+  zones?: string[];
+  affinities?: string[];
 }
 
 export interface ZoneInput extends Omit<Zone, 'phenomena' | 'linked_zones' | 'populations' | 'titles' | 'principles'> {
-  phenomena_ids?: string[];
-  linked_zones_ids?: string[];
-  populations_ids?: string[];
-  titles_ids?: string[];
-  principles_ids?: string[];
+  phenomena?: string[];
+  linked_zones?: string[];
+  populations?: string[];
+  titles?: string[];
+  principles?: string[];
 }
 
 export interface TitleInput extends Omit<Title, 'issuer' | 'body' | 'superior_title' | 'holders' | 'symbols' | 'characters' | 'institutions' | 'families' | 'zones' | 'locations' | 'objects' | 'constructs' | 'laws' | 'collectives' | 'creatures' | 'phenomena' | 'species' | 'languages'> {
-  issuer_id?: string;
-  body_id?: string;
-  superior_title_id?: string;
-  holders_ids?: string[];
-  symbols_ids?: string[];
-  characters_ids?: string[];
-  institutions_ids?: string[];
-  families_ids?: string[];
-  zones_ids?: string[];
-  locations_ids?: string[];
-  objects_ids?: string[];
-  constructs_ids?: string[];
-  laws_ids?: string[];
-  collectives_ids?: string[];
-  creatures_ids?: string[];
-  phenomena_ids?: string[];
-  species_ids?: string[];
-  languages_ids?: string[];
+  issuer?: string;
+  body?: string;
+  superior_title?: string;
+  holders?: string[];
+  symbols?: string[];
+  characters?: string[];
+  institutions?: string[];
+  families?: string[];
+  zones?: string[];
+  locations?: string[];
+  objects?: string[];
+  constructs?: string[];
+  laws?: string[];
+  collectives?: string[];
+  creatures?: string[];
+  phenomena?: string[];
+  species?: string[];
+  languages?: string[];
 }
 
 export interface TraitInput extends Omit<Trait, 'anti_trait' | 'empowered_abilities'> {
-  anti_trait_id?: string;
-  empowered_abilities_ids?: string[];
+  anti_trait?: string;
+  empowered_abilities?: string[];
 }
 
 export interface NarrativeInput extends Omit<Narrative, 'parent_narrative' | 'protagonist' | 'antagonist' | 'narrator' | 'conservator' | 'events' | 'characters' | 'objects' | 'locations' | 'species' | 'creatures' | 'institutions' | 'traits' | 'collectives' | 'zones' | 'abilities' | 'phenomena' | 'languages' | 'families' | 'relations' | 'titles' | 'constructs' | 'laws'> {
-  parent_narrative_id?: string;
-  protagonist_id?: string;
-  antagonist_id?: string;
-  narrator_id?: string;
-  conservator_id?: string;
-  events_ids?: string[];
-  characters_ids?: string[];
-  objects_ids?: string[];
-  locations_ids?: string[];
-  species_ids?: string[];
-  creatures_ids?: string[];
-  institutions_ids?: string[];
-  traits_ids?: string[];
-  collectives_ids?: string[];
-  zones_ids?: string[];
-  abilities_ids?: string[];
-  phenomena_ids?: string[];
-  languages_ids?: string[];
-  families_ids?: string[];
-  relations_ids?: string[];
-  titles_ids?: string[];
-  constructs_ids?: string[];
-  laws_ids?: string[];
+  parent_narrative?: string;
+  protagonist?: string;
+  antagonist?: string;
+  narrator?: string;
+  conservator?: string;
+  events?: string[];
+  characters?: string[];
+  objects?: string[];
+  locations?: string[];
+  species?: string[];
+  creatures?: string[];
+  institutions?: string[];
+  traits?: string[];
+  collectives?: string[];
+  zones?: string[];
+  abilities?: string[];
+  phenomena?: string[];
+  languages?: string[];
+  families?: string[];
+  relations?: string[];
+  titles?: string[];
+  constructs?: string[];
+  laws?: string[];
 }
 
 export interface MapInput extends Omit<Map, 'parent_map' | 'location'> {
-  parent_map_id?: string;
-  location_id?: string;
+  parent_map?: string;
+  location?: string;
 }
 
 export interface MarkerInput extends Omit<Marker, 'map' | 'zone'> {
-  map_id?: string;
-  zone_id?: string;
+  map?: string;
+  zone?: string;
 }
 
 export interface PinInput extends Omit<Pin, 'map' | 'element_id'> {
-  map_id?: string;
+  map?: string;
   element_id?: string;
 }
 
