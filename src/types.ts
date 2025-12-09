@@ -667,6 +667,7 @@ export interface Marker extends BaseElement {
   x?: number;
   y?: number;
   z?: number;
+  order?: number;
 }
 
 /**
@@ -1126,7 +1127,7 @@ export const ELEMENT_SECTIONS: Record<ElementType, SectionInfo[]> = {
     { name: 'Details', order: 1, fields: ["background_color", "hierarchy", "width", "height", "depth", "parent_map", "location"] },
   ],
   [ElementType.Marker]: [
-    { name: 'Details', order: 1, fields: ["map", "zone", "x", "y", "z"] },
+    { name: 'Details', order: 1, fields: ["map", "zone", "x", "y", "z", "order"] },
   ],
   [ElementType.Narrative]: [
     { name: 'Context', order: 1, fields: ["story", "consequences", "start_date", "end_date", "order", "parent_narrative", "protagonist", "antagonist", "narrator", "conservator"] },
@@ -1652,7 +1653,8 @@ export const FIELD_SCHEMA = {
     zone: { type: 'single_link', target: 'zone' },
     x: { type: 'number' },
     y: { type: 'number' },
-    z: { type: 'number' }
+    z: { type: 'number' },
+    order: { type: 'number' }
   },
   narrative: {
     // Base fields (shared by all elements)
