@@ -1218,35 +1218,6 @@ export const ELEMENT_ICONS: Record<ElementType, string> = {
 } as const;
 
 /**
- * Simple Unicode icons for element types
- * Minimalist symbols used as fallbacks
- */
-export const ELEMENT_UNICODE_ICONS: Record<ElementType, string> = {
-  [ElementType.Ability]: '✨',
-  [ElementType.Character]: '👤',
-  [ElementType.Collective]: '👥',
-  [ElementType.Construct]: '⚙️',
-  [ElementType.Creature]: '🐾',
-  [ElementType.Event]: '📅',
-  [ElementType.Family]: '👨‍👩‍👧‍👦',
-  [ElementType.Institution]: '🏛️',
-  [ElementType.Language]: '💬',
-  [ElementType.Law]: '⚖️',
-  [ElementType.Location]: '🏰',
-  [ElementType.Map]: '🗺️',
-  [ElementType.Marker]: '📍',
-  [ElementType.Narrative]: '📖',
-  [ElementType.Object]: '📦',
-  [ElementType.Phenomenon]: '⚡',
-  [ElementType.Pin]: '📌',
-  [ElementType.Relation]: '🔗',
-  [ElementType.Species]: '🧬',
-  [ElementType.Title]: '👑',
-  [ElementType.Trait]: '❄️',
-  [ElementType.Zone]: '🗺️',
-} as const;
-
-/**
  * Get Material Design icon for an element type
  * Returns the uniform monochrome icon used in OnlyWorlds frontend
  * @param elementType The element type
@@ -1254,15 +1225,6 @@ export const ELEMENT_UNICODE_ICONS: Record<ElementType, string> = {
  */
 export function getElementIcon(elementType: ElementType): string {
   return ELEMENT_ICONS[elementType];
-}
-
-/**
- * Get Unicode icon for an element type
- * @param elementType The element type
- * @returns Unicode symbol string
- */
-export function getElementUnicodeIcon(elementType: ElementType): string {
-  return ELEMENT_UNICODE_ICONS[elementType];
 }
 
 // ============================================================================
