@@ -1436,7 +1436,7 @@ export const FIELD_SCHEMA = {
     consequences: { type: 'text' },
     start_date: { type: 'number' },
     end_date: { type: 'number' },
-    triggers: { type: 'multi_link', target: 'construct' },
+    triggers: { type: 'multi_link', target: 'event' },
     // Involves
     characters: { type: 'multi_link', target: 'character' },
     objects: { type: 'multi_link', target: 'object' },
