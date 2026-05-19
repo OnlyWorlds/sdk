@@ -1248,6 +1248,7 @@ export interface FieldInfo {
   type: FieldType;
   target?: string;    // For link fields: target element type
   max?: number;       // For integer_max fields: maximum value
+  required?: boolean; // True if the field is required per canonical YAML schema
 }
 
 /**
@@ -1614,12 +1615,12 @@ export const FIELD_SCHEMA = {
     image_url: { type: 'text', required: false },
 
         // Details
-    map: { type: 'single_link', target: 'map' },
-    zone: { type: 'single_link', target: 'zone' },
-    x: { type: 'number' },
-    y: { type: 'number' },
+    map: { type: 'single_link', target: 'map', required: true },
+    zone: { type: 'single_link', target: 'zone', required: true },
+    x: { type: 'number', required: true },
+    y: { type: 'number', required: true },
     z: { type: 'number' },
-    order: { type: 'number' }
+    order: { type: 'number', required: true }
   },
   narrative: {
     // Base fields (shared by all elements)
@@ -1716,11 +1717,11 @@ export const FIELD_SCHEMA = {
     image_url: { type: 'text', required: false },
 
         // Details
-    map: { type: 'single_link', target: 'map' },
-    element_type: { type: 'text' }, // ElementType enum value
-    element_id: { type: 'single_link', target: 'any' }, // Can reference any element
-    x: { type: 'number' },
-    y: { type: 'number' },
+    map: { type: 'single_link', target: 'map', required: true },
+    element_type: { type: 'text', required: true }, // ElementType enum value; YAML 'element' generic-link is split into _type + _id
+    element_id: { type: 'single_link', target: 'any', required: true }, // Can reference any element
+    x: { type: 'number', required: true },
+    y: { type: 'number', required: true },
     z: { type: 'number' }
   },
   relation: {

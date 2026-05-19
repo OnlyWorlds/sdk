@@ -50,7 +50,7 @@ await client.characters.delete('element-id');
 ## Features
 
 - ✅ **Full Type Safety** - Complete TypeScript definitions for all 22 OnlyWorlds element types
-- ✅ **Auto-Generated Types** - Types synchronized with the latest OnlyWorlds schema
+- ✅ **Schema-Aligned Types** - Type definitions track the OnlyWorlds schema
 - ✅ **CRUD Operations** - Create, read, update, and delete operations for all elements
 - ✅ **Token Management** - Built-in support for OnlyWorlds token rating system
 - ✅ **Branded Types** - Compile-time safety for element relationships
