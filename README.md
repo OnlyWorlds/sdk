@@ -18,9 +18,10 @@ import { OnlyWorldsClient } from '@onlyworlds/sdk';
 
 const client = new OnlyWorldsClient({
   apiKey: 'your-api-key',
-  apiPin: '1234',
-  baseUrl: 'https://onlyworlds.com'
+  apiPin: '1234'
 });
+// baseUrl defaults to https://www.onlyworlds.com/api/worldapi — only override it
+// when pointing at a different host (it must include the full API path)
 
 // Get your world (API keys are world-scoped)
 const world = await client.worlds.get();
