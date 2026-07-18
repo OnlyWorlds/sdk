@@ -12,6 +12,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "pretest": "npm run build",
+    "test": "node --test \"test/**/*.test.mjs\"",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

@@ -5,13 +5,67 @@
 
 A type-safe TypeScript SDK for building world-building applications with the OnlyWorlds API.
 
+The SDK speaks two dialects of the same API:
+
+- **v2 (`OwV2Client`)** -- the current, recommended default. Local-first shape: one-shape read/write (no `_ids` suffix), an opaque `/changes` sync feed, atomic bulk writes, and client-side UUID minting for safe retries. Base URL `https://www.onlyworlds.com/api/v2`.
+- **v1 (`OnlyWorldsClient`)** -- the original resource-style client. Fully served forever; kept below as the legacy section. Existing 2.x code keeps working unchanged -- v2 is purely additive.
+
 ## Installation
 
 ```bash
 npm install @onlyworlds/sdk
 ```
 
-## Quick Start
+## Quick Start (v2 -- recommended)
+
+```typescript
+import { OwV2Client } from '@onlyworlds/sdk';
+
+const client = new OwV2Client({
+  apiKey: 'ow_w_your_world_key', // ow_w_ write / ow_r_ read / ow_a_ account / 10-digit legacy
+  apiPin: '1234',                // needed for writes on a PIN-protected world
+});
+// baseUrl defaults to https://www.onlyworlds.com/api/v2
+
+// Read a page, or walk every page of a type
+const page = await client.list('character');           // { data, has_more, next_cursor }
+for await (const character of client.listAll('character')) {
+  // ...
+}
+
+// Create -- id is minted client-side when omitted (retries stay idempotent)
+const location = await client.create('location', {
+  name: 'Dragon Peak',
+  description: 'A treacherous mountain peak where dragons nest',
+});
+
+// Partial update (arrays replace wholesale -- for links prefer editLinks)
+await client.patch('character', location.id, { name: 'Updated Name' });
+
+// Atomic link merge -- returns the full updated element
+await client.editLinks('event', eventId, 'objects', { add: [swordId], remove: [] });
+
+// Bulk write (up to ~1000; partial success by default, atomic:true for all-or-nothing)
+const res = await client.bulk([
+  { type: 'character', element: { name: 'A' } },
+  { type: 'event', element: { name: 'B' } },
+]);
+// res.items[i].status is the per-slot HTTP status; res.errors flags any failure
+
+// Sync: walk the opaque change feed and persist the final cursor
+let cursor;
+for await (const change of client.changesAll(cursor)) {
+  // apply change in order
+}
+```
+
+### AI-assistant access (MCP)
+
+An MCP server exists at `https://www.onlyworlds.com/mcp` for AI assistants (Claude and other MCP clients) to read and write worlds directly -- no SDK code required. See the [docs](https://onlyworlds.github.io) for setup.
+
+## Legacy: v1 client (`OnlyWorldsClient`)
+
+The v1 resource-style client remains fully supported and served forever. Prefer `OwV2Client` for new code.
 
 ```typescript
 import { OnlyWorldsClient } from '@onlyworlds/sdk';
