@@ -9,48 +9,26 @@
  * CVD floor band, so secondary encoding (icon + label) is REQUIRED alongside
  * colour, not optional.
  *
- * Provenance: first proven live in atlas (`src/core/element-colors.ts`) and
- * council (`src/cosmos/element-families.ts`) — both are re-exports-in-waiting
- * of this module. Do not change any value here without re-running the CVD
- * validation (every brighter World green collides with Temporal amber for
- * protan viewers — the green is pinned BY the accessibility budget).
+ * The type→family map is GENERATED: `ELEMENT_FAMILIES` is emitted by
+ * `codegen/generate_types.py` from the `family:` key in keel's schema YAML
+ * (added 2026-07-23, keel c69366b) — a keel PRESENTATION-WRAPPER key
+ * (first-party rendering metadata, not part of the council-governed
+ * OnlyWorlds standard). It cannot drift from the schema; membership and hex
+ * invariants stay test-gated in `test/palette.test.mjs`.
  *
- * NOTE: `ELEMENT_FAMILIES` is hand-authored until the canonical schema YAML
- * grows a per-type `family:` key (Skeld's side of the seam), at which point it
- * moves into `types.generated.ts` and this module re-exports it. Until then,
- * completeness is gated by test: `test/palette.test.mjs` asserts every slug in
- * `ELEMENT_TYPES` has a family and no stray keys exist.
+ * The hexes below are design constants, hand-authored beside the generated
+ * map. Do not change any value without re-running the CVD validation (every
+ * brighter World green collides with Temporal amber for protan viewers — the
+ * green is pinned BY the accessibility budget).
+ *
+ * Provenance: first proven live in atlas (`src/core/element-colors.ts`) and
+ * council (`src/cosmos/element-families.ts`) — both become re-exports of this
+ * module.
  */
-import { ELEMENT_TYPES, type ElementType } from './types.generated';
+import { ELEMENT_FAMILIES, type ElementFamily, type ElementType } from './types.generated';
 
-/** The four semantic families. Spatial types fold into `world` (a pin is coloured by its TARGET element's type in practice). */
-export type ElementFamily = 'agents' | 'world' | 'abstract' | 'temporal';
-
-/** Per-type semantic family — the schema fact (colour-independent). */
-export const ELEMENT_FAMILIES: Record<ElementType, ElementFamily> = {
-  character: 'agents',
-  creature: 'agents',
-  species: 'agents',
-  family: 'agents',
-  collective: 'agents',
-  institution: 'agents',
-  location: 'world',
-  object: 'world',
-  construct: 'world',
-  map: 'world',
-  pin: 'world',
-  marker: 'world',
-  zone: 'world',
-  ability: 'abstract',
-  trait: 'abstract',
-  title: 'abstract',
-  language: 'abstract',
-  law: 'abstract',
-  event: 'temporal',
-  narrative: 'temporal',
-  phenomenon: 'temporal',
-  relation: 'temporal',
-};
+export { ELEMENT_FAMILIES };
+export type { ElementFamily };
 
 /**
  * Family → validated hex per surface mode. `light` assumes near-white
@@ -82,8 +60,3 @@ export function elementColor(type: ElementType, mode: 'light' | 'dark' = 'dark')
 
 /** All four families, in ruling order (the order IS the CVD-safety mechanism of the source palette). */
 export const FAMILY_ORDER: readonly ElementFamily[] = ['agents', 'world', 'abstract', 'temporal'];
-
-// Completeness invariant restated for readers: keys of ELEMENT_FAMILIES ===
-// ELEMENT_TYPES exactly. Enforced in test/palette.test.mjs; typed by
-// Record<ElementType, ...> at compile time.
-void ELEMENT_TYPES;

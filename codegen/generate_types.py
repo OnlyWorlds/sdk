@@ -224,7 +224,10 @@ def render_interface(type_slug: str, fields: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def render_maps(all_fields: dict[str, list[dict]]) -> str:
+VALID_FAMILIES = ("agents", "world", "abstract", "temporal")
+
+
+def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str]) -> str:
     types_sorted = sorted(ELEMENT_TYPES)
     lines: list[str] = []
 
@@ -234,6 +237,19 @@ def render_maps(all_fields: dict[str, list[dict]]) -> str:
 
     arr = ", ".join(f"'{t}'" for t in types_sorted)
     lines.append(f"export const ELEMENT_TYPES: ElementType[] = [{arr}];")
+    lines.append("")
+
+    fam_union = " | ".join(f"'{f}'" for f in VALID_FAMILIES)
+    lines.append("/** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */")
+    lines.append(f"export type ElementFamily = {fam_union};")
+    lines.append("")
+    lines.append("/** Per-type semantic family. Source: keel's PRESENTATION-WRAPPER schema key `family:`")
+    lines.append(" *  (first-party rendering metadata, keel-only — NOT part of the council-governed")
+    lines.append(" *  OnlyWorlds standard; see keel/schema-pipeline.md \"The wrapper layer\"). */")
+    lines.append("export const ELEMENT_FAMILIES: Record<ElementType, ElementFamily> = {")
+    for t in types_sorted:
+        lines.append(f"  {t}: '{families[t]}',")
+    lines.append("};")
     lines.append("")
 
     lines.append("/** Single-link field names per type (bare schema names). */")
@@ -263,6 +279,9 @@ def _ts_str_array(names: list[str]) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--schema", default=str(DEFAULT_SCHEMA_DIR))
+    ap.add_argument("--check", action="store_true",
+                    help="drift guard: regenerate in memory and fail (exit 1) if the "
+                         "committed types.generated.ts differs; writes nothing")
     args = ap.parse_args()
     schema_dir = Path(args.schema).resolve()
     if not schema_dir.is_dir():
@@ -274,18 +293,39 @@ def main() -> None:
         )
 
     all_fields: dict[str, list[dict]] = {}
+    families: dict[str, str] = {}
     interfaces: list[str] = []
     for tslug in ELEMENT_TYPES:
         doc = load_yaml(schema_dir, tslug)
+        fam = doc.get("family")
+        if fam not in VALID_FAMILIES:
+            raise SystemExit(
+                f"{tslug}.yaml: top-level `family:` is {fam!r} — expected one of {VALID_FAMILIES}. "
+                "This is a keel wrapper key (see keel/schema-pipeline.md); a canonical-schema "
+                "refresh that OVERWRITES instead of MERGING wipes it — check that first."
+            )
+        families[tslug] = fam
         fields = flatten_fields(doc, tslug)
         all_fields[tslug] = fields
         interfaces.append(render_interface(tslug, fields))
 
     parts = [HEADER, ""]
-    parts.append(render_maps(all_fields))
+    parts.append(render_maps(all_fields, families))
     parts.append("\n\n".join(interfaces))
     parts.append("")
-    OUT_PATH.write_text("\n".join(parts), encoding="utf-8")
+    output = "\n".join(parts)
+
+    if args.check:
+        current = OUT_PATH.read_text(encoding="utf-8") if OUT_PATH.exists() else ""
+        if current != output:
+            raise SystemExit(
+                "DRIFT: src/v2/types.generated.ts does not match the schema YAMLs. "
+                "Run `python codegen/generate_types.py` and commit the result."
+            )
+        print("drift check: clean (types.generated.ts matches schema).")
+        return
+
+    OUT_PATH.write_text(output, encoding="utf-8")
 
     print(f"Wrote {OUT_PATH.relative_to(REPO)} ({len(ELEMENT_TYPES)} interfaces).")
     print(f"Notes: {len(drift_notes)}")

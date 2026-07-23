@@ -38,6 +38,37 @@ export type ElementType = 'ability' | 'character' | 'collective' | 'construct' |
 
 export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective', 'construct', 'creature', 'event', 'family', 'institution', 'language', 'law', 'location', 'map', 'marker', 'narrative', 'object', 'phenomenon', 'pin', 'relation', 'species', 'title', 'trait', 'zone'];
 
+/** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */
+export type ElementFamily = 'agents' | 'world' | 'abstract' | 'temporal';
+
+/** Per-type semantic family. Source: keel's PRESENTATION-WRAPPER schema key `family:`
+ *  (first-party rendering metadata, keel-only — NOT part of the council-governed
+ *  OnlyWorlds standard; see keel/schema-pipeline.md "The wrapper layer"). */
+export const ELEMENT_FAMILIES: Record<ElementType, ElementFamily> = {
+  ability: 'abstract',
+  character: 'agents',
+  collective: 'agents',
+  construct: 'world',
+  creature: 'agents',
+  event: 'temporal',
+  family: 'agents',
+  institution: 'agents',
+  language: 'abstract',
+  law: 'abstract',
+  location: 'world',
+  map: 'world',
+  marker: 'world',
+  narrative: 'temporal',
+  object: 'world',
+  phenomenon: 'temporal',
+  pin: 'world',
+  relation: 'temporal',
+  species: 'agents',
+  title: 'abstract',
+  trait: 'abstract',
+  zone: 'world',
+};
+
 /** Single-link field names per type (bare schema names). */
 export const SINGLE_LINK_FIELDS: Record<ElementType, string[]> = {
   ability: ['tradition', 'source', 'locus'],

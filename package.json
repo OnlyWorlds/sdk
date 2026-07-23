@@ -1,6 +1,6 @@
 {
   "name": "@onlyworlds/sdk",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "TypeScript SDK for the OnlyWorlds API - build world-building applications with type safety",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -16,6 +16,8 @@
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "pretest": "npm run build",
     "test": "node --test \"test/**/*.test.mjs\"",
+    "codegen": "python codegen/generate_types.py",
+    "codegen:check": "python codegen/generate_types.py --check",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
