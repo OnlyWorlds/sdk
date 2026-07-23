@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwPage, OwWorldMeta,
 } from './types';
-import { OwNetworkError, errorFromResponse, parseEnvelope } from './errors';
+import { OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
 
 const DEFAULT_BASE_URL = 'https://www.onlyworlds.com/api/v2';
@@ -263,7 +263,16 @@ export class OwV2Client {
 
 // -- Helpers ---------------------------------------------------------------
 
-/** Read-only fields the API must never receive on a write. */
+/**
+ * Read-only fields the API must never receive on a write.
+ *
+ * LAW (do not "improve"): this is a BLACKLIST and must never become a
+ * whitelist. Namespaced extension fields (atlas_* / shadow_* / x_*) MUST pass
+ * through writes untouched — every tool that round-trips its own state through
+ * other tools depends on it (e.g. tangle's x_tangle_battle). A whitelist would
+ * silently strip them and corrupt cross-tool state. Consumer-review-upheld
+ * (Temper 2026-07-18, reaffirmed §5-A 2026-07-23).
+ */
 const READ_ONLY_FIELDS = ['world', 'type', 'created_at', 'updated_at', 'change_seq'] as const;
 
 /**
@@ -316,6 +325,6 @@ function buildQuery(params: Record<string, string | number | boolean | undefined
   return q.toString();
 }
 
-// parseEnvelope is re-exported by errors; imported here to keep the module's
+// parseErrorEnvelope re-exported for consumers hand-parsing stored envelopes; the
 // error surface discoverable to consumers reading the client.
-export { parseEnvelope };
+export { parseErrorEnvelope };

@@ -25,6 +25,9 @@ round-trip. Key differences from v1 habits:
 - `PATCH` is destructive on sent fields — use `editLinks` for relationships.
 - `ElementType` at the root is now the v2 slug union; the 3.x alias `V2ElementType` is
   gone (rename imports; values unchanged).
+- `parseEnvelope` is renamed `parseErrorEnvelope` (it parses the platform *error*
+  envelope — renamed to avoid collision with the world-export envelope, a different
+  artifact).
 
 ## If you used the token surface
 

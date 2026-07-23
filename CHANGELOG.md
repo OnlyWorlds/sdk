@@ -40,10 +40,19 @@ pinned consumers.
 - README rewritten v2-native (v1 sections, branded types, and the encrypted-key
   walkthrough removed; bulk partial-failure and idempotency-key hygiene promoted).
 
+### alpha.1 — consumer-pin fixes (Temper's atlas review, same night)
+- **`parseEnvelope` → `parseErrorEnvelope`** (it parses the platform *error* envelope;
+  renamed before the 4.0 name freeze to avoid collision with the world-export envelope).
+- The never-whitelist LAW now lives as a comment on `READ_ONLY_FIELDS` itself.
+- Stale v1 example in the shipped d.ts fixed (TokenResource JSDoc).
+
 ### Planned before release (RFC-001 gates)
-- Skeld's live wire-log v1-traffic query (gate 3). Alpha publishes to the `alpha`
-  dist-tag only — never `latest`. **No `npm deprecate` on 3.x** (amended per landscape
-  research — 3.x stays plainly supported; README framing carries the message).
+- Skeld's live wire-log v1-traffic query (gate 3) + the `/tokens/*`-under-v2 base-path
+  answer. Alpha publishes to the `alpha` dist-tag only — never `latest`. **No `npm
+  deprecate` on 3.x** (amended per landscape research — 3.x stays plainly supported;
+  README framing carries the message). 4.x wishlist grows: account client (list/mint/
+  create — atlas first consumer, hand-rolls it today) and a world-export envelope
+  reader (§8c; atlas + future importers would drop hand-rolled copies).
 
 ## [3.1.0] — 2026-07-23
 

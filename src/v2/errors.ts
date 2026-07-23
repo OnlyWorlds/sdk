@@ -89,7 +89,9 @@ interface EnvelopeShape {
 }
 
 /** Parse a wire envelope into OwApiError parts (exported for the error type-tests). */
-export function parseEnvelope(status: number, body: unknown): OwApiError {
+/** Parse the platform ERROR envelope into an OwApiError. (Renamed from parseEnvelope in 4.0 —
+ *  distinct from the world-export envelope, which is a different artifact entirely.) */
+export function parseErrorEnvelope(status: number, body: unknown): OwApiError {
   const env = (body && typeof body === 'object' ? body : {}) as EnvelopeShape;
   const nested = typeof env.error === 'object' && env.error !== null ? env.error : undefined;
   const code = env.code ?? nested?.code ?? (typeof env.error === 'string' ? env.error : null) ?? null;
@@ -113,5 +115,5 @@ export async function errorFromResponse(res: Response): Promise<OwApiError> {
   } catch {
     body = text || null;
   }
-  return parseEnvelope(res.status, body);
+  return parseErrorEnvelope(res.status, body);
 }

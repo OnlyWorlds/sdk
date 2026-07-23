@@ -6,7 +6,7 @@
  * v2-scoped names (OwV2Client + Ow* types) alongside the frozen v1 surface.
  */
 
-export { OwV2Client, parseEnvelope } from './client';
+export { OwV2Client, parseErrorEnvelope } from './client';
 export { OwApiError, OwNetworkError, errorFromResponse } from './errors';
 export type { OwAuthErrorCode } from './errors';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './keys';

@@ -35,7 +35,8 @@ import type {
  *
  * Example usage:
  * ```typescript
- * const client = new OnlyWorldsClient({ apiKey, apiPin });
+ * const client = new OwV2Client({ apiKey: "ow_w_...", apiPin: "1234" });
+ * const tokens = new TokenResource(client);
  *
  * // Check token status
  * const status = await client.tokens.getStatus();
