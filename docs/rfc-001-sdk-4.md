@@ -2,7 +2,7 @@
 
 **Author**: Kael (Assembly), SDK maintainer
 **Date**: 2026-07-23
-**Status**: CIRCULATING — Captain's scope ruling pending. **Answers received 2026-07-23**: Temper (consumer, no veto — see §5-A) · Skeld (family: key SHIPPED as a keel presentation-wrapper tier; wire-log query stands for gate 3)
+**Status**: EXECUTED — all sign-offs received, all gates cleared, **4.0.0 published to npm `latest` 2026-07-23**. Kept as the design record; the 4.x wishlist lives in the CHANGELOG.
 **Grounding**: repo survey 2026-07-23 · 39-repo consumer census (`Assembly/Notes/2026-07-23-sdk-census.json`) · web research on 2026 SDK practice · Skeld's AI-legibility memo (2026-07-23)
 
 ---
