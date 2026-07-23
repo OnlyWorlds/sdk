@@ -35,7 +35,10 @@
    - **Field descriptions as JSDoc in the generated `.d.ts`** — semantics inline where every editor and agent already looks.
    - **One wire-true worked example** in the README (create world → two linked elements → read back, byte-true v2 dialect).
    - **`AGENTS.md`** + a README line stating the SDK/MCP division of labor (SDK = typed deterministic path; MCP = live/exploratory; the SDK is 4–32× cheaper in tokens for known ops).
-5. **Migration guide + `npm deprecate` message** on 3.x pointing at it.
+5. **Migration guide; NO `npm deprecate` on 3.x** (amended 2026-07-23 per landscape research:
+   deprecating a working major reads as "broken" and floods support — ESLint precedent. 3.x
+   stays plainly supported; README carries the "stay on 3.x for v1 + CJS" framing instead.
+   Revisit only if 3.x ever becomes genuinely unsupported, and then range-scoped + softly worded).
 
 ## 4. Gates before the 4.0 axe (order matters)
 

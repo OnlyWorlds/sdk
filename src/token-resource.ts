@@ -6,14 +6,13 @@
  */
 
 /**
- * Minimal transport the token resource needs — structurally satisfied by any
- * client exposing `request<T>(method, path, body?)`. Decoupled from the v1
- * OnlyWorldsClient in 4.0 (v1 client removed). NOTE: the /tokens/* routes'
- * wire fate is an open question with Skeld (RFC-001 §5); this surface is
- * retained pending that answer and may be removed in a later 4.x.
+ * Minimal transport the token resource needs — structurally satisfied by
+ * `OwV2Client` (its `request()` is public since 4.0): `new TokenResource(client)`.
+ * Wire ruling (Skeld 2026-07-23): keel keeps the /tokens/* economy long-term
+ * (Tangle ratings write it, Council voting reads it) — port, don't delete.
  */
 export interface TokenTransport {
-  request<T>(method: string, path: string, body?: unknown): Promise<T>;
+  request<T>(method: string, path: string, opts?: { body?: unknown }): Promise<T>;
 }
 
 import type {

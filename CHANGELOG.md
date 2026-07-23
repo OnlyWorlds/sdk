@@ -24,11 +24,26 @@ pinned consumers.
   body?) }`) instead of the removed v1 client. Token surface retained pending the
   wire-fate ruling (RFC-001 §5) — may be removed in a later 4.x.
 
+### Added (post-alpha.0, same night)
+- **`ELEMENT_ICONS` GENERATED** from keel's `icon:` wrapper key (keel `56c124a`).
+- **`ELEMENT_SECTIONS` DERIVED** from the canonical schema's own document structure
+  (Skeld's ruling: sections are the standard tier's property groups; document order is
+  display order). Divergence check vs the old hand table found and fixed three fossils:
+  creature "Behaviour"→"Behavior", pin's triple-listed generic link → `element`,
+  relation "Involves" listing a nonexistent `relations` field. Canonical is truth.
+- **`SCHEMA.md`** — full generated schema reference (every field with its canonical
+  description, link directions, families, icons, sections), ships in the tarball;
+  covered by the codegen drift guard. AGENTS.md points agents at it first.
+- **`OwV2Client.request()` is public** (typed escape hatch; does not sanitize) and
+  structurally satisfies `TokenTransport` — `new TokenResource(client)` just works.
+  Token ruling (Skeld): keel keeps `/tokens/*` long-term; ported, not deleted.
+- README rewritten v2-native (v1 sections, branded types, and the encrypted-key
+  walkthrough removed; bulk partial-failure and idempotency-key hygiene promoted).
+
 ### Planned before release (RFC-001 gates)
-- `ELEMENT_ICONS`/`ELEMENT_SECTIONS` become codegen-emitted once keel's `icon:`/`sections:`
-  wrapper keys land (proposal with Skeld). Generated `SCHEMA.md` + JSDoc descriptions once
-  the standard tier carries `description:` fields. Skeld's live wire-log v1-traffic query.
-  README rewrite (v1 sections removal). `npm deprecate` message on 3.x.
+- Skeld's live wire-log v1-traffic query (gate 3). Alpha publishes to the `alpha`
+  dist-tag only — never `latest`. **No `npm deprecate` on 3.x** (amended per landscape
+  research — 3.x stays plainly supported; README framing carries the message).
 
 ## [3.1.0] — 2026-07-23
 

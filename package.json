@@ -16,7 +16,8 @@
     "dist",
     "README.md",
     "AGENTS.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "SCHEMA.md"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",

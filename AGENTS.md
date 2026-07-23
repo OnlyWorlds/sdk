@@ -1,5 +1,9 @@
 # For AI agents using @onlyworlds/sdk
 
+**Start with [SCHEMA.md](SCHEMA.md)** (in this package): the full generated schema reference —
+every type, every field with its meaning, link directions, families, icons, display sections.
+It is generated from the same canonical YAML as the types, so it cannot drift.
+
 **What this package is**: the canonical typed TypeScript client for the OnlyWorlds v2 API,
 plus the canonical constants (element types, icons, colour families, field schema).
 OnlyWorlds is an open standard for portable world data — 22 element types, UUID-linked.

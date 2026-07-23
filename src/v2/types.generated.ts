@@ -69,6 +69,140 @@ export const ELEMENT_FAMILIES: Record<ElementType, ElementFamily> = {
   zone: 'world',
 };
 
+/** Material Symbols icon name per type. Source: keel's PRESENTATION-WRAPPER key `icon:` (keel 56c124a). */
+export const ELEMENT_ICONS: Record<ElementType, string> = {
+  ability: 'auto_fix_normal',
+  character: 'person',
+  collective: 'groups_3',
+  construct: 'api',
+  creature: 'bug_report',
+  event: 'saved_search',
+  family: 'supervisor_account',
+  institution: 'business',
+  language: 'edit_road',
+  law: 'gpp_bad',
+  location: 'castle',
+  map: 'map',
+  marker: 'place',
+  narrative: 'menu_book',
+  object: 'webhook',
+  phenomenon: 'thunderstorm',
+  pin: 'push_pin',
+  relation: 'link',
+  species: 'crib',
+  title: 'military_tech',
+  trait: 'flaky',
+  zone: 'architecture',
+};
+
+/** Field grouping for display. DERIVED from the canonical schema's own document
+ *  structure (top-level property groups, document order = display order). */
+export interface SectionInfo { name: string; order: number; fields: string[]; }
+
+export const ELEMENT_SECTIONS: Record<ElementType, SectionInfo[]> = {
+  ability: [
+    { name: 'Mechanics', order: 1, fields: ['activation', 'duration', 'potency', 'range', 'effects', 'challenges', 'talents', 'requisites'] },
+    { name: 'World', order: 2, fields: ['prevalence', 'tradition', 'source', 'locus', 'instruments', 'systems'] },
+  ],
+  character: [
+    { name: 'Constitution', order: 1, fields: ['physicality', 'mentality', 'height', 'weight', 'species', 'traits', 'abilities'] },
+    { name: 'Origins', order: 2, fields: ['background', 'motivations', 'birth_date', 'birthplace', 'languages'] },
+    { name: 'World', order: 3, fields: ['reputation', 'location', 'objects', 'institutions'] },
+    { name: 'Personality', order: 4, fields: ['charisma', 'coercion', 'competence', 'compassion', 'creativity', 'courage'] },
+    { name: 'Social', order: 5, fields: ['family', 'friends', 'rivals'] },
+    { name: 'TTRPG', order: 6, fields: ['level', 'hit_points', 'STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] },
+  ],
+  collective: [
+    { name: 'Formation', order: 1, fields: ['composition', 'count', 'formation_date', 'operator', 'equipment'] },
+    { name: 'Dynamics', order: 2, fields: ['activity', 'disposition', 'state', 'abilities', 'symbolism'] },
+    { name: 'World', order: 3, fields: ['species', 'characters', 'creatures', 'phenomena'] },
+  ],
+  construct: [
+    { name: 'Nature', order: 1, fields: ['rationale', 'history', 'status', 'reach', 'start_date', 'end_date', 'founder', 'custodian'] },
+    { name: 'Involves', order: 2, fields: ['characters', 'objects', 'locations', 'species', 'creatures', 'institutions', 'traits', 'collectives', 'zones', 'abilities', 'phenomena', 'languages', 'families', 'relations', 'titles', 'constructs', 'events', 'narratives'] },
+  ],
+  creature: [
+    { name: 'Biology', order: 1, fields: ['appearance', 'weight', 'height', 'species'] },
+    { name: 'Behavior', order: 2, fields: ['habits', 'demeanor', 'traits', 'abilities', 'languages'] },
+    { name: 'World', order: 3, fields: ['status', 'birth_date', 'location', 'zone'] },
+    { name: 'TTRPG', order: 4, fields: ['challenge_rating', 'hit_points', 'armor_class', 'speed', 'actions'] },
+  ],
+  event: [
+    { name: 'Nature', order: 1, fields: ['history', 'challenges', 'consequences', 'start_date', 'end_date', 'triggers'] },
+    { name: 'Involves', order: 2, fields: ['characters', 'objects', 'locations', 'species', 'creatures', 'institutions', 'traits', 'collectives', 'zones', 'abilities', 'phenomena', 'languages', 'families', 'relations', 'titles', 'constructs'] },
+  ],
+  family: [
+    { name: 'Identity', order: 1, fields: ['spirit', 'history', 'traditions', 'traits', 'abilities', 'languages', 'ancestors'] },
+    { name: 'World', order: 2, fields: ['reputation', 'estates', 'governs', 'heirlooms', 'creatures'] },
+  ],
+  institution: [
+    { name: 'Foundation', order: 1, fields: ['doctrine', 'founding_date', 'parent_institution'] },
+    { name: 'Claims', order: 2, fields: ['zones', 'objects', 'creatures'] },
+    { name: 'World', order: 3, fields: ['status', 'allies', 'adversaries', 'constructs'] },
+  ],
+  language: [
+    { name: 'Structure', order: 1, fields: ['phonology', 'grammar', 'lexicon', 'writing', 'classification'] },
+    { name: 'World', order: 2, fields: ['status', 'spread', 'dialects'] },
+  ],
+  law: [
+    { name: 'Code', order: 1, fields: ['declaration', 'purpose', 'date', 'parent_law', 'penalties'] },
+    { name: 'World', order: 2, fields: ['author', 'locations', 'zones', 'prohibitions', 'adjudicators', 'enforcers'] },
+  ],
+  location: [
+    { name: 'Setting', order: 1, fields: ['form', 'function', 'founding_date', 'parent_location', 'populations'] },
+    { name: 'Politics', order: 2, fields: ['political_climate', 'primary_power', 'governing_title', 'secondary_powers', 'zone', 'rival', 'partner'] },
+    { name: 'World', order: 3, fields: ['customs', 'founders', 'cults', 'delicacies'] },
+    { name: 'Production', order: 4, fields: ['extraction_methods', 'extraction_goods', 'industry_methods', 'industry_goods'] },
+    { name: 'Commerce', order: 5, fields: ['infrastructure', 'extraction_markets', 'industry_markets', 'currencies'] },
+    { name: 'Construction', order: 6, fields: ['architecture', 'buildings', 'building_methods'] },
+    { name: 'Defense', order: 7, fields: ['defensibility', 'elevation', 'fighters', 'defensive_objects'] },
+  ],
+  map: [
+    { name: 'Details', order: 1, fields: ['background_color', 'hierarchy', 'width', 'height', 'depth', 'parent_map', 'location'] },
+  ],
+  marker: [
+    { name: 'Details', order: 1, fields: ['map', 'zone', 'x', 'y', 'z', 'order'] },
+  ],
+  narrative: [
+    { name: 'Context', order: 1, fields: ['story', 'consequences', 'start_date', 'end_date', 'order', 'parent_narrative', 'protagonist', 'antagonist', 'narrator', 'conservator'] },
+    { name: 'Involves', order: 2, fields: ['events', 'characters', 'objects', 'locations', 'species', 'creatures', 'institutions', 'traits', 'collectives', 'zones', 'abilities', 'phenomena', 'languages', 'families', 'relations', 'titles', 'constructs', 'laws'] },
+  ],
+  object: [
+    { name: 'Form', order: 1, fields: ['aesthetics', 'weight', 'amount', 'parent_object', 'materials', 'technology'] },
+    { name: 'Function', order: 2, fields: ['utility', 'effects', 'abilities', 'consumes'] },
+    { name: 'World', order: 3, fields: ['origins', 'location', 'language', 'affinities'] },
+  ],
+  phenomenon: [
+    { name: 'Mechanics', order: 1, fields: ['expression', 'effects', 'duration', 'catalysts', 'empowerments'] },
+    { name: 'World', order: 2, fields: ['mythology', 'system', 'triggers', 'wielders', 'environments'] },
+  ],
+  pin: [
+    { name: 'Details', order: 1, fields: ['map', 'element', 'x', 'y', 'z'] },
+  ],
+  relation: [
+    { name: 'Nature', order: 1, fields: ['background', 'start_date', 'end_date', 'intensity', 'actor', 'events'] },
+    { name: 'Involves', order: 2, fields: ['characters', 'objects', 'locations', 'species', 'creatures', 'institutions', 'traits', 'collectives', 'zones', 'abilities', 'phenomena', 'languages', 'families', 'titles', 'constructs', 'events', 'narratives'] },
+  ],
+  species: [
+    { name: 'Biology', order: 1, fields: ['appearance', 'life_span', 'weight', 'nourishment', 'reproduction', 'adaptations'] },
+    { name: 'Psychology', order: 2, fields: ['instincts', 'sociality', 'temperament', 'communication', 'aggression', 'traits'] },
+    { name: 'World', order: 3, fields: ['role', 'parent_species', 'locations', 'zones', 'affinities'] },
+  ],
+  title: [
+    { name: 'Mandate', order: 1, fields: ['authority', 'eligibility', 'grant_date', 'revoke_date', 'issuer', 'body', 'superior_title', 'holders', 'symbols'] },
+    { name: 'World', order: 2, fields: ['status', 'history', 'characters', 'institutions', 'families', 'zones', 'locations', 'objects', 'constructs', 'laws', 'collectives', 'creatures', 'phenomena', 'species', 'languages'] },
+  ],
+  trait: [
+    { name: 'Qualitative', order: 1, fields: ['social_effects', 'physical_effects', 'functional_effects', 'personality_effects', 'behaviour_effects'] },
+    { name: 'Quantitative', order: 2, fields: ['charisma', 'coercion', 'competence', 'compassion', 'creativity', 'courage'] },
+    { name: 'World', order: 3, fields: ['significance', 'anti_trait', 'empowered_abilities'] },
+  ],
+  zone: [
+    { name: 'Scope', order: 1, fields: ['role', 'start_date', 'end_date', 'phenomena', 'linked_zones'] },
+    { name: 'World', order: 2, fields: ['context', 'populations', 'titles', 'principles'] },
+  ],
+};
+
 /** Single-link field names per type (bare schema names). */
 export const SINGLE_LINK_FIELDS: Record<ElementType, string[]> = {
   ability: ['tradition', 'source', 'locus'],

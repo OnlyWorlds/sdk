@@ -3,12 +3,13 @@
 [![npm version](https://badge.fury.io/js/@onlyworlds%2Fsdk.svg)](https://www.npmjs.com/package/@onlyworlds/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A type-safe TypeScript SDK for building world-building applications with the OnlyWorlds API.
+The canonical typed client for the [OnlyWorlds](https://onlyworlds.github.io) v2 API, plus the
+canonical constants (element types, icons, colour families, field schema) — generated from the
+same schema source the server runs on.
 
-The SDK speaks two dialects of the same API:
-
-- **v2 (`OwV2Client`)** -- the current, recommended default. Local-first shape: one-shape read/write (no `_ids` suffix), an opaque `/changes` sync feed, atomic bulk writes, and client-side UUID minting for safe retries. Base URL `https://www.onlyworlds.com/api/v2`.
-- **v1 (`OnlyWorldsClient`)** -- the original resource-style client. Fully served forever; kept below as the legacy section. Existing 2.x code keeps working unchanged -- v2 is purely additive.
+**4.x is v2-native and ESM-only (Node 18+).** If you need the legacy v1 API dialect
+(`OnlyWorldsClient`) or CommonJS `require()`, stay on 3.x — it remains published and the v1 API
+remains served. See [docs/migrating-3-to-4.md](docs/migrating-3-to-4.md).
 
 ## Installation
 
@@ -16,317 +17,128 @@ The SDK speaks two dialects of the same API:
 npm install @onlyworlds/sdk
 ```
 
-## Quick Start (v2 -- recommended)
+## Quick Start
 
 ```typescript
 import { OwV2Client } from '@onlyworlds/sdk';
 
-const client = new OwV2Client({
-  apiKey: 'ow_w_your_world_key', // ow_w_ write / ow_r_ read / ow_a_ account / 10-digit legacy
-  apiPin: '1234',                // needed for writes on a PIN-protected world
-});
-// baseUrl defaults to https://www.onlyworlds.com/api/v2
+const client = new OwV2Client({ apiKey: 'ow_r_your_key' }); // read-only key: that's all you need
+const page = await client.list('character');                 // { data, has_more, next_cursor }
+```
 
-// Read a page, or walk every page of a type
-const page = await client.list('character');           // { data, has_more, next_cursor }
-for await (const character of client.listAll('character')) {
-  // ...
-}
+Key kinds: `ow_w_` write / `ow_r_` read-only (no PIN — the "give this to your players" key) /
+`ow_a_` account Bearer / 10-digit legacy. Writes on a PIN-protected world also pass `apiPin`.
+Demo keys `0000000000`–`0000000009` read real sample worlds.
 
-// A worked round-trip: two elements, linked, read back. Byte-true v2 dialect:
-// link fields use ONE bare name both directions (no _ids suffix — that's v1),
-// and you NEVER send a "world" field (identity comes from the key; sending it 422s).
-const location = await client.create('location', {
+## The full round-trip
+
+```typescript
+const writer = new OwV2Client({ apiKey: 'ow_w_your_key', apiPin: '1234' });
+
+// v2 dialect rules, worth internalizing once:
+// - link fields use ONE bare name both directions (no _ids suffix — that's v1)
+// - NEVER send a "world" field (identity comes from the key; the client strips it anyway)
+const location = await writer.create('location', {
   name: 'Dragon Peak',
   description: 'A treacherous mountain peak where dragons nest',
 }); // id minted client-side when omitted (retries stay idempotent)
 
-const dragon = await client.create('creature', {
+const dragon = await writer.create('creature', {
   name: 'Vorrath the Ember-Scaled',
   location: location.id,            // single link: UUID (or null)
 });
 
-const fetched = await client.get('creature', dragon.id);
+const fetched = await writer.get('creature', dragon.id);
 // fetched.location === location.id — reads the way it writes
 
-// Partial update (PATCH is destructive on sent fields; arrays replace wholesale)
-await client.patch('location', location.id, { supertype: 'Mountain' });
+// PATCH is destructive on sent fields; arrays replace wholesale
+await writer.patch('location', location.id, { supertype: 'Mountain' });
 
-// For relationships, prefer the atomic link merge -- returns the full updated element
-const fireBreath = await client.create('ability', { name: 'Ember Breath' });
-await client.editLinks('creature', dragon.id, 'abilities', { add: [fireBreath.id], remove: [] });
+// For relationships, use the atomic link merge — returns the full updated element
+const fireBreath = await writer.create('ability', { name: 'Ember Breath' });
+await writer.editLinks('creature', dragon.id, 'abilities', { add: [fireBreath.id], remove: [] });
 
-// Bulk write (up to ~1000; partial success by default, atomic:true for all-or-nothing)
-const res = await client.bulk([
-  { type: 'character', element: { name: 'A' } },
-  { type: 'event', element: { name: 'B' } },
-]);
-// res.items[i].status is the per-slot HTTP status; res.errors flags any failure
-
-// Sync: walk the opaque change feed and persist the final cursor
-let cursor;
-for await (const change of client.changesAll(cursor)) {
-  // apply change in order
-}
+// Walk every page of a type
+for await (const character of writer.listAll('character')) { /* ... */ }
 ```
 
-### Canonical element colours
+## Bulk writes — always check `errors`
+
+`/bulk` **succeeds partially by default** (HTTP 200 with per-slot statuses). The one mistake to
+never make: treating a 200 as "everything landed."
 
 ```typescript
-import { elementColor, ELEMENT_FAMILIES, FAMILY_COLORS } from '@onlyworlds/sdk';
-
-elementColor('character', 'dark');  // '#3987e5' — colour carries the FAMILY
-// (agents / world / abstract / temporal); ELEMENT_ICONS carries the TYPE.
-// CVD-validated: always pair colour with icon + label, never colour alone.
-```
-
-### AI-assistant access (MCP) — and when to use which
-
-An MCP server exists at `https://www.onlyworlds.com/mcp` for AI assistants (Claude and other MCP clients) to read and write worlds directly -- no SDK code required. See the [docs](https://onlyworlds.github.io) for setup.
-
-Division of labor: for **known, deterministic operations** (CRUD, sync, bulk) use this SDK — typed calls, no tool-schema overhead. For **live exploration of a user's world from a chat/agent context**, use the MCP server. Agents: see `AGENTS.md` in this package.
-
-## Legacy: v1 client (`OnlyWorldsClient`)
-
-The v1 resource-style client remains fully supported and served forever. Prefer `OwV2Client` for new code.
-
-```typescript
-import { OnlyWorldsClient } from '@onlyworlds/sdk';
-
-const client = new OnlyWorldsClient({
-  apiKey: 'your-api-key',
-  apiPin: '1234'
-});
-// baseUrl defaults to https://www.onlyworlds.com/api/worldapi — only override it
-// when pointing at a different host (it must include the full API path)
-
-// Get your world (API keys are world-scoped)
-const world = await client.worlds.get();
-
-// Fetch characters (paginated)
-const characters = await client.characters.list();
-
-// Create a new location
-const location = await client.locations.create({
-  name: 'Dragon Peak',
-  description: 'A treacherous mountain peak where dragons nest',
-  supertype: 'mountain'
-});
-
-// Get a specific element
-const character = await client.characters.get('element-id');
-
-// Update an element
-await client.characters.update('element-id', {
-  name: 'Updated Name'
-});
-
-// Delete an element
-await client.characters.delete('element-id');
-```
-
-## Features
-
-- ✅ **Full Type Safety** - Complete TypeScript definitions for all 22 OnlyWorlds element types
-- ✅ **Schema-Aligned Types** - Type definitions track the OnlyWorlds schema
-- ✅ **CRUD Operations** - Create, read, update, and delete operations for all elements
-- ✅ **Token Management** - Built-in support for OnlyWorlds token rating system
-- ✅ **Branded Types** - Compile-time safety for element relationships
-- ✅ **Zero Runtime Overhead** - Type system has no runtime cost
-- ✅ **Modern ESM/CJS** - Supports both ES modules and CommonJS
-
-## API Reference
-
-### World Endpoint
-
-The `worlds` resource is special because API keys are world-scoped (one key = one world). The endpoint returns a single `World` object directly, not a paginated list.
-
-```typescript
-// Get your world
-const world = await client.worlds.get();
-
-// Update your world
-const updated = await client.worlds.update({
-  description: 'A dark fantasy realm'
-});
-```
-
-**Note**: The `worlds` resource only has `get()` and `update()` methods (no `list()`, `create()`, or `delete()`) because API keys are world-scoped.
-
-### Element Endpoints
-
-All other element types return paginated results:
-
-```typescript
-// List with pagination
-const response = await client.characters.list({
-  limit: 10,
-  offset: 0,
-  ordering: '-created_at',
-  search: 'dragon'
-});
-
-console.log(response.count);      // Total count
-console.log(response.results);    // Array of Characters
-console.log(response.next);       // URL for next page
-console.log(response.previous);   // URL for previous page
-```
-
-## Type-Safe Relationships
-
-```typescript
-import { ElementId, Character, Location } from '@onlyworlds/sdk';
-
-// Branded types ensure you can't mix up element IDs
-const locationId: ElementId<'Location'> = 'some-location-id';
-const character: Character = {
-  name: 'Aragorn',
-  location: locationId  // Type-safe!
-};
-```
-
-## Token Management
-
-OnlyWorlds provides a token rating system for tracking API usage and enabling AI-powered features. Users get a daily token allowance (default: 10,000 tokens) that resets every day.
-
-### Working Reference Implementation
-
-See [base-tool/src/llm/token-service.ts](https://github.com/OnlyWorlds/base-tool) for the complete working implementation that this SDK enables.
-
-### Check Token Status
-
-```typescript
-// Get current token status
-const status = await client.tokens.getStatus();
-
-console.log(`Available: ${status.tokens_available_today}/${status.token_rating}`);
-console.log(`Used today: ${status.tokens_used_today}`);
-console.log(`Active sessions: ${status.sessions_active}`);
-console.log(`Last reset: ${status.last_reset}`);
-```
-
-### Consume Tokens
-
-Report token consumption when your tool uses AI features or other token-tracked services:
-
-```typescript
-// Report token usage
-const result = await client.tokens.consume({
-  amount: 500,
-  service: 'my_worldbuilding_tool',
-  metadata: {
-    feature: 'character_generation',
-    model: 'gpt-4',
-    prompt_tokens: 300,
-    completion_tokens: 200
+const res = await writer.bulk(
+  [
+    { type: 'character', element: { name: 'A' } },
+    { type: 'event', element: { name: 'B' } },
+  ],
+  { idempotencyKey: crypto.randomUUID() }, // mint FRESH per attempt — a failed batch is
+);                                          // cached under its key; never reuse across retries
+if (res.errors) {
+  for (const slot of res.items.filter((s) => s.status >= 400)) {
+    console.warn(slot.error?.code, slot.error?.message, slot.error?.doc_url);
   }
-});
-
-// Check if consumption succeeded
-if (result.error) {
-  console.warn('Token warning:', result.error);
 }
-
-console.log(`Consumed ${result.tokens_consumed} tokens`);
-console.log(`${result.tokens_remaining} tokens remaining`);
+// Pass { atomic: true } for all-or-nothing instead. res.wasReplay flags idempotent replays.
 ```
 
-**Important**: The API allows consumption even when exceeding available tokens (tracks as debt), but returns a warning in the `error` field.
-
-### Advanced: Encrypted API Key Access
-
-For tools that need direct OpenAI API access using OnlyWorlds tokens:
+## Sync
 
 ```typescript
-// Get encrypted OpenAI key (requires 100+ tokens)
-const access = await client.tokens.getAccessKey();
-
-console.log('Session ID:', access.session_id);
-console.log('Expires:', access.expires_at);
-console.log('Available tokens:', access.tokens_available);
-
-// Decrypt the key client-side (see base-tool for full implementation)
-// 1. Derive decryption key from world ID using SHA-256
-// 2. Use 'fernet' npm package to decrypt
-// 3. Use decrypted OpenAI key for direct API calls
-// 4. Report usage with session_id
-
-// See base-tool/src/llm/token-service.ts:99-235 for complete example
-```
-
-**Full decryption implementation** (based on base-tool):
-
-```typescript
-import { fernet } from 'fernet';
-
-// Derive decryption key from world ID
-async function deriveKey(worldId: string): Promise<string> {
-  const salt = 'onlyworlds-token-api-2024-public-salt';
-  const keyMaterial = `${worldId}:${salt}`;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(keyMaterial);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const base64 = btoa(String.fromCharCode(...hashArray));
-  return base64.replace(/\+/g, '-').replace(/\//g, '_');
+let cursor; // opaque, never expires; persist it
+for await (const change of client.changesAll(cursor)) {
+  // ops arrive in (change_seq, id) order — apply in order → convergence
 }
-
-// Decrypt the API key
-async function decryptApiKey(encryptedKey: string, worldId: string): Promise<string> {
-  const derivedKey = await deriveKey(worldId);
-  const secret = new fernet.Secret(derivedKey);
-  const token = new fernet.Token({
-    secret: secret,
-    token: encryptedKey,
-    ttl: 0  // Don't enforce TTL client-side
-  });
-  return token.decode();
-}
-
-// Usage
-const world = await client.worlds.get();
-const access = await client.tokens.getAccessKey();
-const apiKey = await decryptApiKey(access.encrypted_key, world.id);
-
-// Use apiKey for OpenAI API calls, then report usage:
-await client.tokens.consume({
-  amount: tokensUsed,
-  sessionId: access.session_id,
-  service: 'direct_openai',
-  metadata: { model: 'gpt-4', /* ... */ }
-});
+// GOTCHA: world-meta edits (name, calendar, public_read) do NOT enter /changes.
+// Poll client.getWorld() and compare updated_at separately.
 ```
 
-### Session Management
+## Errors
+
+Every non-2xx throws `OwApiError` carrying the platform envelope: `.status`, `.type`, `.code`,
+`.param` (the exact field that failed), and `.docUrl` — surface `docUrl` in your UX. Transport
+failures throw `OwNetworkError`. `err.isValidationError` is the common branch.
+
+## Canonical constants (all generated or test-gated from schema)
 
 ```typescript
-// Revoke a specific session
-await client.tokens.revokeSession(sessionId);
+import {
+  ELEMENT_TYPES,        // the 22 slugs (and the ElementType union)
+  ELEMENT_ICONS,        // Material Symbols icon per type
+  ELEMENT_LABELS,       // plural display labels
+  ELEMENT_SECTIONS,     // canonical field grouping + display order
+  FIELD_SCHEMA,         // per-field type/target metadata
+  elementColor,         // canonical colour: family carries COLOUR, icon carries TYPE
+} from '@onlyworlds/sdk';
 
-// Revoke all sessions (emergency cleanup)
-const result = await client.tokens.revokeAllSessions();
-console.log(`Revoked ${result.sessions_revoked} sessions`);
+elementColor('character', 'dark'); // '#3987e5' — four CVD-validated families
+// Always pair colour with icon + label; colour alone is not accessible.
 ```
 
-### Encryption Info
+The full schema with per-field meaning lives in [SCHEMA.md](SCHEMA.md) (generated, ships in this
+package). AI agents: read [AGENTS.md](AGENTS.md) first.
 
-Get public encryption details (no auth required):
+## Token rating system
 
 ```typescript
-const info = await client.tokens.getEncryptionInfo();
-console.log('Algorithm:', info.algorithm);
-console.log('Key derivation:', info.key_derivation);
-console.log('Public salt:', info.salt);
-console.log(info.javascript_example);
+import { TokenResource } from '@onlyworlds/sdk';
+const tokens = new TokenResource(writer); // OwV2Client.request() satisfies TokenTransport
+const status = await tokens.getStatus();
 ```
+
+## AI access — when to use which
+
+For **known, deterministic operations** (CRUD, sync, bulk) use this SDK — typed calls, no
+tool-schema overhead. For **live exploration of a user's world from a chat/agent context**, use
+the MCP server at `https://www.onlyworlds.com/mcp` (same `API-Key`/`API-Pin` headers, 11 tools;
+unaffected by SDK versioning).
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details
+MIT
 
 ## Links
 
-- [OnlyWorlds Website](https://onlyworlds.com)
-- [Documentation](https://onlyworlds.github.io/)
-- [NPM Package](https://www.npmjs.com/package/@onlyworlds/sdk)
-- [Report Issues](https://github.com/OnlyWorlds/sdk/issues)
+- [OnlyWorlds](https://www.onlyworlds.com) · [Docs](https://onlyworlds.github.io) · [API reference](https://www.onlyworlds.com/api/docs)
+- [Issues](https://github.com/OnlyWorlds/sdk/issues) · [CHANGELOG](CHANGELOG.md) · [Migration 3→4](docs/migrating-3-to-4.md)

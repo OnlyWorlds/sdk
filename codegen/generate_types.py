@@ -227,7 +227,23 @@ def render_interface(type_slug: str, fields: list[dict]) -> str:
 VALID_FAMILIES = ("agents", "world", "abstract", "temporal")
 
 
-def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str]) -> str:
+def parse_sections(doc: dict, tslug: str) -> list[dict]:
+    """Sections ARE the canonical document structure: top-level `properties`
+    keys are section names, their nested `properties` are the fields, both in
+    document order (order IS display order; Skeld's ruling 2026-07-23 —
+    sections are DERIVED from the standard tier, not a wrapper key)."""
+    out = []
+    props = doc.get("properties") or {}
+    for i, (section_name, section) in enumerate(props.items()):
+        fields = list((section.get("properties") or {}).keys())
+        if not fields:
+            note(f"{tslug}.{section_name}: empty section in canonical YAML")
+        out.append({"name": section_name, "order": i + 1, "fields": fields})
+    return out
+
+
+def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str],
+                icons: dict[str, str], sections: dict[str, list[dict]]) -> str:
     types_sorted = sorted(ELEMENT_TYPES)
     lines: list[str] = []
 
@@ -249,6 +265,26 @@ def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str]) -> 
     lines.append("export const ELEMENT_FAMILIES: Record<ElementType, ElementFamily> = {")
     for t in types_sorted:
         lines.append(f"  {t}: '{families[t]}',")
+    lines.append("};")
+    lines.append("")
+
+    lines.append("/** Material Symbols icon name per type. Source: keel's PRESENTATION-WRAPPER key `icon:` (keel 56c124a). */")
+    lines.append("export const ELEMENT_ICONS: Record<ElementType, string> = {")
+    for t in types_sorted:
+        lines.append(f"  {t}: '{icons[t]}',")
+    lines.append("};")
+    lines.append("")
+
+    lines.append("/** Field grouping for display. DERIVED from the canonical schema's own document")
+    lines.append(" *  structure (top-level property groups, document order = display order). */")
+    lines.append("export interface SectionInfo { name: string; order: number; fields: string[]; }")
+    lines.append("")
+    lines.append("export const ELEMENT_SECTIONS: Record<ElementType, SectionInfo[]> = {")
+    for t in types_sorted:
+        lines.append(f"  {t}: [")
+        for s in sections[t]:
+            lines.append(f"    {{ name: '{s['name']}', order: {s['order']}, fields: {_ts_str_array(s['fields'])} }},")
+        lines.append("  ],")
     lines.append("};")
     lines.append("")
 
@@ -276,6 +312,56 @@ def _ts_str_array(names: list[str]) -> str:
     return "[" + ", ".join(f"'{n}'" for n in names) + "]"
 
 
+SCHEMA_MD_PATH = REPO / "SCHEMA.md"
+
+SCHEMA_MD_HEADER = """\
+# OnlyWorlds Schema Reference
+
+GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
+Written for both humans and AI agents reading this package locally.
+
+**The shape rules** (v2 wire dialect): every element carries `id` (UUID), `name`, optional
+`description`/`supertype`/`subtype`/`image_url`, server-managed `type`/`created_at`/`updated_at`/`change_seq`,
+and namespaced extension fields (`x_*` etc.) returned verbatim. Link fields use ONE bare
+name in both read and write (no `_ids` suffix). Single links are `UUID | null`; multi links
+are `UUID[]`. **Links are owned one-way**: the type listed below owns the field (e.g.
+Character owns `abilities`; Ability has no `characters`). Sections and their order are the
+canonical display grouping.
+
+Families (colour semantics; icon carries the type): agents · world · abstract · temporal.
+"""
+
+
+def render_schema_md(all_fields, families, icons, sections) -> str:
+    kind_label = {
+        "scalar_str": "text",
+        "scalar_int": "integer",
+        "single": "single link",
+        "multi": "multi link",
+        "generic": "generic link (any element type)",
+    }
+    by_name = {}
+    parts = [SCHEMA_MD_HEADER]
+    for tslug in sorted(ELEMENT_TYPES):
+        fields = all_fields[tslug]
+        by_name = {f["name"]: f for f in fields}
+        parts.append(f"\n## {tslug}  ·  family: {families[tslug]}  ·  icon: {icons[tslug]}\n")
+        for sec in sections[tslug]:
+            parts.append(f"\n### {sec['name']}\n")
+            for fname in sec["fields"]:
+                f = by_name.get(fname)
+                if f is None:
+                    # generic links appear in sections under their YAML name
+                    parts.append(f"- `{fname}` — generic link (any element type)")
+                    continue
+                kind = kind_label.get(f["kind"], f["kind"])
+                tgt = f" → {f['target']}" if f.get("target") else ""
+                desc = f.get("desc") or ""
+                parts.append(f"- `{fname}` ({kind}{tgt}){' — ' + desc if desc else ''}")
+        parts.append("")
+    return "\n".join(parts) + "\n"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--schema", default=str(DEFAULT_SCHEMA_DIR))
@@ -294,6 +380,8 @@ def main() -> None:
 
     all_fields: dict[str, list[dict]] = {}
     families: dict[str, str] = {}
+    icons: dict[str, str] = {}
+    sections: dict[str, list[dict]] = {}
     interfaces: list[str] = []
     for tslug in ELEMENT_TYPES:
         doc = load_yaml(schema_dir, tslug)
@@ -305,29 +393,41 @@ def main() -> None:
                 "refresh that OVERWRITES instead of MERGING wipes it — check that first."
             )
         families[tslug] = fam
+        icon = doc.get("icon")
+        if not isinstance(icon, str) or not icon:
+            raise SystemExit(
+                f"{tslug}.yaml: top-level `icon:` missing or empty — wrapper key (keel 56c124a). "
+                "Same wiped-wrapper check applies as for family:."
+            )
+        icons[tslug] = icon
+        sections[tslug] = parse_sections(doc, tslug)
         fields = flatten_fields(doc, tslug)
         all_fields[tslug] = fields
         interfaces.append(render_interface(tslug, fields))
 
     parts = [HEADER, ""]
-    parts.append(render_maps(all_fields, families))
+    parts.append(render_maps(all_fields, families, icons, sections))
     parts.append("\n\n".join(interfaces))
     parts.append("")
     output = "\n".join(parts)
+    schema_md = render_schema_md(all_fields, families, icons, sections)
 
     if args.check:
-        current = OUT_PATH.read_text(encoding="utf-8") if OUT_PATH.exists() else ""
-        if current != output:
-            raise SystemExit(
-                "DRIFT: src/v2/types.generated.ts does not match the schema YAMLs. "
-                "Run `python codegen/generate_types.py` and commit the result."
-            )
-        print("drift check: clean (types.generated.ts matches schema).")
+        for path, want, label in ((OUT_PATH, output, "types.generated.ts"),
+                                  (SCHEMA_MD_PATH, schema_md, "SCHEMA.md")):
+            current = path.read_text(encoding="utf-8") if path.exists() else ""
+            if current != want:
+                raise SystemExit(
+                    f"DRIFT: {label} does not match the schema YAMLs. "
+                    "Run `python codegen/generate_types.py` and commit the result."
+                )
+        print("drift check: clean (types.generated.ts + SCHEMA.md match schema).")
         return
 
     OUT_PATH.write_text(output, encoding="utf-8")
+    SCHEMA_MD_PATH.write_text(schema_md, encoding="utf-8")
 
-    print(f"Wrote {OUT_PATH.relative_to(REPO)} ({len(ELEMENT_TYPES)} interfaces).")
+    print(f"Wrote {OUT_PATH.relative_to(REPO)} ({len(ELEMENT_TYPES)} interfaces) + SCHEMA.md.")
     print(f"Notes: {len(drift_notes)}")
     for n in drift_notes:
         print(f"  - {n}")

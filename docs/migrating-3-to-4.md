@@ -35,4 +35,12 @@ on them, say so — that input decides whether the surface stays.
 ## Packaging
 
 ESM-only (`"type": "module"`, sealed `exports` map). Every current bundler and Node >= 18
-handles this natively; CJS `require()` consumers must stay on 3.x or migrate to ESM.
+handles this natively. CJS consumers: stay on 3.x, migrate your project to ESM, or use the
+async escape hatch from inside CJS:
+
+```js
+const { OwV2Client } = await import('@onlyworlds/sdk');
+```
+
+The MCP server (`www.onlyworlds.com/mcp`) is a separate product and is unaffected by SDK
+versioning.

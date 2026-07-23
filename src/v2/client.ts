@@ -203,7 +203,14 @@ export class OwV2Client {
 
   // -- Core request machinery ----------------------------------------------
 
-  private async request(
+  /**
+   * Raw authenticated request against this client's baseUrl. Public since 4.0
+   * so auxiliary resources can ride the same transport — it structurally
+   * satisfies `TokenTransport` (`new TokenResource(client)`). Prefer the typed
+   * methods for element CRUD; this is the escape hatch, and it does NOT apply
+   * sanitizePayload — callers own their body shape.
+   */
+  async request<T = unknown>(
     method: string,
     path: string,
     opts: {
@@ -214,7 +221,7 @@ export class OwV2Client {
       allowEmpty?: boolean;
       replayAware?: boolean;
     } = {},
-  ): Promise<unknown> {
+  ): Promise<T> {
     const url = `${this.baseUrl}${path}${opts.query ? `?${opts.query}` : ''}`;
     const headers: Record<string, string> = {};
     if (opts.auth !== false) {
@@ -242,7 +249,7 @@ export class OwV2Client {
     if (!res.ok) throw await errorFromResponse(res);
     if (res.status === 204 || opts.allowEmpty) {
       const text = await res.text();
-      return text ? JSON.parse(text) : null;
+      return (text ? JSON.parse(text) : null) as T;
     }
     const parsed = await res.json();
     // Bulk: surface server-side idempotent replay. The header arrives lowercase
@@ -250,7 +257,7 @@ export class OwV2Client {
     if (opts.replayAware && parsed && typeof parsed === 'object') {
       (parsed as OwBulkResponse).wasReplay = readReplayHeader(res.headers);
     }
-    return parsed;
+    return parsed as T;
   }
 }
 
