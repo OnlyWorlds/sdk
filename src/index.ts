@@ -20,6 +20,10 @@ export { OwV2Client, parseEnvelope } from './v2';
 export { OwApiError, OwNetworkError, errorFromResponse } from './v2';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './v2';
 export { ELEMENT_TYPES, SPATIAL_TYPES } from './v2';
+// Canonical element colour palette (four semantic families; colour carries
+// FAMILY, ELEMENT_ICONS carries TYPE). Keyed on the v2 slug union.
+export { ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf, elementColor } from './v2';
+export type { ElementFamily } from './v2';
 export type { OwKeyKind, OwAuthErrorCode } from './v2';
 export type { ElementType as V2ElementType } from './v2';
 export type {

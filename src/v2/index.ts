@@ -12,6 +12,10 @@ export type { OwAuthErrorCode } from './errors';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './keys';
 export type { OwKeyKind } from './keys';
 export { ELEMENT_TYPES, SPATIAL_TYPES } from './types';
+export {
+  ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf, elementColor,
+} from './palette';
+export type { ElementFamily } from './palette';
 export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
