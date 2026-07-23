@@ -33,17 +33,28 @@ for await (const character of client.listAll('character')) {
   // ...
 }
 
-// Create -- id is minted client-side when omitted (retries stay idempotent)
+// A worked round-trip: two elements, linked, read back. Byte-true v2 dialect:
+// link fields use ONE bare name both directions (no _ids suffix — that's v1),
+// and you NEVER send a "world" field (identity comes from the key; sending it 422s).
 const location = await client.create('location', {
   name: 'Dragon Peak',
   description: 'A treacherous mountain peak where dragons nest',
+}); // id minted client-side when omitted (retries stay idempotent)
+
+const dragon = await client.create('creature', {
+  name: 'Vorrath the Ember-Scaled',
+  location: location.id,            // single link: UUID (or null)
 });
 
-// Partial update (arrays replace wholesale -- for links prefer editLinks)
-await client.patch('character', location.id, { name: 'Updated Name' });
+const fetched = await client.get('creature', dragon.id);
+// fetched.location === location.id — reads the way it writes
 
-// Atomic link merge -- returns the full updated element
-await client.editLinks('event', eventId, 'objects', { add: [swordId], remove: [] });
+// Partial update (PATCH is destructive on sent fields; arrays replace wholesale)
+await client.patch('location', location.id, { supertype: 'Mountain' });
+
+// For relationships, prefer the atomic link merge -- returns the full updated element
+const fireBreath = await client.create('ability', { name: 'Ember Breath' });
+await client.editLinks('creature', dragon.id, 'abilities', { add: [fireBreath.id], remove: [] });
 
 // Bulk write (up to ~1000; partial success by default, atomic:true for all-or-nothing)
 const res = await client.bulk([
@@ -59,9 +70,21 @@ for await (const change of client.changesAll(cursor)) {
 }
 ```
 
-### AI-assistant access (MCP)
+### Canonical element colours
+
+```typescript
+import { elementColor, ELEMENT_FAMILIES, FAMILY_COLORS } from '@onlyworlds/sdk';
+
+elementColor('character', 'dark');  // '#3987e5' — colour carries the FAMILY
+// (agents / world / abstract / temporal); ELEMENT_ICONS carries the TYPE.
+// CVD-validated: always pair colour with icon + label, never colour alone.
+```
+
+### AI-assistant access (MCP) — and when to use which
 
 An MCP server exists at `https://www.onlyworlds.com/mcp` for AI assistants (Claude and other MCP clients) to read and write worlds directly -- no SDK code required. See the [docs](https://onlyworlds.github.io) for setup.
+
+Division of labor: for **known, deterministic operations** (CRUD, sync, bulk) use this SDK — typed calls, no tool-schema overhead. For **live exploration of a user's world from a chat/agent context**, use the MCP server. Agents: see `AGENTS.md` in this package.
 
 ## Legacy: v1 client (`OnlyWorldsClient`)
 
