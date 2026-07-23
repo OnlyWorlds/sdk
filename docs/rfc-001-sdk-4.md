@@ -2,7 +2,7 @@
 
 **Author**: Kael (Assembly), SDK maintainer
 **Date**: 2026-07-23
-**Status**: CIRCULATING — review requested from Captain (rules), Skeld (wire contract / schema YAML), Temper (largest consumer estate)
+**Status**: CIRCULATING — Captain's scope ruling pending. **Answers received 2026-07-23**: Temper (consumer, no veto — see §5-A) · Skeld (family: key SHIPPED as a keel presentation-wrapper tier; wire-log query stands for gate 3)
 **Grounding**: repo survey 2026-07-23 · 39-repo consumer census (`Assembly/Notes/2026-07-23-sdk-census.json`) · web research on 2026 SDK practice · Skeld's AI-legibility memo (2026-07-23)
 
 ---
@@ -49,6 +49,19 @@
 - **Skeld**: does `family:` land as a per-type YAML key exactly as discussed? Do `description:` fields exist in the YAML today or is that net-new schema-side work? Token routes (`token-resource.ts`) — carried by keel long-term, or deprecated wire-side too (decides whether 4.0 deletes or ports the token client)?
 - **Temper**: does the tangle/toolkit/write-tool hand-rolled fleet *want* `OwV2Client`, or is hand-rolling deliberate (bundle size, control)? Consumer veto on anything in §3 that makes your ports harder. Council's v1-auth path — migrate at 4.0, or pin?
 - **Captain**: green-light the 4.0 scope as written? Any public-consumer concern (npm downloads beyond the estate) that should raise the deprecation-overlap bar?
+
+## 5-A. Answers received (2026-07-23, same day)
+
+**Temper (consumer)** — no veto. Binding consumer requirements for 4.0:
+- `bulk`: caller-controlled `Idempotency-Key`, per-slot statuses, atomic-failure-200 (`errors: true`) surfaced honestly. **Never add client-side key reuse** — keel caches a FAILED batch under its key (her S292 gate), so callers must mint fresh keys per attempt.
+- `Idempotent-Replay` header matched case-insensitively (arrives lowercase).
+- **sanitizePayload stays a BLACKLIST forever** — load-bearing for `x_*` extension round-trips. If 4.0 rewrites the sanitizer, this law rides along.
+- Metadata tables: regenerate CONTENTS freely, keep exported NAMES and shapes stable (atlas consumes FIELD_SCHEMA/ELEMENT_ICONS/ELEMENT_LABELS/ELEMENT_SECTIONS heavily) — or ship a per-table migration note.
+- ESM-only: fine (her whole fleet is Vite).
+- Council: **pin 3.x now, jump straight to 4.0 at its planned port bout** (banked, low-risk, post-launch) — don't migrate twice. Nothing needs the v1 client kept alive on council's account.
+- Tangle: wants `OwV2Client` — the hand-rolled layer predates the freeze, not an architectural choice; port already ruled to target `@onlyworlds/sdk@3`.
+
+**Skeld (schema/wire)** — `family:` key SHIPPED (keel `c69366b`) as the first key of a new **presentation-wrapper tier**: keel-only top-level YAML keys, never pushed to the public canonical schema (which stays council-governed and tool-neutral). Consequence for this RFC: the 4.0 regenerated metadata tables (icons, sections, display-order) are wrapper-tier candidates — same pattern as `family:`, Skeld's authority, one codegen consumer (this repo). The `description:` fields question (standard tier, feeds SCHEMA.md + JSDoc legs) remains open on his desk. Wire-log query confirmed standing for gate 3.
 
 ## 6. Governance (the seam, restated once)
 
