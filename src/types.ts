@@ -1238,6 +1238,9 @@ export type FieldType =
   | 'text'           // Text fields
   | 'integer'        // Positive integers
   | 'integer_max'    // Positive integers with max value
+  | 'number'         // Legacy alias for integer — what FIELD_SCHEMA entries actually
+                     // carry (70 entries); consumers switch on it. Normalized to
+                     // 'integer' in 4.0 when the tables are regenerated from schema.
   | 'single_link'    // Single element reference
   | 'multi_link';    // Array of element references
 

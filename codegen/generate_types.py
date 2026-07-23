@@ -265,6 +265,13 @@ def main() -> None:
     ap.add_argument("--schema", default=str(DEFAULT_SCHEMA_DIR))
     args = ap.parse_args()
     schema_dir = Path(args.schema).resolve()
+    if not schema_dir.is_dir():
+        raise SystemExit(
+            f"schema dir not found: {schema_dir}\n"
+            "The canonical schema YAMLs live in the keel repo (Skeld's authority), "
+            "expected as a sibling checkout: <parent>/keel/schema. "
+            "Clone keel next to this repo or pass --schema <path>."
+        )
 
     all_fields: dict[str, list[dict]] = {}
     interfaces: list[str] = []
