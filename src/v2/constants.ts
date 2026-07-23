@@ -4,10 +4,10 @@
 // wrapper keys land (icons:/sections: — like family:).
 
 import type { ElementType } from './types.generated';
-import { ELEMENT_TYPES, ELEMENT_ICONS, ELEMENT_SECTIONS } from './types.generated';
+import { ELEMENT_TYPES, ELEMENT_ICONS, ELEMENT_SECTIONS, ONLYWORLDS_VERSION } from './types.generated';
 // Icons + sections are GENERATED since 4.0: icon: is a keel wrapper key (56c124a),
 // sections derive from the canonical document structure (Skeld ruling 2026-07-23).
-export { ELEMENT_ICONS, ELEMENT_SECTIONS };
+export { ELEMENT_ICONS, ELEMENT_SECTIONS, ONLYWORLDS_VERSION };
 export type { SectionInfo } from './types.generated';
 
 
@@ -16,7 +16,7 @@ export type { SectionInfo } from './types.generated';
  * Current OnlyWorlds version
  * Synced with https://github.com/OnlyWorlds/OnlyWorlds/blob/main/VERSION
  */
-export const ONLYWORLDS_VERSION = '00.30.00' as const;
+// ONLYWORLDS_VERSION is generated since 4.0 (canonical VERSION file via keel schema/).
 
 /**
  * Field type definitions for OnlyWorlds elements

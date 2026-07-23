@@ -38,6 +38,9 @@ export type ElementType = 'ability' | 'character' | 'collective' | 'construct' |
 
 export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective', 'construct', 'creature', 'event', 'family', 'institution', 'language', 'law', 'location', 'map', 'marker', 'narrative', 'object', 'phenomenon', 'pin', 'relation', 'species', 'title', 'trait', 'zone'];
 
+/** Canonical OnlyWorlds schema version. Source: canonical VERSION file, carried into keel schema/ by the refresh script (keel 492168c). */
+export const ONLYWORLDS_VERSION = '00.30.00' as const;
+
 /** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */
 export type ElementFamily = 'agents' | 'world' | 'abstract' | 'temporal';
 

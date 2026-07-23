@@ -3,7 +3,7 @@
 All notable changes to `@onlyworlds/sdk`. Maintained from 3.1.0 onward (Kael, Assembly);
 earlier history lives in git log only.
 
-## [Unreleased — 4.0.0] (branch `v4`)
+## [4.0.0] — 2026-07-23
 
 **v2-native only.** See `docs/migrating-3-to-4.md`. 3.x stays published forever for
 pinned consumers.
@@ -46,13 +46,21 @@ pinned consumers.
 - The never-whitelist LAW now lives as a comment on `READ_ONLY_FIELDS` itself.
 - Stale v1 example in the shipped d.ts fixed (TokenResource JSDoc).
 
-### Planned before release (RFC-001 gates)
-- Skeld's live wire-log v1-traffic query (gate 3) + the `/tokens/*`-under-v2 base-path
-  answer. Alpha publishes to the `alpha` dist-tag only — never `latest`. **No `npm
-  deprecate` on 3.x** (amended per landscape research — 3.x stays plainly supported;
-  README framing carries the message). 4.x wishlist grows: account client (list/mint/
-  create — atlas first consumer, hand-rolls it today) and a world-export envelope
-  reader (§8c; atlas + future importers would drop hand-rolled copies).
+### Release gates — ALL GREEN (2026-07-23 night)
+- **Gate 3 (wire-log v1-traffic query, Skeld)**: GREEN — no unknown v1-SDK consumer on
+  the wire; observed v1 traffic is pinned deployed builds (council proxy, legacy plugin
+  walks) that an npm major cannot touch. The v1 API dialect stays served regardless.
+- **`/api/v2/tokens/` live on prod + staging** (keel `e181689`; three-base byte
+  agreement test-pinned). `TokenResource` annotates a 404 on token routes as
+  "older server", not "no tokens". Requirement noted in the migration guide.
+- **`ONLYWORLDS_VERSION` now GENERATED** from canonical's `VERSION` file (carried
+  into keel `schema/` by the refresh script, keel `492168c`) — the last hand-synced
+  constant is dead. Consumer soak: Temper pinned the alpha against atlas's full
+  static surface — strict-clean compile, correct runtime, package shape approved.
+- **No `npm deprecate` on 3.x** (landscape research; 3.x stays plainly supported).
+- 4.x wishlist: account client (list/mint/create — atlas first consumer), world-export
+  envelope reader (§8c), per-status error classes, richer codegen JSDoc, retry/backoff
+  parity audit, FIELD_SCHEMA generation with `required:` from YAML.
 
 ## [3.1.0] — 2026-07-23
 

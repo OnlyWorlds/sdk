@@ -41,6 +41,7 @@ KNOWN_CATEGORIES = {t.capitalize(): t for t in ELEMENT_TYPES}
 KNOWN_CATEGORIES["World"] = "world"
 
 drift_notes: list[str] = []
+_schema_version = ""
 
 
 def note(msg: str) -> None:
@@ -255,6 +256,10 @@ def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str],
     lines.append(f"export const ELEMENT_TYPES: ElementType[] = [{arr}];")
     lines.append("")
 
+    lines.append("/** Canonical OnlyWorlds schema version. Source: canonical VERSION file, carried into keel schema/ by the refresh script (keel 492168c). */")
+    lines.append(f"export const ONLYWORLDS_VERSION = '{_schema_version}' as const;")
+    lines.append("")
+
     fam_union = " | ".join(f"'{f}'" for f in VALID_FAMILIES)
     lines.append("/** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */")
     lines.append(f"export type ElementFamily = {fam_union};")
@@ -377,6 +382,15 @@ def main() -> None:
             "expected as a sibling checkout: <parent>/keel/schema. "
             "Clone keel next to this repo or pass --schema <path>."
         )
+
+    global _schema_version
+    version_file = schema_dir / "VERSION"
+    if not version_file.is_file():
+        raise SystemExit(
+            f"VERSION file not found in {schema_dir} — carried by keel's refresh script "
+            "since 492168c. A refresh that dropped it is the wiped-wrapper failure class."
+        )
+    _schema_version = version_file.read_text(encoding="utf-8").strip()
 
     all_fields: dict[str, list[dict]] = {}
     families: dict[str, str] = {}

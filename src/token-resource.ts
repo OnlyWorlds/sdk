@@ -54,6 +54,23 @@ export class TokenResource {
   constructor(private client: TokenTransport) {}
 
   /**
+   * All token routes go through here: a 404 on /tokens/* almost always means
+   * the SERVER predates the v2 token mount (keel >= 2026-07-23, e181689) —
+   * not "user has no tokens". Annotate so the failure reads correctly.
+   */
+  private async req<T>(method: string, path: string, opts?: { body?: unknown }): Promise<T> {
+    try {
+      return await this.client.request<T>(method, path, opts);
+    } catch (err) {
+      if (err && typeof err === 'object' && (err as { status?: number }).status === 404) {
+        (err as { message: string }).message +=
+          ' [token routes require keel >= 2026-07-23 (e181689) on /api/v2 — a 404 here usually means an older server, not zero tokens]';
+      }
+      throw err;
+    }
+  }
+
+  /**
    * Get current token status for authenticated user
    *
    * Returns daily token allowance, usage, and availability.
@@ -69,7 +86,7 @@ export class TokenResource {
    * ```
    */
   async getStatus(): Promise<TokenStatus> {
-    return this.client.request<TokenStatus>('GET', '/tokens/status/');
+    return this.req<TokenStatus>('GET', '/tokens/status/');
   }
 
   /**
@@ -101,7 +118,7 @@ export class TokenResource {
    * ```
    */
   async consume(params: TokenConsumeParams): Promise<TokenConsumeResponse> {
-    return this.client.request<TokenConsumeResponse>('POST', '/tokens/consume/', {
+    return this.req<TokenConsumeResponse>('POST', '/tokens/consume/', {
       body: {
         amount: params.amount,
         service: params.service || 'sdk_client',
@@ -138,7 +155,7 @@ export class TokenResource {
    * ```
    */
   async getAccessKey(): Promise<AccessKeyResponse> {
-    return this.client.request<AccessKeyResponse>('GET', '/tokens/access-key/');
+    return this.req<AccessKeyResponse>('GET', '/tokens/access-key/');
   }
 
   /**
@@ -155,7 +172,7 @@ export class TokenResource {
    * ```
    */
   async revokeSession(sessionId: string): Promise<RevokeSessionResponse> {
-    return this.client.request<RevokeSessionResponse>(
+    return this.req<RevokeSessionResponse>(
       'POST',
       `/tokens/revoke-session/?session_id=${encodeURIComponent(sessionId)}`
     );
@@ -175,7 +192,7 @@ export class TokenResource {
    * ```
    */
   async revokeAllSessions(): Promise<RevokeAllSessionsResponse> {
-    return this.client.request<RevokeAllSessionsResponse>('POST', '/tokens/revoke-all-sessions/');
+    return this.req<RevokeAllSessionsResponse>('POST', '/tokens/revoke-all-sessions/');
   }
 
   /**
@@ -196,6 +213,6 @@ export class TokenResource {
   async getEncryptionInfo(): Promise<EncryptionInfo> {
     // This endpoint doesn't require authentication, but we'll use the standard request
     // method since it handles the URL construction properly
-    return this.client.request<EncryptionInfo>('GET', '/tokens/encryption-info/');
+    return this.req<EncryptionInfo>('GET', '/tokens/encryption-info/');
   }
 }

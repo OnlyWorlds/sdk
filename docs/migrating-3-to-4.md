@@ -31,9 +31,11 @@ round-trip. Key differences from v1 habits:
 
 ## If you used the token surface
 
-`TokenResource` now takes any `{ request<T>(method, path, body?) }` transport instead of
-the v1 client. Note the token routes' long-term wire status is under review; if you depend
-on them, say so — that input decides whether the surface stays.
+`TokenResource` now takes any `{ request<T>(method, path, opts?) }` transport instead of
+the v1 client — `OwV2Client` satisfies it directly: `new TokenResource(client)`. The token
+economy is permanent wire surface (ruled 2026-07-23). **Requirement: token calls through
+`OwV2Client` (the `/api/v2` base) need keel ≥ 2026-07-23 (`e181689`)** — against an older
+server the routes 404; the SDK annotates that 404 so it doesn't read as "no tokens".
 
 ## Packaging
 
