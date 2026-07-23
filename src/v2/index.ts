@@ -21,3 +21,8 @@ export type {
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
   OwLinkEdit, OwPage, OwWorldMeta,
 } from './types';
+export {
+  ELEMENT_LABELS, ELEMENT_SECTIONS, ELEMENT_ICONS, FIELD_SCHEMA,
+  ONLYWORLDS_VERSION, getElementIcon, getElementLabel,
+} from './constants';
+export type { FieldType, FieldInfo, SectionInfo } from './constants';

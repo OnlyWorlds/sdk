@@ -13,9 +13,7 @@ import assert from 'node:assert/strict';
 
 import {
   OwV2Client, OwApiError, detectKeyKind, ELEMENT_TYPES,
-  // v1 compat surface -- import-and-exists check below
-  OnlyWorldsClient,
-} from '../dist/index.mjs';
+} from '../dist/index.js';
 
 // -- fake fetch harness -----------------------------------------------------
 
@@ -255,6 +253,8 @@ test('ELEMENT_TYPES lists all 22 slugs', () => {
 
 // -- v1 compat surface unchanged (import-and-exists) ------------------------
 
-test('v1 exports remain importable from the package root', () => {
-  assert.equal(typeof OnlyWorldsClient, 'function');
+test('4.0: the v1 client is GONE from the package root', async () => {
+  const mod = await import('../dist/index.js');
+  assert.equal(mod.OnlyWorldsClient, undefined);
+  assert.equal(typeof mod.elementColor, 'function'); // v2 surface intact
 });

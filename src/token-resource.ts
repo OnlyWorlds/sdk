@@ -5,7 +5,17 @@
  * Based on the working implementation in base-tool/src/llm/token-service.ts
  */
 
-import type { OnlyWorldsClient } from './client';
+/**
+ * Minimal transport the token resource needs — structurally satisfied by any
+ * client exposing `request<T>(method, path, body?)`. Decoupled from the v1
+ * OnlyWorldsClient in 4.0 (v1 client removed). NOTE: the /tokens/* routes'
+ * wire fate is an open question with Skeld (RFC-001 §5); this surface is
+ * retained pending that answer and may be removed in a later 4.x.
+ */
+export interface TokenTransport {
+  request<T>(method: string, path: string, body?: unknown): Promise<T>;
+}
+
 import type {
   TokenStatus,
   TokenConsumeResponse,
@@ -41,7 +51,7 @@ import type {
  * ```
  */
 export class TokenResource {
-  constructor(private client: OnlyWorldsClient) {}
+  constructor(private client: TokenTransport) {}
 
   /**
    * Get current token status for authenticated user

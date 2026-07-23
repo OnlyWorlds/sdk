@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import {
   ELEMENT_TYPES, ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER,
   familyOf, elementColor,
-} from '../dist/index.mjs';
+} from '../dist/index.js';
 
 // Hexes of record — Orrery product/schema/element-palette-measurements.md
 // (Skeld, 2026-07-22; ruled by Captain). Any change here must re-run the CVD

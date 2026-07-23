@@ -3,6 +3,33 @@
 All notable changes to `@onlyworlds/sdk`. Maintained from 3.1.0 onward (Kael, Assembly);
 earlier history lives in git log only.
 
+## [Unreleased — 4.0.0] (branch `v4`)
+
+**v2-native only.** See `docs/migrating-3-to-4.md`. 3.x stays published forever for
+pinned consumers.
+
+### Removed (BREAKING)
+- The v1 client (`OnlyWorldsClient`), the v1 `ElementType` enum, `icon-utils`.
+  `ElementType` at the root is now THE v2 slug union (was `V2ElementType` alias in 3.x).
+- CJS build — the package is ESM-only with a sealed `exports` map (`"type": "module"`,
+  `sideEffects: false`).
+
+### Changed
+- Metadata tables (`ELEMENT_ICONS`, `ELEMENT_LABELS`, `ELEMENT_SECTIONS`, `FIELD_SCHEMA`,
+  `getElementIcon`, `getElementLabel`) ported onto the v2 slug union — same export names,
+  same shapes, contents byte-identical EXCEPT: `FIELD_SCHEMA` `type: 'number'` →
+  `'integer'` (70 entries; 'number' dropped from `FieldType`). Migration: consumers
+  switching on `'number'` switch on `'integer'`.
+- `TokenResource` now takes a structural `TokenTransport` (`{ request<T>(method, path,
+  body?) }`) instead of the removed v1 client. Token surface retained pending the
+  wire-fate ruling (RFC-001 §5) — may be removed in a later 4.x.
+
+### Planned before release (RFC-001 gates)
+- `ELEMENT_ICONS`/`ELEMENT_SECTIONS` become codegen-emitted once keel's `icon:`/`sections:`
+  wrapper keys land (proposal with Skeld). Generated `SCHEMA.md` + JSDoc descriptions once
+  the standard tier carries `description:` fields. Skeld's live wire-log v1-traffic query.
+  README rewrite (v1 sections removal). `npm deprecate` message on 3.x.
+
 ## [3.1.0] — 2026-07-23
 
 ### Added
