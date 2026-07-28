@@ -1,5 +1,16 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.30.0-dist.2
+//         commit          d86e4c8a84d14f3fa90f45aa15621d92d7f55037
+//         MANIFEST sha256 8166337432ee6f141fbcb9743e5965d0b79e911974045f19c1cbda3d0918e2b2
+//         canonical 00.30.00, dist serial 2, published 2026-07-28
+//
+// The distribution is vendored at codegen/schema-dist/ and verified two ways by
+// codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
+// itself against the hash recorded at pin time. The second check is the one that
+// catches a moved tag -- a re-fetched manifest always agrees with the tree it
+// arrived with, so contents-verification alone proves consistency, never identity.
+//
 // One interface per element type, extending OwElementBase. Field shapes are the v2
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
 // `number | null`. Link fields use bare schema names (no `_ids` suffix). The four
@@ -38,15 +49,17 @@ export type ElementType = 'ability' | 'character' | 'collective' | 'construct' |
 
 export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective', 'construct', 'creature', 'event', 'family', 'institution', 'language', 'law', 'location', 'map', 'marker', 'narrative', 'object', 'phenomenon', 'pin', 'relation', 'species', 'title', 'trait', 'zone'];
 
-/** Canonical OnlyWorlds schema version. Source: canonical VERSION file, carried into keel schema/ by the refresh script (keel 492168c). */
+/** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned
+ *  distribution's VERSION file (see the provenance block at the top of this file). */
 export const ONLYWORLDS_VERSION = '00.30.00' as const;
 
 /** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */
 export type ElementFamily = 'agents' | 'world' | 'abstract' | 'temporal';
 
-/** Per-type semantic family. Source: keel's PRESENTATION-WRAPPER schema key `family:`
- *  (first-party rendering metadata, keel-only — NOT part of the council-governed
- *  OnlyWorlds standard; see keel/schema-pipeline.md "The wrapper layer"). */
+/** Per-type semantic family. Source: the distribution's `presentation.json` sidecar
+ *  (first-party rendering DEFAULTS — NOT part of the council-governed OnlyWorlds
+ *  standard, and explicitly overridable by any consumer). The colour values are
+ *  NOT in the sidecar: FAMILY_COLORS is hand-authored here in src/v2/palette.ts. */
 export const ELEMENT_FAMILIES: Record<ElementType, ElementFamily> = {
   ability: 'abstract',
   character: 'agents',
@@ -72,7 +85,7 @@ export const ELEMENT_FAMILIES: Record<ElementType, ElementFamily> = {
   zone: 'world',
 };
 
-/** Material Symbols icon name per type. Source: keel's PRESENTATION-WRAPPER key `icon:` (keel 56c124a). */
+/** Material Symbols icon name per type. Source: the distribution's `presentation.json` sidecar. */
 export const ELEMENT_ICONS: Record<ElementType, string> = {
   ability: 'auto_fix_normal',
   character: 'person',

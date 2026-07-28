@@ -1,0 +1,13 @@
+{
+  "_what": "The recorded pin for the vendored OnlyWorlds schema distribution. This file is the go.sum of this repo's schema supply chain — do not edit it by hand; run `npm run schema:update` and review the diff.",
+  "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (Boss, 2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
+  "repo": "https://github.com/OnlyWorlds/schema-dist",
+  "tag": "v0.30.0-dist.2",
+  "commit": "d86e4c8a84d14f3fa90f45aa15621d92d7f55037",
+  "manifest_sha256": "8166337432ee6f141fbcb9743e5965d0b79e911974045f19c1cbda3d0918e2b2",
+  "canonical_version": "00.30.00",
+  "dist_serial": 2,
+  "published": "2026-07-28",
+  "pinned_at": "2026-07-28",
+  "pinned_by": "Kael (Assembly) — verified 31/31 file hashes independently, under a core.autocrlf=true checkout"
+}

@@ -17,3 +17,31 @@ jobs:
       # `npm test` runs pretest (tsup build) then node --test against the
       # compiled dist bundle — the same artifact npm publish ships.
       - run: npm test
+
+  schema:
+    # The schema guards. Before 2026-07-28 these could not run here at all:
+    # codegen read a sibling checkout of the PRIVATE keel repo, which does not
+    # exist on a runner. `codegen:check` existed as an npm script and had never
+    # once fired in CI — a drift guard that was, in practice, a claim. The
+    # repoint onto the vendored public distribution is what makes it real.
+    #
+    # Two checks, catching different things:
+    #   schema:verify  — the vendored tree is the distribution we pinned
+    #                    (contents vs MANIFEST, AND MANIFEST vs the hash
+    #                    recorded at pin time — the moved-tag check)
+    #   codegen:check  — the committed generated output matches that schema
+    #
+    # Neither implies the other. A correct pin with stale generated output
+    # passes the first and fails the second; a regenerated file from a
+    # substituted schema passes the second and fails the first.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # PyYAML is codegen's only third-party dependency and this repo carries no
+      # requirements.txt, so it is installed explicitly rather than implied.
+      - run: pip install pyyaml
+      - run: npm run schema:verify
+      - run: npm run codegen:check

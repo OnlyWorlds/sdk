@@ -21,12 +21,18 @@ from pathlib import Path
 from generate_types import ELEMENT_TYPES, flatten_fields, load_yaml
 
 REPO = Path(__file__).resolve().parent.parent
-DEFAULT_SCHEMA_DIR = REPO.parent / "keel" / "schema"
-DEFAULT_CACHE = Path(
-    "C:/Users/Titus/AppData/Local/Temp/claude/"
-    "C--Users-Titus-Carrier-Orrery/0583abc5-9073-4c6a-ae05-7bd4bc9776f3/"
-    "scratchpad/w11"
-)
+DEFAULT_SCHEMA_DIR = REPO / "codegen" / "schema-dist" / "schema"
+
+# NOTE (2026-07-28): --cache no longer has a default, deliberately.
+#
+# It used to default to a SESSION-SCOPED TEMP DIRECTORY belonging to a different
+# consciousness's scratchpad — long dead. Combined with `main()` never calling
+# sys.exit, this script would print "0 elements (no coverage)" 22 times and exit
+# 0, while codegen/README.md called it "the gate". A check that cannot fail is
+# worse than no check: it answers the question "is this verified?" with a yes.
+#
+# Both halves are fixed: the dead path is gone (the dump dir is now required and
+# must exist), and a mismatch — or a run with no coverage at all — exits non-zero.
 
 # Base + server-managed keys carried by every element (OwElementBase).
 BASE_KEYS = {
@@ -73,10 +79,18 @@ def shape_ok(kind: str, val) -> bool:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--schema", default=str(DEFAULT_SCHEMA_DIR))
-    ap.add_argument("--cache", default=str(DEFAULT_CACHE))
+    ap.add_argument(
+        "--cache",
+        required=True,
+        help="directory of <type>.json v2 world-dump files. REQUIRED — there is no "
+             "default, because the previous default was a dead path that made this "
+             "script silently unfailable.",
+    )
     args = ap.parse_args()
     schema_dir = Path(args.schema).resolve()
     cache = Path(args.cache)
+    if not cache.is_dir():
+        raise SystemExit(f"cache dir not found: {cache}")
 
     total_pass = 0
     total_mismatch = 0
@@ -128,7 +142,21 @@ def main() -> None:
     print()
     print(f"TOTAL: {total_pass} elements clean, {total_mismatch} mismatches")
     if empty_types:
-        print(f"No coverage (empty in W11): {', '.join(empty_types)}")
+        print(f"No coverage (absent from this dump): {', '.join(empty_types)}")
+
+    if total_mismatch:
+        raise SystemExit(
+            f"FAIL: {total_mismatch} wire/interface mismatch(es). The wire is truth — "
+            "a mismatch means the generated types are wrong (unless the key is a "
+            "genuine namespaced extension)."
+        )
+    if total_pass == 0:
+        raise SystemExit(
+            "FAIL: zero elements validated. A run that checks nothing must not report "
+            "success — that is exactly how this script spent months as a gate that "
+            "could not fail."
+        )
+    print("validate: OK")
 
 
 if __name__ == "__main__":
