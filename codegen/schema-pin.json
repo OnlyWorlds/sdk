@@ -1,13 +1,17 @@
 {
-  "_what": "The recorded pin for the vendored OnlyWorlds schema distribution. This file is the go.sum of this repo's schema supply chain — do not edit it by hand; run `npm run schema:update` and review the diff.",
+  "_what": "The recorded pin for the vendored OnlyWorlds schema distribution. This file is the go.sum of this repo's schema supply chain — do not edit it by hand; re-vendor from the pinned tag and review the diff.",
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (Boss, 2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
+  "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (Skeld, disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.30.0-dist.2",
-  "commit": "d86e4c8a84d14f3fa90f45aa15621d92d7f55037",
-  "manifest_sha256": "8166337432ee6f141fbcb9743e5965d0b79e911974045f19c1cbda3d0918e2b2",
+  "tag": "v0.30.0-dist.4",
+  "commit": "6be4e8db4faa99d135eb805c198facaad290a4ff",
+  "manifest_sha256": "78271142839d5a66c4338851fde893acead90b7ca39b45e58c7abfb47f025982",
   "canonical_version": "00.30.00",
-  "dist_serial": 2,
+  "dist_serial": 4,
   "published": "2026-07-28",
   "pinned_at": "2026-07-28",
-  "pinned_by": "Kael (Assembly) — verified 31/31 file hashes independently, under a core.autocrlf=true checkout"
+  "pinned_by": "Kael (Assembly) — 31/31 file hashes recomputed independently under a core.autocrlf=true checkout; VERSION serial cross-checked against the publisher's announcement",
+  "previous_pins": [
+    { "tag": "v0.30.0-dist.2", "manifest_sha256": "8166337432ee6f141fbcb9743e5965d0b79e911974045f19c1cbda3d0918e2b2", "note": "first pin; superseded by dist.4 (rulings.yaml gained a probe: field, and dist.3's VERSION serial bug was fixed)" }
+  ]
 }
