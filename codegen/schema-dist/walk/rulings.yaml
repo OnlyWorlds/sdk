@@ -7,6 +7,12 @@
 # schema-authority ruling (Skeld, Orrery register); a row names its evidence.
 #
 # Format: id · applies_to · rule (the binding sentence) · rationale · since · status
+#         · probe (OPTIONAL) — what was actually CHECKED, with its control and
+#           its residue cleanup, for rows whose authority rests on a live
+#           measurement. A consumer cannot re-derive a probe and will not know
+#           to doubt a verdict; recording the method is what makes the verdict
+#           trustworthy downstream (Quillon, 2026-07-28). Omit on rows ruled
+#           from design rather than measurement.
 
 rulings:
   - id: nullable-by-default
@@ -36,6 +42,25 @@ rulings:
       treat these fields as required; readers MUST tolerate null in them.
       Whether keel should add enforcement is an open product question
       (existing data may legally contain such rows).
+    probe: >
+      What was CHECKED, so a third consumer need not re-derive it and knows
+      when to doubt it (Quillon's ask, 2026-07-28: "a row that says what was
+      checked is worth more than a row that says what was decided").
+      Re-run 2026-07-28 21:21 UTC against production, world W11:
+      (1) POST /api/v2/marker/ with body `{name}` only — map/zone/x/y/order
+      all absent — returned 201 with all five null;
+      (2) POST /api/v2/pin/ with `{name}` only — map/element/x/y absent —
+      returned 201 with all four null;
+      (3) CONTROL, and the row is worthless without it: POST /api/v2/pin/
+      with a nonexistent map FK returned 400 `invalid_link`, typed, with
+      `param: "map"`. The endpoint DOES validate; it just does not enforce
+      `required`. Without (3), the 201s are equally explained by an endpoint
+      that validates nothing.
+      Both probe elements deleted (204) and re-fetched (404); no residue.
+      Source side same date: `grep -n required schema/*.yaml` returns five
+      hits in three files — base_properties (Id/Name/World), marker (5),
+      pin (4). The two ability.yaml hits are the word inside prose
+      descriptions. That is the entire population.
 
   - id: required-world-wire-caveat
     applies_to: base_properties.World
@@ -73,6 +98,29 @@ rulings:
       ruled — reopening requires a keel storage migration on the table, not a
       convention change. The authority here is exercised as much in what the
       table refuses as in what it records.
+
+  - id: change-seq-not-unique
+    applies_to: change_seq on any element; the /changes cursor
+    rule: >
+      `change_seq` is NOT unique within a world. A bulk import stamps every
+      element it creates with a single seq (measured: a demo world with all
+      164 elements at `change_seq: 1`). Consumers MUST NOT diff, dedupe, or
+      key on seq alone. Pagination is unaffected — the cursor carries an id
+      tiebreak and is lossless — but any sync or diff logic treating seq as a
+      per-element identity breaks on exactly the worlds a parse pipeline
+      produces.
+      Two companions: the world `head` COUNTS DELETES, so it can exceed the
+      maximum live element seq and MUST NOT be derived from element bodies;
+      and the `/changes` cursor is polymorphic — a `"seq:uuid"` string when
+      changes return, a bare integer when the array is empty.
+    rationale: >
+      Measured by Kael 2026-07-28 across four real worlds (1,710 element
+      bodies) while building the folder writer. The dangerous case is not
+      exotic: bulk-imported and parsed worlds are precisely the ones most
+      likely to be snapshotted per chapter, so a seq-keyed differ fails first
+      on the workload the format exists to serve.
+    since: "2026-07-28"
+    status: ruled — wire-measured, four worlds
 
   - id: unknown-field-types-must-be-surfaced
     applies_to: any consumer walking the schema
