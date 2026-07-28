@@ -7,12 +7,38 @@ on:
 
 jobs:
   test:
+    # ⚑ This job had NEVER passed. Ten runs, ten failures, from the day the "CI
+    # gate" was added (2026-07-18) until 2026-07-28 — and nobody noticed,
+    # because it fails identically every time and the failure was never opened.
+    #
+    # Cause: `npm test` was `node --test "test/**/*.test.mjs"`. Glob expansion in
+    # the Node test runner landed in Node 22; this job pins Node 20, where the
+    # quoted pattern is treated as a literal path and the run dies with
+    # "Could not find '.../test/**/*.test.mjs'". It passed on every maintainer
+    # machine (Node 22) and could not pass here. Confirmed by running the old
+    # script under a real Node 20.18.1, not inferred.
+    #
+    # Fixed three ways, and the first two guesses were both wrong — the fix was
+    # settled by running every candidate form on both versions:
+    #   - `--test test` / `--test test/` passes on 20 and FAILS on 22 (22 tries
+    #     to load the directory as a module). The exact inverse of the old bug.
+    #   - `--test` with no args discovers correctly on both — but it also
+    #     discovered `test-api-response.js`, a tracked v1-era scratch script in
+    #     the repo root that matched Node's default `test-*.js` pattern, ran as
+    #     a test, and failed. Removed: it spoke `/api/worldapi`, the dialect this
+    #     package stopped supporting at 4.0.
+    #   - The matrix below means a version-specific regression fails on the
+    #     version it breaks, instead of hiding behind the one that works.
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
       - run: npm ci || npm install
       # `npm test` runs pretest (tsup build) then node --test against the
       # compiled dist bundle — the same artifact npm publish ships.

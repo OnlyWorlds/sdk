@@ -23,7 +23,7 @@
     "build": "tsup src/index.ts --format esm --dts --clean",
     "dev": "tsup src/index.ts --format esm --dts --watch",
     "pretest": "npm run build",
-    "test": "node --test \"test/**/*.test.mjs\"",
+    "test": "node --test",
     "codegen": "python codegen/generate_types.py",
     "codegen:check": "python codegen/generate_types.py --check",
     "schema:verify": "python codegen/verify_dist.py",
