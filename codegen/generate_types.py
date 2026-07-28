@@ -18,12 +18,28 @@ Run:  python codegen/generate_types.py [--schema ../keel/schema]
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 import yaml
 
 REPO = Path(__file__).resolve().parent.parent
-DEFAULT_SCHEMA_DIR = REPO.parent / "keel" / "schema"
+CODEGEN = Path(__file__).resolve().parent
+
+# The vendored, hash-verified schema distribution (github.com/OnlyWorlds/schema-dist),
+# pinned in codegen/schema-pin.json and checked by codegen/verify_dist.py.
+#
+# BEFORE 2026-07-28 this read `REPO.parent / "keel" / "schema"` — a sibling
+# checkout of the PRIVATE keel repo on one developer's disk. Two consequences,
+# both of which the repoint closes:
+#   - `codegen:check` could never run in CI, because that path does not exist on
+#     a runner. It was a drift guard that had never once fired.
+#   - The published package recorded NO provenance for its generated types. The
+#     honest description was "whatever was in a local keel checkout when someone
+#     last ran the script". Two different keel commits sharing a VERSION string
+#     were indistinguishable from inside this repo.
+DIST_DIR = CODEGEN / "schema-dist"
+DEFAULT_SCHEMA_DIR = DIST_DIR / "schema"
 OUT_PATH = REPO / "src" / "v2" / "types.generated.ts"
 
 # The 22 element types, in the canonical order (matches generate_models.py, then
@@ -144,6 +160,8 @@ def _resolve_target(fname: str, fspec: dict, type_slug: str) -> str | None:
 HEADER = """\
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
+__PROVENANCE__
+//
 // One interface per element type, extending OwElementBase. Field shapes are the v2
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
 // `number | null`. Link fields use bare schema names (no `_ids` suffix). The four
@@ -257,7 +275,8 @@ def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str],
     lines.append(f"export const ELEMENT_TYPES: ElementType[] = [{arr}];")
     lines.append("")
 
-    lines.append("/** Canonical OnlyWorlds schema version. Source: canonical VERSION file, carried into keel schema/ by the refresh script (keel 492168c). */")
+    lines.append("/** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned")
+    lines.append(" *  distribution's VERSION file (see the provenance block at the top of this file). */")
     lines.append(f"export const ONLYWORLDS_VERSION = '{_schema_version}' as const;")
     lines.append("")
 
@@ -265,16 +284,17 @@ def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str],
     lines.append("/** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */")
     lines.append(f"export type ElementFamily = {fam_union};")
     lines.append("")
-    lines.append("/** Per-type semantic family. Source: keel's PRESENTATION-WRAPPER schema key `family:`")
-    lines.append(" *  (first-party rendering metadata, keel-only — NOT part of the council-governed")
-    lines.append(" *  OnlyWorlds standard; see keel/schema-pipeline.md \"The wrapper layer\"). */")
+    lines.append("/** Per-type semantic family. Source: the distribution's `presentation.json` sidecar")
+    lines.append(" *  (first-party rendering DEFAULTS — NOT part of the council-governed OnlyWorlds")
+    lines.append(" *  standard, and explicitly overridable by any consumer). The colour values are")
+    lines.append(" *  NOT in the sidecar: FAMILY_COLORS is hand-authored here in src/v2/palette.ts. */")
     lines.append("export const ELEMENT_FAMILIES: Record<ElementType, ElementFamily> = {")
     for t in types_sorted:
         lines.append(f"  {t}: '{families[t]}',")
     lines.append("};")
     lines.append("")
 
-    lines.append("/** Material Symbols icon name per type. Source: keel's PRESENTATION-WRAPPER key `icon:` (keel 56c124a). */")
+    lines.append("/** Material Symbols icon name per type. Source: the distribution's `presentation.json` sidecar. */")
     lines.append("export const ELEMENT_ICONS: Record<ElementType, string> = {")
     for t in types_sorted:
         lines.append(f"  {t}: '{icons[t]}',")
@@ -368,6 +388,129 @@ def render_schema_md(all_fields, families, icons, sections) -> str:
     return "\n".join(parts) + "\n"
 
 
+def render_provenance(schema_dir: Path) -> str:
+    """The provenance block stamped into the generated output.
+
+    This exists because before 2026-07-28 this package recorded NOTHING about
+    which schema bytes produced its types. The honest description of the old
+    state was "whatever was in a local keel checkout when someone last ran the
+    script" — two different upstream commits sharing a VERSION string were
+    indistinguishable from inside this repo. A generated artifact that cannot
+    name its source is the shape of defect this pipeline exists to prevent, so
+    it should not be one.
+    """
+    pin_path = CODEGEN / "schema-pin.json"
+    if not pin_path.is_file() or DIST_DIR not in schema_dir.parents and schema_dir != DEFAULT_SCHEMA_DIR:
+        return (
+            "// SOURCE: an out-of-tree schema directory passed via --schema.\n"
+            "// This build is NOT reproducible from the pinned distribution — do not commit it."
+        )
+    pin = json.loads(pin_path.read_text(encoding="utf-8"))
+    return "\n".join(
+        [
+            f"// SOURCE: {pin.get('repo')} @ {pin.get('tag')}",
+            f"//         commit          {pin.get('commit')}",
+            f"//         MANIFEST sha256 {pin.get('manifest_sha256')}",
+            f"//         canonical {pin.get('canonical_version')}, dist serial {pin.get('dist_serial')}, published {pin.get('published')}",
+            "//",
+            "// The distribution is vendored at codegen/schema-dist/ and verified two ways by",
+            "// codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json",
+            "// itself against the hash recorded at pin time. The second check is the one that",
+            "// catches a moved tag -- a re-fetched manifest always agrees with the tree it",
+            "// arrived with, so contents-verification alone proves consistency, never identity.",
+        ]
+    )
+
+
+def read_canonical_version(schema_dir: Path) -> str:
+    """Return the bare canonical schema version, e.g. '00.30.00'.
+
+    TWO shapes exist and the difference is a trap:
+      - the distribution's VERSION sits at the DIST ROOT and is three lines of
+        YAML: `canonical: 00.30.00` / `serial: N` / `published: DATE`
+      - keel's VERSION sits INSIDE schema/ and is the bare string `00.30.00`
+
+    `ONLYWORLDS_VERSION` is a PUBLIC export with an `as const` literal type and a
+    documented compatibility promise (docs/migrating-3-to-4.md). Reading the dist
+    file naively emits a three-line string literal and the build fails loudly —
+    which is the good outcome. The dangerous "fix" is taking the first line,
+    which yields 'canonical: 00.30.00' and silently changes the literal type of a
+    published export. Parse the value; never the line.
+    """
+    candidates = [schema_dir.parent / "VERSION", schema_dir / "VERSION"]
+    for vf in candidates:
+        if not vf.is_file():
+            continue
+        raw = vf.read_text(encoding="utf-8").strip()
+        if "canonical:" in raw:
+            for line in raw.splitlines():
+                key, _, value = line.partition(":")
+                if key.strip() == "canonical":
+                    return value.strip()
+            raise SystemExit(f"{vf}: has `canonical:` but no parseable value")
+        if "\n" in raw:
+            raise SystemExit(
+                f"{vf}: multi-line VERSION with no `canonical:` key — refusing to guess. "
+                "ONLYWORLDS_VERSION is a public export; a wrong value here is a silent "
+                "breaking change to the published type."
+            )
+        return raw
+    raise SystemExit(
+        f"VERSION not found beside or inside {schema_dir}. The distribution carries it at "
+        "the dist root; keel carries it inside schema/. A tree with neither is not a "
+        "schema source."
+    )
+
+
+def load_presentation(schema_dir: Path) -> dict | None:
+    """Load the presentation sidecar (family + icon defaults), if this tree has one.
+
+    The distribution strips `family:`/`icon:` from the schema YAMLs into
+    presentation.json, which makes the walk wrapper-agnostic by construction.
+    keel keeps its inline wrapper keys for one full cycle past this repoint as
+    the deliberate rollback artifact — so BOTH sources stay supported here, and
+    the sidecar wins when present.
+    """
+    p = schema_dir.parent / "presentation.json"
+    if not p.is_file():
+        return None
+    data = json.loads(p.read_text(encoding="utf-8"))
+    types = data.get("types")
+    if not isinstance(types, dict):
+        raise SystemExit(f"{p}: no `types` object — unexpected sidecar shape.")
+    missing = [t for t in ELEMENT_TYPES if t not in types]
+    if missing:
+        raise SystemExit(
+            f"{p}: presentation sidecar does not cover all 22 types — missing {missing}. "
+            "This is the wiped-wrapper guard, moved to its new home: a presentation layer "
+            "that silently loses types is the failure this check exists for."
+        )
+    return types
+
+
+def presentation_for(presentation: dict | None, doc: dict, tslug: str) -> tuple[str, str]:
+    """Resolve (family, icon) from the sidecar, or from keel's inline wrapper keys."""
+    if presentation is not None:
+        entry = presentation.get(tslug) or {}
+        fam, icon, src = entry.get("family"), entry.get("icon"), "presentation.json"
+    else:
+        fam, icon, src = doc.get("family"), doc.get("icon"), f"{tslug}.yaml wrapper keys"
+
+    if fam not in VALID_FAMILIES:
+        raise SystemExit(
+            f"{tslug}: `family` is {fam!r} from {src} — expected one of {VALID_FAMILIES}. "
+            "Presentation metadata is first-party rendering data, NOT part of the "
+            "council-governed standard. A refresh that OVERWRITES instead of MERGING "
+            "wipes it — check that first."
+        )
+    if not isinstance(icon, str) or not icon:
+        raise SystemExit(
+            f"{tslug}: `icon` missing or empty from {src}. "
+            "Same wiped-presentation check applies as for family."
+        )
+    return fam, icon
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--schema", default=str(DEFAULT_SCHEMA_DIR))
@@ -379,19 +522,17 @@ def main() -> None:
     if not schema_dir.is_dir():
         raise SystemExit(
             f"schema dir not found: {schema_dir}\n"
-            "The canonical schema YAMLs live in the keel repo (Skeld's authority), "
-            "expected as a sibling checkout: <parent>/keel/schema. "
-            "Clone keel next to this repo or pass --schema <path>."
+            "The schema YAMLs are VENDORED from the public distribution "
+            "(github.com/OnlyWorlds/schema-dist) at codegen/schema-dist/, pinned in "
+            "codegen/schema-pin.json. Run `npm run schema:verify` first; if the tree is "
+            "missing, re-vendor from the pinned tag. Pass --schema <path> to point at "
+            "another source (e.g. a keel checkout, which still carries inline "
+            "presentation wrapper keys for one cycle as the rollback artifact)."
         )
 
     global _schema_version
-    version_file = schema_dir / "VERSION"
-    if not version_file.is_file():
-        raise SystemExit(
-            f"VERSION file not found in {schema_dir} — carried by keel's refresh script "
-            "since 492168c. A refresh that dropped it is the wiped-wrapper failure class."
-        )
-    _schema_version = version_file.read_text(encoding="utf-8").strip()
+    _schema_version = read_canonical_version(schema_dir)
+    presentation = load_presentation(schema_dir)
 
     all_fields: dict[str, list[dict]] = {}
     families: dict[str, str] = {}
@@ -400,27 +541,15 @@ def main() -> None:
     interfaces: list[str] = []
     for tslug in ELEMENT_TYPES:
         doc = load_yaml(schema_dir, tslug)
-        fam = doc.get("family")
-        if fam not in VALID_FAMILIES:
-            raise SystemExit(
-                f"{tslug}.yaml: top-level `family:` is {fam!r} — expected one of {VALID_FAMILIES}. "
-                "This is a keel wrapper key (see keel/schema-pipeline.md); a canonical-schema "
-                "refresh that OVERWRITES instead of MERGING wipes it — check that first."
-            )
+        fam, icon = presentation_for(presentation, doc, tslug)
         families[tslug] = fam
-        icon = doc.get("icon")
-        if not isinstance(icon, str) or not icon:
-            raise SystemExit(
-                f"{tslug}.yaml: top-level `icon:` missing or empty — wrapper key (keel 56c124a). "
-                "Same wiped-wrapper check applies as for family:."
-            )
         icons[tslug] = icon
         sections[tslug] = parse_sections(doc, tslug)
         fields = flatten_fields(doc, tslug)
         all_fields[tslug] = fields
         interfaces.append(render_interface(tslug, fields))
 
-    parts = [HEADER, ""]
+    parts = [HEADER.replace("__PROVENANCE__", render_provenance(schema_dir)), ""]
     parts.append(render_maps(all_fields, families, icons, sections))
     parts.append("\n\n".join(interfaces))
     parts.append("")

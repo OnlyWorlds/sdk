@@ -1,0 +1,120 @@
+# Semantic rulings the schema YAMLs cannot carry — THE ruling table.
+#
+# Read by emitters alongside schema_walk.py; shipped in schema-dist walk/.
+# Each row is a convention that at least two implementations previously
+# re-derived independently (the collective.equipment drift, 2026-07-23, is the
+# founding case — specs agreed while rulings drifted). Rows are added only by
+# schema-authority ruling (Skeld, Orrery register); a row names its evidence.
+#
+# Format: id · applies_to · rule (the binding sentence) · rationale · since · status
+
+rulings:
+  - id: nullable-by-default
+    applies_to: all fields
+    rule: >
+      ONLY `name` is required. Every other field is optional and nullable on
+      the wire. A client whose runtime cannot express "value or unset" must
+      represent unset explicitly; collapsing null to 0 or "" silently
+      overwrites "the author never set this."
+      (Captain's product ruling 2026-07-28: pin/marker `required:` lists are
+      being DROPPED from canonical — mapless pins are a legitimate app
+      pattern, and the wire never enforced them. Until that YAML bump lands,
+      the lists still appear in the schema files; emitters should not
+      hard-fail on them. `marker.order` becomes optional with a convention:
+      absent `order`, consumers sort by `created_at`; `order` exists for
+      inserting between existing markers.)
+    rationale: >
+      A level-0 character and a level-unknown character are different claims.
+      70 scalar ints ride this; three emitters (Django null=True, TS
+      `number | null`, C# SerializableNullable<T>) each re-derived it from
+      folklore before this row existed.
+    since: "2026-07-28"
+    status: >
+      ruled — wire probe 2026-07-28: the v2 API does NOT enforce pin/marker
+      required lists (a mapless pin POSTs 201 with map/x/y null). So
+      `required` is schema intent, not wire enforcement: writers SHOULD
+      treat these fields as required; readers MUST tolerate null in them.
+      Whether keel should add enforcement is an open product question
+      (existing data may legally contain such rows).
+
+  - id: required-world-wire-caveat
+    applies_to: base_properties.World
+    rule: >
+      `required: World` speaks storage truth (every element row has a world),
+      NOT wire truth: the v2 API rejects `world` in POST/PATCH bodies — the
+      API key header determines the world. Wire clients must not send it.
+    rationale: >
+      The one place the YAML's required list and the wire contract disagree.
+      Canonical truing rides the next YAML version bump (with Character.status).
+    since: "2026-07-28"
+    status: ruled — canonical truing pending
+
+  - id: string-empty-is-unset
+    applies_to: all scalar string fields
+    rule: >
+      For STRINGS, `""` IS the wire's unset — keel stores them
+      `blank=True, default=""` and never nullable, so a string field is empty
+      or it has content; there is no third state. Consumers MUST NOT
+      distinguish `""` from absent for strings, and MUST NOT round-trip a
+      distinction the wire cannot carry.
+      Corollary that bites in browsers: never render an empty string into a
+      URL-valued attribute — `<img src="">` makes the browser re-request the
+      current page as an image. Check emptiness before emitting the attribute.
+    rationale: >
+      Boss's census (2026-07-28) proposed the philosophically cleaner rule —
+      null and "" as distinct claims, matching the int convention. It was
+      REFUSED against keel's storage truth: writing it would have minted a
+      promise the platform does not keep, which is the exact disease this
+      table treats. His edge finding survives whole; only the null half was
+      wrong. Note the asymmetry with `nullable-by-default` is real and
+      deliberate: ints carry three states, strings carry two.
+    since: "2026-07-28"
+    status: >
+      ruled — reopening requires a keel storage migration on the table, not a
+      convention change. The authority here is exercised as much in what the
+      table refuses as in what it records.
+
+  - id: unknown-field-types-must-be-surfaced
+    applies_to: any consumer walking the schema
+    rule: >
+      A consumer that meets a field type it does not recognise MUST surface it.
+      `schema_walk.flatten_fields` SKIPS unknown types and reports them through
+      the `note` sink, which defaults to a no-op — so a vendored walk pinned at
+      an older dist, meeting a newer schema, drops the new field in total
+      silence. Vendors MUST pass a real sink (log, warn, or fail; the policy is
+      theirs). Emitting a partial type from a schema you cannot fully read is
+      the failure this row exists to prevent.
+    rationale: >
+      Found by Kael on 2026-07-28 reading the dist as its first consumer, and
+      named by him as the sharpest supply risk in the artifact. The walk itself
+      cannot choose the policy — an emitter mid-migration may legitimately want
+      to continue past an unknown type — so the obligation sits with the
+      consumer and the default stays non-fatal. Raising unilaterally would
+      convert a silent failure into a hard one at a schema bump, which is worse
+      for everyone downstream.
+    since: "2026-07-28"
+    status: ruled — README instructs vendors to pass a sink
+
+  - id: collective-equipment-target
+    applies_to: collective.equipment
+    rule: >
+      Target is Object, per the YAML. The v1 implementation (Construct) is
+      decommissioned; keel serves per YAML, settled by dump data.
+    rationale: >
+      The founding drift case: specs agreed while emitter rulings drifted for
+      five days, benign only by luck. This table exists because of this row.
+    since: "2026-07-23"
+    status: ruled
+
+  - id: extension-passthrough
+    applies_to: unmodeled fields (x_* and tool-prefixed)
+    rule: >
+      Extension fields round-trip unconditionally: preserved on read, merged
+      back on write, never dropped, and never behind an opt-in flag.
+    rationale: >
+      The never-whitelist law — "passthrough that depends on a caller
+      remembering to ask for it fails exactly when it matters" (Quillon,
+      2026-07-28). A tool that drops another tool's state breaks the
+      portability promise the standard exists to make.
+    since: "2026-07-28"
+    status: ruled
