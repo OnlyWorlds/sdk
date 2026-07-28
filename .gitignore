@@ -35,3 +35,6 @@ coverage/
 .claude/
 Notes/
 CLAUDE.md 
+# Python codegen bytecode
+__pycache__/
+*.pyc
