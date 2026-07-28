@@ -5,20 +5,55 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   ELEMENT_TYPES, ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER,
   familyOf, elementColor,
 } from '../dist/index.js';
 
-// Hexes of record — Orrery product/schema/element-palette-measurements.md
-// (Skeld, 2026-07-22; ruled by Captain). Any change here must re-run the CVD
-// validator first.
-const RULED = {
-  agents: { light: '#2a78d6', dark: '#3987e5' },
-  world: { light: '#008300', dark: '#008300' },
-  abstract: { light: '#e87ba4', dark: '#d55181' },
-  temporal: { light: '#eda100', dark: '#c98500' },
-};
+// ★ Hexes of record, read from the PINNED DISTRIBUTION rather than restated here.
+//
+// Until 2026-07-28 this block was a hand-copied literal, so the test proved the
+// palette equalled itself — two copies in one repo agreeing, which is not
+// evidence about anything. `presentation.json` now publishes the colour values
+// (schema-dist serial 6), so the assertion below compares the shipped palette
+// against the distribution, the same way `codegen:check` compares the generated
+// types against the schema. The vendored tree is itself hash-verified by
+// `npm run schema:verify` against the manifest AND against the hash recorded at
+// pin time, so this chain terminates in something that cannot quietly drift.
+//
+// Two shape notes that would make a naive compare fail for the wrong reason:
+// the values are {light, dark} PAIRS, and `colors.order` is meaningful — the
+// family order is the CVD-safety mechanism of the source palette, not sugar.
+const PRESENTATION = JSON.parse(
+  readFileSync(new URL('../codegen/schema-dist/presentation.json', import.meta.url), 'utf8'),
+);
+const RULED = PRESENTATION.colors.families;
+const RULED_ORDER = PRESENTATION.colors.order;
+
+test('★ the distribution is WELL-FORMED before anything is compared against it', () => {
+  // A checker that silently reads an empty object passes vacuously against
+  // nothing. Skeld's own control for this same palette did exactly that an hour
+  // before this test was written: a regex parsed one source to `{}`, and `{}`
+  // compares unequal to everything, so it reported drift that did not exist. It
+  // printed the counts it had parsed, which is the only reason that was an
+  // anecdote instead of an incident. Assert the shape before trusting the values.
+  assert.equal(typeof PRESENTATION.colors, 'object');
+  assert.equal(Object.keys(RULED).length, 4, 'presentation.json must carry exactly 4 families');
+  assert.equal(RULED_ORDER.length, 4);
+  for (const [fam, pair] of Object.entries(RULED)) {
+    assert.match(pair.light, /^#[0-9a-f]{6}$/, `${fam}.light is not a hex`);
+    assert.match(pair.dark, /^#[0-9a-f]{6}$/, `${fam}.dark is not a hex`);
+  }
+});
+
+test('★ FAMILY_COLORS equals the pinned distribution, not a restatement of itself', () => {
+  assert.deepEqual(FAMILY_COLORS, RULED);
+});
+
+test('★ FAMILY_ORDER equals the distribution order — the order IS the CVD mechanism', () => {
+  assert.deepEqual([...FAMILY_ORDER], RULED_ORDER);
+});
 
 test('every generated element type has a family, and no stray keys exist', () => {
   const mapped = Object.keys(ELEMENT_FAMILIES).sort();
@@ -33,10 +68,6 @@ test('family values are only the four ruled families', () => {
     assert.ok(allowed.has(fam), `${type} → ${fam} is not a ruled family`);
   }
   assert.deepEqual([...FAMILY_ORDER], ['agents', 'world', 'abstract', 'temporal']);
-});
-
-test('hexes match the measurements of record, both modes', () => {
-  assert.deepEqual(FAMILY_COLORS, RULED);
 });
 
 test('family membership matches the ruling exactly', () => {

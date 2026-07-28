@@ -27,8 +27,20 @@ rulings:
       pattern, and the wire never enforced them. Until that YAML bump lands,
       the lists still appear in the schema files; emitters should not
       hard-fail on them. `marker.order` becomes optional with a convention:
-      absent `order`, consumers sort by `created_at`; `order` exists for
-      inserting between existing markers.)
+      absent `order`, consumers SHOULD sort by `created_at` WHERE PRESENT;
+      absent both, marker order is UNDEFINED and a consumer MAY use any
+      stable order. `order` exists for inserting between existing markers.
+      ⚑ The fallback is ADVISORY, not a consumer MUST — corrected
+      2026-07-28 after Temper reported Atlas sorts in file-scan order and
+      offered to bout it. It cannot be a MUST: `created_at` is itself
+      optional on element bodies (a writer MUST NOT synthesize timestamps
+      it does not have), so a legal hand-authored folder can contain
+      markers with neither key, and a normative rule that some conforming
+      inputs make unsatisfiable is the `writable` defect again. The real
+      fix is upstream: a writer emitting a zone SHOULD write `order`.
+      Sorting harder does not recover vertex sequence a file never
+      recorded — a `created_at` sort is equally capable of drawing a
+      plausible-looking wrong polygon.)
     rationale: >
       A level-0 character and a level-unknown character are different claims.
       70 scalar ints ride this; three emitters (Django null=True, TS
