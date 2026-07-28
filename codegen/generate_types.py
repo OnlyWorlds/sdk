@@ -129,11 +129,12 @@ def _resolve_target(fname: str, fspec: dict, type_slug: str) -> str | None:
     if slug is None:
         note(f"{type_slug}.{fname}: link category `{cat}` not a known element type.")
         return cat.lower()
-    if type_slug == "collective" and fname == "equipment":
-        note(
-            "collective.equipment: YAML declares target Object, but keel production "
-            "implements Construct. Generated per YAML (Object) to match the wire."
-        )
+    # collective.equipment drift RESOLVED 2026-07: v1 (which implemented Construct)
+    # is decommissioned; keel is production and serves per YAML (Object), settled by
+    # dump data (1 row). keel retired its warning in generate_models.py (f700976);
+    # this copy kept warning for five days and asserted the opposite of keel's actual
+    # behaviour -- the duplication seam drifting in the RULINGS while the emitted
+    # specs stayed identical. Retired here 2026-07-28 to match.
     return slug
 
 
