@@ -32,7 +32,12 @@ export {
 } from './v2';
 export type { FieldType, FieldInfo, SectionInfo } from './v2';
 
-// Token rating surface (wire fate under review — RFC-001 §5; may be removed in a later 4.x)
+// Token rating surface. RFC-001 §5 left its wire fate as an open question to the
+// platform owner and it was never answered in writing — so this comment said "may be
+// removed in a later 4.x" for months on nobody's authority. PROBED 2026-07-29 against
+// production with a demo key: GET /api/v2/tokens/status/ and /tokens/encryption-info/
+// both return 200, with a 404 control on a nonexistent route proving the check meant
+// something. The wire carries it. It stays, and the speculation is retired.
 export { TokenResource } from './token-resource';
 export type { TokenTransport } from './token-resource';
 export * from './token-types';

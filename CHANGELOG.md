@@ -3,6 +3,34 @@
 All notable changes to `@onlyworlds/sdk`. Maintained from 3.1.0 onward (Kael, Assembly);
 earlier history lives in git log only.
 
+## [4.1.0] — 2026-07-29
+
+Public-surface hygiene. Nothing breaks; one member is now marked for removal, and one
+piece of long-standing speculation is retired by measurement.
+
+⚑ **4.0.2 was tagged in git and superseded before it reached npm.** Everything in it ships
+here — the tag stays as a record rather than being moved or deleted.
+
+### Deprecated
+- **`FieldType.integer_max` and `FieldInfo.max`** — removal scheduled for **5.0.0**. No
+  `FIELD_SCHEMA` entry has ever carried either, in this repository's entire history. They
+  existed to surface the schema's `maximum:` constraint, and that constraint is **advisory**:
+  keel declares no `MaxValueValidator`, and a `charisma: 9999` write against a `maximum: 100`
+  field returns 201 and stores it verbatim. The canonical schema walk therefore stays silent
+  on bounds permanently. There is no source to wire them to and no promise they could keep —
+  and a public type member meaning "hint the wire ignores" is one consumers read as
+  validation. Deprecating now rather than at the major so the signal arrives early; the
+  `@deprecated` tags surface in editors via the shipped `.d.ts`.
+
+### Changed
+- **`TokenResource` is confirmed staying.** RFC-001 §5 asked the platform owner whether the
+  token routes were carried long-term or deprecated wire-side, and the question was never
+  answered in writing — so this package's own barrel carried "wire fate under review; may be
+  removed in a later 4.x" for months, on nobody's authority. Probed against production:
+  `GET /api/v2/tokens/status/` and `/tokens/encryption-info/` both return **200**, with a 404
+  control on a nonexistent route proving the check meant something. The wire carries it. The
+  speculation is retired and the comment now records the evidence instead.
+
 ## [4.0.2] — 2026-07-29
 
 Re-pinned to `v0.30.1-dist.13` (canonical **00.30.01**). No field shape changed and no

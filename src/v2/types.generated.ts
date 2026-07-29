@@ -309,7 +309,18 @@ export const MULTI_LINK_FIELDS: Record<ElementType, string[]> = {
 export type FieldType =
   | 'text'           // Text fields
   | 'integer'        // Positive integers
-  | 'integer_max'    // Positive integers with max value
+  /**
+   * @deprecated Emitted by nothing, and scheduled for removal in 5.0.0.
+   *
+   * No `FIELD_SCHEMA` entry has ever carried this type, in the entire history of
+   * this repository. It was meant to surface the schema's `maximum:` constraint,
+   * and that constraint is **advisory**: keel declares no `MaxValueValidator` and
+   * the wire stores `charisma: 9999` against a `maximum: 100` field (201, verbatim).
+   * The canonical schema walk therefore stays silent on bounds permanently, so
+   * there is no source to wire this to and no promise it could keep. A public type
+   * member meaning "hint the wire ignores" is one consumers read as validation.
+   */
+  | 'integer_max'
   | 'single_link'    // Single element reference
   | 'multi_link';    // Array of element references
 
@@ -317,7 +328,8 @@ export type FieldType =
 export interface FieldInfo {
   type: FieldType;
   target?: string;    // For link fields: target element type
-  max?: number;       // For integer_max fields: maximum value
+  /** @deprecated Never populated; removed in 5.0.0. See `FieldType.integer_max`. */
+  max?: number;
   required?: boolean; // True if the field is required per canonical YAML schema
 }
 
