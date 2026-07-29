@@ -269,6 +269,139 @@ def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str],
     return "\n".join(lines)
 
 
+FIELD_SCHEMA_INTRO = """
+// ---------------------------------------------------------------------------
+// FIELD_SCHEMA -- per-type field metadata (type, link target, required flag).
+//
+// GENERATED since 2026-07-29. It was ~650 hand-maintained lines, publicly
+// exported, with a test that checked only that its keys matched ELEMENT_TYPES
+// and that nothing was still typed 'number' -- not one field name, link target
+// or required flag was ever compared to the schema. It was wrong in two places
+// when the comparison was finally run:
+//
+//   collective.equipment  target 'construct' -> 'object'. The founding case of
+//     the ruling table (rulings.yaml: collective-equipment-target), ruled on
+//     2026-07-23 and fixed the same week in the GENERATED path, while this
+//     hand-maintained copy of the same fact in the same package kept shipping
+//     the decommissioned v1 value on `latest` for six days. The fix went where
+//     someone happened to be looking.
+//   relation.relations    removed. A multi_link to 'relation' that does not
+//     exist in relation.yaml at all -- a phantom field, exported, that the v2
+//     API would 422 on as an unknown key.
+//
+// Two DECLARED deviations from a naive schema read, both matching what codegen
+// already emits for the interfaces:
+//   - pin.element is a `generic-link` and is split into element_type (text) +
+//     element_id (single_link, target 'any'), which is what the v2 wire serves.
+//   - `integer_max` / `max` remain in the FieldType union for API compatibility
+//     and are emitted by nothing: the walk does not surface the schema's
+//     `maximum:` constraint (41 of them across 17 element types), so there is
+//     no source for them here. Retiring the member or teaching the walk to
+//     carry `maximum` is a schema-authority decision, not a local patch.
+// ---------------------------------------------------------------------------
+
+/** Field type definitions for OnlyWorlds elements. */
+export type FieldType =
+  | 'text'           // Text fields
+  | 'integer'        // Positive integers
+  | 'integer_max'    // Positive integers with max value
+  | 'single_link'    // Single element reference
+  | 'multi_link';    // Array of element references
+
+/** Field metadata structure. */
+export interface FieldInfo {
+  type: FieldType;
+  target?: string;    // For link fields: target element type
+  max?: number;       // For integer_max fields: maximum value
+  required?: boolean; // True if the field is required per canonical YAML schema
+}
+"""
+
+# The five base fields every element carries, with the required flags the wire
+# enforces. `name` is the only required field in the standard (rulings.yaml:
+# nullable-by-default); the other four are spelled out as false rather than
+# omitted because consumers read this table to build forms.
+BASE_FIELD_ROWS = [
+    ("name", "{ type: 'text', required: true }"),
+    ("description", "{ type: 'text', required: false }"),
+    ("supertype", "{ type: 'text', required: false }"),
+    ("subtype", "{ type: 'text', required: false }"),
+    ("image_url", "{ type: 'text', required: false }"),
+]
+
+
+def _field_schema_entries(f: dict, required: bool) -> list[tuple[str, str]]:
+    """One walk field spec -> the (name, TS-literal) rows it contributes."""
+    req = ", required: true" if required else ""
+    kind = f["kind"]
+    if kind == "scalar_str":
+        return [(f["name"], f"{{ type: 'text'{req} }}")]
+    if kind == "scalar_int":
+        return [(f["name"], f"{{ type: 'integer'{req} }}")]
+    if kind in ("single", "multi"):
+        ts = "single_link" if kind == "single" else "multi_link"
+        tgt = f.get("target") or "any"
+        return [(f["name"], f"{{ type: '{ts}', target: '{tgt}'{req} }}")]
+    if kind == "generic":
+        # pin.element only. Declared deviation -- the wire serves the pair, and
+        # render_interface() splits it the same way.
+        return [
+            (f"{f['name']}_type", f"{{ type: 'text'{req} }}"),
+            (f"{f['name']}_id", f"{{ type: 'single_link', target: 'any'{req} }}"),
+        ]
+    note(f"FIELD_SCHEMA: unhandled kind `{kind}` on {f['name']} -- omitted.")
+    return []
+
+
+def render_field_schema(all_fields: dict[str, list[dict]],
+                        sections: dict[str, list[dict]],
+                        required_sets: dict[str, set[str]]) -> str:
+    lines: list[str] = [FIELD_SCHEMA_INTRO.rstrip(), ""]
+    lines.append("export const FIELD_SCHEMA = {")
+    for tslug in sorted(ELEMENT_TYPES):
+        by_name = {f["name"]: f for f in all_fields[tslug]}
+        required = required_sets[tslug]
+        lines.append(f"  {tslug}: {{")
+        lines.append("    // Base fields (shared by all elements)")
+        for fname, literal in BASE_FIELD_ROWS:
+            lines.append(f"    {fname}: {literal},")
+        rows: list[str] = []
+        # Sections are the YAML's own groups, and a field can appear in TWO of
+        # them (relation.events is declared in both Nature and Involves). The
+        # walk dedupes its field LIST; iterating sections re-introduces the
+        # duplicate, which in an object literal is a silently-overwritten key —
+        # so dedupe here too, keeping the first section, exactly as the walk
+        # keeps the first spec. Caught by esbuild warning on the first build.
+        emitted_names: set[str] = {name for name, _ in BASE_FIELD_ROWS}
+        for section in sections[tslug]:
+            emitted_here: list[str] = []
+            for fname in section["fields"]:
+                spec = by_name.get(fname)
+                if spec is None:
+                    # An unknown YAML type the walk skipped — already noted by it.
+                    continue
+                for name, literal in _field_schema_entries(spec, fname in required):
+                    if name in emitted_names:
+                        continue
+                    emitted_names.add(name)
+                    emitted_here.append(f"    {name}: {literal},")
+            if emitted_here:
+                rows.append(f"    // {section['name']}")
+                rows.extend(emitted_here)
+        if rows:
+            rows[-1] = rows[-1].rstrip(",")
+        lines.extend(rows)
+        lines.append("  },")
+    lines[-1] = lines[-1].rstrip(",")
+    # `as const` is NOT decoration: the hand-maintained table carried it, so the
+    # published .d.ts exposes deeply-readonly literal types ({ readonly type:
+    # "text" }). Emitting `satisfies` alone would silently widen every entry in
+    # the public type surface — a breaking change with no runtime signal.
+    # `as const satisfies` keeps the old types and adds the check.
+    lines.append("} as const satisfies Record<ElementType, Record<string, FieldInfo>>;")
+    return "\n".join(lines)
+
+
 def _ts_str_array(names: list[str]) -> str:
     if not names:
         return "[]"
@@ -475,6 +608,7 @@ def main() -> None:
     families: dict[str, str] = {}
     icons: dict[str, str] = {}
     sections: dict[str, list[dict]] = {}
+    required_sets: dict[str, set[str]] = {}
     interfaces: list[str] = []
     for tslug in ELEMENT_TYPES:
         doc = load_yaml(schema_dir, tslug)
@@ -482,12 +616,16 @@ def main() -> None:
         families[tslug] = fam
         icons[tslug] = icon
         sections[tslug] = parse_sections(doc, tslug)
+        # Read separately rather than via include_required so the field specs the
+        # interface emitter sees stay byte-for-byte what they were before.
+        required_sets[tslug] = walk.required_names(doc)
         fields = flatten_fields(doc, tslug)
         all_fields[tslug] = fields
         interfaces.append(render_interface(tslug, fields))
 
     parts = [HEADER.replace("__PROVENANCE__", render_provenance(schema_dir)), ""]
     parts.append(render_maps(all_fields, families, icons, sections))
+    parts.append(render_field_schema(all_fields, sections, required_sets))
     parts.append("\n\n".join(interfaces))
     parts.append("")
     output = "\n".join(parts)
