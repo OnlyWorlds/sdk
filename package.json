@@ -28,7 +28,8 @@
     "codegen:check": "python codegen/generate_types.py --check",
     "schema:verify": "python codegen/verify_dist.py",
     "schema:check": "npm run schema:verify && npm run codegen:check",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "release:verify": "node codegen/verify_release.mjs"
   },
   "keywords": [
     "onlyworlds",
