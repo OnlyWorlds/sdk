@@ -3,7 +3,16 @@
 All notable changes to `@onlyworlds/sdk`. Maintained from 3.1.0 onward (Kael, Assembly);
 earlier history lives in git log only.
 
-## [Unreleased]
+## [4.0.1] — 2026-07-29
+
+**Metadata correction release.** No wire-path change: the client's reads and writes never
+consulted `FIELD_SCHEMA`, and the generated interfaces carried the correct targets throughout.
+The exposure is anything that builds UI or validation by **iterating `FIELD_SCHEMA`**.
+
+⚑ **One way this can surface as a compile error**: `relation.relations` is removed, so
+`FIELD_SCHEMA.relation.relations` is now a TypeScript error rather than a value. That is the
+intended outcome — the field does not exist in the standard and the API rejects it — but it can
+break a build rather than only a behaviour.
 
 ### Fixed
 - **`FIELD_SCHEMA.collective.equipment` targeted `construct`; the standard says `object`.**
