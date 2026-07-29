@@ -3,6 +3,33 @@
 All notable changes to `@onlyworlds/sdk`. Maintained from 3.1.0 onward (Kael, Assembly);
 earlier history lives in git log only.
 
+## [4.0.2] — 2026-07-29
+
+Re-pinned to `v0.30.1-dist.13` (canonical **00.30.01**). No field shape changed and no
+`FIELD_SCHEMA` entry changed — the schema walk is byte-identical between the two pins, so
+nothing about decoding moved. Three things changed and nothing else.
+
+### Fixed
+- **`construct.relations` and `event.languages` shipped with no description at all** — in
+  `types.generated.ts` and in `SCHEMA.md`. Their descriptions were nested one level too deep
+  inside `items:` in the canonical YAML, which made them invisible to every consumer that reads
+  field descriptions, this package included. `SCHEMA.md` is the package's AI-legibility artifact,
+  so the gap landed where it did the most harm.
+- **Five description typos** corrected in published JSDoc and `SCHEMA.md`: `beapplied`,
+  `phyiscal`, `relating the`, `object grant`, `eventuated`. The rendered docs site had already
+  fixed all five by hand — the downstream copy was the correct one, and nobody noticed because
+  the fix went where it was visible rather than where it was true.
+
+### Changed
+- `ONLYWORLDS_VERSION` `'00.30.00'` → `'00.30.01'`. It is a public `as const`, so its **literal
+  type** changes. Depending on that literal is pathological, but it is a type-level change and
+  should not be discovered rather than announced.
+- The pin now carries canonical's numeric-bounds correction: the `maximum: 0` sentinel is gone
+  from 26 fields, 8 fields gained `minimum: 0`, and `rulings.yaml` carries the numeric-bounds
+  row. Nothing in this package consumes bounds — `maximum:` is **advisory** (keel does not
+  enforce it; a `charisma: 9999` write returns 201 and stores verbatim) and the walk stays
+  silent on bounds permanently. `integer_max` / `max` therefore remain declared no-ops here.
+
 ## [4.0.1] — 2026-07-29
 
 **Metadata correction release.** No wire-path change: the client's reads and writes never
