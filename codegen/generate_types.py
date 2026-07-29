@@ -19,9 +19,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
-
-import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 CODEGEN = Path(__file__).resolve().parent
@@ -42,19 +41,29 @@ DIST_DIR = CODEGEN / "schema-dist"
 DEFAULT_SCHEMA_DIR = DIST_DIR / "schema"
 OUT_PATH = REPO / "src" / "v2" / "types.generated.ts"
 
-# The 22 element types, in the canonical order (matches generate_models.py, then
-# re-sorted below for the union so slugs read alphabetically -- kept here as the
-# authoritative membership list).
-ELEMENT_TYPES = [
-    "ability", "collective", "character", "construct", "creature", "event",
-    "family", "institution", "language", "law", "location", "map", "marker",
-    "narrative", "object", "phenomenon", "pin", "relation", "species", "title",
-    "trait", "zone",
-]
+# THE WALK — imported from the vendored distribution, never re-implemented.
+#
+# Until 2026-07-29 this file carried its OWN copy of flatten_fields /
+# _collect_field / _resolve_target / ELEMENT_TYPES / KNOWN_CATEGORIES, ~90 lines
+# whose docstring said it "mirrors keel/codegen/generate_models.py". That made it
+# the ELEVENTH copy of the walk — in the repo whose maintainer had just had the
+# other ten deleted and written "never copy it; vendor it" into three documents.
+# The copies agreed on the day they were checked, which is the only reason this
+# was cheap: the founding drift case (collective.equipment) is exactly a pair of
+# copies whose emitted specs matched while their rulings diverged.
+# ⚑ Bytecode writing OFF before the import, and it is load-bearing, not tidiness:
+# importing from the vendored tree makes CPython drop `walk/__pycache__/*.pyc`
+# INSIDE it, and verify_dist.py correctly refuses any untracked file in a
+# hash-verified directory. Caught by that guard on the first run of this swap —
+# schema:verify went red for a file the swap itself created.
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(DIST_DIR / "walk"))
+import schema_walk as walk  # noqa: E402  (path must be set first)
 
-# category (YAML link target, singular TitleCase) -> type slug.
-KNOWN_CATEGORIES = {t.capitalize(): t for t in ELEMENT_TYPES}
-KNOWN_CATEGORIES["World"] = "world"
+# The 22 element types, in canonical order, and the link-category map — both from
+# the walk, so this file holds no second membership list to drift against.
+ELEMENT_TYPES = walk.ELEMENT_TYPES
+KNOWN_CATEGORIES = walk.KNOWN_CATEGORIES
 
 drift_notes: list[str] = []
 _schema_version = ""
@@ -65,93 +74,21 @@ def note(msg: str) -> None:
 
 
 def load_yaml(schema_dir: Path, name: str) -> dict:
-    with open(schema_dir / f"{name}.yaml", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    return walk.load_yaml(schema_dir, name)
 
 
-def flatten_fields(doc: dict, type_slug: str) -> list[dict]:
-    """Walk the grouped YAML (Group -> properties -> fields) and return a flat,
-    ordered list of field specs. Each spec: {name, kind, target?, desc?} where kind
-    in {scalar_str, scalar_int, single, multi, generic}. Mirrors the Django
-    generator's flatten_fields + _collect_field, including the dedupe pass.
+def flatten_fields(doc: dict, type_slug: str, include_required: bool = False) -> list[dict]:
+    """Delegate to the vendored walk, with THIS generator's note sink attached.
+
+    The sink is not optional decoration: the walk's default is a no-op, so a
+    vendored walk meeting a newer schema drops the unknown field in total
+    silence (rulings.yaml: unknown-field-types-must-be-surfaced). Passing `note`
+    is what turns that silence into a drift note on every run.
     """
-    fields: list[dict] = []
-    props = doc.get("properties", {})
-    for group_name, group in props.items():
-        group_props = group.get("properties")
-        if group_props is None:
-            note(
-                f"{type_slug}: top-level property `{group_name}` outside a group "
-                f"object -- parsed directly."
-            )
-            _collect_field(group_name, group, type_slug, fields)
-            continue
-        for fname, fspec in group_props.items():
-            _collect_field(fname, fspec, type_slug, fields)
-
-    # Dedupe by field name (keep first). relation.yaml declares `events` in BOTH
-    # the Nature and Involves groups -- a YAML irregularity.
-    seen: set[str] = set()
-    deduped: list[dict] = []
-    for f in fields:
-        if f["name"] in seen:
-            note(
-                f"{type_slug}.{f['name']}: field declared more than once across "
-                f"groups (YAML irregularity) -- kept first, dropped duplicate."
-            )
-            continue
-        seen.add(f["name"])
-        deduped.append(f)
-    return deduped
-
-
-def _collect_field(fname: str, fspec: dict, type_slug: str, out: list[dict]) -> None:
-    ftype = fspec.get("type")
-    desc = fspec.get("description")
-    if ftype == "string":
-        out.append({"name": fname, "kind": "scalar_str", "desc": desc})
-    elif ftype == "integer":
-        out.append({"name": fname, "kind": "scalar_int", "desc": desc})
-    elif ftype == "single-link":
-        out.append(
-            {"name": fname, "kind": "single",
-             "target": _resolve_target(fname, fspec, type_slug), "desc": desc}
-        )
-    elif ftype == "multi-link":
-        out.append(
-            {"name": fname, "kind": "multi",
-             "target": _resolve_target(fname, fspec, type_slug), "desc": desc}
-        )
-    elif ftype == "generic-link":
-        # pin.element only. The v2 wire serializes it as a type discriminator
-        # (element_type) + a UUID (element_id). Mirrors the Django pair.
-        note(
-            f"{type_slug}.{fname}: `generic-link` (link to any element type). "
-            f"Emitted as {fname}_type (string|null) + {fname}_id (string|null)."
-        )
-        out.append({"name": fname, "kind": "generic", "desc": desc})
-    elif ftype == "array":
-        note(f"{type_slug}.{fname}: unexpected `array` scalar -- skipped.")
-    else:
-        note(f"{type_slug}.{fname}: unknown YAML type `{ftype}` -- skipped.")
-
-
-def _resolve_target(fname: str, fspec: dict, type_slug: str) -> str | None:
-    cat = fspec.get("category")
-    if cat is None:
-        note(f"{type_slug}.{fname}: link with no `category` -- target unresolved.")
-        return None
-    slug = KNOWN_CATEGORIES.get(cat)
-    if slug is None:
-        note(f"{type_slug}.{fname}: link category `{cat}` not a known element type.")
-        return cat.lower()
-    # collective.equipment drift RESOLVED 2026-07: v1 (which implemented Construct)
-    # is decommissioned; keel is production and serves per YAML (Object), settled by
-    # dump data (1 row). keel retired its warning in generate_models.py (f700976);
-    # this copy kept warning for five days and asserted the opposite of keel's actual
-    # behaviour -- the duplication seam drifting in the RULINGS while the emitted
-    # specs stayed identical. Retired here 2026-07-28 to match.
-    return slug
+    return walk.flatten_fields(
+        doc, type_slug, note=note,
+        include_required=include_required, include_desc=True,
+    )
 
 
 # ---------------------------------------------------------------------------
