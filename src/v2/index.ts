@@ -2,8 +2,8 @@
  * keel v2 engine absorbed from Assembly's ow-v2-client v0.9.0 (Kael),
  * wire-corrected against live staging fixtures 2026-07-18.
  *
- * Public barrel for the v2 dialect. Re-exported from the package root under
- * v2-scoped names (OwV2Client + Ow* types) alongside the frozen v1 surface.
+ * Public barrel for the v2 dialect — since 4.0 the only dialect in the package.
+ * Re-exported from the package root under v2-scoped names (OwV2Client + Ow* types).
  */
 
 export { OwV2Client, parseErrorEnvelope } from './client';
