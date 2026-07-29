@@ -105,33 +105,100 @@ __PROVENANCE__
 // server-managed fields (type, created_at, updated_at, change_seq) and the
 // extension index signature live on OwElementBase.
 
-/** Every element carries these. The extension index signature admits namespaced
- *  pass-through fields (atlas_* / shadow_* / x_*) returned verbatim by the server. */
-export interface OwElementBase {
-  /** Element type slug (server-managed, read-only). */
-  type: string;
-  /** Unique identifier, uuidv7 format. */
-  id: string;
-  /** Name of the element. */
-  name: string;
-  /** Any kind of details about the element. */
-  description?: string;
-  /** The top level category to which the element belongs. */
-  supertype?: string;
-  /** The sub level category through which the element is further classified. */
-  subtype?: string;
-  /** URL to an image representing the element. */
-  image_url?: string;
-  /** Creation timestamp (server-managed, read-only). */
-  created_at?: string;
-  /** Last-update timestamp (server-managed, read-only). */
-  updated_at?: string;
-  /** Per-world change cursor, stamped on every write (server-managed, read-only). */
-  change_seq?: number;
-  /** Namespaced extension fields (atlas_* / shadow_* / x_*), returned verbatim. */
-  [ext: string]: unknown;
-}
+__ELEMENT_BASE__
 """
+
+
+# --- OwElementBase: DERIVED from base_properties.yaml, under a declared mapping ---
+#
+# Until 2026-07-29 this interface was a hardcoded literal sitting inside HEADER --
+# emitted under a "GENERATED from OnlyWorlds canonical schema YAML" banner while the
+# generator had never once opened base_properties.yaml, which the distribution ships.
+# It carried the authority of generated output without the derivation. It was also
+# correct, which is why nothing ever caught it.
+#
+# It cannot be a straight copy of the schema base, and that is the whole reason the
+# mapping is spelled out here instead of being implied:
+#
+#   - Schema keys are TitleCase (Id, Name, Image_URL); the wire is snake_case.
+#   - `World` is DROPPED. The schema's `required: [Id, Name, World]` speaks storage
+#     truth -- every element row has a world -- while the v2 API REJECTS `world` in a
+#     request body, because the API key determines the world. (rulings.yaml:
+#     required-world-wire-caveat. Canonical truing rides a later YAML bump.)
+#   - Four server-managed fields are ADDED. They exist on every wire body and in no
+#     element YAML: type, created_at, updated_at, change_seq.
+#   - Only Id and Name stay non-optional. Everything else is optional per
+#     rulings.yaml: nullable-by-default -- only `name` is truly required, and `id` is
+#     present on every body the server returns.
+#
+# Descriptions now come from the YAML rather than from paraphrase, so the published
+# JSDoc says what the standard says.
+WIRE_ONLY_BASE_FIELDS = [
+    ("type", "Element type slug (server-managed, read-only).", "string", True),
+    ("created_at", "Creation timestamp (server-managed, read-only).", "string", False),
+    ("updated_at", "Last-update timestamp (server-managed, read-only).", "string", False),
+    ("change_seq", "Per-world change cursor, stamped on every write (server-managed, read-only).", "number", False),
+]
+BASE_KEY_TO_WIRE = {
+    "Id": "id", "Name": "name", "Description": "description",
+    "Supertype": "supertype", "Subtype": "subtype", "Image_URL": "image_url",
+}
+BASE_DROPPED_FROM_WIRE = {"World"}
+BASE_NON_OPTIONAL = {"id", "name"}
+
+
+def render_element_base(schema_dir: Path) -> str:
+    doc = walk.load_yaml(schema_dir, "base_properties")
+    props = doc.get("properties") or {}
+
+    unknown = set(props) - set(BASE_KEY_TO_WIRE) - BASE_DROPPED_FROM_WIRE
+    if unknown:
+        raise SystemExit(
+            f"base_properties.yaml grew field(s) this generator has no mapping for: "
+            f"{sorted(unknown)}. Add them to BASE_KEY_TO_WIRE (with the wire spelling) "
+            f"or to BASE_DROPPED_FROM_WIRE (with a reason), then regenerate. Refusing to "
+            f"emit a base that silently omits part of the standard."
+        )
+    missing = set(BASE_KEY_TO_WIRE) - set(props)
+    if missing:
+        raise SystemExit(
+            f"base_properties.yaml no longer declares {sorted(missing)}, which this "
+            f"generator maps onto the wire base. The standard moved under us -- resolve "
+            f"deliberately rather than emitting a base that invents fields."
+        )
+
+    lines = [
+        "/** Every element carries these. The extension index signature admits namespaced",
+        " *  pass-through fields (atlas_* / shadow_* / x_*) returned verbatim by the server.",
+        " *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in",
+        " *  bodies -- the key determines the world) and the four server-managed fields are",
+        " *  added, since they ride every wire body and appear in no element YAML. */",
+        "export interface OwElementBase {",
+    ]
+    emitted: set[str] = set()
+
+    def emit(name: str, desc: str, ts: str, required: bool) -> None:
+        lines.append(f"  /** {desc} */")
+        lines.append(f"  {name}{'' if required else '?'}: {ts};")
+        emitted.add(name)
+
+    type_field = next(f for f in WIRE_ONLY_BASE_FIELDS if f[0] == "type")
+    emit(*type_field)
+    for schema_key, wire_name in BASE_KEY_TO_WIRE.items():
+        spec = props[schema_key] or {}
+        desc = (spec.get("description") or "").strip()
+        if not desc:
+            note(f"base_properties.{schema_key}: no description in the YAML.")
+            desc = wire_name
+        emit(wire_name, f"{desc}.", "string", wire_name in BASE_NON_OPTIONAL)
+    for name, desc, ts, required in WIRE_ONLY_BASE_FIELDS:
+        if name not in emitted:
+            emit(name, desc, ts, required)
+
+    lines.append("  /** Namespaced extension fields (atlas_* / shadow_* / x_*), returned verbatim. */")
+    lines.append("  [ext: string]: unknown;")
+    lines.append("}")
+    return "\n".join(lines)
 
 
 def _ts_field(f: dict) -> list[str]:
@@ -623,7 +690,10 @@ def main() -> None:
         all_fields[tslug] = fields
         interfaces.append(render_interface(tslug, fields))
 
-    parts = [HEADER.replace("__PROVENANCE__", render_provenance(schema_dir)), ""]
+    header = (HEADER
+              .replace("__PROVENANCE__", render_provenance(schema_dir))
+              .replace("__ELEMENT_BASE__", render_element_base(schema_dir)))
+    parts = [header, ""]
     parts.append(render_maps(all_fields, families, icons, sections))
     parts.append(render_field_schema(all_fields, sections, required_sets))
     parts.append("\n\n".join(interfaces))

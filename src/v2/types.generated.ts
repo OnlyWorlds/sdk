@@ -18,11 +18,14 @@
 // extension index signature live on OwElementBase.
 
 /** Every element carries these. The extension index signature admits namespaced
- *  pass-through fields (atlas_* / shadow_* / x_*) returned verbatim by the server. */
+ *  pass-through fields (atlas_* / shadow_* / x_*) returned verbatim by the server.
+ *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in
+ *  bodies -- the key determines the world) and the four server-managed fields are
+ *  added, since they ride every wire body and appear in no element YAML. */
 export interface OwElementBase {
   /** Element type slug (server-managed, read-only). */
   type: string;
-  /** Unique identifier, uuidv7 format. */
+  /** Unique identifier for the element, uuidv7 format. */
   id: string;
   /** Name of the element. */
   name: string;
