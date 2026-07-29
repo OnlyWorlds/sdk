@@ -5,7 +5,10 @@
 
 The canonical typed client for the [OnlyWorlds](https://onlyworlds.github.io) v2 API, plus the
 canonical constants (element types, icons, colour families, field schema) — generated from the
-same schema source the server runs on.
+canonical OnlyWorlds schema, obtained through the public
+[schema distribution](https://github.com/OnlyWorlds/schema-dist) at a pinned, hash-verified
+tag. The generated files carry that tag and commit in their header, so what these types were
+built from is checkable rather than asserted.
 
 **4.x is v2-native and ESM-only (Node 18+).** If you need the legacy v1 API dialect
 (`OnlyWorldsClient`) or CommonJS `require()`, stay on 3.x — it remains published and the v1 API

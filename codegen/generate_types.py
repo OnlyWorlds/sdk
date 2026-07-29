@@ -19,9 +19,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
-
-import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 CODEGEN = Path(__file__).resolve().parent
@@ -42,19 +41,29 @@ DIST_DIR = CODEGEN / "schema-dist"
 DEFAULT_SCHEMA_DIR = DIST_DIR / "schema"
 OUT_PATH = REPO / "src" / "v2" / "types.generated.ts"
 
-# The 22 element types, in the canonical order (matches generate_models.py, then
-# re-sorted below for the union so slugs read alphabetically -- kept here as the
-# authoritative membership list).
-ELEMENT_TYPES = [
-    "ability", "collective", "character", "construct", "creature", "event",
-    "family", "institution", "language", "law", "location", "map", "marker",
-    "narrative", "object", "phenomenon", "pin", "relation", "species", "title",
-    "trait", "zone",
-]
+# THE WALK — imported from the vendored distribution, never re-implemented.
+#
+# Until 2026-07-29 this file carried its OWN copy of flatten_fields /
+# _collect_field / _resolve_target / ELEMENT_TYPES / KNOWN_CATEGORIES, ~90 lines
+# whose docstring said it "mirrors keel/codegen/generate_models.py". That made it
+# the ELEVENTH copy of the walk — in the repo whose maintainer had just had the
+# other ten deleted and written "never copy it; vendor it" into three documents.
+# The copies agreed on the day they were checked, which is the only reason this
+# was cheap: the founding drift case (collective.equipment) is exactly a pair of
+# copies whose emitted specs matched while their rulings diverged.
+# ⚑ Bytecode writing OFF before the import, and it is load-bearing, not tidiness:
+# importing from the vendored tree makes CPython drop `walk/__pycache__/*.pyc`
+# INSIDE it, and verify_dist.py correctly refuses any untracked file in a
+# hash-verified directory. Caught by that guard on the first run of this swap —
+# schema:verify went red for a file the swap itself created.
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(DIST_DIR / "walk"))
+import schema_walk as walk  # noqa: E402  (path must be set first)
 
-# category (YAML link target, singular TitleCase) -> type slug.
-KNOWN_CATEGORIES = {t.capitalize(): t for t in ELEMENT_TYPES}
-KNOWN_CATEGORIES["World"] = "world"
+# The 22 element types, in canonical order, and the link-category map — both from
+# the walk, so this file holds no second membership list to drift against.
+ELEMENT_TYPES = walk.ELEMENT_TYPES
+KNOWN_CATEGORIES = walk.KNOWN_CATEGORIES
 
 drift_notes: list[str] = []
 _schema_version = ""
@@ -65,93 +74,21 @@ def note(msg: str) -> None:
 
 
 def load_yaml(schema_dir: Path, name: str) -> dict:
-    with open(schema_dir / f"{name}.yaml", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    return walk.load_yaml(schema_dir, name)
 
 
-def flatten_fields(doc: dict, type_slug: str) -> list[dict]:
-    """Walk the grouped YAML (Group -> properties -> fields) and return a flat,
-    ordered list of field specs. Each spec: {name, kind, target?, desc?} where kind
-    in {scalar_str, scalar_int, single, multi, generic}. Mirrors the Django
-    generator's flatten_fields + _collect_field, including the dedupe pass.
+def flatten_fields(doc: dict, type_slug: str, include_required: bool = False) -> list[dict]:
+    """Delegate to the vendored walk, with THIS generator's note sink attached.
+
+    The sink is not optional decoration: the walk's default is a no-op, so a
+    vendored walk meeting a newer schema drops the unknown field in total
+    silence (rulings.yaml: unknown-field-types-must-be-surfaced). Passing `note`
+    is what turns that silence into a drift note on every run.
     """
-    fields: list[dict] = []
-    props = doc.get("properties", {})
-    for group_name, group in props.items():
-        group_props = group.get("properties")
-        if group_props is None:
-            note(
-                f"{type_slug}: top-level property `{group_name}` outside a group "
-                f"object -- parsed directly."
-            )
-            _collect_field(group_name, group, type_slug, fields)
-            continue
-        for fname, fspec in group_props.items():
-            _collect_field(fname, fspec, type_slug, fields)
-
-    # Dedupe by field name (keep first). relation.yaml declares `events` in BOTH
-    # the Nature and Involves groups -- a YAML irregularity.
-    seen: set[str] = set()
-    deduped: list[dict] = []
-    for f in fields:
-        if f["name"] in seen:
-            note(
-                f"{type_slug}.{f['name']}: field declared more than once across "
-                f"groups (YAML irregularity) -- kept first, dropped duplicate."
-            )
-            continue
-        seen.add(f["name"])
-        deduped.append(f)
-    return deduped
-
-
-def _collect_field(fname: str, fspec: dict, type_slug: str, out: list[dict]) -> None:
-    ftype = fspec.get("type")
-    desc = fspec.get("description")
-    if ftype == "string":
-        out.append({"name": fname, "kind": "scalar_str", "desc": desc})
-    elif ftype == "integer":
-        out.append({"name": fname, "kind": "scalar_int", "desc": desc})
-    elif ftype == "single-link":
-        out.append(
-            {"name": fname, "kind": "single",
-             "target": _resolve_target(fname, fspec, type_slug), "desc": desc}
-        )
-    elif ftype == "multi-link":
-        out.append(
-            {"name": fname, "kind": "multi",
-             "target": _resolve_target(fname, fspec, type_slug), "desc": desc}
-        )
-    elif ftype == "generic-link":
-        # pin.element only. The v2 wire serializes it as a type discriminator
-        # (element_type) + a UUID (element_id). Mirrors the Django pair.
-        note(
-            f"{type_slug}.{fname}: `generic-link` (link to any element type). "
-            f"Emitted as {fname}_type (string|null) + {fname}_id (string|null)."
-        )
-        out.append({"name": fname, "kind": "generic", "desc": desc})
-    elif ftype == "array":
-        note(f"{type_slug}.{fname}: unexpected `array` scalar -- skipped.")
-    else:
-        note(f"{type_slug}.{fname}: unknown YAML type `{ftype}` -- skipped.")
-
-
-def _resolve_target(fname: str, fspec: dict, type_slug: str) -> str | None:
-    cat = fspec.get("category")
-    if cat is None:
-        note(f"{type_slug}.{fname}: link with no `category` -- target unresolved.")
-        return None
-    slug = KNOWN_CATEGORIES.get(cat)
-    if slug is None:
-        note(f"{type_slug}.{fname}: link category `{cat}` not a known element type.")
-        return cat.lower()
-    # collective.equipment drift RESOLVED 2026-07: v1 (which implemented Construct)
-    # is decommissioned; keel is production and serves per YAML (Object), settled by
-    # dump data (1 row). keel retired its warning in generate_models.py (f700976);
-    # this copy kept warning for five days and asserted the opposite of keel's actual
-    # behaviour -- the duplication seam drifting in the RULINGS while the emitted
-    # specs stayed identical. Retired here 2026-07-28 to match.
-    return slug
+    return walk.flatten_fields(
+        doc, type_slug, note=note,
+        include_required=include_required, include_desc=True,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -329,6 +266,139 @@ def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str],
         lines.append(f"  {t}: {_ts_str_array(names)},")
     lines.append("};")
     lines.append("")
+    return "\n".join(lines)
+
+
+FIELD_SCHEMA_INTRO = """
+// ---------------------------------------------------------------------------
+// FIELD_SCHEMA -- per-type field metadata (type, link target, required flag).
+//
+// GENERATED since 2026-07-29. It was ~650 hand-maintained lines, publicly
+// exported, with a test that checked only that its keys matched ELEMENT_TYPES
+// and that nothing was still typed 'number' -- not one field name, link target
+// or required flag was ever compared to the schema. It was wrong in two places
+// when the comparison was finally run:
+//
+//   collective.equipment  target 'construct' -> 'object'. The founding case of
+//     the ruling table (rulings.yaml: collective-equipment-target), ruled on
+//     2026-07-23 and fixed the same week in the GENERATED path, while this
+//     hand-maintained copy of the same fact in the same package kept shipping
+//     the decommissioned v1 value on `latest` for six days. The fix went where
+//     someone happened to be looking.
+//   relation.relations    removed. A multi_link to 'relation' that does not
+//     exist in relation.yaml at all -- a phantom field, exported, that the v2
+//     API would 422 on as an unknown key.
+//
+// Two DECLARED deviations from a naive schema read, both matching what codegen
+// already emits for the interfaces:
+//   - pin.element is a `generic-link` and is split into element_type (text) +
+//     element_id (single_link, target 'any'), which is what the v2 wire serves.
+//   - `integer_max` / `max` remain in the FieldType union for API compatibility
+//     and are emitted by nothing: the walk does not surface the schema's
+//     `maximum:` constraint (41 of them across 17 element types), so there is
+//     no source for them here. Retiring the member or teaching the walk to
+//     carry `maximum` is a schema-authority decision, not a local patch.
+// ---------------------------------------------------------------------------
+
+/** Field type definitions for OnlyWorlds elements. */
+export type FieldType =
+  | 'text'           // Text fields
+  | 'integer'        // Positive integers
+  | 'integer_max'    // Positive integers with max value
+  | 'single_link'    // Single element reference
+  | 'multi_link';    // Array of element references
+
+/** Field metadata structure. */
+export interface FieldInfo {
+  type: FieldType;
+  target?: string;    // For link fields: target element type
+  max?: number;       // For integer_max fields: maximum value
+  required?: boolean; // True if the field is required per canonical YAML schema
+}
+"""
+
+# The five base fields every element carries, with the required flags the wire
+# enforces. `name` is the only required field in the standard (rulings.yaml:
+# nullable-by-default); the other four are spelled out as false rather than
+# omitted because consumers read this table to build forms.
+BASE_FIELD_ROWS = [
+    ("name", "{ type: 'text', required: true }"),
+    ("description", "{ type: 'text', required: false }"),
+    ("supertype", "{ type: 'text', required: false }"),
+    ("subtype", "{ type: 'text', required: false }"),
+    ("image_url", "{ type: 'text', required: false }"),
+]
+
+
+def _field_schema_entries(f: dict, required: bool) -> list[tuple[str, str]]:
+    """One walk field spec -> the (name, TS-literal) rows it contributes."""
+    req = ", required: true" if required else ""
+    kind = f["kind"]
+    if kind == "scalar_str":
+        return [(f["name"], f"{{ type: 'text'{req} }}")]
+    if kind == "scalar_int":
+        return [(f["name"], f"{{ type: 'integer'{req} }}")]
+    if kind in ("single", "multi"):
+        ts = "single_link" if kind == "single" else "multi_link"
+        tgt = f.get("target") or "any"
+        return [(f["name"], f"{{ type: '{ts}', target: '{tgt}'{req} }}")]
+    if kind == "generic":
+        # pin.element only. Declared deviation -- the wire serves the pair, and
+        # render_interface() splits it the same way.
+        return [
+            (f"{f['name']}_type", f"{{ type: 'text'{req} }}"),
+            (f"{f['name']}_id", f"{{ type: 'single_link', target: 'any'{req} }}"),
+        ]
+    note(f"FIELD_SCHEMA: unhandled kind `{kind}` on {f['name']} -- omitted.")
+    return []
+
+
+def render_field_schema(all_fields: dict[str, list[dict]],
+                        sections: dict[str, list[dict]],
+                        required_sets: dict[str, set[str]]) -> str:
+    lines: list[str] = [FIELD_SCHEMA_INTRO.rstrip(), ""]
+    lines.append("export const FIELD_SCHEMA = {")
+    for tslug in sorted(ELEMENT_TYPES):
+        by_name = {f["name"]: f for f in all_fields[tslug]}
+        required = required_sets[tslug]
+        lines.append(f"  {tslug}: {{")
+        lines.append("    // Base fields (shared by all elements)")
+        for fname, literal in BASE_FIELD_ROWS:
+            lines.append(f"    {fname}: {literal},")
+        rows: list[str] = []
+        # Sections are the YAML's own groups, and a field can appear in TWO of
+        # them (relation.events is declared in both Nature and Involves). The
+        # walk dedupes its field LIST; iterating sections re-introduces the
+        # duplicate, which in an object literal is a silently-overwritten key —
+        # so dedupe here too, keeping the first section, exactly as the walk
+        # keeps the first spec. Caught by esbuild warning on the first build.
+        emitted_names: set[str] = {name for name, _ in BASE_FIELD_ROWS}
+        for section in sections[tslug]:
+            emitted_here: list[str] = []
+            for fname in section["fields"]:
+                spec = by_name.get(fname)
+                if spec is None:
+                    # An unknown YAML type the walk skipped — already noted by it.
+                    continue
+                for name, literal in _field_schema_entries(spec, fname in required):
+                    if name in emitted_names:
+                        continue
+                    emitted_names.add(name)
+                    emitted_here.append(f"    {name}: {literal},")
+            if emitted_here:
+                rows.append(f"    // {section['name']}")
+                rows.extend(emitted_here)
+        if rows:
+            rows[-1] = rows[-1].rstrip(",")
+        lines.extend(rows)
+        lines.append("  },")
+    lines[-1] = lines[-1].rstrip(",")
+    # `as const` is NOT decoration: the hand-maintained table carried it, so the
+    # published .d.ts exposes deeply-readonly literal types ({ readonly type:
+    # "text" }). Emitting `satisfies` alone would silently widen every entry in
+    # the public type surface — a breaking change with no runtime signal.
+    # `as const satisfies` keeps the old types and adds the check.
+    lines.append("} as const satisfies Record<ElementType, Record<string, FieldInfo>>;")
     return "\n".join(lines)
 
 
@@ -538,6 +608,7 @@ def main() -> None:
     families: dict[str, str] = {}
     icons: dict[str, str] = {}
     sections: dict[str, list[dict]] = {}
+    required_sets: dict[str, set[str]] = {}
     interfaces: list[str] = []
     for tslug in ELEMENT_TYPES:
         doc = load_yaml(schema_dir, tslug)
@@ -545,12 +616,16 @@ def main() -> None:
         families[tslug] = fam
         icons[tslug] = icon
         sections[tslug] = parse_sections(doc, tslug)
+        # Read separately rather than via include_required so the field specs the
+        # interface emitter sees stay byte-for-byte what they were before.
+        required_sets[tslug] = walk.required_names(doc)
         fields = flatten_fields(doc, tslug)
         all_fields[tslug] = fields
         interfaces.append(render_interface(tslug, fields))
 
     parts = [HEADER.replace("__PROVENANCE__", render_provenance(schema_dir)), ""]
     parts.append(render_maps(all_fields, families, icons, sections))
+    parts.append(render_field_schema(all_fields, sections, required_sets))
     parts.append("\n\n".join(interfaces))
     parts.append("")
     output = "\n".join(parts)

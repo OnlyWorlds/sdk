@@ -3,6 +3,33 @@
 All notable changes to `@onlyworlds/sdk`. Maintained from 3.1.0 onward (Kael, Assembly);
 earlier history lives in git log only.
 
+## [Unreleased]
+
+### Fixed
+- **`FIELD_SCHEMA.collective.equipment` targeted `construct`; the standard says `object`.**
+  This is the founding case of the schema ruling table
+  (`collective-equipment-target`, ruled 2026-07-23): the v1 implementation used
+  Construct, v1 is decommissioned, and keel serves per YAML. The generated code path
+  in this repo was corrected the same week. The hand-maintained `FIELD_SCHEMA` copy of
+  the same fact, in the same package, kept shipping the decommissioned value on
+  `latest` — the fix went where someone happened to be looking.
+- **`FIELD_SCHEMA.relation.relations` removed** — a `multi_link` to `relation` that does
+  not exist in `relation.yaml`. A phantom field, publicly exported, that consumers
+  building forms from this table would have sent to an API that 422s unknown keys.
+
+### Changed
+- **`FIELD_SCHEMA` is now GENERATED** from the pinned schema distribution and gated by
+  `codegen:check`, joining `ELEMENT_ICONS` / `ELEMENT_SECTIONS` / `ELEMENT_FAMILIES`. It
+  was ~650 hand-maintained lines whose test compared nothing to the schema. Regenerating
+  it changed exactly 2 of 467 entries — the two above. Runtime shape and the deeply
+  readonly public types (`as const`) are unchanged.
+  Two declared deviations from a naive schema read are now stated in the generated file:
+  `pin.element` (a `generic-link`) splits into `element_type` + `element_id`, as the wire
+  serves it; and `integer_max` / `max` remain in the `FieldType` union unused, because
+  the walk does not surface the schema's `maximum:` constraint (41 across 17 types).
+- `codegen/generate_types.py` imports the vendored schema walk instead of carrying its
+  own copy of it. Output byte-identical.
+
 ## [4.0.0] — 2026-07-23
 
 **v2-native only.** See `docs/migrating-3-to-4.md`. 3.x stays published forever for

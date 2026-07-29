@@ -10,11 +10,16 @@ against generated files.
 - `schema/*.yaml` — the 22 OnlyWorlds element types + `base_properties` +
   `world`, byte-identical to the Council-governed standard
   (github.com/OnlyWorlds/OnlyWorlds). No presentation keys.
-- `presentation.json` — family + icon **defaults** per type. Defaults, not
-  authority: tools are free to override (Atlas remaps wholesale for dark
-  mode). Families are names (`agents`, `world`, `abstract`, `temporal`), not
-  hexes: the palette lives in each consumer, and `_meta.provenance` records
-  why the four-family split exists so it is not re-litigated by taste.
+- `presentation.json` — family + icon **defaults** per type, plus the four
+  family **colours** (`colors.families`, light/dark pairs). Defaults, not
+  authority: tools are free to override, and Atlas remaps wholesale for dark
+  mode. `_meta.provenance` records why the four-family split exists so it is
+  not re-litigated by taste, and points at the measurement record.
+  **Do not change a hex without re-running CVD validation** — the World green
+  is pinned by the accessibility budget, not by preference.
+  *(Colours were withheld through serial 5 on the position that "the palette
+  lives in each consumer". That cost a new consumer any legitimate source for
+  them, which is how a sixth hardcoded copy gets born; published from serial 6.)*
 - `walk/schema_walk.py` — THE official schema reader. Vendor it or port it,
   but keep its semantics; it is the one decoder of what the YAMLs mean.
   Requires PyYAML; no other dependency, and nothing from the platform.

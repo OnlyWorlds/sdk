@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.30.0-dist.4
-//         commit          6be4e8db4faa99d135eb805c198facaad290a4ff
-//         MANIFEST sha256 78271142839d5a66c4338851fde893acead90b7ca39b45e58c7abfb47f025982
-//         canonical 00.30.00, dist serial 4, published 2026-07-28
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.30.0-dist.6
+//         commit          7a4359f4e2a08cc3c4201416aca98196d64acf8f
+//         MANIFEST sha256 574c1a5440257c945601e81fdeaf0120e16fcf7cfa3af4dda798747678ad1dda
+//         canonical 00.30.00, dist serial 6, published 2026-07-28
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -271,6 +271,644 @@ export const MULTI_LINK_FIELDS: Record<ElementType, string[]> = {
   zone: ['phenomena', 'linked_zones', 'populations', 'titles', 'principles'],
 };
 
+
+// ---------------------------------------------------------------------------
+// FIELD_SCHEMA -- per-type field metadata (type, link target, required flag).
+//
+// GENERATED since 2026-07-29. It was ~650 hand-maintained lines, publicly
+// exported, with a test that checked only that its keys matched ELEMENT_TYPES
+// and that nothing was still typed 'number' -- not one field name, link target
+// or required flag was ever compared to the schema. It was wrong in two places
+// when the comparison was finally run:
+//
+//   collective.equipment  target 'construct' -> 'object'. The founding case of
+//     the ruling table (rulings.yaml: collective-equipment-target), ruled on
+//     2026-07-23 and fixed the same week in the GENERATED path, while this
+//     hand-maintained copy of the same fact in the same package kept shipping
+//     the decommissioned v1 value on `latest` for six days. The fix went where
+//     someone happened to be looking.
+//   relation.relations    removed. A multi_link to 'relation' that does not
+//     exist in relation.yaml at all -- a phantom field, exported, that the v2
+//     API would 422 on as an unknown key.
+//
+// Two DECLARED deviations from a naive schema read, both matching what codegen
+// already emits for the interfaces:
+//   - pin.element is a `generic-link` and is split into element_type (text) +
+//     element_id (single_link, target 'any'), which is what the v2 wire serves.
+//   - `integer_max` / `max` remain in the FieldType union for API compatibility
+//     and are emitted by nothing: the walk does not surface the schema's
+//     `maximum:` constraint (41 of them across 17 element types), so there is
+//     no source for them here. Retiring the member or teaching the walk to
+//     carry `maximum` is a schema-authority decision, not a local patch.
+// ---------------------------------------------------------------------------
+
+/** Field type definitions for OnlyWorlds elements. */
+export type FieldType =
+  | 'text'           // Text fields
+  | 'integer'        // Positive integers
+  | 'integer_max'    // Positive integers with max value
+  | 'single_link'    // Single element reference
+  | 'multi_link';    // Array of element references
+
+/** Field metadata structure. */
+export interface FieldInfo {
+  type: FieldType;
+  target?: string;    // For link fields: target element type
+  max?: number;       // For integer_max fields: maximum value
+  required?: boolean; // True if the field is required per canonical YAML schema
+}
+
+export const FIELD_SCHEMA = {
+  ability: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Mechanics
+    activation: { type: 'text' },
+    duration: { type: 'integer' },
+    potency: { type: 'integer' },
+    range: { type: 'integer' },
+    effects: { type: 'multi_link', target: 'phenomenon' },
+    challenges: { type: 'text' },
+    talents: { type: 'multi_link', target: 'trait' },
+    requisites: { type: 'multi_link', target: 'construct' },
+    // World
+    prevalence: { type: 'text' },
+    tradition: { type: 'single_link', target: 'construct' },
+    source: { type: 'single_link', target: 'phenomenon' },
+    locus: { type: 'single_link', target: 'location' },
+    instruments: { type: 'multi_link', target: 'object' },
+    systems: { type: 'multi_link', target: 'construct' }
+  },
+  character: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Constitution
+    physicality: { type: 'text' },
+    mentality: { type: 'text' },
+    height: { type: 'integer' },
+    weight: { type: 'integer' },
+    species: { type: 'multi_link', target: 'species' },
+    traits: { type: 'multi_link', target: 'trait' },
+    abilities: { type: 'multi_link', target: 'ability' },
+    // Origins
+    background: { type: 'text' },
+    motivations: { type: 'text' },
+    birth_date: { type: 'integer' },
+    birthplace: { type: 'single_link', target: 'location' },
+    languages: { type: 'multi_link', target: 'language' },
+    // World
+    reputation: { type: 'text' },
+    location: { type: 'single_link', target: 'location' },
+    objects: { type: 'multi_link', target: 'object' },
+    institutions: { type: 'multi_link', target: 'institution' },
+    // Personality
+    charisma: { type: 'integer' },
+    coercion: { type: 'integer' },
+    competence: { type: 'integer' },
+    compassion: { type: 'integer' },
+    creativity: { type: 'integer' },
+    courage: { type: 'integer' },
+    // Social
+    family: { type: 'multi_link', target: 'family' },
+    friends: { type: 'multi_link', target: 'character' },
+    rivals: { type: 'multi_link', target: 'character' },
+    // TTRPG
+    level: { type: 'integer' },
+    hit_points: { type: 'integer' },
+    STR: { type: 'integer' },
+    DEX: { type: 'integer' },
+    CON: { type: 'integer' },
+    INT: { type: 'integer' },
+    WIS: { type: 'integer' },
+    CHA: { type: 'integer' }
+  },
+  collective: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Formation
+    composition: { type: 'text' },
+    count: { type: 'integer' },
+    formation_date: { type: 'integer' },
+    operator: { type: 'single_link', target: 'institution' },
+    equipment: { type: 'multi_link', target: 'object' },
+    // Dynamics
+    activity: { type: 'text' },
+    disposition: { type: 'text' },
+    state: { type: 'text' },
+    abilities: { type: 'multi_link', target: 'ability' },
+    symbolism: { type: 'multi_link', target: 'construct' },
+    // World
+    species: { type: 'multi_link', target: 'species' },
+    characters: { type: 'multi_link', target: 'character' },
+    creatures: { type: 'multi_link', target: 'creature' },
+    phenomena: { type: 'multi_link', target: 'phenomenon' }
+  },
+  construct: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Nature
+    rationale: { type: 'text' },
+    history: { type: 'text' },
+    status: { type: 'text' },
+    reach: { type: 'text' },
+    start_date: { type: 'integer' },
+    end_date: { type: 'integer' },
+    founder: { type: 'single_link', target: 'character' },
+    custodian: { type: 'single_link', target: 'institution' },
+    // Involves
+    characters: { type: 'multi_link', target: 'character' },
+    objects: { type: 'multi_link', target: 'object' },
+    locations: { type: 'multi_link', target: 'location' },
+    species: { type: 'multi_link', target: 'species' },
+    creatures: { type: 'multi_link', target: 'creature' },
+    institutions: { type: 'multi_link', target: 'institution' },
+    traits: { type: 'multi_link', target: 'trait' },
+    collectives: { type: 'multi_link', target: 'collective' },
+    zones: { type: 'multi_link', target: 'zone' },
+    abilities: { type: 'multi_link', target: 'ability' },
+    phenomena: { type: 'multi_link', target: 'phenomenon' },
+    languages: { type: 'multi_link', target: 'language' },
+    families: { type: 'multi_link', target: 'family' },
+    relations: { type: 'multi_link', target: 'relation' },
+    titles: { type: 'multi_link', target: 'title' },
+    constructs: { type: 'multi_link', target: 'construct' },
+    events: { type: 'multi_link', target: 'event' },
+    narratives: { type: 'multi_link', target: 'narrative' }
+  },
+  creature: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Biology
+    appearance: { type: 'text' },
+    weight: { type: 'integer' },
+    height: { type: 'integer' },
+    species: { type: 'multi_link', target: 'species' },
+    // Behavior
+    habits: { type: 'text' },
+    demeanor: { type: 'text' },
+    traits: { type: 'multi_link', target: 'trait' },
+    abilities: { type: 'multi_link', target: 'ability' },
+    languages: { type: 'multi_link', target: 'language' },
+    // World
+    status: { type: 'text' },
+    birth_date: { type: 'integer' },
+    location: { type: 'single_link', target: 'location' },
+    zone: { type: 'single_link', target: 'zone' },
+    // TTRPG
+    challenge_rating: { type: 'integer' },
+    hit_points: { type: 'integer' },
+    armor_class: { type: 'integer' },
+    speed: { type: 'integer' },
+    actions: { type: 'multi_link', target: 'ability' }
+  },
+  event: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Nature
+    history: { type: 'text' },
+    challenges: { type: 'text' },
+    consequences: { type: 'text' },
+    start_date: { type: 'integer' },
+    end_date: { type: 'integer' },
+    triggers: { type: 'multi_link', target: 'event' },
+    // Involves
+    characters: { type: 'multi_link', target: 'character' },
+    objects: { type: 'multi_link', target: 'object' },
+    locations: { type: 'multi_link', target: 'location' },
+    species: { type: 'multi_link', target: 'species' },
+    creatures: { type: 'multi_link', target: 'creature' },
+    institutions: { type: 'multi_link', target: 'institution' },
+    traits: { type: 'multi_link', target: 'trait' },
+    collectives: { type: 'multi_link', target: 'collective' },
+    zones: { type: 'multi_link', target: 'zone' },
+    abilities: { type: 'multi_link', target: 'ability' },
+    phenomena: { type: 'multi_link', target: 'phenomenon' },
+    languages: { type: 'multi_link', target: 'language' },
+    families: { type: 'multi_link', target: 'family' },
+    relations: { type: 'multi_link', target: 'relation' },
+    titles: { type: 'multi_link', target: 'title' },
+    constructs: { type: 'multi_link', target: 'construct' }
+  },
+  family: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Identity
+    spirit: { type: 'text' },
+    history: { type: 'text' },
+    traditions: { type: 'multi_link', target: 'construct' },
+    traits: { type: 'multi_link', target: 'trait' },
+    abilities: { type: 'multi_link', target: 'ability' },
+    languages: { type: 'multi_link', target: 'language' },
+    ancestors: { type: 'multi_link', target: 'character' },
+    // World
+    reputation: { type: 'text' },
+    estates: { type: 'multi_link', target: 'location' },
+    governs: { type: 'multi_link', target: 'institution' },
+    heirlooms: { type: 'multi_link', target: 'object' },
+    creatures: { type: 'multi_link', target: 'creature' }
+  },
+  institution: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Foundation
+    doctrine: { type: 'text' },
+    founding_date: { type: 'integer' },
+    parent_institution: { type: 'single_link', target: 'institution' },
+    // Claims
+    zones: { type: 'multi_link', target: 'zone' },
+    objects: { type: 'multi_link', target: 'object' },
+    creatures: { type: 'multi_link', target: 'creature' },
+    // World
+    status: { type: 'text' },
+    allies: { type: 'multi_link', target: 'institution' },
+    adversaries: { type: 'multi_link', target: 'institution' },
+    constructs: { type: 'multi_link', target: 'construct' }
+  },
+  language: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Structure
+    phonology: { type: 'text' },
+    grammar: { type: 'text' },
+    lexicon: { type: 'text' },
+    writing: { type: 'text' },
+    classification: { type: 'single_link', target: 'construct' },
+    // World
+    status: { type: 'text' },
+    spread: { type: 'multi_link', target: 'location' },
+    dialects: { type: 'multi_link', target: 'language' }
+  },
+  law: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Code
+    declaration: { type: 'text' },
+    purpose: { type: 'text' },
+    date: { type: 'integer' },
+    parent_law: { type: 'single_link', target: 'law' },
+    penalties: { type: 'multi_link', target: 'construct' },
+    // World
+    author: { type: 'single_link', target: 'institution' },
+    locations: { type: 'multi_link', target: 'location' },
+    zones: { type: 'multi_link', target: 'zone' },
+    prohibitions: { type: 'multi_link', target: 'construct' },
+    adjudicators: { type: 'multi_link', target: 'title' },
+    enforcers: { type: 'multi_link', target: 'title' }
+  },
+  location: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Setting
+    form: { type: 'text' },
+    function: { type: 'text' },
+    founding_date: { type: 'integer' },
+    parent_location: { type: 'single_link', target: 'location' },
+    populations: { type: 'multi_link', target: 'collective' },
+    // Politics
+    political_climate: { type: 'text' },
+    primary_power: { type: 'single_link', target: 'institution' },
+    governing_title: { type: 'single_link', target: 'title' },
+    secondary_powers: { type: 'multi_link', target: 'institution' },
+    zone: { type: 'single_link', target: 'zone' },
+    rival: { type: 'single_link', target: 'location' },
+    partner: { type: 'single_link', target: 'location' },
+    // World
+    customs: { type: 'text' },
+    founders: { type: 'multi_link', target: 'character' },
+    cults: { type: 'multi_link', target: 'construct' },
+    delicacies: { type: 'multi_link', target: 'species' },
+    // Production
+    extraction_methods: { type: 'multi_link', target: 'construct' },
+    extraction_goods: { type: 'multi_link', target: 'construct' },
+    industry_methods: { type: 'multi_link', target: 'construct' },
+    industry_goods: { type: 'multi_link', target: 'construct' },
+    // Commerce
+    infrastructure: { type: 'text' },
+    extraction_markets: { type: 'multi_link', target: 'location' },
+    industry_markets: { type: 'multi_link', target: 'location' },
+    currencies: { type: 'multi_link', target: 'construct' },
+    // Construction
+    architecture: { type: 'text' },
+    buildings: { type: 'multi_link', target: 'object' },
+    building_methods: { type: 'multi_link', target: 'construct' },
+    // Defense
+    defensibility: { type: 'text' },
+    elevation: { type: 'integer' },
+    fighters: { type: 'multi_link', target: 'construct' },
+    defensive_objects: { type: 'multi_link', target: 'object' }
+  },
+  map: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Details
+    background_color: { type: 'text' },
+    hierarchy: { type: 'integer' },
+    width: { type: 'integer' },
+    height: { type: 'integer' },
+    depth: { type: 'integer' },
+    parent_map: { type: 'single_link', target: 'map' },
+    location: { type: 'single_link', target: 'location' }
+  },
+  marker: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Details
+    map: { type: 'single_link', target: 'map', required: true },
+    zone: { type: 'single_link', target: 'zone', required: true },
+    x: { type: 'integer', required: true },
+    y: { type: 'integer', required: true },
+    z: { type: 'integer' },
+    order: { type: 'integer', required: true }
+  },
+  narrative: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Context
+    story: { type: 'text' },
+    consequences: { type: 'text' },
+    start_date: { type: 'integer' },
+    end_date: { type: 'integer' },
+    order: { type: 'integer' },
+    parent_narrative: { type: 'single_link', target: 'narrative' },
+    protagonist: { type: 'single_link', target: 'character' },
+    antagonist: { type: 'single_link', target: 'character' },
+    narrator: { type: 'single_link', target: 'character' },
+    conservator: { type: 'single_link', target: 'institution' },
+    // Involves
+    events: { type: 'multi_link', target: 'event' },
+    characters: { type: 'multi_link', target: 'character' },
+    objects: { type: 'multi_link', target: 'object' },
+    locations: { type: 'multi_link', target: 'location' },
+    species: { type: 'multi_link', target: 'species' },
+    creatures: { type: 'multi_link', target: 'creature' },
+    institutions: { type: 'multi_link', target: 'institution' },
+    traits: { type: 'multi_link', target: 'trait' },
+    collectives: { type: 'multi_link', target: 'collective' },
+    zones: { type: 'multi_link', target: 'zone' },
+    abilities: { type: 'multi_link', target: 'ability' },
+    phenomena: { type: 'multi_link', target: 'phenomenon' },
+    languages: { type: 'multi_link', target: 'language' },
+    families: { type: 'multi_link', target: 'family' },
+    relations: { type: 'multi_link', target: 'relation' },
+    titles: { type: 'multi_link', target: 'title' },
+    constructs: { type: 'multi_link', target: 'construct' },
+    laws: { type: 'multi_link', target: 'law' }
+  },
+  object: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Form
+    aesthetics: { type: 'text' },
+    weight: { type: 'integer' },
+    amount: { type: 'integer' },
+    parent_object: { type: 'single_link', target: 'object' },
+    materials: { type: 'multi_link', target: 'construct' },
+    technology: { type: 'multi_link', target: 'construct' },
+    // Function
+    utility: { type: 'text' },
+    effects: { type: 'multi_link', target: 'phenomenon' },
+    abilities: { type: 'multi_link', target: 'ability' },
+    consumes: { type: 'multi_link', target: 'construct' },
+    // World
+    origins: { type: 'text' },
+    location: { type: 'single_link', target: 'location' },
+    language: { type: 'single_link', target: 'language' },
+    affinities: { type: 'multi_link', target: 'trait' }
+  },
+  phenomenon: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Mechanics
+    expression: { type: 'text' },
+    effects: { type: 'text' },
+    duration: { type: 'integer' },
+    catalysts: { type: 'multi_link', target: 'object' },
+    empowerments: { type: 'multi_link', target: 'ability' },
+    // World
+    mythology: { type: 'text' },
+    system: { type: 'single_link', target: 'phenomenon' },
+    triggers: { type: 'multi_link', target: 'construct' },
+    wielders: { type: 'multi_link', target: 'character' },
+    environments: { type: 'multi_link', target: 'location' }
+  },
+  pin: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Details
+    map: { type: 'single_link', target: 'map', required: true },
+    element_type: { type: 'text', required: true },
+    element_id: { type: 'single_link', target: 'any', required: true },
+    x: { type: 'integer', required: true },
+    y: { type: 'integer', required: true },
+    z: { type: 'integer' }
+  },
+  relation: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Nature
+    background: { type: 'text' },
+    start_date: { type: 'integer' },
+    end_date: { type: 'integer' },
+    intensity: { type: 'integer' },
+    actor: { type: 'single_link', target: 'character' },
+    events: { type: 'multi_link', target: 'event' },
+    // Involves
+    characters: { type: 'multi_link', target: 'character' },
+    objects: { type: 'multi_link', target: 'object' },
+    locations: { type: 'multi_link', target: 'location' },
+    species: { type: 'multi_link', target: 'species' },
+    creatures: { type: 'multi_link', target: 'creature' },
+    institutions: { type: 'multi_link', target: 'institution' },
+    traits: { type: 'multi_link', target: 'trait' },
+    collectives: { type: 'multi_link', target: 'collective' },
+    zones: { type: 'multi_link', target: 'zone' },
+    abilities: { type: 'multi_link', target: 'ability' },
+    phenomena: { type: 'multi_link', target: 'phenomenon' },
+    languages: { type: 'multi_link', target: 'language' },
+    families: { type: 'multi_link', target: 'family' },
+    titles: { type: 'multi_link', target: 'title' },
+    constructs: { type: 'multi_link', target: 'construct' },
+    narratives: { type: 'multi_link', target: 'narrative' }
+  },
+  species: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Biology
+    appearance: { type: 'text' },
+    life_span: { type: 'integer' },
+    weight: { type: 'integer' },
+    nourishment: { type: 'multi_link', target: 'species' },
+    reproduction: { type: 'multi_link', target: 'construct' },
+    adaptations: { type: 'multi_link', target: 'ability' },
+    // Psychology
+    instincts: { type: 'text' },
+    sociality: { type: 'text' },
+    temperament: { type: 'text' },
+    communication: { type: 'text' },
+    aggression: { type: 'integer' },
+    traits: { type: 'multi_link', target: 'trait' },
+    // World
+    role: { type: 'text' },
+    parent_species: { type: 'single_link', target: 'species' },
+    locations: { type: 'multi_link', target: 'location' },
+    zones: { type: 'multi_link', target: 'zone' },
+    affinities: { type: 'multi_link', target: 'phenomenon' }
+  },
+  title: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Mandate
+    authority: { type: 'text' },
+    eligibility: { type: 'text' },
+    grant_date: { type: 'integer' },
+    revoke_date: { type: 'integer' },
+    issuer: { type: 'single_link', target: 'institution' },
+    body: { type: 'single_link', target: 'institution' },
+    superior_title: { type: 'single_link', target: 'title' },
+    holders: { type: 'multi_link', target: 'character' },
+    symbols: { type: 'multi_link', target: 'object' },
+    // World
+    status: { type: 'text' },
+    history: { type: 'text' },
+    characters: { type: 'multi_link', target: 'character' },
+    institutions: { type: 'multi_link', target: 'institution' },
+    families: { type: 'multi_link', target: 'family' },
+    zones: { type: 'multi_link', target: 'zone' },
+    locations: { type: 'multi_link', target: 'location' },
+    objects: { type: 'multi_link', target: 'object' },
+    constructs: { type: 'multi_link', target: 'construct' },
+    laws: { type: 'multi_link', target: 'law' },
+    collectives: { type: 'multi_link', target: 'collective' },
+    creatures: { type: 'multi_link', target: 'creature' },
+    phenomena: { type: 'multi_link', target: 'phenomenon' },
+    species: { type: 'multi_link', target: 'species' },
+    languages: { type: 'multi_link', target: 'language' }
+  },
+  trait: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Qualitative
+    social_effects: { type: 'text' },
+    physical_effects: { type: 'text' },
+    functional_effects: { type: 'text' },
+    personality_effects: { type: 'text' },
+    behaviour_effects: { type: 'text' },
+    // Quantitative
+    charisma: { type: 'integer' },
+    coercion: { type: 'integer' },
+    competence: { type: 'integer' },
+    compassion: { type: 'integer' },
+    creativity: { type: 'integer' },
+    courage: { type: 'integer' },
+    // World
+    significance: { type: 'text' },
+    anti_trait: { type: 'single_link', target: 'trait' },
+    empowered_abilities: { type: 'multi_link', target: 'ability' }
+  },
+  zone: {
+    // Base fields (shared by all elements)
+    name: { type: 'text', required: true },
+    description: { type: 'text', required: false },
+    supertype: { type: 'text', required: false },
+    subtype: { type: 'text', required: false },
+    image_url: { type: 'text', required: false },
+    // Scope
+    role: { type: 'text' },
+    start_date: { type: 'integer' },
+    end_date: { type: 'integer' },
+    phenomena: { type: 'multi_link', target: 'phenomenon' },
+    linked_zones: { type: 'multi_link', target: 'zone' },
+    // World
+    context: { type: 'text' },
+    populations: { type: 'multi_link', target: 'collective' },
+    titles: { type: 'multi_link', target: 'title' },
+    principles: { type: 'multi_link', target: 'construct' }
+  }
+} as const satisfies Record<ElementType, Record<string, FieldInfo>>;
 export interface AbilityV2 extends OwElementBase {
   type: "ability";
   /** Method or conditions under which the ability is activated */

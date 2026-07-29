@@ -1,6 +1,6 @@
 # SDK types codegen
 
-`generate_types.py` reads the OnlyWorlds schema YAML (22 element types plus `base_properties.yaml`)
+`generate_types.py` reads the OnlyWorlds schema YAML (the 22 element types)
 and emits `src/v2/types.generated.ts` and `SCHEMA.md`: the `ElementType` union, one `<Type>V2`
 interface per element type extending a shared `OwElementBase`, and the `ELEMENT_TYPES` /
 `ELEMENT_FAMILIES` / `ELEMENT_ICONS` / `ELEMENT_SECTIONS` constants. Field shapes are pinned to
@@ -8,6 +8,14 @@ the v2 wire, not to Django columns -- single-links are `string | null`, multi-li
 integers `number | null`, link fields use bare schema names (no `_ids` suffix), and the four
 server-managed fields plus a namespaced-extension index signature (`atlas_*` / `shadow_*` / `x_*`)
 ride the base.
+
+⚑ **`OwElementBase` is a hardcoded template literal in this script, not derived from schema.**
+It lands in `types.generated.ts` under a "GENERATED from OnlyWorlds canonical schema YAML"
+header, so it reads as generated and is not: the distribution ships `base_properties.yaml` and
+codegen never opens it. This is deliberate in substance — the wire base is not the schema base
+(it drops `World`, which the v2 API rejects in bodies, and adds four server-managed fields) —
+but the deviation is currently undeclared and unchecked. Any guard here must assert the
+*mapping*, not equality. Verified correct against `base_properties.yaml` on 2026-07-29.
 
 ## Where the schema comes from (changed 2026-07-28)
 
