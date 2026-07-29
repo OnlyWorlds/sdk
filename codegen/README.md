@@ -9,13 +9,23 @@ integers `number | null`, link fields use bare schema names (no `_ids` suffix), 
 server-managed fields plus a namespaced-extension index signature (`atlas_*` / `shadow_*` / `x_*`)
 ride the base.
 
-⚑ **`OwElementBase` is a hardcoded template literal in this script, not derived from schema.**
-It lands in `types.generated.ts` under a "GENERATED from OnlyWorlds canonical schema YAML"
-header, so it reads as generated and is not: the distribution ships `base_properties.yaml` and
-codegen never opens it. This is deliberate in substance — the wire base is not the schema base
-(it drops `World`, which the v2 API rejects in bodies, and adds four server-managed fields) —
-but the deviation is currently undeclared and unchecked. Any guard here must assert the
-*mapping*, not equality. Verified correct against `base_properties.yaml` on 2026-07-29.
+**`OwElementBase` is DERIVED from `base_properties.yaml`** (since 2026-07-29) under a mapping
+declared in `render_element_base()`. It has to be a mapping rather than a copy: the wire base
+is not the schema base. TitleCase keys become snake_case; **`World` is dropped**, because the
+schema's `required: [Id, Name, World]` speaks storage truth while the v2 API rejects `world` in
+a request body (rulings.yaml: `required-world-wire-caveat`); four server-managed fields
+(`type`, `created_at`, `updated_at`, `change_seq`) are added, since they ride every wire body
+and appear in no element YAML; and only `id`/`name` stay non-optional.
+
+Two guards, both watched firing: a new field in `base_properties.yaml` with no mapping **exits
+1** rather than silently omitting part of the standard from all 22 interfaces, and a mapped
+field disappearing from the standard **exits 1** rather than emitting a base that invents
+fields.
+
+*(Until that date it was a hardcoded template literal emitted under the "GENERATED from
+canonical schema YAML" banner, with `base_properties.yaml` never opened — the authority of
+generated output without the derivation. Deriving it changed not one field declaration, which
+is why nothing had ever caught it.)*
 
 ## Where the schema comes from (changed 2026-07-28)
 
