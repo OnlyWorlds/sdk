@@ -110,6 +110,13 @@ rulings:
       ruled — reopening requires a keel storage migration on the table, not a
       convention change. The authority here is exercised as much in what the
       table refuses as in what it records.
+    probe: >
+      Checked against keel's STORAGE rather than against the wire or the
+      proposal: the model fields are declared `blank=True, default=""` and
+      are not nullable, so no third state exists to round-trip. This is why
+      Boss's philosophically-correct null rule was REFUSED - writing it would
+      have minted a promise the platform does not keep. Source-read of the
+      generated models; no live write, no residue.
 
   - id: change-seq-not-unique
     applies_to: change_seq on any element; the /changes cursor
@@ -133,7 +140,16 @@ rulings:
       on the workload the format exists to serve.
     since: "2026-07-28"
     status: ruled — wire-measured, four worlds
-
+    probe: >
+      Kael's measurement across FOUR live worlds via the v2 API, not one: a
+      bulk-imported demo world returned all 164 elements at `change_seq: 1`,
+      which is the finding; incrementally-built worlds showed distinct seqs,
+      which is the control proving the collapse is a property of bulk import
+      rather than of the field itself. The head-counts-deletes companion was
+      read from keel's cursor source, not inferred from the wire. Read-only,
+      no residue. Note the shape of the trap: a consumer testing only against
+      an incrementally-built world sees unique seqs forever and concludes the
+      opposite - the failing case is exactly the world a parse pipeline makes.
   - id: unknown-field-types-must-be-surfaced
     applies_to: any consumer walking the schema
     rule: >
@@ -165,6 +181,13 @@ rulings:
       five days, benign only by luck. This table exists because of this row.
     since: "2026-07-23"
     status: ruled
+    probe: >
+      Settled by DUMP DATA rather than by reading either spec: the production
+      database was queried for live collective.equipment values and they
+      resolve to Object, matching the YAML and not v1's Construct. Chosen as
+      the method precisely because both written sources agreed while the
+      implementations disagreed — when specs concur and behaviour differs,
+      only stored data breaks the tie. No residue (read-only query).
 
   - id: extension-passthrough
     applies_to: unmodeled fields (x_* and tool-prefixed)
@@ -178,3 +201,81 @@ rulings:
       portability promise the standard exists to make.
     since: "2026-07-28"
     status: ruled
+
+  - id: maximum-is-advisory-and-zero-means-unbounded
+    applies_to: "`maximum:` on integer fields (41 fields across 17 types)"
+    rule: >
+      `maximum:` is ADVISORY. No emitter may generate range validation from it,
+      and no consumer may treat a value as rejected for exceeding it.
+      Two populations, one key, and they mean different things:
+      `maximum: 100` (15 fields) is a genuine 0-100 attribute scale authored
+      deliberately - the six character attributes, their six mirrors on trait,
+      plus ability.potency, relation.intensity, species.aggression (whose
+      descriptions say "on a relative scale of 0 to 100" in words).
+      `maximum: 0` (26 fields) is a SENTINEL FOR "NO MAXIMUM", never a real
+      constraint - every one of the 26 is an unbounded world-unit quantity
+      (every date field, weight, height, count, elevation, duration, life_span).
+      A collective whose member count may not exceed zero is not a constraint
+      anyone authored.
+      Until canonical drops the sentinel, an emitter honoring `maximum` naively
+      would cap 26 fields at zero across every backend. THE WALK DROPPING
+      `maximum` IS THEREFORE LOAD-BEARING, not a gap: it has been protecting
+      three consumers silently.
+    rationale: >
+      ⚑ INTENT CONFIRMED BY THE AUTHOR (Captain, 2026-07-29): `maximum: 0`
+      was AUTHORED to mean "no maximum". So this is a deliberate convention,
+      not a placeholder that escaped review - and that makes the case for
+      changing it stronger rather than weaker, because a convention that
+      inverts a standard keyword will keep being read as the keyword by
+      everyone who was not told. The standard already contains its own
+      correct answer: `trait.yaml` declares proper signed ranges on all six
+      of its attributes with no sentinel, and absence already means
+      unbounded. Nothing needs inventing; 26 fields need aligning with the
+      six that got it right.
+      THE DANGER IS ASYMMETRIC AND THAT IS THE POINT: the diligent
+      implementer is the one who breaks this, because honoring a declared
+      constraint is the correct instinct everywhere else in the standard
+      (Kael's framing, 2026-07-29). A careless emitter that ignores
+      constraints is accidentally safe here; a careful one is not. That
+      inversion is why the rule lives in this table rather than in a comment.
+      Found by Kael 2026-07-29 while generating FIELD_SCHEMA, chasing a public
+      `integer_max`/`max` type member that zero entries have ever used. He
+      correctly did NOT ask for the walk to carry `maximum` - propagating the
+      broken half into three languages under the authority of the one decoder
+      is the worse outcome. Same shape as `required:` on pin/marker: a key
+      whose meaning depends on its value, ruled the same way (schema intent,
+      not wire enforcement). Canonical fix is to DELETE the key from the 26,
+      not to teach every consumer a sentinel; it rides the motion cohort.
+    since: "2026-07-29"
+    status: >
+      ruled - advisory. The MEANING was ruled independently by Captain the
+      same day ("maximum: 0 means no maximum"), converging with the reading
+      the measurement forced; the ENFORCEMENT question is closed by the probe
+      below.
+      ⚑ RESOLVED 2026-07-29 in canonical 00.30.01: the 26 sentinels are
+      STRIPPED and the 8 missing floors added. The historical note stays
+      because a consumer holding a pre-00.30.01 copy still sees the trap.
+      ★ THE WALK STAYS SILENT ON BOUNDS - PERMANENTLY, not pending. An
+      earlier draft of this row left the door open ("only then may the walk
+      carry it"). Closed on Kael's argument, which reversed his own accepted
+      proposal: the wire does not enforce (charisma 9999 stored against a
+      maximum of 100), so a walk carrying `maximum` would ship a constraint
+      the platform does not keep - and any consumer reading a bound is
+      tempted to enforce it, with the prohibition living in a different file
+      from the data. That is the same ground `string-empty-is-unset` refused
+      Boss's cleaner null rule on. The table does not mint promises the
+      platform does not keep, including for its own proposals. If a docs
+      consumer ever needs the numbers they belong in the presentation tier
+      as a display hint, never in the decoder.
+    probe: >
+      Two independent checks, source and wire, because either alone is weaker.
+      SOURCE: keel contains ZERO MaxValueValidator - grep across the codebase
+      returns nothing outside .venv - and `codegen/generate_models.py` states
+      the omission deliberately ("Integer fields all nullable; `maximum:`
+      constraints ignored ... range constraints are not expressed at the DB
+      layer"). So the intent is documented, not accidental.
+      WIRE: POST /api/v2/character/ with `charisma: 9999` against a field the
+      schema caps at 100 returned 201 and STORED 9999 verbatim. Probe element
+      deleted (204) and re-fetched (404); no residue. The wire does not
+      enforce, matching the source read - which is what makes the advisory
+      ruling safe rather than merely convenient.

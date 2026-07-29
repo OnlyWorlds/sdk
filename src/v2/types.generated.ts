@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.30.0-dist.6
-//         commit          7a4359f4e2a08cc3c4201416aca98196d64acf8f
-//         MANIFEST sha256 574c1a5440257c945601e81fdeaf0120e16fcf7cfa3af4dda798747678ad1dda
-//         canonical 00.30.00, dist serial 6, published 2026-07-28
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.30.1-dist.13
+//         commit          2d3c95571a9af34424d47239481cc94508f735cb
+//         MANIFEST sha256 d8208863138899ae5363237d8beafdf0308f31ef725c4a257c22a3793b73952e
+//         canonical 00.30.01, dist serial 13, published 2026-07-29
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -54,7 +54,7 @@ export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective
 
 /** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned
  *  distribution's VERSION file (see the provenance block at the top of this file). */
-export const ONLYWORLDS_VERSION = '00.30.00' as const;
+export const ONLYWORLDS_VERSION = '00.30.01' as const;
 
 /** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */
 export type ElementFamily = 'agents' | 'world' | 'abstract' | 'temporal';
@@ -1090,6 +1090,7 @@ export interface ConstructV2 extends OwElementBase {
   languages: string[];  // -> language
   /** Families relevant to the construct */
   families: string[];  // -> family
+  /** Relations relevant to the construct */
   relations: string[];  // -> relation
   /** Titles relevant to the construct */
   titles: string[];  // -> title
@@ -1153,7 +1154,7 @@ export interface EventV2 extends OwElementBase {
   start_date: number | null;
   /** Date on which the event concluded */
   end_date: number | null;
-  /** Events that eventuated the event */
+  /** Events that precipitated this event */
   triggers: string[];  // -> event
   /** Key characters relevant to the event */
   characters: string[];  // -> character
@@ -1177,6 +1178,7 @@ export interface EventV2 extends OwElementBase {
   abilities: string[];  // -> ability
   /** Natural or supernatural phenomena relevant to the event */
   phenomena: string[];  // -> phenomenon
+  /** Languages relevant to the event */
   languages: string[];  // -> language
   /** Families relevant to the event */
   families: string[];  // -> family
@@ -1272,7 +1274,7 @@ export interface LawV2 extends OwElementBase {
   parent_law: string | null;  // -> law
   /** The institution that created or issued the law */
   author: string | null;  // -> institution
-  /** Consequences intended to beapplied when the law is contravened */
+  /** Consequences intended to be applied when the law is contravened */
   penalties: string[];  // -> construct
   /** Locations where the law is supported or enforced */
   locations: string[];  // -> location
@@ -1464,13 +1466,13 @@ export interface ObjectV2 extends OwElementBase {
   location: string | null;  // -> location
   /** Required to read, understand, or activate the object */
   language: string | null;  // -> language
-  /** The phyiscal matter that constitutes the object */
+  /** The physical matter that constitutes the object */
   materials: string[];  // -> construct
-  /** Mechanisms relating the object's design or operation */
+  /** Mechanisms relating to the object's design or operation */
   technology: string[];  // -> construct
   /** Phenomena potentially triggered or emitted on object use */
   effects: string[];  // -> phenomenon
-  /** Abilities that the object grant or enables */
+  /** Abilities that the object grants or enables */
   abilities: string[];  // -> ability
   /** What might be used or depleted on object use */
   consumes: string[];  // -> construct

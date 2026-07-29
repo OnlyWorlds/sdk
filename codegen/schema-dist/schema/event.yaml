@@ -16,17 +16,15 @@ properties:
         description: "Outcomes and impacts resulting from the event"
       start_date:
         type: "integer"
-        maximum: 0
         description: "Date on which the event began"
       end_date:
         type: "integer"
-        maximum: 0
         description: "Date on which the event concluded"
       triggers:
         type: "multi-link"
         items:
           type: "string"
-        description: "Events that eventuated the event"
+        description: "Events that precipitated this event"
         category: "Event"
 
   Involves:
@@ -102,7 +100,7 @@ properties:
         type: "multi-link"
         items:
           type: "string"
-          description: "Languages relevant to the event"
+        description: "Languages relevant to the event"
         category: "Language"
       families:
         type: "multi-link"

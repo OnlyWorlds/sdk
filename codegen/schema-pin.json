@@ -1,17 +1,22 @@
 {
-  "_what": "The recorded pin for the vendored OnlyWorlds schema distribution. This file is the go.sum of this repo's schema supply chain \u2014 do not edit it by hand; re-vendor from the pinned tag and review the diff.",
-  "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content \u2014 the sha256 would not be broken, it would be complicit (Boss, 2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
-  "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file \u2014 the builder's default, with --serial not passed (Skeld, disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
+  "_what": "The recorded pin for the vendored OnlyWorlds schema distribution. This file is the go.sum of this repo's schema supply chain — do not edit it by hand; re-vendor from the pinned tag and review the diff.",
+  "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (Boss, 2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
+  "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (Skeld, disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.30.0-dist.6",
-  "commit": "7a4359f4e2a08cc3c4201416aca98196d64acf8f",
-  "manifest_sha256": "574c1a5440257c945601e81fdeaf0120e16fcf7cfa3af4dda798747678ad1dda",
-  "canonical_version": "00.30.00",
-  "dist_serial": 6,
-  "published": "2026-07-28",
-  "pinned_at": "2026-07-28",
-  "pinned_by": "Kael (Assembly) \u2014 31/31 file hashes recomputed independently under a core.autocrlf=true checkout; MANIFEST self-hash matched the publisher's announced value",
+  "tag": "v0.30.1-dist.13",
+  "commit": "2d3c95571a9af34424d47239481cc94508f735cb",
+  "manifest_sha256": "d8208863138899ae5363237d8beafdf0308f31ef725c4a257c22a3793b73952e",
+  "canonical_version": "00.30.01",
+  "dist_serial": 13,
+  "published": "2026-07-29",
+  "pinned_at": "2026-07-29",
+  "pinned_by": "Kael (Assembly) — 31/31 file hashes recomputed independently from a fresh download of the public tag; MANIFEST self-hash recorded from that same download and cross-checked against the publisher's announced serial (13) and canonical version (00.30.01)",
   "previous_pins": [
+    {
+      "tag": "v0.30.0-dist.6",
+      "manifest_sha256": "574c1a5440257c945601e81fdeaf0120e16fcf7cfa3af4dda798747678ad1dda",
+      "note": "superseded by v0.30.1-dist.13. Held canonical 00.30.00, which carried the `maximum: 0` sentinel on 26 fields and shipped two field descriptions nested inside `items:` and therefore absent from generated output (construct.relations, event.languages), plus five description typos."
+    },
     {
       "tag": "v0.30.0-dist.4",
       "manifest_sha256": "78271142839d5a66c4338851fde893acead90b7ca39b45e58c7abfb47f025982",

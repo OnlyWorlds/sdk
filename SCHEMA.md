@@ -149,7 +149,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `phenomena` (multi link → phenomenon) — Phenomena relevant to the construct
 - `languages` (multi link → language) — Languages relevant to the construct
 - `families` (multi link → family) — Families relevant to the construct
-- `relations` (multi link → relation)
+- `relations` (multi link → relation) — Relations relevant to the construct
 - `titles` (multi link → title) — Titles relevant to the construct
 - `constructs` (multi link → construct) — Other constructs relevant to the construct
 - `events` (multi link → event) — Events relevant to the construct
@@ -200,7 +200,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `consequences` (text) — Outcomes and impacts resulting from the event
 - `start_date` (integer) — Date on which the event began
 - `end_date` (integer) — Date on which the event concluded
-- `triggers` (multi link → event) — Events that eventuated the event
+- `triggers` (multi link → event) — Events that precipitated this event
 
 ### Involves
 
@@ -215,7 +215,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `zones` (multi link → zone) — Zones relevant to the event
 - `abilities` (multi link → ability) — Abilities relevant to the event
 - `phenomena` (multi link → phenomenon) — Natural or supernatural phenomena relevant to the event
-- `languages` (multi link → language)
+- `languages` (multi link → language) — Languages relevant to the event
 - `families` (multi link → family) — Families relevant to the event
 - `relations` (multi link → relation) — Interpersonal or political relations relevant to the event
 - `titles` (multi link → title) — Titles relevant to the event
@@ -294,7 +294,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `purpose` (text) — The intent, motivation, or justification for the law's creation
 - `date` (integer) — Date the law was formally established, in world TIME units
 - `parent_law` (single link → law) — A law that this law derives from, modifies, or enhances
-- `penalties` (multi link → construct) — Consequences intended to beapplied when the law is contravened
+- `penalties` (multi link → construct) — Consequences intended to be applied when the law is contravened
 
 ### World
 
@@ -436,14 +436,14 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `weight` (integer) — Approximate or exact mass of the object, defined by world MASS units
 - `amount` (integer) — The number of identical units in this object entry
 - `parent_object` (single link → object) — Larger object that this one is part of or contained within
-- `materials` (multi link → construct) — The phyiscal matter that constitutes the object
-- `technology` (multi link → construct) — Mechanisms relating the object's design or operation
+- `materials` (multi link → construct) — The physical matter that constitutes the object
+- `technology` (multi link → construct) — Mechanisms relating to the object's design or operation
 
 ### Function
 
 - `utility` (text) — Intended purpose or primary use of the object
 - `effects` (multi link → phenomenon) — Phenomena potentially triggered or emitted on object use
-- `abilities` (multi link → ability) — Abilities that the object grant or enables
+- `abilities` (multi link → ability) — Abilities that the object grants or enables
 - `consumes` (multi link → construct) — What might be used or depleted on object use
 
 ### World

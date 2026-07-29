@@ -10,20 +10,19 @@ properties:
         description: "History and origin of the relation"
       start_date:
         type: "integer"
-        maximum: 0 
         description: "Date when the relation began, defined in world TIME units"
       end_date:
         type: "integer"
-        maximum: 0
         description: "Date when the relation ended if any, defined in world TIME units"
       intensity:
         type: "integer"
+        minimum: 0
         maximum: 100
         description: "Significance of the relation, on a relative scale of 0 to 100"
       actor:
         type: "single-link"
         category: "Character"
-        description: "Primary character defining the relation" 
+        description: "Primary character defining the relation"
       events:
         type: "multi-link"
         items:
@@ -113,7 +112,7 @@ properties:
         items:
           type: "string"
         description: "Families relevant to the relation"
-        category: "Family"  
+        category: "Family"
       titles:
         type: "multi-link"
         items:
@@ -130,7 +129,7 @@ properties:
         type: "multi-link"
         items:
           type: "string"
-        description: "Events relevant to the relation"
+        description: "Events where the relation is involved or relevant"
         category: "Event"
       narratives:
         type: "multi-link"

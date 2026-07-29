@@ -88,26 +88,32 @@ properties:
     properties:
       charisma:
         type: "integer"
+        minimum: 0
         maximum: 100
         description: "Ability to attract, inspire, and influence others"
       coercion:
         type: "integer"
+        minimum: 0
         maximum: 100
         description: "Capacity to dominate, intimidate, or apply force to shape outcomes"
       competence:
         type: "integer"
+        minimum: 0
         maximum: 100
         description: "Skill in planning, understanding, and managing complex systems or situations"
       compassion:
         type: "integer"
+        minimum: 0
         maximum: 100
         description: "Willingness to empathize with and care for others"
       creativity:
         type: "integer"
+        minimum: 0
         maximum: 100
         description: "Ability to generate novel ideas, perspectives, or solutions"
       courage:
         type: "integer"
+        minimum: 0
         maximum: 100
         description: "Readiness to face danger, risk, or adversity"
 
@@ -143,21 +149,20 @@ properties:
         type: "integer"
         description: "Total health available to the character"
       STR:
-        type: "integer" 
+        type: "integer"
         description: "Physical force and carrying capacity"
       DEX:
-        type: "integer" 
+        type: "integer"
         description: "Agility, coordination, and reflexes"
       CON:
-        type: "integer" 
+        type: "integer"
         description: "Endurance and resistance to strain"
       INT:
-        type: "integer" 
+        type: "integer"
         description: "Reasoning, memory, and learning"
       WIS:
-        type: "integer" 
+        type: "integer"
         description: "Intuition, awareness, and judgment"
       CHA:
-        type: "integer" 
+        type: "integer"
         description: "Persuasiveness and personal magnetism"
-
