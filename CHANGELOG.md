@@ -3,6 +3,18 @@
 All notable changes to `@onlyworlds/sdk`. Maintained from 3.1.0 onward (Kael, Assembly);
 earlier history lives in git log only.
 
+## [Unreleased]
+
+### Changed
+- **`SCHEMA.md` now opens with its own provenance** (dist tag, canonical version, publish
+  date — rendered from `schema-pin.json`, never the wall clock). It ships in the tarball
+  and is read cold by agents outside this repo, where the pin file is not present; a
+  generated reference that cannot name its source was the one remaining self-dating gap.
+- **`AGENTS.md` carries a "Current as of" line, asserted by `codegen:check`** — the tag it
+  names must match the pin or CI fails. A hand-maintained agent doc with an ungated date
+  is how this repo's previous agent doc went a major version stale. Gate watched firing
+  (tampered tag → exit 1, restored → 0).
+
 ## [4.1.0] — 2026-07-29
 
 Public-surface hygiene. Nothing breaks; one member is now marked for removal, and one

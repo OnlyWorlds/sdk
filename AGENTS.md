@@ -1,5 +1,9 @@
 # For AI agents using @onlyworlds/sdk
 
+**Current as of**: SDK **4.x** · schema-dist **v0.30.1-dist.13** (canonical 00.30.01).
+This line is asserted by `codegen:check` in CI — if the pin moves and this file is not
+re-read against it, the check fails rather than letting this document rot quietly.
+
 **Start with [SCHEMA.md](SCHEMA.md)** (in this package): the full generated schema reference —
 every type, every field with its meaning, link directions, families, icons, display sections.
 It is generated from the same canonical YAML as the types, so it cannot drift.

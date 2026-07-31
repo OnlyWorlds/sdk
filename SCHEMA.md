@@ -1,5 +1,7 @@
 # OnlyWorlds Schema Reference
 
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.30.1-dist.13** — canonical schema **00.30.01**, published 2026-07-29.
+
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
 

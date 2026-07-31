@@ -492,6 +492,8 @@ SCHEMA_MD_PATH = REPO / "SCHEMA.md"
 SCHEMA_MD_HEADER = """\
 # OnlyWorlds Schema Reference
 
+__SCHEMA_SOURCE__
+
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
 
@@ -507,6 +509,23 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 """
 
 
+def render_schema_md_source() -> str:
+    """The self-dating line for SCHEMA.md.
+
+    SCHEMA.md ships in the npm tarball and is read by agents cold, outside this
+    repo, where `schema-pin.json` is not present — so the provenance has to be
+    IN the file. Rendered from pin data only (never the wall clock), so
+    regeneration is reproducible and the line moves exactly when the pin moves.
+    """
+    pin_path = CODEGEN / "schema-pin.json"
+    if not pin_path.is_file():
+        return ("**Source**: an out-of-tree schema directory — this build is NOT "
+                "reproducible from the pinned distribution. Do not commit it.")
+    pin = json.loads(pin_path.read_text(encoding="utf-8"))
+    return (f"**Source**: {pin.get('repo')} @ **{pin.get('tag')}** — canonical schema "
+            f"**{pin.get('canonical_version')}**, published {pin.get('published')}.")
+
+
 def render_schema_md(all_fields, families, icons, sections) -> str:
     kind_label = {
         "scalar_str": "text",
@@ -516,7 +535,7 @@ def render_schema_md(all_fields, families, icons, sections) -> str:
         "generic": "generic link (any element type)",
     }
     by_name = {}
-    parts = [SCHEMA_MD_HEADER]
+    parts = [SCHEMA_MD_HEADER.replace("__SCHEMA_SOURCE__", render_schema_md_source())]
     for tslug in sorted(ELEMENT_TYPES):
         fields = all_fields[tslug]
         by_name = {f["name"]: f for f in fields}
@@ -722,7 +741,23 @@ def main() -> None:
                     f"DRIFT: {label} does not match the schema YAMLs. "
                     "Run `python codegen/generate_types.py` and commit the result."
                 )
-        print("drift check: clean (types.generated.ts + SCHEMA.md match schema).")
+        # AGENTS.md is hand-maintained and self-dated against the pin. This assert
+        # is its hook: a repin moves the schema under it, and without a check that
+        # runs where CI already runs, its "current as of" line is a comment — and a
+        # comment is the weakest guard we have. Tag-presence only, deliberately:
+        # the prose is judgment, the currency claim is mechanical.
+        agents_path = REPO / "AGENTS.md"
+        pin_path = CODEGEN / "schema-pin.json"
+        if agents_path.is_file() and pin_path.is_file():
+            pin_tag = json.loads(pin_path.read_text(encoding="utf-8")).get("tag")
+            if pin_tag and pin_tag not in agents_path.read_text(encoding="utf-8"):
+                raise SystemExit(
+                    f"DRIFT: AGENTS.md does not name the pinned dist tag {pin_tag}. "
+                    "A repin moved the schema under a hand-maintained agent doc. "
+                    "Re-read AGENTS.md against the new pin (wire facts may have moved "
+                    "too), then update its 'Current as of' line."
+                )
+        print("drift check: clean (types.generated.ts + SCHEMA.md match schema; AGENTS.md names the pin).")
         return
 
     OUT_PATH.write_text(output, encoding="utf-8")
