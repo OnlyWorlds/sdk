@@ -5,6 +5,11 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.3.0] — 2026-09-28
+
+Errors you can act on: the two 409s told apart, and the busy server's `Retry-After`, in Node and
+browsers. One getter narrows (see Fixed); nothing is removed.
+
 ### Fixed
 - **`OwApiError.isIdempotencyConflict` no longer claims every 409.** keel sends two: 409
   `idempotency_error` (a key reused with a different body) and 409 `id_conflict` (the id is
