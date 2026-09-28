@@ -99,7 +99,7 @@ export class OwV2Client {
   }
 
   /**
-   * POST /{type}/ -- create. Mints an RFC-4122 UUID for element.id when the
+   * POST /{type}/ -- create. Mints an RFC 9562 UUIDv7 for element.id when the
    * caller omits one (design ruling D29d) so a retry carrying the same
    * Idempotency-Key is structurally safe. Callers MAY still supply their own id.
    */
@@ -294,17 +294,35 @@ function readReplayHeader(headers: Headers): boolean {
   return v != null && v.toLowerCase() === 'true';
 }
 
-/** Mint an RFC-4122 v4 UUID; native crypto.randomUUID with a getRandomValues fallback. */
-function mintUuid(): string {
+/**
+ * Mint an RFC 9562 UUIDv7: 48-bit Unix milliseconds, version 7, variant 10,
+ * 74 random bits. Ids THIS client mints a millisecond or more apart sort by
+ * creation (while the clock does not step backwards); within one millisecond the
+ * order is random. Worlds also hold v4 ids and legacy v1-server ids (`06x...`,
+ * which carry nibble 7 too but are seconds-first), so never order elements by id:
+ * use created_at for creation order (change_seq is last-write order). v7 is a DEFAULT, never a
+ * requirement -- caller-supplied v4 ids stay valid forever (Captain's ruling,
+ * 2026-09-28; keel mints v7 server-side too, layout per keel core/ids.py).
+ */
+function mintUuid(now: number = Date.now()): string {
   const c: Crypto | undefined = (globalThis as { crypto?: Crypto }).crypto;
-  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
   const bytes = new Uint8Array(16);
   if (c && typeof c.getRandomValues === 'function') {
     c.getRandomValues(bytes);
   } else {
     for (let i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256);
   }
-  bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+  // 48-bit big-endian ms. The two high bytes by division: bitwise ops truncate to 32 bits.
+  // Floor once so every byte agrees on the same integer (a fractional or pre-1970 mocked
+  // clock would otherwise floor the high bytes and truncate the low ones).
+  const ms = Math.floor(now);
+  bytes[0] = Math.floor(ms / 2 ** 40) & 0xff;
+  bytes[1] = Math.floor(ms / 2 ** 32) & 0xff;
+  bytes[2] = (ms >>> 24) & 0xff;
+  bytes[3] = (ms >>> 16) & 0xff;
+  bytes[4] = (ms >>> 8) & 0xff;
+  bytes[5] = ms & 0xff;
+  bytes[6] = (bytes[6] & 0x0f) | 0x70; // version 7
   bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10
   const hex: string[] = [];
   for (let i = 0; i < 256; i++) hex.push((i + 0x100).toString(16).slice(1));

@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.30.1-dist.13
-//         commit          2d3c95571a9af34424d47239481cc94508f735cb
-//         MANIFEST sha256 d8208863138899ae5363237d8beafdf0308f31ef725c4a257c22a3793b73952e
-//         canonical 00.30.01, dist serial 13, published 2026-07-29
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.30.1-dist.15
+//         commit          6a4b2a70f5c3b48958578a5a8ba84af4ae436110
+//         MANIFEST sha256 9472b3d4a40546df68df0e7fc42a762a7e775d269f508066df140932c503f8e3
+//         canonical 00.30.01, dist serial 15, published 2026-09-18
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -97,12 +97,12 @@ export const ELEMENT_ICONS: Record<ElementType, string> = {
   creature: 'bug_report',
   event: 'saved_search',
   family: 'supervisor_account',
-  institution: 'business',
+  institution: 'account_balance',
   language: 'edit_road',
   law: 'gpp_bad',
   location: 'castle',
   map: 'map',
-  marker: 'place',
+  marker: 'location_on',
   narrative: 'menu_book',
   object: 'webhook',
   phenomenon: 'thunderstorm',
@@ -298,11 +298,10 @@ export const MULTI_LINK_FIELDS: Record<ElementType, string[]> = {
 // already emits for the interfaces:
 //   - pin.element is a `generic-link` and is split into element_type (text) +
 //     element_id (single_link, target 'any'), which is what the v2 wire serves.
-//   - `integer_max` / `max` remain in the FieldType union for API compatibility
-//     and are emitted by nothing: the walk does not surface the schema's
-//     `maximum:` constraint (41 of them across 17 element types), so there is
-//     no source for them here. Retiring the member or teaching the walk to
-//     carry `maximum` is a schema-authority decision, not a local patch.
+//   - `integer_max` / `max` are deprecated (removal at 5.0.0) and emitted by
+//     nothing. The schema's `maximum:` is advisory -- the wire does not enforce
+//     it -- so the walk stays silent on bounds permanently (ruled 2026-07-29).
+//     There is no source for them, and none is coming.
 // ---------------------------------------------------------------------------
 
 /** Field type definitions for OnlyWorlds elements. */

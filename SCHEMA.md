@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.30.1-dist.13** — canonical schema **00.30.01**, published 2026-07-29.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.30.1-dist.15** — canonical schema **00.30.01**, published 2026-09-18.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -246,7 +246,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `creatures` (multi link → creature) — Creatures owned, bonded to, or representing the family
 
 
-## institution  ·  family: agents  ·  icon: business
+## institution  ·  family: agents  ·  icon: account_balance
 
 
 ### Foundation
@@ -378,7 +378,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `location` (single link → location) — Location element that this map represents
 
 
-## marker  ·  family: world  ·  icon: place
+## marker  ·  family: world  ·  icon: location_on
 
 
 ### Details

@@ -109,9 +109,10 @@ export interface ListParams {
   /** Sparse include-set of field names. */
   fields?: string[];
   /**
-   * Blessed Django-style filters: __icontains, __in, __gte, __lte, __isnull,
-   * supertype/subtype equality. Unknown params 422 loudly server-side -- the
-   * client passes them through and lets the platform name the typo.
+   * Accepted: `name__icontains`, `supertype`, `subtype`. Any other key 422s
+   * server-side, which names the typo -- the client passes keys through
+   * unchecked and lets the platform say so. (`__in`, `__gte`, `__lte` and
+   * `__isnull` are designed in keel's spec but not built; `ordering` 422s too.)
    */
   filter?: Record<string, string | number | boolean>;
 }

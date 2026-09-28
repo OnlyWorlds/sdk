@@ -189,13 +189,94 @@ test('non-2xx throws OwApiError with full envelope (P4a: type/code/param/doc_url
 
 // -- UUID minting on id-less create -----------------------------------------
 
-const UUID_V4_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_V7_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-test('create mints a v4 UUID when element.id is absent', async () => {
+/** Run fn with Date.now pinned to t (the minted id's timestamp source). */
+async function atTime(t, fn) {
+  const real = Date.now;
+  Date.now = () => t;
+  try { return await fn(); } finally { Date.now = real; }
+}
+
+async function mintedId(t) {
+  const { client, fetchImpl } = makeClient({ status: 201, body: { id: 'server', type: 'character' } });
+  await atTime(t, () => client.create('character', { name: 'K' }));
+  return lastBody(fetchImpl).id;
+}
+
+test('create mints an RFC 9562 v7 UUID when element.id is absent (4.2.0 default)', async () => {
   const { client, fetchImpl } = makeClient({ status: 201, body: { id: 'server', type: 'character' } });
   await client.create('character', { name: 'K' });
-  const sent = lastBody(fetchImpl);
-  assert.match(sent.id, UUID_V4_RE);
+  assert.match(lastBody(fetchImpl).id, UUID_V7_RE);
+});
+
+test('v7 carries the creation millisecond as its first 48 bits, big-endian', async () => {
+  // 0x0192_3456_789A: every byte distinct, and the two high bytes sit above bit 32,
+  // where JS bitwise operators would silently truncate.
+  const t = 0x01923456789a;
+  const id = await mintedId(t);
+  assert.equal(id.replace(/-/g, '').slice(0, 12), '01923456789a');
+  // A real clock value round-trips too.
+  const now = 1790000000000;
+  assert.equal(parseInt((await mintedId(now)).replace(/-/g, '').slice(0, 12), 16), now);
+});
+
+test('v7 floors the clock ONCE: fractional and pre-1970 clocks give one consistent integer', async () => {
+  // Without a single Math.floor, the two high bytes (division + floor) and the four
+  // low bytes (bitwise, which truncates toward zero) disagree for these inputs.
+  const t = 0x01923456789a;
+  assert.equal((await mintedId(t + 0.5)).replace(/-/g, '').slice(0, 12), '01923456789a');
+  assert.equal((await mintedId(-1)).replace(/-/g, '').slice(0, 12), 'ffffffffffff');
+  assert.equal((await mintedId(-0.5)).replace(/-/g, '').slice(0, 12), 'ffffffffffff');
+});
+
+test('v7 ids a millisecond apart sort in creation order', async () => {
+  const t = 1790000000000;
+  for (let i = 0; i < 50; i++) {
+    const a = await mintedId(t + i);
+    const b = await mintedId(t + i + 1);
+    assert.ok(a < b, `${a} should sort before ${b}`);
+  }
+});
+
+test('v7 ids minted in ONE millisecond are all distinct and all RFC 9562', async () => {
+  // Pinned clock: every id shares its 48 timestamp bits, so only the random bits
+  // separate them. Catches a dropped random fill (all ids identical -> 409s on a
+  // parallel create) and makes a missing version/variant mask fail every run,
+  // not one run in four.
+  const seen = new Set();
+  for (let i = 0; i < 1000; i++) {
+    const id = await mintedId(1790000000000);
+    assert.match(id, UUID_V7_RE);
+    seen.add(id);
+  }
+  assert.equal(seen.size, 1000);
+});
+
+test('v7 minting still works with no crypto at all (Math.random fallback)', async () => {
+  const desc = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
+  Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true, writable: true });
+  const realRandom = Math.random;
+  let randomCalls = 0;
+  Math.random = () => { randomCalls++; return realRandom(); };
+  try {
+    assert.equal(globalThis.crypto, undefined);
+    const seen = new Set();
+    for (let i = 0; i < 200; i++) {
+      const id = await mintedId(1790000000000);
+      assert.match(id, UUID_V7_RE);
+      seen.add(id);
+    }
+    assert.equal(seen.size, 200);
+    // Proves the fallback ran: a client that captured crypto at load time would
+    // pass everything above while never touching Math.random.
+    assert.ok(randomCalls >= 200 * 16, `Math.random called ${randomCalls} times`);
+  } finally {
+    Math.random = realRandom;
+    if (desc) Object.defineProperty(globalThis, 'crypto', desc);
+    else delete globalThis.crypto;
+  }
+  assert.notEqual(globalThis.crypto, undefined);
 });
 
 test('create preserves a caller-supplied id', async () => {

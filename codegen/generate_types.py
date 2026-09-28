@@ -360,11 +360,10 @@ FIELD_SCHEMA_INTRO = """
 // already emits for the interfaces:
 //   - pin.element is a `generic-link` and is split into element_type (text) +
 //     element_id (single_link, target 'any'), which is what the v2 wire serves.
-//   - `integer_max` / `max` remain in the FieldType union for API compatibility
-//     and are emitted by nothing: the walk does not surface the schema's
-//     `maximum:` constraint (41 of them across 17 element types), so there is
-//     no source for them here. Retiring the member or teaching the walk to
-//     carry `maximum` is a schema-authority decision, not a local patch.
+//   - `integer_max` / `max` are deprecated (removal at 5.0.0) and emitted by
+//     nothing. The schema's `maximum:` is advisory -- the wire does not enforce
+//     it -- so the walk stays silent on bounds permanently (ruled 2026-07-29).
+//     There is no source for them, and none is coming.
 // ---------------------------------------------------------------------------
 
 /** Field type definitions for OnlyWorlds elements. */

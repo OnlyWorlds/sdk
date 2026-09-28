@@ -1,6 +1,6 @@
 # For AI agents using @onlyworlds/sdk
 
-**Current as of**: SDK **4.x** · schema-dist **v0.30.1-dist.13** (canonical 00.30.01).
+**Current as of**: SDK **4.x** · schema-dist **v0.30.1-dist.15** (canonical 00.30.01).
 This line is asserted by `codegen:check` in CI — if the pin moves and this file is not
 re-read against it, the check fails rather than letting this document rot quietly.
 
@@ -14,8 +14,8 @@ OnlyWorlds is an open standard for portable world data — 22 element types, UUI
 
 **Use the v2 surface.** `OwV2Client` + the `V2ElementType` slug union + the generated
 interfaces in `types.generated.ts` (emitted from the canonical schema YAML, validated
-against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) is frozen
-legacy — do not build new work on it.
+against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) is not in
+4.x — it was removed at 4.0.0 and lives only in 3.x. Do not build new work on it.
 
 **SDK vs MCP server — pick correctly**:
 - Known, deterministic operations (CRUD, sync, bulk) → **this SDK**. Typed calls, typed
@@ -29,7 +29,17 @@ legacy — do not build new work on it.
 - PATCH is destructive on sent fields; use `editLinks` (atomic add/remove) for relationships.
 - World-meta changes do NOT appear in `/changes` — poll `GET /world` separately.
 - Extension fields: `x_<toolname>_*` is the sanctioned namespace for tool-specific state;
-  unknown unprefixed fields 422.
+  unknown unprefixed fields 422. Extensions are capped at **64 KB per element** (422,
+  `param: extensions`).
+- List filters: only `name__icontains`, `supertype` and `subtype` are built. Any other
+  filter key — and `?ordering=` — returns 422 naming it. Filter or sort client-side.
+- Ids: the client mints **UUIDv7** on an id-less `create` (since 4.2.0; keel mints v7 too).
+  A v4 or v7 id you supply is accepted. **Never sort elements by id**: worlds mix v7, v4
+  and legacy `06x…` ids (nibble 7 too, but seconds-first). For creation order use
+  `created_at`; `change_seq` is last-write order, not creation.
+  A PUT or bulk item whose id belongs to **another world** returns 409 `id_conflict`.
+- A string holding an unpaired surrogate (text cut mid-emoji) is a 422 naming the field.
+  Slice strings by code point, not by UTF-16 unit.
 - Colour carries the element's FAMILY (`elementColor(type, mode)`); the icon
   (`ELEMENT_ICONS`) carries the TYPE. Icon + label are required alongside colour, not optional.
 

@@ -5,7 +5,47 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.2.0] — staged 2026-09-28, not yet published
+
+Ids, honest filter docs, and the schema repin. Nothing is removed; no call needs to change.
+
 ### Changed
+- **`create()` now mints an RFC 9562 UUIDv7** when the element has no id (was v4). The first
+  48 bits are the creation millisecond, so ids this client mints a millisecond or more apart
+  sort by creation (while the clock does not step backwards), which gives databases better
+  index locality. **This holds within one client only**: worlds also hold v4 ids and legacy
+  v1-server ids (`06x…`, which also carry version nibble 7 but put seconds first), so never
+  order elements by id. For creation order use `created_at`; `change_seq` is last-write
+  order. This is a **default, not a
+  requirement**: a v4 or v7 id a caller supplies is still accepted as-is, and
+  every id already stored stays valid. Keel mints v7 server-side too (Captain's ruling,
+  2026-09-28). Pinned by six tests: version and variant, the big-endian timestamp above
+  bit 32, fractional and pre-1970 clocks floored consistently, creation order across 50
+  consecutive milliseconds, 1,000 distinct ids inside one millisecond, and the no-`crypto`
+  fallback (asserting `Math.random` is actually used). Five injected defects (v4 nibble,
+  32-bit truncation, a dropped random fill, a dropped variant mask, an unfloored clock)
+  each fail the suite on every run, on Node 20 and 22. An independent reviewer's decoder agreed on 20,000 random timestamps and the 48-bit
+  edges, and keel's `uuid7()` agrees on timestamp, version and variant for a pinned clock.
+- The generated field-schema comment no longer calls `maximum:` an open question or counts
+  its occurrences (the count was 41; since 00.30.01 it is 15). The question was ruled on
+  2026-07-29.
+- **`ListParams.filter` JSDoc names what the server actually accepts**: `name__icontains`,
+  `supertype`, `subtype`. It used to list `__in`, `__gte`, `__lte` and `__isnull`, copied
+  from keel's spec, which described them but never built them. Probed live 2026-09-28: the
+  three accepted keys answer 200; every other one, and `?ordering=`, answers 422.
+- **Schema repinned `v0.30.1-dist.13` → `v0.30.1-dist.15`** (canonical unchanged, 00.30.01).
+  Two generated values move: `ELEMENT_ICONS.institution` `business` → `account_balance`,
+  `ELEMENT_ICONS.marker` `place` → `location_on` (both Material Symbols names). dist.15
+  also adds `minimum: 0` to `ability.potency`; the walk does not surface bounds, so nothing
+  generated changes for it. 31/31 file hashes recomputed from a fresh download.
+- **`AGENTS.md` re-read against the new pin** (its gate fired on the repin, as designed).
+  It still called the v1 client "frozen legacy" in this package; v1 was removed at 4.0.0.
+  It now also names the wire behaviours keel deployed on 2026-09-28 (keel D70): the 64 KB
+  extension cap, the three built filters and the `?ordering=` 422, 409 `id_conflict` for a
+  PUT or bulk id that belongs to another world, and the 422 for unpaired surrogates. None of
+  them needs client code.
+
+### Also in this release (staged earlier)
 - **`SCHEMA.md` now opens with its own provenance** (dist tag, canonical version, publish
   date — rendered from `schema-pin.json`, never the wall clock). It ships in the tarball
   and is read cold by agents outside this repo, where the pin file is not present; a
