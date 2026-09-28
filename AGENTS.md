@@ -37,7 +37,13 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   A v4 or v7 id you supply is accepted. **Never sort elements by id**: worlds mix v7, v4
   and legacy `06x…` ids (nibble 7 too, but seconds-first). For creation order use
   `created_at`; `change_seq` is last-write order, not creation.
-  A PUT or bulk item whose id belongs to **another world** returns 409 `id_conflict`.
+  A create with an id that already exists, or a PUT whose id belongs to **another world**,
+  returns 409 `id_conflict` (`err.isIdConflict`; retrying won't help). `/bulk` never throws:
+  check each slot for `status: 409` with `error.code: 'id_conflict'`. A different 409, `idempotency_error`, means an
+  Idempotency-Key was reused with another body (`err.isIdempotencyConflict`).
+- Under load keel answers 503 `server_busy` with `Retry-After` (`err.isBusy`, `err.retryAfter`
+  in seconds). The client does not retry for you; back off and retry yourself. In browsers
+  `Retry-After` is unreadable and the busy 503 surfaces as a network error, for now.
 - A string holding an unpaired surrogate (text cut mid-emoji) is a 422 naming the field.
   Slice strings by code point, not by UTF-16 unit.
 - Colour carries the element's FAMILY (`elementColor(type, mode)`); the icon

@@ -24,6 +24,17 @@ export class OwApiError extends Error {
   readonly docUrl: string | null;
   /** Raw parsed envelope (or body text when the body wasn't JSON). */
   readonly detail: unknown;
+  /**
+   * Seconds to wait before retrying, from the `Retry-After` header (a delay in
+   * seconds or an HTTP date), else null. keel sends it on 503 `server_busy`
+   * (admission control, D71) and 429 `rate_limited`. This client never retries
+   * on its own; the value is here so callers can back off politely.
+   * ⚑ Server-side / Node only for now: keel sends no `Access-Control-Expose-Headers`,
+   * so a browser cannot read `Retry-After` (always null there), and the admission
+   * gate's 503 carries no CORS headers at all, so a browser sees a network error
+   * (OwNetworkError) rather than this. Reported to keel's owner 2026-09-28.
+   */
+  readonly retryAfter: number | null;
 
   constructor(
     status: number,
@@ -33,6 +44,7 @@ export class OwApiError extends Error {
     detail: unknown,
     type: string | null = null,
     param: string | null = null,
+    retryAfter: number | null = null,
   ) {
     super(message);
     this.name = 'OwApiError';
@@ -42,6 +54,7 @@ export class OwApiError extends Error {
     this.param = param;
     this.docUrl = docUrl;
     this.detail = detail;
+    this.retryAfter = retryAfter;
   }
 
   get isAuthError(): boolean {
@@ -53,9 +66,28 @@ export class OwApiError extends Error {
     return this.status === 422 || this.status === 400;
   }
 
-  /** Same Idempotency-Key replayed with a different payload. */
+  /**
+   * Same Idempotency-Key replayed with a different payload (409 `idempotency_error`).
+   * Through 4.2.0 this was true for ANY 409, which misread an id conflict as a key
+   * conflict: keel also answers 409 `id_conflict` (see isIdConflict).
+   */
   get isIdempotencyConflict(): boolean {
-    return this.status === 409;
+    return this.status === 409 && this.code === 'idempotency_error';
+  }
+
+  /**
+   * The id is already taken (409 `id_conflict`): a create with an id that exists
+   * (keel D39), or a PUT whose id belongs to another world (D70). Retrying will not
+   * help; the id is the problem. `/bulk` never throws for this: it answers 200 with a
+   * per-item slot `{status: 409, error: {code: 'id_conflict'}}` — check the slot.
+   */
+  get isIdConflict(): boolean {
+    return this.status === 409 && this.code === 'id_conflict';
+  }
+
+  /** keel's admission control turned the request away (503 `server_busy`); see retryAfter. */
+  get isBusy(): boolean {
+    return this.status === 503 && this.code === 'server_busy';
   }
 }
 
@@ -91,7 +123,7 @@ interface EnvelopeShape {
 /** Parse a wire envelope into OwApiError parts (exported for the error type-tests). */
 /** Parse the platform ERROR envelope into an OwApiError. (Renamed from parseEnvelope in 4.0 —
  *  distinct from the world-export envelope, which is a different artifact entirely.) */
-export function parseErrorEnvelope(status: number, body: unknown): OwApiError {
+export function parseErrorEnvelope(status: number, body: unknown, retryAfter: number | null = null): OwApiError {
   const env = (body && typeof body === 'object' ? body : {}) as EnvelopeShape;
   const nested = typeof env.error === 'object' && env.error !== null ? env.error : undefined;
   const code = env.code ?? nested?.code ?? (typeof env.error === 'string' ? env.error : null) ?? null;
@@ -102,7 +134,20 @@ export function parseErrorEnvelope(status: number, body: unknown): OwApiError {
     env.message ?? nested?.message ??
     (typeof env.detail === 'string' ? env.detail : undefined) ??
     `OnlyWorlds API error ${status}${code ? ` (${code})` : ''}`;
-  return new OwApiError(status, code, message, docUrl, body, type, param);
+  return new OwApiError(status, code, message, docUrl, body, type, param, retryAfter);
+}
+
+/** `Retry-After` as seconds: a non-negative delay, or an HTTP date turned into one. Else null. */
+export function parseRetryAfter(value: string | null, now: number = Date.now()): number | null {
+  if (value == null) return null;
+  const v = value.trim();
+  if (/^\d+$/.test(v)) return Number(v);
+  // Only an IMF-fixdate ("Wed, 21 Oct 2015 07:28:00 GMT") goes to Date.parse: V8 parses
+  // "1.5", "-1" or "+5" leniently into a date, which would read as "retry now".
+  if (!/[A-Za-z]/.test(v)) return null;
+  const when = Date.parse(v);
+  if (Number.isNaN(when)) return null;
+  return Math.max(0, Math.ceil((when - now) / 1000));
 }
 
 /** Build an OwApiError from a non-2xx response, tolerating non-JSON bodies. */
@@ -115,5 +160,5 @@ export async function errorFromResponse(res: Response): Promise<OwApiError> {
   } catch {
     body = text || null;
   }
-  return parseErrorEnvelope(res.status, body);
+  return parseErrorEnvelope(res.status, body, parseRetryAfter(res.headers?.get?.('Retry-After') ?? null));
 }

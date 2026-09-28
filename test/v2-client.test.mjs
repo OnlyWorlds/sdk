@@ -187,6 +187,67 @@ test('non-2xx throws OwApiError with full envelope (P4a: type/code/param/doc_url
   );
 });
 
+// -- 409s told apart, and a busy server's Retry-After (4.2.0) --------------
+// Envelopes shaped as keel sends them: core/errors.py (id_conflict), core/idempotency.py
+// (idempotency_error), core/admission.py (server_busy + retry-after). doc_url varies in keel
+// itself (/api/errors# vs /docs/api/errors#); these tests don't depend on it.
+
+const envelope = (type, code) => ({ error: { type, code, message: code, param: null,
+  doc_url: `https://onlyworlds.github.io/docs/api/errors#${code}` } });
+
+async function thrown(script, call) {
+  const { client } = makeClient(script);
+  try { await call(client); } catch (err) { return err; }
+  assert.fail('expected a throw');
+}
+
+test('409 id_conflict is an id conflict, NOT an idempotency conflict', async () => {
+  const err = await thrown({ status: 409, body: envelope('invalid_request', 'id_conflict') },
+    (c) => c.create('character', { id: '11111111-2222-4333-8444-555555555555', name: 'K' }));
+  assert.equal(err.isIdConflict, true);
+  assert.equal(err.isIdempotencyConflict, false);
+});
+
+test('409 idempotency_error is an idempotency conflict, NOT an id conflict', async () => {
+  const err = await thrown({ status: 409, body: envelope('idempotency_error', 'idempotency_error') },
+    (c) => c.create('character', { name: 'K' }, { idempotencyKey: 'k1' }));
+  assert.equal(err.isIdempotencyConflict, true);
+  assert.equal(err.isIdConflict, false);
+});
+
+test('503 server_busy carries isBusy and Retry-After in seconds', async () => {
+  const err = await thrown({ status: 503, headers: { 'retry-after': '5' }, body: envelope('api_error', 'server_busy') },
+    (c) => c.list('character'));
+  assert.equal(err.isBusy, true);
+  assert.equal(err.retryAfter, 5);
+});
+
+test('a 503 that is NOT server_busy is not busy, and still carries its Retry-After', async () => {
+  // keel's mcp_moved (web/views.py): 503 + Retry-After: 86400.
+  const err = await thrown({ status: 503, headers: { 'Retry-After': '86400' }, body: envelope('api_error', 'mcp_moved') },
+    (c) => c.list('character'));
+  assert.equal(err.isBusy, false);
+  assert.equal(err.retryAfter, 86400);
+});
+
+test('a malformed Retry-After is null, never "retry now"', async () => {
+  for (const bad of ['1.5', '-1', '+5', '5.0', 'soon']) {
+    const err = await thrown({ status: 429, headers: { 'Retry-After': bad }, body: envelope('rate_limited', 'rate_limited') },
+      (c) => c.list('character'));
+    assert.equal(err.retryAfter, null, `Retry-After ${JSON.stringify(bad)}`);
+  }
+});
+
+test('Retry-After is null when absent, and an HTTP date becomes seconds', async () => {
+  const none = await thrown({ status: 422, body: FIX_P4a }, (c) => c.patch('character', 'x', { not_a_field: 1 }));
+  assert.equal(none.retryAfter, null);
+  assert.equal(none.isBusy, false);
+  const at = new Date(Date.now() + 30_000).toUTCString();
+  const dated = await thrown({ status: 429, headers: { 'Retry-After': at }, body: envelope('rate_limited', 'rate_limited') },
+    (c) => c.list('character'));
+  assert.ok(dated.retryAfter >= 28 && dated.retryAfter <= 31, `retryAfter ${dated.retryAfter}`);
+});
+
 // -- UUID minting on id-less create -----------------------------------------
 
 const UUID_V7_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

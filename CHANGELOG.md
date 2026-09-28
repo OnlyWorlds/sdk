@@ -5,7 +5,27 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
-## [4.2.0] — staged 2026-09-28, not yet published
+### Fixed
+- **`OwApiError.isIdempotencyConflict` no longer claims every 409.** keel sends two: 409
+  `idempotency_error` (a key reused with a different body) and 409 `id_conflict` (the id is
+  taken: a create with an existing id since D39, or a PUT / bulk id held by another world since
+  D70). The getter was true for both, so an id conflict read as a key problem, and retrying with
+  a fresh key could never help. It now matches `idempotency_error` only, and the new
+  **`isIdConflict`** names the other. A caller who relied on the old catch-all for `id_conflict`
+  should switch to `isIdConflict`. A 409 with no code (a proxy, a non-JSON body) now reads
+  false for both. `/bulk` is unaffected: it answers 200 and reports a per-item 409 in the slot.
+
+### Added
+- **`OwApiError.retryAfter`** (seconds, or null) is parsed from `Retry-After`, as a delay or an
+  HTTP date, and **`isBusy`** marks keel's 503 `server_busy` (admission control, keel D71: six
+  requests at once per worker, up to 10 s of queueing, then 503 with `Retry-After: 5`). The client
+  still never retries on its own; it gives callers what they need to back off. A malformed
+  `Retry-After` is null, never "retry now". ⚑ Node/server only for now: keel exposes no
+  headers over CORS, so browsers can't read `Retry-After`, and the admission gate's 503 has no
+  CORS headers (a browser sees `OwNetworkError`). Reported to keel. Six tests; the four core ones
+  watched failing on the previous `errors.ts`.
+
+## [4.2.0] — 2026-09-28
 
 Ids, honest filter docs, and the schema repin. Nothing is removed; no call needs to change.
 
