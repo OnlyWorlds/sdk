@@ -42,8 +42,8 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   check each slot for `status: 409` with `error.code: 'id_conflict'`. A different 409, `idempotency_error`, means an
   Idempotency-Key was reused with another body (`err.isIdempotencyConflict`).
 - Under load keel answers 503 `server_busy` with `Retry-After` (`err.isBusy`, `err.retryAfter`
-  in seconds). The client does not retry for you; back off and retry yourself. In browsers
-  `Retry-After` is unreadable and the busy 503 surfaces as a network error, for now.
+  in seconds). The client does not retry for you; back off and retry yourself. Works the same
+  in browsers.
 - A string holding an unpaired surrogate (text cut mid-emoji) is a 422 naming the field.
   Slice strings by code point, not by UTF-16 unit.
 - Colour carries the element's FAMILY (`elementColor(type, mode)`); the icon

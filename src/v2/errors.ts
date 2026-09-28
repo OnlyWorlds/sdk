@@ -29,10 +29,8 @@ export class OwApiError extends Error {
    * seconds or an HTTP date), else null. keel sends it on 503 `server_busy`
    * (admission control, D71) and 429 `rate_limited`. This client never retries
    * on its own; the value is here so callers can back off politely.
-   * ⚑ Server-side / Node only for now: keel sends no `Access-Control-Expose-Headers`,
-   * so a browser cannot read `Retry-After` (always null there), and the admission
-   * gate's 503 carries no CORS headers at all, so a browser sees a network error
-   * (OwNetworkError) rather than this. Reported to keel's owner 2026-09-28.
+   * Readable in browsers too: keel exposes `Retry-After` over CORS and its
+   * admission gate's 503 carries CORS headers (keel `4949406`, 2026-09-28).
    */
   readonly retryAfter: number | null;
 

@@ -20,10 +20,12 @@ earlier history lives in git log only.
   HTTP date, and **`isBusy`** marks keel's 503 `server_busy` (admission control, keel D71: six
   requests at once per worker, up to 10 s of queueing, then 503 with `Retry-After: 5`). The client
   still never retries on its own; it gives callers what they need to back off. A malformed
-  `Retry-After` is null, never "retry now". ⚑ Node/server only for now: keel exposes no
-  headers over CORS, so browsers can't read `Retry-After`, and the admission gate's 503 has no
-  CORS headers (a browser sees `OwNetworkError`). Reported to keel. Six tests; the four core ones
-  watched failing on the previous `errors.ts`.
+  `Retry-After` is null, never "retry now". **Works in browsers too** since keel `4949406`
+  (2026-09-28): every response exposes `Retry-After`, `Idempotent-Replay` and
+  `X-OW-Schema-Version` over CORS (probed from an allowed origin), and keel reports that the
+  admission gate's 503 now carries CORS headers, so a busy server reads as busy, not as
+  `OwNetworkError` (keel's word; the 503 can't be triggered on demand to probe). Six tests; the
+  four core ones watched failing on the previous `errors.ts`.
 
 ## [4.2.0] — 2026-09-28
 
