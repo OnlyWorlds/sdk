@@ -82,6 +82,11 @@ test('family membership matches the ruling exactly', () => {
   }
 });
 
+test('elementColor on an unknown type throws a TypeError that names it (4.2.0)', () => {
+  assert.throws(() => elementColor('zzz'), { name: 'TypeError', message: /unknown element type "zzz"/ });
+  assert.throws(() => elementColor(undefined, 'light'), { name: 'TypeError', message: /unknown element type "undefined"/ });
+});
+
 test('elementColor resolves per mode and defaults to dark', () => {
   assert.equal(elementColor('character', 'light'), '#2a78d6');
   assert.equal(elementColor('character', 'dark'), '#3987e5');

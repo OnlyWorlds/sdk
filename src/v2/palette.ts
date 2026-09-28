@@ -53,9 +53,18 @@ export function familyOf(type: ElementType): ElementFamily {
  * Name matches the live atlas/council implementations so their SDK swap is a
  * re-export, not a rename. Defaults to `dark` (both current consumers are
  * dark-surface).
+ *
+ * An unknown type throws a TypeError naming it (since 4.2.0; before, it crashed
+ * with "Cannot read properties of undefined"). This is the one place a swap from
+ * atlas's own copy is NOT a pure re-export: atlas falls back to the `world`
+ * family for an unknown type. A caller that wants a fallback catches, or checks
+ * `type in ELEMENT_FAMILIES` first; which fallback, if any, is a design call
+ * this package does not make for its consumers.
  */
 export function elementColor(type: ElementType, mode: 'light' | 'dark' = 'dark'): string {
-  return FAMILY_COLORS[ELEMENT_FAMILIES[type]][mode];
+  const family = ELEMENT_FAMILIES[type];
+  if (family === undefined) throw new TypeError(`elementColor: unknown element type "${String(type)}"`);
+  return FAMILY_COLORS[family][mode];
 }
 
 /** All four families, in ruling order (the order IS the CVD-safety mechanism of the source palette). */

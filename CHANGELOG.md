@@ -26,6 +26,11 @@ Ids, honest filter docs, and the schema repin. Nothing is removed; no call needs
   32-bit truncation, a dropped random fill, a dropped variant mask, an unfloored clock)
   each fail the suite on every run, on Node 20 and 22. An independent reviewer's decoder agreed on 20,000 random timestamps and the 48-bit
   edges, and keel's `uuid7()` agrees on timestamp, version and variant for a pinned clock.
+- **`elementColor()` on an unknown type now throws a `TypeError` that names the type.** It
+  used to crash with `Cannot read properties of undefined (reading 'dark')`. Found while
+  building the Forge's colour gate: atlas's own copy falls back to the `world` family for an
+  unknown type, so swapping it for this export is not a pure re-export for that input, and the
+  docstring now says so. Whether the package should fall back is left to its consumers.
 - The generated field-schema comment no longer calls `maximum:` an open question or counts
   its occurrences (the count was 41; since 00.30.01 it is 15). The question was ruled on
   2026-07-29.
