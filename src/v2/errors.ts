@@ -9,7 +9,12 @@
  * surfaced on the thrown error.
  */
 
-/** Auth codes are distinguishable by design; client recovery UX differs per code. */
+/**
+ * Auth codes are distinguishable by design; client recovery UX differs per code.
+ * `world_gone` is RESERVED: keel's spec promises it but the server never emits it (a deleted
+ * world's keys go with it, so the key reads as unknown: 401 `invalid_credentials`). Kept so
+ * the client is ready if keel ever remembers deleted worlds' key hashes.
+ */
 export type OwAuthErrorCode = 'invalid_credentials' | 'key_revoked' | 'world_gone';
 
 export class OwApiError extends Error {

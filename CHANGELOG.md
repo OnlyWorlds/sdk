@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Documented
+- **`world_gone` is reserved.** `OwAuthErrorCode` and `isAuthError` still carry it, but keel never
+  emits it: a deleted world's keys are deleted with it, so the key answers 401 `invalid_credentials`
+  (Skeld, 2026-10-04; keel spec section 2, T6b). Found by the wire gate reading the SDK's own
+  built file for the codes it keys on.
+
 ## [4.5.0] — 2026-10-04 (staged, not published)
 
 What the staging write probes found on the wire (Python package, 2026-10-04): one new getter, and
