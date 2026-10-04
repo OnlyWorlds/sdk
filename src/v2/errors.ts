@@ -104,9 +104,10 @@ export class OwApiError extends Error {
   }
 
   /**
-   * A contributor tried a world-level change: `patchWorld`, or publishing a show page
-   * (403 `owner_only`, keel D72 membership phase 2). Retrying will not help; only the
-   * owner may. Owners and co-builders never see it.
+   * A member key tried what only the owner may do: `patchWorld`, even with a co-builder's
+   * key (403 `owner_only`, keel D72; sharing's publish, republish and revoke answer
+   * contributors and guests with the same code). Retrying will not help. The owner's own
+   * key never sees it.
    */
   get isOwnerOnly(): boolean {
     return this.status === 403 && this.code === 'owner_only';
