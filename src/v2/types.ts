@@ -65,6 +65,8 @@ export interface OwBulkItem {
  * One slot of a /bulk response. WIRE-CORRECTED (fixtures P2a/P2c): `status` is
  * the NUMERIC HTTP status of that slot (201/400/...), success slots echo
  * created_at/updated_at, error slots carry an OwErrorBody under `error`.
+ * A contributor's write on someone else's element fails in its slot as
+ * `{status: 403, error: {code: 'not_author'}}` (keel D72), never as a thrown error.
  */
 export interface OwBulkItemResult {
   status: number;

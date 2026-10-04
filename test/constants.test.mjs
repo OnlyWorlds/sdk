@@ -109,7 +109,17 @@ test('relation has no phantom self-link field', () => {
 // pin.element is one `generic-link` in the YAML and two fields on the wire.
 test('pin.element is split into the wire pair', () => {
   assert.equal(FIELD_SCHEMA.pin.element, undefined);
-  assert.deepEqual(FIELD_SCHEMA.pin.element_type, { type: 'text', required: true });
+  assert.deepEqual(FIELD_SCHEMA.pin.element_type, { type: 'text' });
   assert.deepEqual(FIELD_SCHEMA.pin.element_id,
-    { type: 'single_link', target: 'any', required: true });
+    { type: 'single_link', target: 'any' });
+});
+
+// (h) `required` is `name` and nothing else: the wire requires nothing more (rulings.yaml:
+// nullable-by-default; keel's OpenAPI write schemas say `required: [name]`), though the
+// schema files still list more for marker and pin. Through 4.3.0 the table copied those lists.
+test('only name is required, on every type', () => {
+  for (const [et, fields] of Object.entries(FIELD_SCHEMA)) {
+    const required = Object.entries(fields).filter(([, f]) => f.required).map(([k]) => k);
+    assert.deepEqual(required, ['name'], `${et} requires ${required}`);
+  }
 });

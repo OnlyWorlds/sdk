@@ -8,8 +8,8 @@ client uses for link-aware helpers.
 Field-kind parsing mirrors keel/codegen/generate_models.py -- the proven consumer
 of these YAMLs. TypeScript shapes are pinned to the v2 wire, not to Django columns:
 single-links serialize as `string | null`, multi-links as `string[]`, ints as
-`number | null`, link fields use BARE schema names (no `_ids` suffix), and the four
-server-managed fields (type, created_at, updated_at, change_seq) plus an extension
+`number | null`, link fields use BARE schema names (no `_ids` suffix), and the five
+server-managed fields (type, created_at, updated_at, change_seq, created_by) plus an extension
 index signature ride the shared base.
 
 Run:  python codegen/generate_types.py [--schema ../keel/schema]
@@ -101,8 +101,8 @@ __PROVENANCE__
 //
 // One interface per element type, extending OwElementBase. Field shapes are the v2
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
-// `number | null`. Link fields use bare schema names (no `_ids` suffix). The four
-// server-managed fields (type, created_at, updated_at, change_seq) and the
+// `number | null`. Link fields use bare schema names (no `_ids` suffix). The five
+// server-managed fields (type, created_at, updated_at, change_seq, created_by) and the
 // extension index signature live on OwElementBase.
 
 __ELEMENT_BASE__
@@ -125,8 +125,8 @@ __ELEMENT_BASE__
 #     truth -- every element row has a world -- while the v2 API REJECTS `world` in a
 #     request body, because the API key determines the world. (rulings.yaml:
 #     required-world-wire-caveat. Canonical truing rides a later YAML bump.)
-#   - Four server-managed fields are ADDED. They exist on every wire body and in no
-#     element YAML: type, created_at, updated_at, change_seq.
+#   - Five server-managed fields are ADDED. They exist on every wire body and in no
+#     element YAML: type, created_at, updated_at, change_seq, created_by.
 #   - Only Id and Name stay non-optional. Everything else is optional per
 #     rulings.yaml: nullable-by-default -- only `name` is truly required, and `id` is
 #     present on every body the server returns.
@@ -138,6 +138,7 @@ WIRE_ONLY_BASE_FIELDS = [
     ("created_at", "Creation timestamp (server-managed, read-only).", "string", False),
     ("updated_at", "Last-update timestamp (server-managed, read-only).", "string", False),
     ("change_seq", "Per-world change cursor, stamped on every write (server-managed, read-only).", "number", False),
+    ("created_by", "The membership that created this element (server-managed, read-only); null for the world's owner and for anything created before memberships existed.", "string | null", False),
 ]
 BASE_KEY_TO_WIRE = {
     "Id": "id", "Name": "name", "Description": "description",
@@ -171,7 +172,7 @@ def render_element_base(schema_dir: Path) -> str:
         "/** Every element carries these. The extension index signature admits namespaced",
         " *  pass-through fields (atlas_* / shadow_* / x_*) returned verbatim by the server.",
         " *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in",
-        " *  bodies -- the key determines the world) and the four server-managed fields are",
+        " *  bodies -- the key determines the world) and the five server-managed fields are",
         " *  added, since they ride every wire body and appear in no element YAML. */",
         "export interface OwElementBase {",
     ]
@@ -356,7 +357,7 @@ FIELD_SCHEMA_INTRO = """
 //     exist in relation.yaml at all -- a phantom field, exported, that the v2
 //     API would 422 on as an unknown key.
 //
-// Two DECLARED deviations from a naive schema read, both matching what codegen
+// Three DECLARED deviations from a naive schema read; the first two match what codegen
 // already emits for the interfaces:
 //   - pin.element is a `generic-link` and is split into element_type (text) +
 //     element_id (single_link, target 'any'), which is what the v2 wire serves.
@@ -364,6 +365,12 @@ FIELD_SCHEMA_INTRO = """
 //     nothing. The schema's `maximum:` is advisory -- the wire does not enforce
 //     it -- so the walk stays silent on bounds permanently (ruled 2026-07-29).
 //     There is no source for them, and none is coming.
+//   - `required: true` appears on `name` ONLY. The schema files still list more
+//     (marker: map, zone, x, y, order; pin: map, element, x, y), but the wire never
+//     enforced them and canonical is dropping the lists (rulings.yaml:
+//     nullable-by-default, Captain 2026-07-28; keel's own OpenAPI write schemas say
+//     `required: [name]`). Through 4.3.0 this table copied the lists, so a form built
+//     from it demanded coordinates the server does not.
 // ---------------------------------------------------------------------------
 
 /** Field type definitions for OnlyWorlds elements. */
@@ -391,7 +398,7 @@ export interface FieldInfo {
   target?: string;    // For link fields: target element type
   /** @deprecated Never populated; removed in 5.0.0. See `FieldType.integer_max`. */
   max?: number;
-  required?: boolean; // True if the field is required per canonical YAML schema
+  required?: boolean; // True only for `name`, the one field the wire requires (rulings.yaml: nullable-by-default)
 }
 """
 
@@ -497,7 +504,7 @@ GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `pyth
 Written for both humans and AI agents reading this package locally.
 
 **The shape rules** (v2 wire dialect): every element carries `id` (UUID), `name`, optional
-`description`/`supertype`/`subtype`/`image_url`, server-managed `type`/`created_at`/`updated_at`/`change_seq`,
+`description`/`supertype`/`subtype`/`image_url`, server-managed `type`/`created_at`/`updated_at`/`change_seq`/`created_by`,
 and namespaced extension fields (`x_*` etc.) returned verbatim. Link fields use ONE bare
 name in both read and write (no `_ids` suffix). Single links are `UUID | null`; multi links
 are `UUID[]`. **Links are owned one-way**: the type listed below owns the field (e.g.
@@ -706,6 +713,7 @@ def main() -> None:
     icons: dict[str, str] = {}
     sections: dict[str, list[dict]] = {}
     required_sets: dict[str, set[str]] = {}
+    dropped_required: dict[str, list[str]] = {}
     interfaces: list[str] = []
     for tslug in ELEMENT_TYPES:
         doc = load_yaml(schema_dir, tslug)
@@ -715,11 +723,23 @@ def main() -> None:
         sections[tslug] = parse_sections(doc, tslug)
         # Read separately rather than via include_required so the field specs the
         # interface emitter sees stay byte-for-byte what they were before.
-        required_sets[tslug] = walk.required_names(doc)
+        yaml_required = walk.required_names(doc)
+        # Declared deviation (see the FIELD_SCHEMA intro): the wire requires `name` and
+        # nothing else, whatever the YAML still lists. `name` is a base row, so the set is empty.
+        required_sets[tslug] = set()
+        if yaml_required:
+            dropped_required[tslug] = sorted(yaml_required)
         fields = flatten_fields(doc, tslug)
         all_fields[tslug] = fields
         interfaces.append(render_interface(tslug, fields))
 
+    if dropped_required:
+        note('FIELD_SCHEMA: `required` is emitted for `name` only; the schema still lists '
+             + '; '.join(f'{t}: {", ".join(v)}' for t, v in sorted(dropped_required.items()))
+             + ' (rulings.yaml: nullable-by-default).')
+    else:
+        note('FIELD_SCHEMA: the schema no longer lists any `required:` beyond name; the clamp in main() '
+             'is now dead code. Delete it and the third deviation in the intro.')
     header = (HEADER
               .replace("__PROVENANCE__", render_provenance(schema_dir))
               .replace("__ELEMENT_BASE__", render_element_base(schema_dir)))

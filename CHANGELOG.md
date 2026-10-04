@@ -5,6 +5,36 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.4.0] — 2026-10-04 (staged, not published)
+
+Membership, as far as the server has shipped it: who created an element, and the refusal a
+contributor meets on someone else's. Additive; nothing is removed or narrows.
+
+### Added
+- **`created_by`** on `OwElementBase` (so on every element type): `string | null`, the id of the
+  membership that created the element, `null` for the world's owner and for anything made
+  before memberships existed (keel D72 phase 2, live 2026-09-28; keel spec §4). Read-only. The
+  schema does not carry it (like `created_at` it is server bookkeeping), so the generator adds
+  it to the wire base under the declared mapping. A write body that carries it has it dropped
+  by the server, so the client does not strip it and a read body still round-trips.
+- **`OwApiError.isNotAuthor`**: 403 `not_author`, a contributor changing, replacing, relinking
+  or deleting an element someone else created. `/bulk` answers 200 and reports it in the item
+  slot, so check the slot (documented on `OwBulkItemResult`).
+
+### Fixed
+- **`FIELD_SCHEMA` no longer marks `marker.map/zone/x/y/order` and `pin.map/element_type/element_id/x/y`
+  as `required: true`.** The wire requires `name` and nothing else (rulings.yaml `nullable-by-default`,
+  Captain 2026-07-28; keel's OpenAPI write schemas say `required: [name]`), but the schema files still
+  list those fields and the generator copied the lists, so a form built from the table demanded
+  coordinates the server never did. Found by comparing the SDK with keel's OpenAPI document (the
+  new `verify-sdk-wire` gate in Assembly). **If you read `required` from this table, marker and pin
+  fields now read as optional**, which is what the server accepts. The generator notes the lists it
+  ignores on every run and says when canonical stops carrying them.
+
+### Not yet
+- `me()` and `members()` wait for the server routes (keel's M2b). Nothing in this release
+  guesses at their names.
+
 ## [4.3.0] — 2026-09-28
 
 Errors you can act on: the two 409s told apart, and the busy server's `Retry-After`, in Node and

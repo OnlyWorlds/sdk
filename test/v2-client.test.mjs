@@ -222,6 +222,24 @@ test('503 server_busy carries isBusy and Retry-After in seconds', async () => {
   assert.equal(err.retryAfter, 5);
 });
 
+test('403 not_author is isNotAuthor, and no other getter claims it', async () => {
+  const err = await thrown({ status: 403, body: envelope('permission_error', 'not_author') },
+    (c) => c.patch('character', 'x', { name: 'K' }));
+  assert.equal(err.isNotAuthor, true);
+  assert.equal(err.isAuthError, false);
+  assert.equal(err.isIdConflict, false);
+});
+
+test('a 403 with another code is not isNotAuthor', async () => {
+  for (const code of ['owner_only', 'insufficient_scope']) {
+    const err = await thrown({ status: 403, body: envelope('permission_error', code) },
+      (c) => c.patch('character', 'x', { name: 'K' }));
+    assert.equal(err.isNotAuthor, false, code);
+  }
+  const bare = await thrown({ status: 403, body: 'forbidden' }, (c) => c.list('character'));
+  assert.equal(bare.isNotAuthor, false);
+});
+
 test('a 503 that is NOT server_busy is not busy, and still carries its Retry-After', async () => {
   // keel's mcp_moved (web/views.py): 503 + Retry-After: 86400.
   const err = await thrown({ status: 503, headers: { 'Retry-After': '86400' }, body: envelope('api_error', 'mcp_moved') },

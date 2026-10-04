@@ -13,14 +13,14 @@
 //
 // One interface per element type, extending OwElementBase. Field shapes are the v2
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
-// `number | null`. Link fields use bare schema names (no `_ids` suffix). The four
-// server-managed fields (type, created_at, updated_at, change_seq) and the
+// `number | null`. Link fields use bare schema names (no `_ids` suffix). The five
+// server-managed fields (type, created_at, updated_at, change_seq, created_by) and the
 // extension index signature live on OwElementBase.
 
 /** Every element carries these. The extension index signature admits namespaced
  *  pass-through fields (atlas_* / shadow_* / x_*) returned verbatim by the server.
  *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in
- *  bodies -- the key determines the world) and the four server-managed fields are
+ *  bodies -- the key determines the world) and the five server-managed fields are
  *  added, since they ride every wire body and appear in no element YAML. */
 export interface OwElementBase {
   /** Element type slug (server-managed, read-only). */
@@ -43,6 +43,8 @@ export interface OwElementBase {
   updated_at?: string;
   /** Per-world change cursor, stamped on every write (server-managed, read-only). */
   change_seq?: number;
+  /** The membership that created this element (server-managed, read-only); null for the world's owner and for anything created before memberships existed. */
+  created_by?: string | null;
   /** Namespaced extension fields (atlas_* / shadow_* / x_*), returned verbatim. */
   [ext: string]: unknown;
 }
@@ -294,7 +296,7 @@ export const MULTI_LINK_FIELDS: Record<ElementType, string[]> = {
 //     exist in relation.yaml at all -- a phantom field, exported, that the v2
 //     API would 422 on as an unknown key.
 //
-// Two DECLARED deviations from a naive schema read, both matching what codegen
+// Three DECLARED deviations from a naive schema read; the first two match what codegen
 // already emits for the interfaces:
 //   - pin.element is a `generic-link` and is split into element_type (text) +
 //     element_id (single_link, target 'any'), which is what the v2 wire serves.
@@ -302,6 +304,12 @@ export const MULTI_LINK_FIELDS: Record<ElementType, string[]> = {
 //     nothing. The schema's `maximum:` is advisory -- the wire does not enforce
 //     it -- so the walk stays silent on bounds permanently (ruled 2026-07-29).
 //     There is no source for them, and none is coming.
+//   - `required: true` appears on `name` ONLY. The schema files still list more
+//     (marker: map, zone, x, y, order; pin: map, element, x, y), but the wire never
+//     enforced them and canonical is dropping the lists (rulings.yaml:
+//     nullable-by-default, Captain 2026-07-28; keel's own OpenAPI write schemas say
+//     `required: [name]`). Through 4.3.0 this table copied the lists, so a form built
+//     from it demanded coordinates the server does not.
 // ---------------------------------------------------------------------------
 
 /** Field type definitions for OnlyWorlds elements. */
@@ -329,7 +337,7 @@ export interface FieldInfo {
   target?: string;    // For link fields: target element type
   /** @deprecated Never populated; removed in 5.0.0. See `FieldType.integer_max`. */
   max?: number;
-  required?: boolean; // True if the field is required per canonical YAML schema
+  required?: boolean; // True only for `name`, the one field the wire requires (rulings.yaml: nullable-by-default)
 }
 
 export const FIELD_SCHEMA = {
@@ -679,12 +687,12 @@ export const FIELD_SCHEMA = {
     subtype: { type: 'text', required: false },
     image_url: { type: 'text', required: false },
     // Details
-    map: { type: 'single_link', target: 'map', required: true },
-    zone: { type: 'single_link', target: 'zone', required: true },
-    x: { type: 'integer', required: true },
-    y: { type: 'integer', required: true },
+    map: { type: 'single_link', target: 'map' },
+    zone: { type: 'single_link', target: 'zone' },
+    x: { type: 'integer' },
+    y: { type: 'integer' },
     z: { type: 'integer' },
-    order: { type: 'integer', required: true }
+    order: { type: 'integer' }
   },
   narrative: {
     // Base fields (shared by all elements)
@@ -777,11 +785,11 @@ export const FIELD_SCHEMA = {
     subtype: { type: 'text', required: false },
     image_url: { type: 'text', required: false },
     // Details
-    map: { type: 'single_link', target: 'map', required: true },
-    element_type: { type: 'text', required: true },
-    element_id: { type: 'single_link', target: 'any', required: true },
-    x: { type: 'integer', required: true },
-    y: { type: 'integer', required: true },
+    map: { type: 'single_link', target: 'map' },
+    element_type: { type: 'text' },
+    element_id: { type: 'single_link', target: 'any' },
+    x: { type: 'integer' },
+    y: { type: 'integer' },
     z: { type: 'integer' }
   },
   relation: {

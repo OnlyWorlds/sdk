@@ -87,6 +87,16 @@ export class OwApiError extends Error {
   get isBusy(): boolean {
     return this.status === 503 && this.code === 'server_busy';
   }
+
+  /**
+   * A contributor tried to change, replace, relink or delete an element someone else
+   * created (403 `not_author`, keel D72 membership phase 2). Retrying will not help; the
+   * element is not theirs. `/bulk` never throws for this: it answers 200 with a per-item
+   * slot `{status: 403, error: {code: 'not_author'}}`. Owners and co-builders never see it.
+   */
+  get isNotAuthor(): boolean {
+    return this.status === 403 && this.code === 'not_author';
+  }
 }
 
 /** Network-level failure (fetch rejected) -- no envelope to parse. */

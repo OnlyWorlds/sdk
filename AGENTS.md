@@ -44,6 +44,11 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Under load keel answers 503 `server_busy` with `Retry-After` (`err.isBusy`, `err.retryAfter`
   in seconds). The client does not retry for you; back off and retry yourself. Works the same
   in browsers.
+- `created_by` rides every element read: the id of the membership that created it, `null` for
+  the world's owner and for anything made before memberships existed. It is read-only; a write
+  body that carries it has it dropped, never an error. A **contributor** can change only what
+  they created: anything else is 403 `not_author` (`err.isNotAuthor`; retrying will not help).
+  `/bulk` reports it per slot, not as a throw.
 - A string holding an unpaired surrogate (text cut mid-emoji) is a 422 naming the field.
   Slice strings by code point, not by UTF-16 unit.
 - Colour carries the element's FAMILY (`elementColor(type, mode)`); the icon
