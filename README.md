@@ -45,6 +45,8 @@ const location = await writer.create('location', {
   name: 'Dragon Peak',
   description: 'A treacherous mountain peak where dragons nest',
 }); // id minted client-side when omitted (retries stay idempotent)
+// name is the one required field, and required means the key is present:
+// '' and null are accepted and stored as '' (nameless Markers exist).
 
 const dragon = await writer.create('creature', {
   name: 'Vorrath the Ember-Scaled',
@@ -84,6 +86,8 @@ if (res.errors) {
   }
 }
 // Pass { atomic: true } for all-or-nothing instead. res.wasReplay flags idempotent replays.
+// After a failed atomic batch NOTHING was written, but the slots that would have succeeded
+// still say 201 (keel's counterfactual 201s): do not record those ids as created.
 ```
 
 ## Sync

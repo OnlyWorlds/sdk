@@ -5,7 +5,25 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
-## [4.4.0] — 2026-10-04 (staged, not published)
+## [4.5.0] — 2026-10-04 (staged, not published)
+
+What the staging write probes found on the wire (Python package, 2026-10-04): one new getter, and
+three behaviours the server has always had that no client doc said. Additive; nothing is removed.
+
+### Added
+- **`OwApiError.isOwnerOnly`**: 403 `owner_only`, a contributor attempting a world-level change
+  (`patchWorld`, publishing a show page). Owners and co-builders never see it. keel's OpenAPI
+  document does not name the code yet (Skeld has that to close); the wire returns it.
+
+### Documented
+- **An atomic `/bulk` rollback still returns 201 slots** for the items that would have
+  succeeded, with the ids and timestamps they would have had (keel spec: "counterfactual 201s").
+  After `atomic: true` with `errors: true`, nothing was written. On `bulk()`, `OwBulkItemResult`
+  and the README.
+- **`name` is required as a key only**: `''` and `null` are accepted and stored as `''` (keel
+  ruling 2026-09-28, spec §6; nameless Markers exist). On `create()` and the README.
+
+## [4.4.0] — 2026-10-04
 
 Membership, as far as the server has shipped it: who created an element, and the refusal a
 contributor meets on someone else's. Additive; nothing is removed or narrows.

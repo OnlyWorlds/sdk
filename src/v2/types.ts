@@ -67,6 +67,9 @@ export interface OwBulkItem {
  * created_at/updated_at, error slots carry an OwErrorBody under `error`.
  * A contributor's write on someone else's element fails in its slot as
  * `{status: 403, error: {code: 'not_author'}}` (keel D72), never as a thrown error.
+ * After an `atomic: true` request with `errors` true NOTHING was written, yet the slots of
+ * the items that would have succeeded still say 201 (keel's "counterfactual 201s"): do not
+ * record their ids as created.
  */
 export interface OwBulkItemResult {
   status: number;

@@ -97,6 +97,15 @@ export class OwApiError extends Error {
   get isNotAuthor(): boolean {
     return this.status === 403 && this.code === 'not_author';
   }
+
+  /**
+   * A contributor tried a world-level change: `patchWorld`, or publishing a show page
+   * (403 `owner_only`, keel D72 membership phase 2). Retrying will not help; only the
+   * owner may. Owners and co-builders never see it.
+   */
+  get isOwnerOnly(): boolean {
+    return this.status === 403 && this.code === 'owner_only';
+  }
 }
 
 /** Network-level failure (fetch rejected) -- no envelope to parse. */

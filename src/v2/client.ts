@@ -102,6 +102,8 @@ export class OwV2Client {
    * POST /{type}/ -- create. Mints an RFC 9562 UUIDv7 for element.id when the
    * caller omits one (design ruling D29d) so a retry carrying the same
    * Idempotency-Key is structurally safe. Callers MAY still supply their own id.
+   * `name` is the one required field, and required means the key is present: `''` and
+   * `null` are accepted and stored as `''` (nameless Markers exist; keel ruling 2026-09-28).
    */
   async create(type: ElementType | string, element: OwElement | Record<string, unknown>, opts: { idempotencyKey?: string } = {}): Promise<OwElement> {
     const body = sanitizePayload(element);
@@ -157,6 +159,9 @@ export class OwV2Client {
    * Success slots echo server-authoritative timestamps: set your sync baseline
    * from this response alone. When an idempotencyKey is replayed, the returned
    * response carries wasReplay:true (read from the Idempotent-Replay header).
+   * After an atomic:true request with errors:true NOTHING was written, yet the slots of
+   * the items that would have succeeded still say 201 with the ids and timestamps they
+   * would have had (keel's "counterfactual 201s"): do not record those ids as created.
    */
   async bulk(items: OwBulkItem[], opts: { atomic?: boolean; idempotencyKey?: string } = {}): Promise<OwBulkResponse> {
     const body = {

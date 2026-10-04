@@ -230,6 +230,21 @@ test('403 not_author is isNotAuthor, and no other getter claims it', async () =>
   assert.equal(err.isIdConflict, false);
 });
 
+test('403 owner_only is isOwnerOnly, and not isNotAuthor', async () => {
+  const err = await thrown({ status: 403, body: envelope('permission_error', 'owner_only') },
+    (c) => c.patchWorld({ name: 'K' }));
+  assert.equal(err.isOwnerOnly, true);
+  assert.equal(err.isNotAuthor, false);
+  assert.equal(err.isAuthError, false);
+  for (const code of ['not_author', 'insufficient_scope']) {
+    const other = await thrown({ status: 403, body: envelope('permission_error', code) },
+      (c) => c.patchWorld({ name: 'K' }));
+    assert.equal(other.isOwnerOnly, false, code);
+  }
+  const bare = await thrown({ status: 403, body: 'forbidden' }, (c) => c.list('character'));
+  assert.equal(bare.isOwnerOnly, false);
+});
+
 test('a 403 with another code is not isNotAuthor', async () => {
   for (const code of ['owner_only', 'insufficient_scope']) {
     const err = await thrown({ status: 403, body: envelope('permission_error', code) },
