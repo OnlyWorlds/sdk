@@ -5,17 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.5.1] — 2026-10-05 (staged, not published)
+
+Docs only: no code path changes.
+
 ### Documented
 - **`isOwnerOnly`'s JSDoc in 4.5.0 was wrong about who sees `owner_only`.** It said owners and
-  co-builders never see it. keel's spec (section 9) says a member key, a co-builder's too, gets it
-  on `PATCH /world`; only the owner's key is exempt. Read from the spec, not probed with a
-  co-builder key. The 4.5.0 `.d.ts` still carries the old sentence.
+  co-builders never see it. A member key, a co-builder's too, gets it on `PATCH /world`; only the
+  owner's key is exempt (keel spec section 9; confirmed from keel's `patch_world` by Skeld,
+  2026-10-04).
 - **`world_gone` is reserved.** `OwAuthErrorCode` and `isAuthError` still carry it, but keel never
   emits it: a deleted world's keys are deleted with it, so the key answers 401 `invalid_credentials`
   (Skeld, 2026-10-04; keel spec section 2, T6b). Found by the wire gate reading the SDK's own
   built file for the codes it keys on.
 
-## [4.5.0] — 2026-10-04 (staged, not published)
+## [4.5.0] — 2026-10-04
 
 What the staging write probes found on the wire (Python package, 2026-10-04): one new getter, and
 three behaviours the server has always had that no client doc said. Additive; nothing is removed.
