@@ -98,8 +98,8 @@ await writer.patch('character', id, { image_url: image.url });
 ```
 
 Two requests: a single-use ticket from keel, then the bytes straight to the edge (keel never
-sees them, and the edge never sees your key). webp, png, jpeg, avif or gif, read from the
-bytes; never SVG. Each ticket counts toward the world's daily limit and the account's image
+sees them, and the edge never sees your key). webp, png, jpeg or avif (never SVG or gif), read from the
+bytes. Each ticket counts toward the world's daily limit and the account's image
 storage. To upload yourself (for a progress bar), take `createMediaTicket()` and POST the bytes to
 its `upload_url` with `Authorization: Bearer <ticket>`.
 

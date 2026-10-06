@@ -11,6 +11,8 @@ earlier history lives in git log only.
   it, walk from zero, and replace the local copy rather than merging.
 
 ### Documented
+- `uploadImage` accepts webp, png, jpeg and avif. 4.6.0's JSDoc and README also listed gif, which
+  the edge refuses (415 `unsupported_type`); checked against the Worker's type table.
 - `changes()`: the old rewind rule compared a stored cursor with `head`, which an opaque cursor
   cannot do; replaced with the reset rule (`isResyncRequired`).
 
@@ -21,8 +23,8 @@ Published from `e198298` (tag `v4.6.0`); the tarball was checked against a build
 Includes 4.5.1's documentation fixes: 4.5.1 was staged and never published.
 
 ### Added
-- **`uploadImage(image, { key?, ticket? })`**: upload one image (webp, png, jpeg, avif, gif;
-  never SVG) and get its permanent public URL. Two requests: a ticket from keel
+- **`uploadImage(image, { key?, ticket? })`**: upload one image (webp, png, jpeg, avif;
+  never SVG; 4.6.0's docs also said gif, which the edge refuses with 415) and get its permanent public URL. Two requests: a ticket from keel
   (`POST /media/ticket`), then the bytes straight to the edge at the ticket's `upload_url`
   (keel never sees them). Only the ticket goes to the edge, never the API key or PIN. An image
   larger than the ticket's `max_bytes` throws 413 `too_large` before anything is sent; the edge's

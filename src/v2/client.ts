@@ -230,7 +230,7 @@ export class OwV2Client {
    * createMediaTicket() to use it instead of fetching one. Returns the edge's 201;
    * set `url` as an element's `image_url` yourself (`patch(type, id, { image_url })`).
    *
-   * webp, png, jpeg, avif or gif, read from the bytes (never SVG). `key` names the
+   * webp, png, jpeg or avif, read from the bytes (never SVG or gif). `key` names the
    * object (it must start with the ticket's `prefix`; without it the edge picks one).
    * An image larger than the ticket's `max_bytes` throws 413 `too_large` before any
    * byte is sent. The edge's refusals arrive as OwApiError with its code: 401
