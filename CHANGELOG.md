@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.6.0] — 2026-10-06 (staged, not published)
+
+Includes 4.5.1's documentation fixes: 4.5.1 was staged and never published.
+
 ### Added
 - **`uploadImage(image, { key?, ticket? })`**: upload one image (webp, png, jpeg, avif, gif;
   never SVG) and get its permanent public URL. Two requests: a ticket from keel
@@ -22,7 +26,7 @@ earlier history lives in git log only.
 - `ListParams.filter` lists what keel accepts now: exact `name`, and `characters=<id>` on every
   type with a `characters` link (keel D76d).
 
-## [4.5.1] — 2026-10-05 (staged, not published)
+## [4.5.1] — 2026-10-05 (never published; shipped in 4.6.0)
 
 Docs only: no code path changes.
 
