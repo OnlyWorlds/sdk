@@ -21,7 +21,7 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Known, deterministic operations (CRUD, sync, bulk) → **this SDK**. Typed calls, typed
   responses, far cheaper than tool-schema reasoning.
 - Live exploration of a user's world from a chat/agent context → the **MCP server** at
-  `https://www.onlyworlds.com/mcp` (same `API-Key`/`API-Pin` headers, 11 tools).
+  `https://www.onlyworlds.com/mcp` (same `API-Key`/`API-Pin` headers, 12 tools).
 
 **Wire facts that bite** (full details in README):
 - Never send a `"world"` field in payloads — world identity comes from the API key (422 otherwise).

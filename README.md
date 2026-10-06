@@ -151,7 +151,7 @@ const status = await tokens.getStatus();
 
 For **known, deterministic operations** (CRUD, sync, bulk) use this SDK — typed calls, no
 tool-schema overhead. For **live exploration of a user's world from a chat/agent context**, use
-the MCP server at `https://www.onlyworlds.com/mcp` (same `API-Key`/`API-Pin` headers, 11 tools;
+the MCP server at `https://www.onlyworlds.com/mcp` (same `API-Key`/`API-Pin` headers, 12 tools;
 unaffected by SDK versioning).
 
 ## License
