@@ -433,3 +433,66 @@ test('4.0: the v1 client is GONE from the package root', async () => {
   assert.equal(mod.OnlyWorldsClient, undefined);
   assert.equal(typeof mod.elementColor, 'function'); // v2 surface intact
 });
+
+// -- Images: the keel ticket, then the bytes to the edge (Keel #59) -----------
+
+const TICKET = {
+  ticket: 'tkt.sig', upload_url: 'https://upload.example/v1/upload', prefix: 'u/w1/',
+  max_bytes: 8, exp: 1900000000, uses: 1, issued_to: { account: 'a1', membership: null },
+};
+const UPLOADED = { url: 'https://media.example/u/w1/x.png', key: 'u/w1/x.png', bytes: 4, type: 'image/png', etag: 'e' };
+
+/** keel answers the ticket, the edge answers `edge` (default: a 201). */
+function imageFetch(edge = { status: 201, body: UPLOADED }) {
+  return fakeFetch((url) => (url.endsWith('/media/ticket') ? { status: 201, body: TICKET } : edge));
+}
+
+test('createMediaTicket: POST /media/ticket with the key and PIN, no body', async () => {
+  const fetchImpl = imageFetch();
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '2589', fetch: fetchImpl });
+  assert.deepEqual(await client.createMediaTicket(), TICKET);
+  const { url, init } = fetchImpl.calls[0];
+  assert.equal(url, 'https://www.onlyworlds.com/api/v2/media/ticket');
+  assert.equal(init.method, 'POST');
+  assert.equal(init.body, undefined);
+  assert.equal(init.headers['API-Key'], 'ow_w_test');
+  assert.equal(init.headers['API-Pin'], '2589');
+});
+
+test('uploadImage: ticket from keel, bytes to upload_url with the ticket only, never the key or PIN', async () => {
+  const fetchImpl = imageFetch();
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '2589', fetch: fetchImpl });
+  const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+  assert.deepEqual(await client.uploadImage(bytes, { key: 'u/w1/x.png' }), UPLOADED);
+  assert.equal(fetchImpl.calls.length, 2);
+  const { url, init } = fetchImpl.calls[1];
+  assert.equal(url, TICKET.upload_url);
+  assert.equal(init.method, 'POST');
+  assert.equal(init.body, bytes);
+  assert.deepEqual(init.headers, { Authorization: 'Bearer tkt.sig', 'X-Key': 'u/w1/x.png' });
+});
+
+test('uploadImage: a ticket you pass is used, keel is not called', async () => {
+  const fetchImpl = imageFetch();
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '2589', fetch: fetchImpl });
+  await client.uploadImage(new Blob([new Uint8Array(3)]), { ticket: TICKET });
+  assert.deepEqual(fetchImpl.calls.map((c) => c.url), [TICKET.upload_url]);
+  assert.equal(fetchImpl.calls[0].init.headers['X-Key'], undefined);
+});
+
+test('uploadImage: larger than max_bytes throws 413 too_large and sends nothing', async () => {
+  const fetchImpl = imageFetch();
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '2589', fetch: fetchImpl });
+  for (const big of [new Uint8Array(9), new Uint8Array(9).buffer, new Blob([new Uint8Array(9)])]) {
+    await assert.rejects(client.uploadImage(big, { ticket: TICKET }), (e) => e instanceof OwApiError && e.status === 413 && e.code === 'too_large');
+  }
+  assert.equal(fetchImpl.calls.length, 0);
+});
+
+test("uploadImage: the edge's refusal arrives as OwApiError with its code", async () => {
+  const client = new OwV2Client({
+    apiKey: 'ow_w_test', apiPin: '2589',
+    fetch: imageFetch({ status: 401, body: { error: 'ticket_used', note: 'one upload per ticket; request another' } }),
+  });
+  await assert.rejects(client.uploadImage(new Uint8Array(4)), (e) => e instanceof OwApiError && e.status === 401 && e.code === 'ticket_used');
+});

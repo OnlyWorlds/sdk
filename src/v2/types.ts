@@ -106,6 +106,40 @@ export interface OwLinkEdit {
   remove?: string[];
 }
 
+/**
+ * POST /media/ticket's 201: a short-lived, single-use permission to upload one image
+ * into this world's prefix. keel never sees the bytes; the edge at `upload_url` does.
+ */
+export interface OwMediaTicket {
+  /** Opaque: send it to `upload_url` as `Authorization: Bearer <ticket>`, as is. */
+  ticket: string;
+  /** Where the image goes (https://upload.onlyworlds.com/v1/upload on production). */
+  upload_url: string;
+  /** `u/<world_id>/`: every upload with this ticket lands under it. */
+  prefix: string;
+  /** The most this ticket accepts: the per-image limit, or what the account has left, whichever is smaller. */
+  max_bytes: number;
+  /** Unix seconds after which the edge refuses the ticket. */
+  exp: number;
+  /** Always 1: one ticket, one upload. */
+  uses: number;
+  /** Who answers for the upload; the edge copies it onto the stored object. */
+  issued_to: { account: string | null; membership: string | null };
+}
+
+/** The edge's 201 for one upload. Put `url` in an element's `image_url`. */
+export interface OwUploadedImage {
+  /** The permanent public URL (https://media.onlyworlds.com/<key>). */
+  url: string;
+  /** The object key, under the ticket's `prefix`. */
+  key: string;
+  bytes: number;
+  /** The MIME type the edge read from the bytes (never from a header or a file name). */
+  type: string;
+  etag: string;
+  [k: string]: unknown;
+}
+
 export interface ListParams {
   limit?: number;
   cursor?: string;
@@ -114,9 +148,11 @@ export interface ListParams {
   /** Sparse include-set of field names. */
   fields?: string[];
   /**
-   * Accepted: `name__icontains`, `supertype`, `subtype`. Any other key 422s
-   * server-side, which names the typo -- the client passes keys through
-   * unchecked and lets the platform say so. (`__in`, `__gte`, `__lte` and
+   * Accepted: `name` (exact), `name__icontains`, `supertype`, `subtype`, and
+   * `characters=<id>` (contains) on every type with a `characters` link (at schema
+   * 0.30.1: collective, construct, event, narrative, relation, title; keel D76d). Any other key 422s
+   * server-side with the list of filters in the message -- the client passes keys
+   * through unchecked and lets the platform say so. (`__in`, `__gte`, `__lte` and
    * `__isnull` are designed in keel's spec but not built; `ordering` 422s too.)
    */
   filter?: Record<string, string | number | boolean>;

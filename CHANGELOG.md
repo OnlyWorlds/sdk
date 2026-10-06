@@ -5,6 +5,23 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+- **`uploadImage(image, { key?, ticket? })`**: upload one image (webp, png, jpeg, avif, gif;
+  never SVG) and get its permanent public URL. Two requests: a ticket from keel
+  (`POST /media/ticket`), then the bytes straight to the edge at the ticket's `upload_url`
+  (keel never sees them). Only the ticket goes to the edge, never the API key or PIN. An image
+  larger than the ticket's `max_bytes` throws 413 `too_large` before anything is sent; the edge's
+  refusals (`ticket_used`, `ticket_expired`, `bad_key`, `exists`, `unsupported_type`, ...) arrive
+  as `OwApiError` with their code. Set the returned `url` as an element's `image_url` yourself.
+  Checked live on 2026-10-06: one upload through keel's ticket to the edge (201), and the same
+  ticket again refused with 401 `ticket_used` (Keel #59).
+- **`createMediaTicket()`**: the first step alone, for callers that upload themselves (progress
+  bars, say). Types `OwMediaTicket` and `OwUploadedImage`.
+
+### Documented
+- `ListParams.filter` lists what keel accepts now: exact `name`, and `characters=<id>` on every
+  type with a `characters` link (keel D76d).
+
 ## [4.5.1] — 2026-10-05 (staged, not published)
 
 Docs only: no code path changes.

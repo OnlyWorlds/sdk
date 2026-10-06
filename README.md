@@ -90,6 +90,19 @@ if (res.errors) {
 // still say 201 (keel's counterfactual 201s): do not record those ids as created.
 ```
 
+## Images
+
+```typescript
+const image = await writer.uploadImage(file);             // a Blob, File, ArrayBuffer or Uint8Array
+await writer.patch('character', id, { image_url: image.url });
+```
+
+Two requests: a single-use ticket from keel, then the bytes straight to the edge (keel never
+sees them, and the edge never sees your key). webp, png, jpeg, avif or gif, read from the
+bytes; never SVG. Each ticket counts toward the world's daily limit and the account's image
+storage. To upload yourself (for a progress bar), take `createMediaTicket()` and POST the bytes to
+its `upload_url` with `Authorization: Bearer <ticket>`.
+
 ## Sync
 
 ```typescript

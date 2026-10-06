@@ -14,9 +14,9 @@
 import type { ElementType } from './types.generated';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
-  OwClientConfig, OwElement, OwLinkEdit, OwPage, OwWorldMeta,
+  OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwUploadedImage, OwWorldMeta,
 } from './types';
-import { OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
+import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
 
 const DEFAULT_BASE_URL = 'https://www.onlyworlds.com/api/v2';
@@ -204,6 +204,59 @@ export class OwV2Client {
       cursor = page.cursor;
     } while (page.has_more);
     return { cursor: page.cursor, head: page.head };
+  }
+
+  // -- Images ---------------------------------------------------------------
+
+  /**
+   * POST /media/ticket -- permission to upload ONE image into this world (a write
+   * key and its PIN; no body). Short-lived (`exp`), single-use, counted toward the
+   * world's daily limit. Use it directly to upload yourself (for progress, say):
+   * POST the bytes to `upload_url` with `Authorization: Bearer <ticket>`. Otherwise
+   * call uploadImage(), which does both steps. Refusals: 403 `storage_full` (the
+   * account's image storage is used up), 429 `quota_exceeded` (the world's daily
+   * limit; Retry-After) as well as the wrong-PIN 429 `rate_limited`, 503
+   * `media_unavailable`.
+   */
+  async createMediaTicket(): Promise<OwMediaTicket> {
+    return this.request('POST', '/media/ticket') as Promise<OwMediaTicket>;
+  }
+
+  /**
+   * Upload one image and get its permanent public URL: a ticket from keel, then the
+   * bytes straight to the edge (keel never sees them). Pass a ticket from
+   * createMediaTicket() to use it instead of fetching one. Returns the edge's 201;
+   * set `url` as an element's `image_url` yourself (`patch(type, id, { image_url })`).
+   *
+   * webp, png, jpeg, avif or gif, read from the bytes (never SVG). `key` names the
+   * object (it must start with the ticket's `prefix`; without it the edge picks one).
+   * An image larger than the ticket's `max_bytes` throws 413 `too_large` before any
+   * byte is sent. The edge's refusals arrive as OwApiError with its code: 401
+   * `ticket_expired` / `ticket_used` / `ticket_invalid`, 400 `bad_key`, 409 `exists`,
+   * 413 `too_large`, 415 `unsupported_type`, 502 `write_failed` (nothing stored; the
+   * ticket is still unspent). A ticket is spent once the upload succeeds: a retry
+   * needs a new one.
+   */
+  async uploadImage(
+    image: Blob | ArrayBuffer | ArrayBufferView,
+    opts: { key?: string; ticket?: OwMediaTicket } = {},
+  ): Promise<OwUploadedImage> {
+    const ticket = opts.ticket ?? await this.createMediaTicket();
+    const size = typeof Blob !== 'undefined' && image instanceof Blob ? image.size : (image as ArrayBuffer).byteLength;
+    if (size > ticket.max_bytes) {
+      throw new OwApiError(413, 'too_large', `Image is ${size} bytes; this ticket accepts at most ${ticket.max_bytes}. Nothing was sent.`,
+        null, { error: 'too_large', max_bytes: ticket.max_bytes, got: size });
+    }
+    const headers: Record<string, string> = { Authorization: `Bearer ${ticket.ticket}` };
+    if (opts.key) headers['X-Key'] = opts.key;
+    let res: Response;
+    try {
+      res = await this.fetchImpl(ticket.upload_url, { method: 'POST', headers, body: image as BodyInit });
+    } catch (cause) {
+      throw new OwNetworkError(`OnlyWorlds image upload failed: POST ${ticket.upload_url}`, cause);
+    }
+    if (!res.ok) throw await errorFromResponse(res);
+    return await res.json() as OwUploadedImage;
   }
 
   // -- Core request machinery ----------------------------------------------
