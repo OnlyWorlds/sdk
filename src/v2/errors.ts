@@ -88,6 +88,16 @@ export class OwApiError extends Error {
     return this.status === 409 && this.code === 'id_conflict';
   }
 
+  /**
+   * `/changes` refused the cursor (409 `resync_required`): a guest's view of the world
+   * changed, or the key's role did (a guest's cursor has another shape). Drop the stored
+   * cursor, walk again from the start, and REPLACE the local copy rather than merging into
+   * it: a guest never receives delete ops, so only the replace removes what it no longer sees.
+   */
+  get isResyncRequired(): boolean {
+    return this.status === 409 && this.code === 'resync_required';
+  }
+
   /** keel's admission control turned the request away (503 `server_busy`); see retryAfter. */
   get isBusy(): boolean {
     return this.status === 503 && this.code === 'server_busy';

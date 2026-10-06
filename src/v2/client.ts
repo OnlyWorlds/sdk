@@ -179,10 +179,12 @@ export class OwV2Client {
 
   /**
    * GET /changes -- one page of the world's ordered change feed.
-   * Cursor is OPAQUE and never expires: persist verbatim, never parse.
+   * Cursor is OPAQUE: persist verbatim, never parse or build one (a guest's has
+   * another shape than everyone else's).
    * Zero/absent cursor = full export (byte-aligned with the Folder Format).
-   * Rewind rule: if your persisted position is ahead of page.head, the server
-   * was restored -- re-baseline from cursor zero; do not assume caught-up.
+   * Reset rule: a 409 `resync_required` (err.isResyncRequired) means the key's
+   * view changed (a guest's, or its role): drop the cursor, walk from zero, and
+   * replace the local copy rather than merging into it.
    * Citizenship: heaviest route on the platform; default page size is polite.
    */
   async changes(opts: { since?: string; limit?: number } = {}): Promise<OwChangesPage> {

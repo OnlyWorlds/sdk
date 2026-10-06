@@ -230,6 +230,17 @@ test('403 not_author is isNotAuthor, and no other getter claims it', async () =>
   assert.equal(err.isIdConflict, false);
 });
 
+test('409 resync_required is isResyncRequired (the guest feed reset), and not a conflict', async () => {
+  const err = await thrown({ status: 409, body: envelope('invalid_request', 'resync_required') },
+    (c) => c.changes({ since: '12:abc' }));
+  assert.equal(err.isResyncRequired, true);
+  assert.equal(err.isIdConflict, false);
+  assert.equal(err.isIdempotencyConflict, false);
+  const other = await thrown({ status: 409, body: envelope('invalid_request', 'id_conflict') },
+    (c) => c.create('character', { name: 'K' }));
+  assert.equal(other.isResyncRequired, false);
+});
+
 test('403 owner_only is isOwnerOnly, and not isNotAuthor', async () => {
   const err = await thrown({ status: 403, body: envelope('permission_error', 'owner_only') },
     (c) => c.patchWorld({ name: 'K' }));

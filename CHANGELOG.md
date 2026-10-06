@@ -21,8 +21,13 @@ Includes 4.5.1's documentation fixes: 4.5.1 was staged and never published.
   ticket again refused with 401 `ticket_used` (Keel #59).
 - **`createMediaTicket()`**: the first step alone, for callers that upload themselves (progress
   bars, say). Types `OwMediaTicket` and `OwUploadedImage`.
+- **`OwApiError.isResyncRequired`**: 409 `resync_required` from `/changes`. Guests can follow the
+  feed since keel D79; when a guest's view or a key's role changes, its stored cursor is refused. Drop
+  it, walk from zero, and replace the local copy rather than merging.
 
 ### Documented
+- `changes()`: the old rewind rule compared a stored cursor with `head`, which an opaque cursor
+  cannot do; replaced with the reset rule above.
 - `ListParams.filter` lists what keel accepts now: exact `name`, and `characters=<id>` on every
   type with a `characters` link (keel D76d).
 
