@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.7.0] — 2026-10-08
+
 ### Added
 - **`OwApiError.isResyncRequired`**: 409 `resync_required` from `/changes`. Guests can follow the
   feed since keel D79; when a guest's view or a key's role changes, its stored cursor is refused. Drop
