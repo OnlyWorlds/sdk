@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/@onlyworlds%2Fsdk.svg)](https://www.npmjs.com/package/@onlyworlds/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A typed client for the [OnlyWorlds](https://onlyworlds.github.io) API, with the schema's constants (element types, icons, colour families, field metadata) generated from the published [schema distribution](https://github.com/OnlyWorlds/schema-dist). Node 18+, ESM only.
+OnlyWorlds is an open standard for worldbuilding data: 22 element types (characters, locations, events, laws and the rest) that any tool can read and write. This is a typed client for its API, with the schema's constants (element types, icons, colour families, field metadata) generated from the published [schema distribution](https://github.com/OnlyWorlds/schema-dist). Node 18+, ESM only.
 
 ## Install
 
@@ -13,7 +13,7 @@ npm install @onlyworlds/sdk
 
 ## First run
 
-Moppetopia is a public demo world. Its read-only key needs no account:
+Moppetopia is a public demo world. Its read-only key, `0000000001`, needs no account:
 
 ```typescript
 import { OwV2Client } from '@onlyworlds/sdk';
@@ -37,7 +37,7 @@ Create a world at [onlyworlds.com](https://www.onlyworlds.com); its keys are on 
 
 - An `ow_r_` key reads, with no PIN. It is the key to give to players or a public site.
 - An `ow_w_` key reads and writes. Writes also send a PIN as `apiPin`.
-- For code that writes, give it its own [agent seat](https://onlyworlds.github.io/docs/development/agents): the seat's key and its `ow_s_` secret (sent as `apiPin`) work in one world, and you can remove them without touching your account PIN.
+- For code that writes, give it its own [agent seat](https://onlyworlds.github.io/docs/development/agents), a key for one tool or script. The seat's key and its `ow_s_` secret (sent as `apiPin`) work in one world, and you can remove them without touching your account PIN.
 
 ```typescript
 const writer = new OwV2Client({ apiKey: 'ow_w_…', apiPin: 'ow_s_…' });
@@ -100,7 +100,7 @@ const image = await writer.uploadImage(file); // a Blob, File, ArrayBuffer or Ui
 await writer.patch('character', id, { image_url: image.url });
 ```
 
-The SDK asks keel for a single-use ticket, then sends the bytes straight to the upload host, which never sees your key. webp, png, jpeg or avif (no SVG or gif), up to 15 MB. Each upload counts toward the world's daily limit and the account's storage. To upload yourself (for a progress bar), call `createMediaTicket()` and POST the bytes to its `upload_url` with `Authorization: Bearer <ticket>`.
+The SDK asks the API for a single-use ticket, then sends the bytes straight to the upload host, which never sees your key. webp, png, jpeg or avif (no SVG or gif), up to 15 MB. Each upload counts toward the world's daily limit and the account's storage. To upload yourself (for a progress bar), call `createMediaTicket()` and POST the bytes to its `upload_url` with `Authorization: Bearer <ticket>`.
 
 ## Sync
 
@@ -132,9 +132,11 @@ import {
 elementColor('character', 'dark'); // '#3987e5'
 ```
 
-The four colour families are checked for colour-blind separation. Show colour with the icon and label, never alone. [SCHEMA.md](SCHEMA.md) (generated, in the package) describes every field; AI agents should read [AGENTS.md](AGENTS.md) first.
+The four colour families (agents, world, abstract, temporal) are checked for colour-blind separation. Show colour with the icon and label, never alone. [SCHEMA.md](SCHEMA.md) (generated, in the package) describes every field; AI agents should read [AGENTS.md](AGENTS.md) first.
 
 ## Tokens
+
+The account's token allowance and ratings, which some OnlyWorlds tools use.
 
 ```typescript
 import { TokenResource } from '@onlyworlds/sdk';
@@ -144,11 +146,11 @@ const status = await tokens.getStatus();
 
 ## SDK or MCP
 
-Use this SDK for known operations in your own code (CRUD, sync, bulk). To let an AI assistant explore a world in a chat, connect it to the MCP server at `https://www.onlyworlds.com/mcp` with the same headers.
+Use this SDK for known operations in your own code (CRUD, sync, bulk). To let an AI assistant that speaks MCP (the Model Context Protocol) explore a world in a chat, connect it to `https://www.onlyworlds.com/mcp` with the same key and PIN as `API-Key` and `API-Pin` headers.
 
-## Version 3
+## Version 3 and the old API
 
-4.x speaks the v2 API only. The v1 client (`OnlyWorldsClient`) and CommonJS `require()` stay on 3.x, which remains published and supported: see [the migration guide](docs/migrating-3-to-4.md).
+4.x speaks the current (v2) API only. The v1 client (`OnlyWorldsClient`) and CommonJS `require()` stay on 3.x, which remains published and supported: see [the migration guide](docs/migrating-3-to-4.md).
 
 ## Links
 
