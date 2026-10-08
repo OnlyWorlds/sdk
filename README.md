@@ -3,74 +3,78 @@
 [![npm version](https://badge.fury.io/js/@onlyworlds%2Fsdk.svg)](https://www.npmjs.com/package/@onlyworlds/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-The canonical typed client for the [OnlyWorlds](https://onlyworlds.github.io) v2 API, plus the
-canonical constants (element types, icons, colour families, field schema) — generated from the
-canonical OnlyWorlds schema, obtained through the public
-[schema distribution](https://github.com/OnlyWorlds/schema-dist) at a pinned, hash-verified
-tag. The generated files carry that tag and commit in their header, so what these types were
-built from is checkable rather than asserted.
+A typed client for the [OnlyWorlds](https://onlyworlds.github.io) API, with the schema's constants (element types, icons, colour families, field metadata) generated from the published [schema distribution](https://github.com/OnlyWorlds/schema-dist). Node 18+, ESM only.
 
-**4.x is v2-native and ESM-only (Node 18+).** If you need the legacy v1 API dialect
-(`OnlyWorldsClient`) or CommonJS `require()`, stay on 3.x — it remains published and the v1 API
-remains served. See [docs/migrating-3-to-4.md](docs/migrating-3-to-4.md).
-
-## Installation
+## Install
 
 ```bash
 npm install @onlyworlds/sdk
 ```
 
-## Quick Start
+## First run
+
+Moppetopia is a public demo world. Its read-only key needs no account:
 
 ```typescript
 import { OwV2Client } from '@onlyworlds/sdk';
 
-const client = new OwV2Client({ apiKey: 'ow_r_your_key' }); // read-only key: that's all you need
-const page = await client.list('character');                 // { data, has_more, next_cursor }
+const client = new OwV2Client({ apiKey: '0000000001' });
+console.log((await client.getWorld()).name);
+const { data } = await client.list('character', { limit: 3 });
+for (const c of data) console.log(' ', c.name);
 ```
 
-Key kinds: `ow_w_` write / `ow_r_` read-only (no PIN — the "give this to your players" key) /
-`ow_a_` account Bearer / 10-digit legacy. Writes on a PIN-protected world also pass `apiPin`.
-Demo keys `0000000000`–`0000000009` read real sample worlds.
+```
+Moppetopia
+  Admiral Splashworth
+  Admiral Fluffington
+  Captain Snoot
+```
 
-## The full round-trip
+## Your own world
+
+Create a world at [onlyworlds.com](https://www.onlyworlds.com); its keys are on the world's page.
+
+- An `ow_r_` key reads, with no PIN. It is the key to give to players or a public site.
+- An `ow_w_` key reads and writes. Writes also send a PIN as `apiPin`.
+- For code that writes, give it its own [agent seat](https://onlyworlds.github.io/docs/development/agents): the seat's key and its `ow_s_` secret (sent as `apiPin`) work in one world, and you can remove them without touching your account PIN.
 
 ```typescript
-const writer = new OwV2Client({ apiKey: 'ow_w_your_key', apiPin: '1234' });
+const writer = new OwV2Client({ apiKey: 'ow_w_…', apiPin: 'ow_s_…' });
+```
 
-// v2 dialect rules, worth internalizing once:
-// - link fields use ONE bare name both directions (no _ids suffix — that's v1)
-// - NEVER send a "world" field (identity comes from the key; the client strips it anyway)
+## Reading and writing
+
+```typescript
 const location = await writer.create('location', {
   name: 'Dragon Peak',
-  description: 'A treacherous mountain peak where dragons nest',
-}); // id minted client-side when omitted (retries stay idempotent)
-// name is the one required field, and required means the key is present:
-// '' and null are accepted and stored as '' (nameless Markers exist).
+  description: 'A mountain peak where dragons nest',
+}); // the id is minted client-side when omitted, so a retry creates nothing twice
 
 const dragon = await writer.create('creature', {
   name: 'Vorrath the Ember-Scaled',
-  location: location.id,            // single link: UUID (or null)
+  location: location.id, // a single link: a UUID or null
 });
 
 const fetched = await writer.get('creature', dragon.id);
-// fetched.location === location.id — reads the way it writes
+// fetched.location === location.id: a field reads the way it writes
 
-// PATCH is destructive on sent fields; arrays replace wholesale
+// PATCH replaces the fields it sends; an array is replaced whole
 await writer.patch('location', location.id, { supertype: 'Mountain' });
 
-// For relationships, use the atomic link merge — returns the full updated element
-const fireBreath = await writer.create('ability', { name: 'Ember Breath' });
-await writer.editLinks('creature', dragon.id, 'abilities', { add: [fireBreath.id], remove: [] });
+// For links, the atomic merge; it returns the updated element
+const breath = await writer.create('ability', { name: 'Ember Breath' });
+await writer.editLinks('creature', dragon.id, 'abilities', { add: [breath.id], remove: [] });
 
-// Walk every page of a type
+// Every page of a type
 for await (const character of writer.listAll('character')) { /* ... */ }
 ```
 
-## Bulk writes — always check `errors`
+A link field has one name in both directions (`location`, not `location_id`). Only `name` is required, and an empty name is stored as `''`. A `world` field in a payload is ignored: the key decides the world, and the client strips it anyway.
 
-`/bulk` **succeeds partially by default** (HTTP 200 with per-slot statuses). The one mistake to
-never make: treating a 200 as "everything landed."
+## Bulk writes
+
+`/bulk` answers 200 even when some items fail, so check `errors`:
 
 ```typescript
 const res = await writer.bulk(
@@ -78,87 +82,78 @@ const res = await writer.bulk(
     { type: 'character', element: { name: 'A' } },
     { type: 'event', element: { name: 'B' } },
   ],
-  { idempotencyKey: crypto.randomUUID() }, // mint FRESH per attempt — a failed batch is
-);                                          // cached under its key; never reuse across retries
+  { idempotencyKey: crypto.randomUUID() }, // a new key per attempt: a failed batch is cached under its key
+);
 if (res.errors) {
   for (const slot of res.items.filter((s) => s.status >= 400)) {
     console.warn(slot.error?.code, slot.error?.message, slot.error?.doc_url);
   }
 }
-// Pass { atomic: true } for all-or-nothing instead. res.wasReplay flags idempotent replays.
-// After a failed atomic batch NOTHING was written, but the slots that would have succeeded
-// still say 201 (keel's counterfactual 201s): do not record those ids as created.
 ```
+
+Pass `{ atomic: true }` for all or nothing. After a failed atomic batch nothing was written, but the slots that would have succeeded still read 201: don't record those ids as created. `res.wasReplay` marks an idempotent replay.
 
 ## Images
 
 ```typescript
-const image = await writer.uploadImage(file);             // a Blob, File, ArrayBuffer or Uint8Array
+const image = await writer.uploadImage(file); // a Blob, File, ArrayBuffer or Uint8Array
 await writer.patch('character', id, { image_url: image.url });
 ```
 
-Two requests: a single-use ticket from keel, then the bytes straight to the edge (keel never
-sees them, and the edge never sees your key). webp, png, jpeg or avif (never SVG or gif), read from the
-bytes. Each ticket counts toward the world's daily limit and the account's image
-storage. To upload yourself (for a progress bar), take `createMediaTicket()` and POST the bytes to
-its `upload_url` with `Authorization: Bearer <ticket>`.
+The SDK asks keel for a single-use ticket, then sends the bytes straight to the upload host, which never sees your key. webp, png, jpeg or avif (no SVG or gif), up to 15 MB. Each upload counts toward the world's daily limit and the account's storage. To upload yourself (for a progress bar), call `createMediaTicket()` and POST the bytes to its `upload_url` with `Authorization: Bearer <ticket>`.
 
 ## Sync
 
 ```typescript
-let cursor; // opaque, never expires; persist it
+let cursor; // opaque and never expires: keep it
 for await (const change of client.changesAll(cursor)) {
-  // ops arrive in (change_seq, id) order — apply in order → convergence
+  // changes arrive in order; apply them in order and you converge
 }
-// GOTCHA: world-meta edits (name, calendar, public_read) do NOT enter /changes.
-// Poll client.getWorld() and compare updated_at separately.
 ```
+
+Edits to the world itself (its name, calendar, `public_read`) don't appear in the change feed. Read `client.getWorld()` and compare `updated_at`.
 
 ## Errors
 
-Every non-2xx throws `OwApiError` carrying the platform envelope: `.status`, `.type`, `.code`,
-`.param` (the exact field that failed), and `.docUrl` — surface `docUrl` in your UX. Transport
-failures throw `OwNetworkError`. `err.isValidationError` is the common branch.
+Every non-2xx response throws `OwApiError` with the API's envelope: `.status`, `.type`, `.code`, `.param` (the field that failed) and `.docUrl`, which is worth showing to your users. A transport failure throws `OwNetworkError`. `err.isValidationError` covers the common case.
 
-## Canonical constants (all generated or test-gated from schema)
+## Schema constants
 
 ```typescript
 import {
-  ELEMENT_TYPES,        // the 22 slugs (and the ElementType union)
-  ELEMENT_ICONS,        // Material Symbols icon per type
-  ELEMENT_LABELS,       // plural display labels
-  ELEMENT_SECTIONS,     // canonical field grouping + display order
-  FIELD_SCHEMA,         // per-field type/target metadata
-  elementColor,         // canonical colour: family carries COLOUR, icon carries TYPE
+  ELEMENT_TYPES,    // the 22 type slugs (and the ElementType union)
+  ELEMENT_ICONS,    // a Material Symbols icon per type
+  ELEMENT_LABELS,   // plural display labels
+  ELEMENT_SECTIONS, // field grouping and display order
+  FIELD_SCHEMA,     // per-field type and link target
+  elementColor,     // colour by family; the icon carries the type
 } from '@onlyworlds/sdk';
 
-elementColor('character', 'dark'); // '#3987e5' — four CVD-validated families
-// Always pair colour with icon + label; colour alone is not accessible.
+elementColor('character', 'dark'); // '#3987e5'
 ```
 
-The full schema with per-field meaning lives in [SCHEMA.md](SCHEMA.md) (generated, ships in this
-package). AI agents: read [AGENTS.md](AGENTS.md) first.
+The four colour families are checked for colour-blind separation. Show colour with the icon and label, never alone. [SCHEMA.md](SCHEMA.md) (generated, in the package) describes every field; AI agents should read [AGENTS.md](AGENTS.md) first.
 
-## Token rating system
+## Tokens
 
 ```typescript
 import { TokenResource } from '@onlyworlds/sdk';
-const tokens = new TokenResource(writer); // OwV2Client.request() satisfies TokenTransport
+const tokens = new TokenResource(writer);
 const status = await tokens.getStatus();
 ```
 
-## AI access — when to use which
+## SDK or MCP
 
-For **known, deterministic operations** (CRUD, sync, bulk) use this SDK — typed calls, no
-tool-schema overhead. For **live exploration of a user's world from a chat/agent context**, use
-the MCP server at `https://www.onlyworlds.com/mcp` (same `API-Key`/`API-Pin` headers, 12 tools;
-unaffected by SDK versioning).
+Use this SDK for known operations in your own code (CRUD, sync, bulk). To let an AI assistant explore a world in a chat, connect it to the MCP server at `https://www.onlyworlds.com/mcp` with the same headers.
+
+## Version 3
+
+4.x speaks the v2 API only. The v1 client (`OnlyWorldsClient`) and CommonJS `require()` stay on 3.x, which remains published and supported: see [the migration guide](docs/migrating-3-to-4.md).
+
+## Links
+
+[Docs](https://onlyworlds.github.io/docs/development/typescript) · [API reference](https://www.onlyworlds.com/api/docs) · [Issues](https://github.com/OnlyWorlds/sdk/issues) · [Changelog](CHANGELOG.md)
 
 ## License
 
 MIT
-
-## Links
-
-- [OnlyWorlds](https://www.onlyworlds.com) · [Docs](https://onlyworlds.github.io) · [API reference](https://www.onlyworlds.com/api/docs)
-- [Issues](https://github.com/OnlyWorlds/sdk/issues) · [CHANGELOG](CHANGELOG.md) · [Migration 3→4](docs/migrating-3-to-4.md)
