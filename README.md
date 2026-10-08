@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/@onlyworlds%2Fsdk.svg)](https://www.npmjs.com/package/@onlyworlds/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-OnlyWorlds is an open standard for worldbuilding data: 22 element types (characters, locations, events, laws and the rest) that any tool can read and write. This is a typed client for its API, with the schema's constants (element types, icons, colour families, field metadata) generated from the published [schema distribution](https://github.com/OnlyWorlds/schema-dist). Node 18+, ESM only.
+OnlyWorlds is an open standard for worldbuilding data: 22 element types (characters, locations, events, laws and the rest) that any tool can read and write. This is a typed client for its API, with the schema's constants (element types, icons, colour families, field metadata) generated from the published [schema distribution](https://github.com/OnlyWorlds/schema-dist). It runs in Node 18+ and in the browser through a bundler (ESM only).
 
 ## Install
 
@@ -33,10 +33,11 @@ Moppetopia
 
 ## Your own world
 
-Create a world at [onlyworlds.com](https://www.onlyworlds.com); its keys are on the world's page.
+Create a world at [onlyworlds.com](https://www.onlyworlds.com); its keys are on the world's page. A new key is shown once, so copy it then.
 
 - An `ow_r_` key reads, with no PIN. It is the key to give to players or a public site.
 - An `ow_w_` key reads and writes. Writes also send a PIN as `apiPin`.
+- Anyone who loads a web page can read the keys in its code. Ship only an `ow_r_` key to a browser, and keep write keys and seat secrets on a server.
 - For code that writes, give it its own [agent seat](https://onlyworlds.github.io/docs/development/agents), a key for one tool or script. The seat's key and its `ow_s_` secret (sent as `apiPin`) work in one world, and you can remove them without touching your account PIN.
 
 ```typescript
@@ -154,7 +155,7 @@ Use this SDK for known operations in your own code (CRUD, sync, bulk). To let an
 
 ## Links
 
-[Docs](https://onlyworlds.github.io/docs/development/typescript) · [API reference](https://www.onlyworlds.com/api/docs) · [Issues](https://github.com/OnlyWorlds/sdk/issues) · [Changelog](CHANGELOG.md)
+[Docs](https://onlyworlds.github.io/docs/development/typescript) · [Games](https://onlyworlds.github.io/docs/development/games) · [API reference](https://www.onlyworlds.com/api/docs) · [Issues](https://github.com/OnlyWorlds/sdk/issues) · [Changelog](CHANGELOG.md)
 
 ## License
 
