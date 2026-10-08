@@ -5,7 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.7.1] — 2026-10-08
+
 ### Changed
+- **README rewritten**: install, a first run against the public demo world (its output shown,
+  run as written), your own world with an agent seat for writes, then the reference. It no
+  longer calls a `world` field in a payload an error: the API ignores it.
+- Comments, the RFC and pin-file prose no longer name people or internal places.
 - **Schema repinned `v0.30.1-dist.15` → `v0.30.2-dist.16`** (canonical **00.30.02**).
   `ONLYWORLDS_VERSION` is now `'00.30.02'`. Field descriptions move with the schema: Location's
   `rivalries` and `partnerships`, Marker's `order`, and Pin's `element` pair. No field shape and
