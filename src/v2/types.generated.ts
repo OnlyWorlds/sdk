@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.30.1-dist.15
-//         commit          6a4b2a70f5c3b48958578a5a8ba84af4ae436110
-//         MANIFEST sha256 9472b3d4a40546df68df0e7fc42a762a7e775d269f508066df140932c503f8e3
-//         canonical 00.30.01, dist serial 15, published 2026-09-18
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.30.2-dist.16
+//         commit          b71567b80899ee99a2e7e7034f33928e4933a416
+//         MANIFEST sha256 1dab5bc27464ae66c7952dd9b901ed651bd3cdc12d3fc396c190b4abbcc18529
+//         canonical 00.30.02, dist serial 16, published 2026-10-08
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -56,7 +56,7 @@ export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective
 
 /** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned
  *  distribution's VERSION file (see the provenance block at the top of this file). */
-export const ONLYWORLDS_VERSION = '00.30.01' as const;
+export const ONLYWORLDS_VERSION = '00.30.02' as const;
 
 /** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */
 export type ElementFamily = 'agents' | 'world' | 'abstract' | 'temporal';
@@ -202,7 +202,7 @@ export const ELEMENT_SECTIONS: Record<ElementType, SectionInfo[]> = {
   ],
   relation: [
     { name: 'Nature', order: 1, fields: ['background', 'start_date', 'end_date', 'intensity', 'actor', 'events'] },
-    { name: 'Involves', order: 2, fields: ['characters', 'objects', 'locations', 'species', 'creatures', 'institutions', 'traits', 'collectives', 'zones', 'abilities', 'phenomena', 'languages', 'families', 'titles', 'constructs', 'events', 'narratives'] },
+    { name: 'Involves', order: 2, fields: ['characters', 'objects', 'locations', 'species', 'creatures', 'institutions', 'traits', 'collectives', 'zones', 'abilities', 'phenomena', 'languages', 'families', 'titles', 'constructs', 'narratives'] },
   ],
   species: [
     { name: 'Biology', order: 1, fields: ['appearance', 'life_span', 'weight', 'nourishment', 'reproduction', 'adaptations'] },
@@ -296,7 +296,7 @@ export const MULTI_LINK_FIELDS: Record<ElementType, string[]> = {
 //     exist in relation.yaml at all -- a phantom field, exported, that the v2
 //     API would 422 on as an unknown key.
 //
-// Three DECLARED deviations from a naive schema read; the first two match what codegen
+// Two DECLARED deviations from a naive schema read, both matching what codegen
 // already emits for the interfaces:
 //   - pin.element is a `generic-link` and is split into element_type (text) +
 //     element_id (single_link, target 'any'), which is what the v2 wire serves.
@@ -304,12 +304,11 @@ export const MULTI_LINK_FIELDS: Record<ElementType, string[]> = {
 //     nothing. The schema's `maximum:` is advisory -- the wire does not enforce
 //     it -- so the walk stays silent on bounds permanently (ruled 2026-07-29).
 //     There is no source for them, and none is coming.
-//   - `required: true` appears on `name` ONLY. The schema files still list more
-//     (marker: map, zone, x, y, order; pin: map, element, x, y), but the wire never
-//     enforced them and canonical is dropping the lists (rulings.yaml:
-//     nullable-by-default, Captain 2026-07-28; keel's own OpenAPI write schemas say
-//     `required: [name]`). Through 4.3.0 this table copied the lists, so a form built
-//     from it demanded coordinates the server does not.
+//
+// `required: true` appears on `name` only, which is all the schema requires since
+// canonical 00.30.02 (rulings.yaml: nullable-by-default). Through 4.3.0 this table copied
+// the older pin/marker lists, so a form built from it demanded coordinates the server
+// does not; 4.4.0 to 4.7.0 dropped them by hand.
 // ---------------------------------------------------------------------------
 
 /** Field type definitions for OnlyWorlds elements. */
@@ -1335,9 +1334,9 @@ export interface LocationV2 extends OwElementBase {
   governing_title: string | null;  // -> title
   /** Zone of interest that is associated with the location */
   zone: string | null;  // -> zone
-  /** Locations with active, traditional, or historical rivalries */
+  /** Location with an active, traditional, or historical rivalry with this one */
   rival: string | null;  // -> location
-  /** Locations with active, cooperative, or historical ties */
+  /** Location with active, cooperative, or historical ties to this one */
   partner: string | null;  // -> location
   /** Distinct collective groups or communities residing within the location */
   populations: string[];  // -> collective
@@ -1399,7 +1398,7 @@ export interface MarkerV2 extends OwElementBase {
   y: number | null;
   /** z coordinate, in case of depth */
   z: number | null;
-  /** Sequence position when markers define a polygon or line (0 = first point) */
+  /** Sequence position when markers define a polygon or line (0 = first point); without it, markers keep the order they were made in */
   order: number | null;
   /** Map this marker is placed on */
   map: string | null;  // -> map
@@ -1533,9 +1532,9 @@ export interface PinV2 extends OwElementBase {
   z: number | null;
   /** Map that the pin is placed on */
   map: string | null;  // -> map
-  /** Link to any Element (managed by ContentType + UUID) (type discriminator half of the generic link). */
+  /** The element this pin places on the map, of any type (type discriminator half of the generic link). */
   element_type: string | null;
-  /** Link to any Element (managed by ContentType + UUID) (UUID half of the generic link). */
+  /** The element this pin places on the map, of any type (UUID half of the generic link). */
   element_id: string | null;
 }
 

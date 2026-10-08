@@ -357,7 +357,7 @@ FIELD_SCHEMA_INTRO = """
 //     exist in relation.yaml at all -- a phantom field, exported, that the v2
 //     API would 422 on as an unknown key.
 //
-// Three DECLARED deviations from a naive schema read; the first two match what codegen
+// Two DECLARED deviations from a naive schema read, both matching what codegen
 // already emits for the interfaces:
 //   - pin.element is a `generic-link` and is split into element_type (text) +
 //     element_id (single_link, target 'any'), which is what the v2 wire serves.
@@ -365,12 +365,11 @@ FIELD_SCHEMA_INTRO = """
 //     nothing. The schema's `maximum:` is advisory -- the wire does not enforce
 //     it -- so the walk stays silent on bounds permanently (ruled 2026-07-29).
 //     There is no source for them, and none is coming.
-//   - `required: true` appears on `name` ONLY. The schema files still list more
-//     (marker: map, zone, x, y, order; pin: map, element, x, y), but the wire never
-//     enforced them and canonical is dropping the lists (rulings.yaml:
-//     nullable-by-default, Captain 2026-07-28; keel's own OpenAPI write schemas say
-//     `required: [name]`). Through 4.3.0 this table copied the lists, so a form built
-//     from it demanded coordinates the server does not.
+//
+// `required: true` appears on `name` only, which is all the schema requires since
+// canonical 00.30.02 (rulings.yaml: nullable-by-default). Through 4.3.0 this table copied
+// the older pin/marker lists, so a form built from it demanded coordinates the server
+// does not; 4.4.0 to 4.7.0 dropped them by hand.
 // ---------------------------------------------------------------------------
 
 /** Field type definitions for OnlyWorlds elements. */
@@ -721,25 +720,24 @@ def main() -> None:
         families[tslug] = fam
         icons[tslug] = icon
         sections[tslug] = parse_sections(doc, tslug)
-        # Read separately rather than via include_required so the field specs the
-        # interface emitter sees stay byte-for-byte what they were before.
+        # Since canonical 00.30.02 the schema requires `name` and nothing else, and `name`
+        # is a base row, so every per-type set is empty. A type that lists more is a new
+        # rule: stop and have it ruled (copy it, or keep the wire's name-only), never
+        # drop it silently. Read separately from include_required so the field specs the
+        # interface emitter sees stay byte-for-byte what they were.
         yaml_required = walk.required_names(doc)
-        # Declared deviation (see the FIELD_SCHEMA intro): the wire requires `name` and
-        # nothing else, whatever the YAML still lists. `name` is a base row, so the set is empty.
-        required_sets[tslug] = set()
         if yaml_required:
             dropped_required[tslug] = sorted(yaml_required)
+        required_sets[tslug] = set()
         fields = flatten_fields(doc, tslug)
         all_fields[tslug] = fields
         interfaces.append(render_interface(tslug, fields))
 
     if dropped_required:
-        note('FIELD_SCHEMA: `required` is emitted for `name` only; the schema still lists '
-             + '; '.join(f'{t}: {", ".join(v)}' for t, v in sorted(dropped_required.items()))
-             + ' (rulings.yaml: nullable-by-default).')
-    else:
-        note('FIELD_SCHEMA: the schema no longer lists any `required:` beyond name; the clamp in main() '
-             'is now dead code. Delete it and the third deviation in the intro.')
+        sys.exit('FIELD_SCHEMA: the schema lists `required:` beyond name again: '
+                 + '; '.join(f'{t}: {", ".join(v)}' for t, v in sorted(dropped_required.items()))
+                 + '. The wire requires name only (rulings.yaml: nullable-by-default). Have it ruled '
+                 'whether FIELD_SCHEMA copies the list, then change this guard.')
     header = (HEADER
               .replace("__PROVENANCE__", render_provenance(schema_dir))
               .replace("__ELEMENT_BASE__", render_element_base(schema_dir)))

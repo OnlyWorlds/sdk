@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.30.1-dist.15** — canonical schema **00.30.01**, published 2026-09-18.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.30.2-dist.16** — canonical schema **00.30.02**, published 2026-10-08.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -326,8 +326,8 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `governing_title` (single link → title) — Governing figure assigned by the location's primary power
 - `secondary_powers` (multi link → institution) — Institutions with significant political control
 - `zone` (single link → zone) — Zone of interest that is associated with the location
-- `rival` (single link → location) — Locations with active, traditional, or historical rivalries
-- `partner` (single link → location) — Locations with active, cooperative, or historical ties
+- `rival` (single link → location) — Location with an active, traditional, or historical rivalry with this one
+- `partner` (single link → location) — Location with active, cooperative, or historical ties to this one
 
 ### World
 
@@ -388,7 +388,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `x` (integer) — x coordinate, from bottom left of the map
 - `y` (integer) — y coordinate, from bottom left of the map
 - `z` (integer) — z coordinate, in case of depth
-- `order` (integer) — Sequence position when markers define a polygon or line (0 = first point)
+- `order` (integer) — Sequence position when markers define a polygon or line (0 = first point); without it, markers keep the order they were made in
 
 
 ## narrative  ·  family: temporal  ·  icon: menu_book
@@ -482,7 +482,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 ### Details
 
 - `map` (single link → map) — Map that the pin is placed on
-- `element` (generic link (any element type)) — Link to any Element (managed by ContentType + UUID)
+- `element` (generic link (any element type)) — The element this pin places on the map, of any type
 - `x` (integer) — x coordinate, from bottom left of the map
 - `y` (integer) — y coordinate, from bottom left of the map
 - `z` (integer) — z coordinate, in case of depth (optional)
@@ -517,7 +517,6 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `families` (multi link → family) — Families relevant to the relation
 - `titles` (multi link → title) — Titles relevant to the relation
 - `constructs` (multi link → construct) — Concepts, contracts, or principles relevant to the relation
-- `events` (multi link → event) — Events where the relation is involved or relevant
 - `narratives` (multi link → narrative) — Narratives relevant to the relation
 
 

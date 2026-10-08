@@ -5,6 +5,15 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+- **Schema repinned `v0.30.1-dist.15` → `v0.30.2-dist.16`** (canonical **00.30.02**).
+  `ONLYWORLDS_VERSION` is now `'00.30.02'`. Field descriptions move with the schema: Location's
+  `rivalries` and `partnerships`, Marker's `order`, and Pin's `element` pair. No field shape and
+  no `FIELD_SCHEMA` entry changed: canonical now requires only `name` on every type, which is
+  what `FIELD_SCHEMA` already said, so its hand-made exception for the old Pin and Marker
+  lists is gone. If the schema lists more than `name` again, codegen stops and asks for a
+  ruling instead of dropping the list. 31/31 file hashes recomputed from the tag.
+
 ## [4.7.0] — 2026-10-08
 
 ### Added

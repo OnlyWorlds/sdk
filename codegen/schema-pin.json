@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (Boss, 2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (Skeld, disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.30.1-dist.15",
-  "commit": "6a4b2a70f5c3b48958578a5a8ba84af4ae436110",
-  "manifest_sha256": "9472b3d4a40546df68df0e7fc42a762a7e775d269f508066df140932c503f8e3",
-  "canonical_version": "00.30.01",
-  "dist_serial": 15,
-  "published": "2026-09-18",
-  "pinned_at": "2026-09-28",
-  "pinned_by": "Kael (Assembly) — 31/31 file hashes recomputed independently from a fresh download of the public tag; MANIFEST self-hash recorded from that same download, matched by the local schema-dist checkout at the same tag, and cross-checked against the publisher's announced serial (15, 2026-09-18) and canonical version (00.30.01)",
+  "tag": "v0.30.2-dist.16",
+  "commit": "b71567b80899ee99a2e7e7034f33928e4933a416",
+  "manifest_sha256": "1dab5bc27464ae66c7952dd9b901ed651bd3cdc12d3fc396c190b4abbcc18529",
+  "canonical_version": "00.30.02",
+  "dist_serial": 16,
+  "published": "2026-10-08",
+  "pinned_at": "2026-10-08",
+  "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; 31/31 files re-hashed against MANIFEST.json; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.30.1-dist.15",
+      "manifest_sha256": "9472b3d4a40546df68df0e7fc42a762a7e775d269f508066df140932c503f8e3",
+      "note": "superseded by dist.16 (canonical 00.30.02: only name required, the pin/marker required lists dropped, three descriptions corrected, relation.events duplicate removed)"
+    },
     {
       "tag": "v0.30.1-dist.13",
       "manifest_sha256": "d8208863138899ae5363237d8beafdf0308f31ef725c4a257c22a3793b73952e",
