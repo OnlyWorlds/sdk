@@ -159,26 +159,25 @@ export interface ListParams {
 }
 
 export interface OwClientConfig {
-  /** ow_w_ / ow_r_ / ow_a_ prefixed key, or grandfathered 10-digit legacy key. */
+  /** The key: an ow_w_ (write) or ow_r_ (read) world key, an ow_a_ account token (sent as a Bearer token, for the account routes), or a 10-digit legacy key. */
   apiKey: string;
   /**
-   * Optional. Required for writes when the world has a PIN, and for legacy-key
-   * reads of private worlds. Prefixed keys read PIN-less. String, not number --
-   * '0123' !== 123.
+   * The PIN, needed for writes when the world has one, and for legacy-key reads of private worlds.
+   * Prefixed keys read without a PIN. A string, not a number: '0123' !== 123.
    */
   apiPin?: string;
-  /** Default: https://www.onlyworlds.com/api/v2 */
+  /** The API's base URL, default https://www.onlyworlds.com/api/v2. */
   baseUrl?: string;
   /**
-   * Page size for element lists. Default 100 (server default; max 1000).
-   * Deliberately visible in config: page size is a citizenship property.
+   * Page size for element lists, default 100 (the server's default; at most 1000).
+   * It is in the config on purpose: page size decides the load a client puts on the server.
    */
   pageSize?: number;
   /**
-   * Page size for /changes pulls. Default 100. Live precedents: Obsidian 100,
-   * Atlas 250, MCP 25. /changes is the platform's heaviest route -- be polite.
+   * Page size for /changes pulls, default 100. Tools in use pick 25 to 250; the change feed
+   * is the platform's heaviest route, so keep it modest.
    */
   changesPageSize?: number;
-  /** Injectable for tests / fake-keel harnesses. Defaults to globalThis.fetch. */
+  /** A fetch implementation to use instead of globalThis.fetch (for tests and other runtimes). */
   fetch?: typeof globalThis.fetch;
 }

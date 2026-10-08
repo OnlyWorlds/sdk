@@ -189,11 +189,10 @@ test('non-2xx throws OwApiError with full envelope (P4a: type/code/param/doc_url
 
 // -- 409s told apart, and a busy server's Retry-After (4.2.0) --------------
 // Envelopes shaped as keel sends them: core/errors.py (id_conflict), core/idempotency.py
-// (idempotency_error), core/admission.py (server_busy + retry-after). doc_url varies in keel
-// itself (/api/errors# vs /docs/api/errors#); these tests don't depend on it.
+// (idempotency_error), core/admission.py (server_busy + retry-after).
 
 const envelope = (type, code) => ({ error: { type, code, message: code, param: null,
-  doc_url: `https://onlyworlds.github.io/docs/api/errors#${code}` } });
+  doc_url: `https://onlyworlds.github.io/api/errors#${code}` } });
 
 async function thrown(script, call) {
   const { client } = makeClient(script);

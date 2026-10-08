@@ -15,6 +15,9 @@ earlier history lives in git log only.
   the edge refuses (415 `unsupported_type`); checked against the Worker's type table.
 - `changes()`: the old rewind rule compared a stored cursor with `head`, which an opaque cursor
   cannot do; replaced with the reset rule (`isResyncRequired`).
+- The doc comments of `OwClientConfig`, `create` and `uploadImage` are written for users: internal
+  ruling numbers and test-harness notes are gone, and each opens with what the option or method does.
+  The docs site's TypeScript reference is generated from these comments.
 
 ## [4.6.0] — 2026-10-06
 

@@ -99,11 +99,11 @@ export class OwV2Client {
   }
 
   /**
-   * POST /{type}/ -- create. Mints an RFC 9562 UUIDv7 for element.id when the
-   * caller omits one (design ruling D29d) so a retry carrying the same
-   * Idempotency-Key is structurally safe. Callers MAY still supply their own id.
+   * POST /{type}/ -- create one element, minting a UUIDv7 id on the client when you leave id out.
+   * The client-side id makes a retry carrying the same Idempotency-Key safe: it rewrites
+   * the same element instead of creating a second one. You may still supply your own id.
    * `name` is the one required field, and required means the key is present: `''` and
-   * `null` are accepted and stored as `''` (nameless Markers exist; keel ruling 2026-09-28).
+   * `null` are accepted and stored as `''` (nameless Markers exist).
    */
   async create(type: ElementType | string, element: OwElement | Record<string, unknown>, opts: { idempotencyKey?: string } = {}): Promise<OwElement> {
     const body = sanitizePayload(element);
@@ -225,8 +225,8 @@ export class OwV2Client {
   }
 
   /**
-   * Upload one image and get its permanent public URL: a ticket from keel, then the
-   * bytes straight to the edge (keel never sees them). Pass a ticket from
+   * Upload one image and get its permanent public URL: a ticket from the API, then the
+   * bytes straight to the media edge (the API never sees them). Pass a ticket from
    * createMediaTicket() to use it instead of fetching one. Returns the edge's 201;
    * set `url` as an element's `image_url` yourself (`patch(type, id, { image_url })`).
    *
