@@ -106,7 +106,7 @@ npm run codegen        # writes types.generated.ts + SCHEMA.md
 
 Stdlib plus **PyYAML** (codegen's only third-party dependency; this repo carries no
 `requirements.txt`, so CI installs it explicitly). Do not hand-edit `types.generated.ts` or
-`SCHEMA.md` -- change the schema upstream (via the schema council for the standard, or Skeld's
+`SCHEMA.md` -- change the schema upstream (via the schema council for the standard, or the
 register for presentation metadata), re-pin, and regenerate. `codegen:check` compares full file
 bytes **including the provenance comments**, so a docs reword to those strings fails the check
 until you regenerate.

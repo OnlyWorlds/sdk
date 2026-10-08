@@ -1,5 +1,5 @@
 /**
- * keel v2 engine absorbed from Assembly's ow-v2-client v0.9.0 (Kael),
+ * keel v2 engine absorbed from an earlier v2 client (ow-v2-client v0.9.0),
  * wire-corrected against live staging fixtures 2026-07-18.
  *
  * OwV2Client -- thin typed fetch client for the keel v2 API.
@@ -331,7 +331,7 @@ export class OwV2Client {
  * through writes untouched — every tool that round-trips its own state through
  * other tools depends on it (e.g. tangle's x_tangle_battle). A whitelist would
  * silently strip them and corrupt cross-tool state. Consumer-review-upheld
- * (Temper 2026-07-18, reaffirmed §5-A 2026-07-23).
+ * (2026-07-18, reaffirmed 2026-07-23).
  */
 const READ_ONLY_FIELDS = ['world', 'type', 'created_at', 'updated_at', 'change_seq'] as const;
 
@@ -361,7 +361,7 @@ function readReplayHeader(headers: Headers): boolean {
  * order is random. Worlds also hold v4 ids and legacy v1-server ids (`06x...`,
  * which carry nibble 7 too but are seconds-first), so never order elements by id:
  * use created_at for creation order (change_seq is last-write order). v7 is a DEFAULT, never a
- * requirement -- caller-supplied v4 ids stay valid forever (Captain's ruling,
+ * requirement -- caller-supplied v4 ids stay valid forever (ruling,
  * 2026-09-28; keel mints v7 server-side too, layout per keel core/ids.py).
  */
 function mintUuid(now: number = Date.now()): string {

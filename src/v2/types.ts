@@ -1,5 +1,5 @@
 /**
- * keel v2 engine absorbed from Assembly's ow-v2-client v0.9.0 (Kael),
+ * keel v2 engine absorbed from an earlier v2 client (ow-v2-client v0.9.0),
  * wire-corrected against live staging fixtures 2026-07-18.
  *
  * OnlyWorlds v2 (keel) wire types -- the NON-generated, hand-owned wire shapes

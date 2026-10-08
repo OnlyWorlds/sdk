@@ -255,7 +255,7 @@ VALID_FAMILIES = ("agents", "world", "abstract", "temporal")
 def parse_sections(doc: dict, tslug: str) -> list[dict]:
     """Sections ARE the canonical document structure: top-level `properties`
     keys are section names, their nested `properties` are the fields, both in
-    document order (order IS display order; Skeld's ruling 2026-07-23 —
+    document order (order IS display order; ruling 2026-07-23 —
     sections are DERIVED from the standard tier, not a wrapper key)."""
     out = []
     props = doc.get("properties") or {}

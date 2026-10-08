@@ -8,7 +8,7 @@
 /**
  * Minimal transport the token resource needs — structurally satisfied by
  * `OwV2Client` (its `request()` is public since 4.0): `new TokenResource(client)`.
- * Wire ruling (Skeld 2026-07-23): keel keeps the /tokens/* economy long-term
+ * Wire ruling (2026-07-23): keel keeps the /tokens/* economy long-term
  * (Tangle ratings write it, Council voting reads it) — port, don't delete.
  */
 export interface TokenTransport {

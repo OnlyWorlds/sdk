@@ -1,5 +1,5 @@
 /**
- * keel v2 engine absorbed from Assembly's ow-v2-client v0.9.0 (Kael),
+ * keel v2 engine absorbed from an earlier v2 client (ow-v2-client v0.9.0),
  * wire-corrected against live staging fixtures 2026-07-18.
  *
  * Public barrel for the v2 dialect — since 4.0 the only dialect in the package.

@@ -1,9 +1,8 @@
 /**
  * Canonical element colour palette — four semantic families.
  *
- * Ruled by Captain 2026-07-22 after Skeld's measurement pass (Orrery
- * `product/schema/element-palette-measurements.md`): 22 mutually-separable
- * hues is structurally impossible; four families is the ceiling that passes
+ * Ruled 2026-07-22 after a measurement pass: 22 mutually-separable hues
+ * is structurally impossible; four families is the ceiling that passes
  * all-pairs CVD separation in both modes. **Colour carries the FAMILY; the
  * icon (`ELEMENT_ICONS`) carries the TYPE.** Dark-mode pairs land in the 6–8
  * CVD floor band, so secondary encoding (icon + label) is REQUIRED alongside

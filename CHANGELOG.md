@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `@onlyworlds/sdk`. Maintained from 3.1.0 onward (Kael, Assembly);
+All notable changes to `@onlyworlds/sdk`. Maintained from 3.1.0 onward;
 earlier history lives in git log only.
 
 ## [Unreleased]
@@ -45,7 +45,7 @@ Includes 4.5.1's documentation fixes: 4.5.1 was staged and never published.
   refusals (`ticket_used`, `ticket_expired`, `bad_key`, `exists`, `unsupported_type`, ...) arrive
   as `OwApiError` with their code. Set the returned `url` as an element's `image_url` yourself.
   Checked live on 2026-10-06: one upload through keel's ticket to the edge (201), and the same
-  ticket again refused with 401 `ticket_used` (Keel #59).
+  ticket again refused with 401 `ticket_used`.
 - **`createMediaTicket()`**: the first step alone, for callers that upload themselves (progress
   bars, say). Types `OwMediaTicket` and `OwUploadedImage`.
 
@@ -60,11 +60,11 @@ Docs only: no code path changes.
 ### Documented
 - **`isOwnerOnly`'s JSDoc in 4.5.0 was wrong about who sees `owner_only`.** It said owners and
   co-builders never see it. A member key, a co-builder's too, gets it on `PATCH /world`; only the
-  owner's key is exempt (keel spec section 9; confirmed from keel's `patch_world` by Skeld,
+  owner's key is exempt (keel spec section 9; confirmed from keel's `patch_world`,
   2026-10-04).
 - **`world_gone` is reserved.** `OwAuthErrorCode` and `isAuthError` still carry it, but keel never
   emits it: a deleted world's keys are deleted with it, so the key answers 401 `invalid_credentials`
-  (Skeld, 2026-10-04; keel spec section 2, T6b). Found by the wire gate reading the SDK's own
+  (2026-10-04; keel spec section 2). Found by the wire gate reading the SDK's own
   built file for the codes it keys on.
 
 ## [4.5.0] — 2026-10-04
@@ -75,7 +75,7 @@ three behaviours the server has always had that no client doc said. Additive; no
 ### Added
 - **`OwApiError.isOwnerOnly`**: 403 `owner_only`, a contributor attempting a world-level change
   (`patchWorld`, publishing a show page). Owners and co-builders never see it. keel's OpenAPI
-  document does not name the code yet (Skeld has that to close); the wire returns it.
+  document does not name the code yet (the schema side has that to close); the wire returns it.
 
 ### Documented
 - **An atomic `/bulk` rollback still returns 201 slots** for the items that would have
@@ -104,10 +104,10 @@ contributor meets on someone else's. Additive; nothing is removed or narrows.
 ### Fixed
 - **`FIELD_SCHEMA` no longer marks `marker.map/zone/x/y/order` and `pin.map/element_type/element_id/x/y`
   as `required: true`.** The wire requires `name` and nothing else (rulings.yaml `nullable-by-default`,
-  Captain 2026-07-28; keel's OpenAPI write schemas say `required: [name]`), but the schema files still
+  ruling 2026-07-28; keel's OpenAPI write schemas say `required: [name]`), but the schema files still
   list those fields and the generator copied the lists, so a form built from the table demanded
   coordinates the server never did. Found by comparing the SDK with keel's OpenAPI document (the
-  new `verify-sdk-wire` gate in Assembly). **If you read `required` from this table, marker and pin
+  new `verify-sdk-wire` gate). **If you read `required` from this table, marker and pin
   fields now read as optional**, which is what the server accepts. The generator notes the lists it
   ignores on every run and says when canonical stops carrying them.
 
@@ -155,7 +155,7 @@ Ids, honest filter docs, and the schema repin. Nothing is removed; no call needs
   order elements by id. For creation order use `created_at`; `change_seq` is last-write
   order. This is a **default, not a
   requirement**: a v4 or v7 id a caller supplies is still accepted as-is, and
-  every id already stored stays valid. Keel mints v7 server-side too (Captain's ruling,
+  every id already stored stays valid. Keel mints v7 server-side too (ruling,
   2026-09-28). Pinned by six tests: version and variant, the big-endian timestamp above
   bit 32, fractional and pre-1970 clocks floored consistently, creation order across 50
   consecutive milliseconds, 1,000 distinct ids inside one millisecond, and the no-`crypto`
@@ -165,7 +165,7 @@ Ids, honest filter docs, and the schema repin. Nothing is removed; no call needs
   edges, and keel's `uuid7()` agrees on timestamp, version and variant for a pinned clock.
 - **`elementColor()` on an unknown type now throws a `TypeError` that names the type.** It
   used to crash with `Cannot read properties of undefined (reading 'dark')`. Found while
-  building the Forge's colour gate: atlas's own copy falls back to the `world` family for an
+  building a colour gate: atlas's own copy falls back to the `world` family for an
   unknown type, so swapping it for this export is not a pure re-export for that input, and the
   docstring now says so. Whether the package should fall back is left to its consumers.
 - The generated field-schema comment no longer calls `maximum:` an open question or counts
@@ -312,7 +312,7 @@ pinned consumers.
 ### Added (post-alpha.0, same night)
 - **`ELEMENT_ICONS` GENERATED** from keel's `icon:` wrapper key (keel `56c124a`).
 - **`ELEMENT_SECTIONS` DERIVED** from the canonical schema's own document structure
-  (Skeld's ruling: sections are the standard tier's property groups; document order is
+  (ruling: sections are the standard tier's property groups; document order is
   display order). Divergence check vs the old hand table found and fixed three fossils:
   creature "Behaviour"→"Behavior", pin's triple-listed generic link → `element`,
   relation "Involves" listing a nonexistent `relations` field. Canonical is truth.
@@ -321,18 +321,18 @@ pinned consumers.
   covered by the codegen drift guard. AGENTS.md points agents at it first.
 - **`OwV2Client.request()` is public** (typed escape hatch; does not sanitize) and
   structurally satisfies `TokenTransport` — `new TokenResource(client)` just works.
-  Token ruling (Skeld): keel keeps `/tokens/*` long-term; ported, not deleted.
+  Token ruling: keel keeps `/tokens/*` long-term; ported, not deleted.
 - README rewritten v2-native (v1 sections, branded types, and the encrypted-key
   walkthrough removed; bulk partial-failure and idempotency-key hygiene promoted).
 
-### alpha.1 — consumer-pin fixes (Temper's atlas review, same night)
+### alpha.1 — consumer-pin fixes (atlas review, same night)
 - **`parseEnvelope` → `parseErrorEnvelope`** (it parses the platform *error* envelope;
   renamed before the 4.0 name freeze to avoid collision with the world-export envelope).
 - The never-whitelist LAW now lives as a comment on `READ_ONLY_FIELDS` itself.
 - Stale v1 example in the shipped d.ts fixed (TokenResource JSDoc).
 
 ### Release gates — ALL GREEN (2026-07-23 night)
-- **Gate 3 (wire-log v1-traffic query, Skeld)**: GREEN — no unknown v1-SDK consumer on
+- **Gate 3 (wire-log v1-traffic query)**: GREEN — no unknown v1-SDK consumer on
   the wire; observed v1 traffic is pinned deployed builds (council proxy, legacy plugin
   walks) that an npm major cannot touch. The v1 API dialect stays served regardless.
 - **`/api/v2/tokens/` live on prod + staging** (keel `e181689`; three-base byte
@@ -340,7 +340,7 @@ pinned consumers.
   "older server", not "no tokens". Requirement noted in the migration guide.
 - **`ONLYWORLDS_VERSION` now GENERATED** from canonical's `VERSION` file (carried
   into keel `schema/` by the refresh script, keel `492168c`) — the last hand-synced
-  constant is dead. Consumer soak: Temper pinned the alpha against atlas's full
+  constant is dead. Consumer soak: the atlas app pinned the alpha against its full
   static surface — strict-clean compile, correct runtime, package shape approved.
 - **No `npm deprecate` on 3.x** (landscape research; 3.x stays plainly supported).
 - 4.x wishlist: account client (list/mint/create — atlas first consumer), world-export
@@ -354,7 +354,7 @@ pinned consumers.
   `ELEMENT_FAMILIES` (type → family), `FAMILY_COLORS` (family → `{light, dark}` hex),
   `familyOf(type)`, `elementColor(type, mode)`, `FAMILY_ORDER`, type `ElementFamily`.
   Four semantic families (agents / world / abstract / temporal) ruled 2026-07-22 after
-  CVD-validated measurement (Orrery `product/schema/element-palette-measurements.md`).
+  CVD-validated measurement.
   Colour carries the FAMILY; `ELEMENT_ICONS` carries the TYPE. Keyed on the v2 slug
   union. First proven live in atlas and council, whose local copies become re-exports.
   **`ELEMENT_FAMILIES` is GENERATED** from the `family:` key in keel's schema YAML
@@ -382,7 +382,7 @@ pinned consumers.
 
 ## [3.0.0] — 2026-07-18
 
-- v2-native client (`OwV2Client`) absorbed from Assembly's ow-v2-client v0.9.0 (Kael),
+- v2-native client (`OwV2Client`) absorbed from an earlier v2 client (ow-v2-client v0.9.0),
   wire-corrected against live staging fixtures (S22). Generated element types from the
   canonical keel schema YAML (`src/v2/types.generated.ts`), validated against all 1,086
   live W11 elements. v1 surface unchanged and frozen.

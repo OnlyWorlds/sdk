@@ -6,10 +6,10 @@
  *
  * WHY
  * ---
- * On 2026-07-29 I wrote to another bay "Shipped as 4.0.2." At that moment 4.0.2 was
+ * On 2026-07-29 I announced "Shipped as 4.0.2." At that moment 4.0.2 was
  * committed, tagged and pushed — and NOT published. It never reached npm at all; its
- * content went out inside 4.1.0 an hour later. Skeld caught it by fetching
- * `dist-tags` from the registry instead of believing my letter, and asked the right
+ * content went out inside 4.1.0 an hour later. A reviewer caught it by fetching
+ * `dist-tags` from the registry instead of believing my announcement, and asked the right
  * question: which of "tagged", "released" and "published" did I actually mean?
  *
  * A version number in a changelog, a package.json, or a git tag is a claim about

@@ -444,7 +444,7 @@ test('4.0: the v1 client is GONE from the package root', async () => {
   assert.equal(typeof mod.elementColor, 'function'); // v2 surface intact
 });
 
-// -- Images: the keel ticket, then the bytes to the edge (Keel #59) -----------
+// -- Images: the keel ticket, then the bytes to the edge -----------
 
 const TICKET = {
   ticket: 'tkt.sig', upload_url: 'https://upload.example/v1/upload', prefix: 'u/w1/',

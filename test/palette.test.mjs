@@ -33,7 +33,7 @@ const RULED_ORDER = PRESENTATION.colors.order;
 
 test('★ the distribution is WELL-FORMED before anything is compared against it', () => {
   // A checker that silently reads an empty object passes vacuously against
-  // nothing. Skeld's own control for this same palette did exactly that an hour
+  // nothing. An earlier control for this same palette did exactly that an hour
   // before this test was written: a regex parsed one source to `{}`, and `{}`
   // compares unequal to everything, so it reported drift that did not exist. It
   // printed the counts it had parsed, which is the only reason that was an

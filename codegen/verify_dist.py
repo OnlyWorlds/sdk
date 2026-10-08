@@ -14,7 +14,7 @@ Two checks that catch DIFFERENT things, and both are needed:
         both agree perfectly about the wrong content. Recording the hash we
         first accepted is the only thing that makes that visible. This is the
         go.sum / package-lock `integrity` pattern.
-        (Boss's finding, 2026-07-28. CVE-2025-30066 is the same shape.)
+        (Found 2026-07-28. CVE-2025-30066 is the same shape.)
 
 Plus a freshness WARNING (never a failure): a check that compares you to what
 you chose can never tell you your choice went stale. Failing on age turns a
