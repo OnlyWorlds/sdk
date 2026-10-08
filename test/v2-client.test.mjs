@@ -40,7 +40,7 @@ function fakeFetch(script) {
 
 function makeClient(script, cfg = {}) {
   const fetchImpl = fakeFetch(script);
-  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '2589', fetch: fetchImpl, ...cfg });
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: fetchImpl, ...cfg });
   return { client, fetchImpl };
 }
 
@@ -425,7 +425,7 @@ test('account key uses Bearer auth, world key uses API-Key/API-Pin', async () =>
   const { client: w, fetchImpl: wf } = makeClient({ status: 200, body: {} });
   await w.getWorld();
   assert.equal(wf.calls.at(-1).init.headers['API-Key'], 'ow_w_test');
-  assert.equal(wf.calls.at(-1).init.headers['API-Pin'], '2589');
+  assert.equal(wf.calls.at(-1).init.headers['API-Pin'], '1234');
 });
 
 // -- ELEMENT_TYPES completeness ---------------------------------------------
@@ -459,19 +459,19 @@ function imageFetch(edge = { status: 201, body: UPLOADED }) {
 
 test('createMediaTicket: POST /media/ticket with the key and PIN, no body', async () => {
   const fetchImpl = imageFetch();
-  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '2589', fetch: fetchImpl });
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: fetchImpl });
   assert.deepEqual(await client.createMediaTicket(), TICKET);
   const { url, init } = fetchImpl.calls[0];
   assert.equal(url, 'https://www.onlyworlds.com/api/v2/media/ticket');
   assert.equal(init.method, 'POST');
   assert.equal(init.body, undefined);
   assert.equal(init.headers['API-Key'], 'ow_w_test');
-  assert.equal(init.headers['API-Pin'], '2589');
+  assert.equal(init.headers['API-Pin'], '1234');
 });
 
 test('uploadImage: ticket from keel, bytes to upload_url with the ticket only, never the key or PIN', async () => {
   const fetchImpl = imageFetch();
-  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '2589', fetch: fetchImpl });
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: fetchImpl });
   const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
   assert.deepEqual(await client.uploadImage(bytes, { key: 'u/w1/x.png' }), UPLOADED);
   assert.equal(fetchImpl.calls.length, 2);
@@ -484,7 +484,7 @@ test('uploadImage: ticket from keel, bytes to upload_url with the ticket only, n
 
 test('uploadImage: a ticket you pass is used, keel is not called', async () => {
   const fetchImpl = imageFetch();
-  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '2589', fetch: fetchImpl });
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: fetchImpl });
   await client.uploadImage(new Blob([new Uint8Array(3)]), { ticket: TICKET });
   assert.deepEqual(fetchImpl.calls.map((c) => c.url), [TICKET.upload_url]);
   assert.equal(fetchImpl.calls[0].init.headers['X-Key'], undefined);
@@ -492,7 +492,7 @@ test('uploadImage: a ticket you pass is used, keel is not called', async () => {
 
 test('uploadImage: larger than max_bytes throws 413 too_large and sends nothing', async () => {
   const fetchImpl = imageFetch();
-  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '2589', fetch: fetchImpl });
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: fetchImpl });
   for (const big of [new Uint8Array(9), new Uint8Array(9).buffer, new Blob([new Uint8Array(9)])]) {
     await assert.rejects(client.uploadImage(big, { ticket: TICKET }), (e) => e instanceof OwApiError && e.status === 413 && e.code === 'too_large');
   }
@@ -501,7 +501,7 @@ test('uploadImage: larger than max_bytes throws 413 too_large and sends nothing'
 
 test("uploadImage: the edge's refusal arrives as OwApiError with its code", async () => {
   const client = new OwV2Client({
-    apiKey: 'ow_w_test', apiPin: '2589',
+    apiKey: 'ow_w_test', apiPin: '1234',
     fetch: imageFetch({ status: 401, body: { error: 'ticket_used', note: 'one upload per ticket; request another' } }),
   });
   await assert.rejects(client.uploadImage(new Uint8Array(4)), (e) => e instanceof OwApiError && e.status === 401 && e.code === 'ticket_used');
