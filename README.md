@@ -20,15 +20,13 @@ import { OwV2Client } from '@onlyworlds/sdk';
 
 const client = new OwV2Client({ apiKey: '0000000001' });
 console.log((await client.getWorld()).name);
-const { data } = await client.list('character', { limit: 3 });
+const { data } = await client.list('character', { filter: { name__icontains: 'fluffington' } });
 for (const c of data) console.log(' ', c.name);
 ```
 
 ```
 Moppetopia
-  Admiral Splashworth
   Admiral Fluffington
-  Captain Snoot
 ```
 
 ## Your own world
