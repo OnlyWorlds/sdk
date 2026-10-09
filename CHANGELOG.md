@@ -5,7 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.7.2] — 2026-10-09
+
 ### Changed
+- **README first run** finds Admiral Fluffington by name (the demo world's default list order moves with every edit, so "the first three" could not be promised); the npm page shows the corrected output.
 - **Schema repinned `v0.30.2-dist.16` → `v0.31.0-dist.18`** (canonical **00.31.00**).
   `ONLYWORLDS_VERSION` is now `'00.31.00'`. The World gains three optional free-text settings,
   `length_unit`, `mass_unit` and `distance_unit`; the nine element fields that promised "world
