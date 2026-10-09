@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+- **Schema repinned `v0.30.2-dist.16` → `v0.31.0-dist.18`** (canonical **00.31.00**).
+  `ONLYWORLDS_VERSION` is now `'00.31.00'`. The World gains three optional free-text settings,
+  `length_unit`, `mass_unit` and `distance_unit`; the nine element fields that promised "world
+  LENGTH / MASS / DISTANCE units" now name them in their descriptions (Ability `range`, Character
+  and Creature `height` and `weight`, Creature `speed`, Location `elevation`, Object and Species
+  `weight`). No element field shape and no `FIELD_SCHEMA` entry changed. The world body is not
+  typed per field (`OwWorldMeta` is open), so `getWorld` returns the three keys and `patchWorld`
+  sends them with no code change; a test says so.
+
 ## [4.7.1] — 2026-10-08
 
 ### Changed

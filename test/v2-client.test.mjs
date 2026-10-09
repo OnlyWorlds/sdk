@@ -506,3 +506,10 @@ test("uploadImage: the edge's refusal arrives as OwApiError with its code", asyn
   });
   await assert.rejects(client.uploadImage(new Uint8Array(4)), (e) => e instanceof OwApiError && e.status === 401 && e.code === 'ticket_used');
 });
+
+test('patchWorld carries the three unit settings (canonical 00.31.00) and still strips the server-managed keys', async () => {
+  const { client, fetchImpl } = makeClient({ body: { id: 'w', name: 'W', length_unit: 'cm', mass_unit: 'kg', distance_unit: 'km' } });
+  const w = await client.patchWorld({ length_unit: 'cm', mass_unit: 'kg', distance_unit: 'km', world: 'x', change_seq: 3 });
+  assert.deepEqual(lastBody(fetchImpl), { length_unit: 'cm', mass_unit: 'kg', distance_unit: 'km' });
+  assert.equal(w.length_unit, 'cm');
+});

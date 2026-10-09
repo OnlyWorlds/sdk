@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.30.2-dist.16
-//         commit          b71567b80899ee99a2e7e7034f33928e4933a416
-//         MANIFEST sha256 1dab5bc27464ae66c7952dd9b901ed651bd3cdc12d3fc396c190b4abbcc18529
-//         canonical 00.30.02, dist serial 16, published 2026-10-08
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.31.0-dist.18
+//         commit          f2f35d9d4fab13b4de2fa4d1164eb6ac604b365a
+//         MANIFEST sha256 2e1783e607efe69500b92fdf283d84624c7b3f310cf4fc1bee185a83c8e35804
+//         canonical 00.31.00, dist serial 18, published 2026-10-09
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -56,7 +56,7 @@ export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective
 
 /** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned
  *  distribution's VERSION file (see the provenance block at the top of this file). */
-export const ONLYWORLDS_VERSION = '00.30.02' as const;
+export const ONLYWORLDS_VERSION = '00.31.00' as const;
 
 /** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */
 export type ElementFamily = 'agents' | 'world' | 'abstract' | 'temporal';
@@ -938,7 +938,7 @@ export interface AbilityV2 extends OwElementBase {
   duration: number | null;
   /** Relative measure of the ability's inherent potency or force, used for scaling or comparison purposes */
   potency: number | null;
-  /** Effective reach or distance at which the ability can be used, measured in DISTANCE units */
+  /** Effective reach or distance at which the ability can be used, in the world's distance unit (World distance_unit) */
   range: number | null;
   /** Describes specific difficulties or constraints that make the ability hard to master or use effectively */
   challenges?: string;
@@ -1000,9 +1000,9 @@ export interface CharacterV2 extends OwElementBase {
   physicality?: string;
   /** The character's mindset, emotional tone, and style of thinking */
   mentality?: string;
-  /** The character's approximate or exact height, using world LENGTH units */
+  /** The character's approximate or exact height, in the world's length unit (World length_unit) */
   height: number | null;
-  /** The character's approximate or exact weight, using world MASS units */
+  /** The character's approximate or exact weight, in the world's mass unit (World mass_unit) */
   weight: number | null;
   /** History, upbringing, or formative experiences of the character */
   background?: string;
@@ -1124,9 +1124,9 @@ export interface CreatureV2 extends OwElementBase {
   type: "creature";
   /** Visual description of the creature */
   appearance?: string;
-  /** Approximate or exact weight of the creature, using world MASS units */
+  /** Approximate or exact weight of the creature, in the world's mass unit (World mass_unit) */
   weight: number | null;
-  /** Approximate height of the creature, using the world's defined LENGTH units */
+  /** Approximate height of the creature, in the world's length unit (World length_unit) */
   height: number | null;
   /** Typical behaviors, instincts, or recurring actions the creature tends to display */
   habits?: string;
@@ -1142,7 +1142,7 @@ export interface CreatureV2 extends OwElementBase {
   hit_points: number | null;
   /** Defense rating against physical attacks or effects */
   armor_class: number | null;
-  /** Typical movement speed, measured in the world's DISTANCE unit per round */
+  /** Typical movement speed, in the world's distance unit (World distance_unit) per round */
   speed: number | null;
   /** Specific location where the creature is currently found or most associated with */
   location: string | null;  // -> location
@@ -1324,7 +1324,7 @@ export interface LocationV2 extends OwElementBase {
   architecture?: string;
   /** Qualities of natural, constructed, and implemented defenses at the location */
   defensibility?: string;
-  /** Height or elevation of the location relative to surrounding terrain, defined in world DISTANCE units */
+  /** Height or elevation of the location relative to surrounding terrain, in the world's distance unit (World distance_unit) */
   elevation: number | null;
   /** Wider location that this location is part of */
   parent_location: string | null;  // -> location
@@ -1470,7 +1470,7 @@ export interface ObjectV2 extends OwElementBase {
   type: "object";
   /** Appearance, design, or visual presentation of the object */
   aesthetics?: string;
-  /** Approximate or exact mass of the object, defined by world MASS units */
+  /** Approximate or exact mass of the object, in the world's mass unit (World mass_unit) */
   weight: number | null;
   /** The number of identical units in this object entry */
   amount: number | null;
@@ -1592,7 +1592,7 @@ export interface SpeciesV2 extends OwElementBase {
   appearance?: string;
   /** Average or typical life expectancy of an individual, defined in world TIME units */
   life_span: number | null;
-  /** Average or typical adult weight, defined in world MASS units */
+  /** Average or typical adult weight, in the world's mass unit (World mass_unit) */
   weight: number | null;
   /** Innate behavioral drives and survival tendencies */
   instincts?: string;

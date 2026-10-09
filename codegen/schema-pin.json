@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.30.2-dist.16",
-  "commit": "b71567b80899ee99a2e7e7034f33928e4933a416",
-  "manifest_sha256": "1dab5bc27464ae66c7952dd9b901ed651bd3cdc12d3fc396c190b4abbcc18529",
-  "canonical_version": "00.30.02",
-  "dist_serial": 16,
-  "published": "2026-10-08",
-  "pinned_at": "2026-10-08",
+  "tag": "v0.31.0-dist.18",
+  "commit": "f2f35d9d4fab13b4de2fa4d1164eb6ac604b365a",
+  "manifest_sha256": "2e1783e607efe69500b92fdf283d84624c7b3f310cf4fc1bee185a83c8e35804",
+  "canonical_version": "00.31.00",
+  "dist_serial": 18,
+  "published": "2026-10-09",
+  "pinned_at": "2026-10-09",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; 31/31 files re-hashed against MANIFEST.json; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.30.2-dist.16",
+      "manifest_sha256": "1dab5bc27464ae66c7952dd9b901ed651bd3cdc12d3fc396c190b4abbcc18529",
+      "note": "superseded by v0.31.0-dist.18 (canonical 00.31.00: the World gains length_unit, mass_unit and distance_unit, and nine element field descriptions point at them)"
+    },
     {
       "tag": "v0.30.1-dist.15",
       "manifest_sha256": "9472b3d4a40546df68df0e7fc42a762a7e775d269f508066df140932c503f8e3",

@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.30.2-dist.16** — canonical schema **00.30.02**, published 2026-10-08.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.31.0-dist.18** — canonical schema **00.31.00**, published 2026-10-09.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -24,7 +24,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `activation` (text) — Method or conditions under which the ability is activated
 - `duration` (integer) — Length of time the ability remains active or its effects persist, measured in TIME units
 - `potency` (integer) — Relative measure of the ability's inherent potency or force, used for scaling or comparison purposes
-- `range` (integer) — Effective reach or distance at which the ability can be used, measured in DISTANCE units
+- `range` (integer) — Effective reach or distance at which the ability can be used, in the world's distance unit (World distance_unit)
 - `effects` (multi link → phenomenon) — Phenomena that result from the ability's use, such as environmental changes or sensory effects
 - `challenges` (text) — Describes specific difficulties or constraints that make the ability hard to master or use effectively
 - `talents` (multi link → trait) — Traits that naturally enhance or improve performance with this ability
@@ -47,8 +47,8 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 
 - `physicality` (text) — The character's visible physical features and body attributes
 - `mentality` (text) — The character's mindset, emotional tone, and style of thinking
-- `height` (integer) — The character's approximate or exact height, using world LENGTH units
-- `weight` (integer) — The character's approximate or exact weight, using world MASS units
+- `height` (integer) — The character's approximate or exact height, in the world's length unit (World length_unit)
+- `weight` (integer) — The character's approximate or exact weight, in the world's mass unit (World mass_unit)
 - `species` (multi link → species) — Species the character might belong to
 - `traits` (multi link → trait) — Traits for notable behavioral, physical, or systemic characteristics
 - `abilities` (multi link → ability) — Abilities the character might perform, control, or invoke
@@ -164,8 +164,8 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 ### Biology
 
 - `appearance` (text) — Visual description of the creature
-- `weight` (integer) — Approximate or exact weight of the creature, using world MASS units
-- `height` (integer) — Approximate height of the creature, using the world's defined LENGTH units
+- `weight` (integer) — Approximate or exact weight of the creature, in the world's mass unit (World mass_unit)
+- `height` (integer) — Approximate height of the creature, in the world's length unit (World length_unit)
 - `species` (multi link → species) — Species this creature belongs to
 
 ### Behavior
@@ -188,7 +188,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `challenge_rating` (integer) — Difficulty or threat level of the creature in a gameplay context
 - `hit_points` (integer) — Total health or durability value in combat
 - `armor_class` (integer) — Defense rating against physical attacks or effects
-- `speed` (integer) — Typical movement speed, measured in the world's DISTANCE unit per round
+- `speed` (integer) — Typical movement speed, in the world's distance unit (World distance_unit) per round
 - `actions` (multi link → ability) — Combat or tactical abilities the creature can perform or use
 
 
@@ -359,7 +359,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 ### Defense
 
 - `defensibility` (text) — Qualities of natural, constructed, and implemented defenses at the location
-- `elevation` (integer) — Height or elevation of the location relative to surrounding terrain, defined in world DISTANCE units
+- `elevation` (integer) — Height or elevation of the location relative to surrounding terrain, in the world's distance unit (World distance_unit)
 - `fighters` (multi link → construct) — Military units or forces responsible for defending the location
 - `defensive_objects` (multi link → object) — Objects or installations for defending the location
 
@@ -435,7 +435,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 ### Form
 
 - `aesthetics` (text) — Appearance, design, or visual presentation of the object
-- `weight` (integer) — Approximate or exact mass of the object, defined by world MASS units
+- `weight` (integer) — Approximate or exact mass of the object, in the world's mass unit (World mass_unit)
 - `amount` (integer) — The number of identical units in this object entry
 - `parent_object` (single link → object) — Larger object that this one is part of or contained within
 - `materials` (multi link → construct) — The physical matter that constitutes the object
@@ -527,7 +527,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 
 - `appearance` (text) — Typical physical or form features of the species
 - `life_span` (integer) — Average or typical life expectancy of an individual, defined in world TIME units
-- `weight` (integer) — Average or typical adult weight, defined in world MASS units
+- `weight` (integer) — Average or typical adult weight, in the world's mass unit (World mass_unit)
 - `nourishment` (multi link → species) — Other species consumed as food sources
 - `reproduction` (multi link → construct) — Reproductive method(s) of the species
 - `adaptations` (multi link → ability) — Special physiological or evolutionary abilities
