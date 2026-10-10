@@ -507,6 +507,62 @@ test("uploadImage: the edge's refusal arrives as OwApiError with its code", asyn
   await assert.rejects(client.uploadImage(new Uint8Array(4)), (e) => e instanceof OwApiError && e.status === 401 && e.code === 'ticket_used');
 });
 
+const RTICKET = {
+  ticket: 'd1.sig', remove_url: 'https://upload.example/v1/remove', exp: 1900000000,
+  key: 'u/w1/x.png', referenced: 2,
+};
+const REMOVED = { removed: 'u/w1/x.png', bytes: 4, cache: 'may_linger' };
+
+/** keel answers the removal ticket, the edge answers `edge` (default: a 200). */
+function removeFetch(edge = { status: 200, body: REMOVED }) {
+  return fakeFetch((url) => (url.endsWith('/media/remove-ticket') ? { status: 200, body: RTICKET } : edge));
+}
+
+test('createRemovalTicket: POST /media/remove-ticket with the key and PIN and {key}; a full image_url is cut to its key', async () => {
+  const fetchImpl = removeFetch();
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: fetchImpl });
+  assert.deepEqual(await client.createRemovalTicket('u/w1/x.png'), RTICKET);
+  await client.createRemovalTicket('https://media.onlyworlds.com/u/w1/x.png');
+  for (const { url, init } of fetchImpl.calls) {
+    assert.equal(url, 'https://www.onlyworlds.com/api/v2/media/remove-ticket');
+    assert.equal(init.method, 'POST');
+    assert.deepEqual(JSON.parse(init.body), { key: 'u/w1/x.png' });
+    assert.equal(init.headers['API-Key'], 'ow_w_test');
+    assert.equal(init.headers['API-Pin'], '1234');
+  }
+});
+
+test("removeImage: ticket from keel, removal at the ticket's remove_url with the ticket only, never the key or PIN", async () => {
+  const fetchImpl = removeFetch();
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: fetchImpl });
+  assert.deepEqual(await client.removeImage('u/w1/x.png'), REMOVED);
+  assert.equal(fetchImpl.calls.length, 2);
+  const { url, init } = fetchImpl.calls[1];
+  assert.equal(url, RTICKET.remove_url);
+  assert.equal(init.method, 'POST');
+  assert.equal(init.body, undefined);
+  assert.deepEqual(init.headers, { Authorization: 'Bearer d1.sig' });
+});
+
+test('removeImage: a ticket you pass is used, keel is not called', async () => {
+  const fetchImpl = removeFetch();
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: fetchImpl });
+  await client.removeImage('u/w1/x.png', { ticket: RTICKET });
+  assert.deepEqual(fetchImpl.calls.map((c) => c.url), [RTICKET.remove_url]);
+});
+
+test("removeImage: keel's refusal and the edge's arrive as OwApiError with their codes", async () => {
+  const keelRefuses = new OwV2Client({
+    apiKey: 'ow_w_test', apiPin: '1234',
+    fetch: fakeFetch(() => ({ status: 409, body: { error: { type: 'invalid_request', code: 'upload_pending', message: 'retry' } } })),
+  });
+  await assert.rejects(keelRefuses.removeImage('u/w1/x.png'), (e) => e instanceof OwApiError && e.status === 409 && e.code === 'upload_pending');
+  const edgeRefuses = new OwV2Client({
+    apiKey: 'ow_w_test', apiPin: '1234', fetch: removeFetch({ status: 403, body: { error: 'not_removable' } }),
+  });
+  await assert.rejects(edgeRefuses.removeImage('u/w1/x.png'), (e) => e instanceof OwApiError && e.status === 403 && e.code === 'not_removable');
+});
+
 test('patchWorld carries the three unit settings (canonical 00.31.00) and still strips the server-managed keys', async () => {
   const { client, fetchImpl } = makeClient({ body: { id: 'w', name: 'W', length_unit: 'cm', mass_unit: 'kg', distance_unit: 'km' } });
   const w = await client.patchWorld({ length_unit: 'cm', mass_unit: 'kg', distance_unit: 'km', world: 'x', change_seq: 3 });

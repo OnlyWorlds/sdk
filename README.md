@@ -101,6 +101,13 @@ await writer.patch('character', id, { image_url: image.url });
 
 The SDK asks the API for a single-use ticket, then sends the bytes straight to the upload host, which never sees your key. webp, png, jpeg or avif (no SVG or gif), up to 15 MB. Each upload counts toward the world's daily limit and the account's storage. To upload yourself (for a progress bar), call `createMediaTicket()` and POST the bytes to its `upload_url` with `Authorization: Bearer <ticket>`.
 
+```typescript
+await writer.removeImage(image.url); // the image_url, or its object key
+await writer.patch('character', id, { image_url: null });
+```
+
+The image's uploader or the world's owner can remove an uploaded image; the space goes back to the uploader's storage. Removal leaves elements as they are, so clear their `image_url` yourself (`createRemovalTicket(key).referenced` says how many still show it). A copy the network already holds can keep answering for a while.
+
 ## Sync
 
 ```typescript

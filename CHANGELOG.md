@@ -5,7 +5,22 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
-## [4.7.3] — 2026-10-10
+## [4.8.0] — 2026-10-10
+
+### Added
+- **`removeImage(keyOrUrl, { ticket? })`**: removes one uploaded image. A removal ticket from
+  keel (`POST /media/remove-ticket`, keel D91), then the removal at the ticket's `remove_url`
+  with the ticket only, never the API key. Takes the object key or the whole `image_url`. The
+  image's uploader or the world's owner key may remove it; the bytes go back to the uploader's
+  storage. Elements keep their `image_url`: clear it yourself.
+- **`createRemovalTicket(key)`** and the types **`OwRemovalTicket`** (`ticket`, `remove_url`,
+  `exp` in unix seconds, `key`, `referenced`: how many elements still show the image) and
+  **`OwRemovedImage`** (`removed`, `bytes`, `cache`). Refusals arrive as `OwApiError`: keel's
+  `permission_error`, `not_found`, `removal_in_flight` and `upload_pending` (both 409 with
+  Retry-After); the edge's `ticket_expired`, `ticket_used`, `ticket_invalid`, `not_removable`,
+  `remove_failed`.
+
+## [4.7.3] — 2026-10-10 (never published; shipped in 4.8.0)
 
 ### Changed
 - **Schema repinned `v0.31.0-dist.18` → `v0.31.0-dist.19`** (canonical unchanged, 00.31.00).

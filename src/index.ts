@@ -18,7 +18,7 @@ export { ELEMENT_TYPES, SPATIAL_TYPES } from './v2';
 export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
-  OwLinkEdit, OwMediaTicket, OwPage, OwUploadedImage, OwWorldMeta,
+  OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta,
 } from './v2';
 
 // Canonical element colour palette (families generated from schema; hexes CVD-validated)

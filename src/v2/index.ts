@@ -19,7 +19,7 @@ export type { ElementFamily } from './palette';
 export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
-  OwLinkEdit, OwMediaTicket, OwPage, OwUploadedImage, OwWorldMeta,
+  OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta,
 } from './types';
 export {
   ELEMENT_LABELS, ELEMENT_SECTIONS, ELEMENT_ICONS, FIELD_SCHEMA,

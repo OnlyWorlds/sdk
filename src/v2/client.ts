@@ -14,7 +14,8 @@
 import type { ElementType } from './types.generated';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
-  OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwUploadedImage, OwWorldMeta,
+  OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
+  OwUploadedImage, OwWorldMeta,
 } from './types';
 import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
@@ -261,6 +262,46 @@ export class OwV2Client {
     return await res.json() as OwUploadedImage;
   }
 
+  /**
+   * POST /media/remove-ticket -- permission to remove ONE image (a write key and its
+   * PIN). The image's uploader may remove it, and so may the world's owner key; an
+   * agent seat answers as its sponsor. Only images uploaded with a ticket qualify.
+   * `key` is the object key, or the whole image_url (the part after the host is taken).
+   * The reply's `referenced` counts the world's elements still showing the image.
+   * Refusals: 403 `permission_error` (neither uploader nor owner), 404 `not_found`
+   * (no removable image under this key), 409 `removal_in_flight` (a ticket for this
+   * image is already out) and 409 `upload_pending` (an upload is not yet recorded), both
+   * with Retry-After.
+   */
+  async createRemovalTicket(key: string): Promise<OwRemovalTicket> {
+    return this.request('POST', '/media/remove-ticket', { body: { key: objectKey(key) } }) as Promise<OwRemovalTicket>;
+  }
+
+  /**
+   * Remove one uploaded image: a removal ticket from the API, then the removal at the
+   * edge (the API key never leaves for the edge). Pass the object key or the whole
+   * image_url, or a ticket from createRemovalTicket() to use it instead of fetching one.
+   * The bytes go back to the uploading account's storage.
+   *
+   * Removal does not touch elements: clear or replace their `image_url` yourself (the
+   * ticket's `referenced` says how many there are). A copy already cached by the network
+   * or a browser can keep answering for a while (`cache: 'may_linger'`). The edge's
+   * refusals arrive as OwApiError with its code: 401 `ticket_expired` / `ticket_used` /
+   * `ticket_invalid`, 403 `not_removable`, 502 `remove_failed` (nothing removed; the
+   * ticket is still unspent).
+   */
+  async removeImage(keyOrUrl: string, opts: { ticket?: OwRemovalTicket } = {}): Promise<OwRemovedImage> {
+    const ticket = opts.ticket ?? await this.createRemovalTicket(keyOrUrl);
+    let res: Response;
+    try {
+      res = await this.fetchImpl(ticket.remove_url, { method: 'POST', headers: { Authorization: `Bearer ${ticket.ticket}` } });
+    } catch (cause) {
+      throw new OwNetworkError(`OnlyWorlds image removal failed: POST ${ticket.remove_url}`, cause);
+    }
+    if (!res.ok) throw await errorFromResponse(res);
+    return await res.json() as OwRemovedImage;
+  }
+
   // -- Core request machinery ----------------------------------------------
 
   /**
@@ -393,6 +434,12 @@ function mintUuid(now: number = Date.now()): string {
     hex[bytes[8]] + hex[bytes[9]] + '-' +
     hex[bytes[10]] + hex[bytes[11]] + hex[bytes[12]] + hex[bytes[13]] + hex[bytes[14]] + hex[bytes[15]]
   );
+}
+
+/** An image's object key: the key as given, or the path of a full image_url without its leading slash. */
+function objectKey(keyOrUrl: string): string {
+  if (!/^https?:\/\//i.test(keyOrUrl)) return keyOrUrl;
+  return decodeURIComponent(new URL(keyOrUrl).pathname.replace(/^\/+/, ''));
 }
 
 function buildQuery(params: Record<string, string | number | boolean | undefined>): string {

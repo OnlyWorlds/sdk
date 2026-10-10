@@ -127,6 +127,39 @@ export interface OwMediaTicket {
   issued_to: { account: string | null; membership: string | null };
 }
 
+/**
+ * POST /media/remove-ticket's 200: a short-lived, single-use permission to remove one
+ * image. keel issues it to the image's uploader or the world's owner key; the edge at
+ * `remove_url` does the removal.
+ */
+export interface OwRemovalTicket {
+  /** Opaque: send it to `remove_url` as `Authorization: Bearer <ticket>`, as is. */
+  ticket: string;
+  /** Where the removal goes: the upload host's /v1/remove (https://upload.onlyworlds.com/v1/remove on production). */
+  remove_url: string;
+  /** Unix seconds after which the edge refuses the ticket (10 minutes after issue). */
+  exp: number;
+  /** The object key the ticket removes. */
+  key: string;
+  /** How many of the world's elements show the image. Removal does not change them: clear their `image_url` yourself. */
+  referenced: number;
+}
+
+/** The edge's 200 for one removal. */
+export interface OwRemovedImage {
+  /** The object key that was removed. */
+  removed: string;
+  /** The bytes given back to the uploading account's storage. */
+  bytes: number;
+  /**
+   * `may_linger`: copies the network or a browser already holds can keep answering for days
+   * or longer (images are cached as unchanging for a year). `purging`: the edge cache is
+   * being cleared too.
+   */
+  cache: 'may_linger' | 'purging' | (string & {});
+  [k: string]: unknown;
+}
+
 /** The edge's 201 for one upload. Put `url` in an element's `image_url`. */
 export interface OwUploadedImage {
   /** The permanent public URL (https://media.onlyworlds.com/<key>). */
