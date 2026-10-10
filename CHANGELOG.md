@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.7.3] — 2026-10-10
+
+### Changed
+- **Schema repinned `v0.31.0-dist.18` → `v0.31.0-dist.19`** (canonical unchanged, 00.31.00).
+  Two generated values move: `ELEMENT_ICONS.zone` `architecture` → `pentagon`,
+  `ELEMENT_ICONS.marker` `location_on` → `polyline` (Material Symbols names; Marker no longer
+  shares the pin glyph). No field, type or `FIELD_SCHEMA` entry changed. The vendored tree grows
+  from 31 to 69 files (dist.19 adds `schema.json` and an example world); 69/69 hashed against
+  the pinned manifest.
+- **`AGENTS.md` re-read against the new pin** (its gate fired on the repin, as designed); its
+  wire facts hold, its "Current as of" line moves.
+
 ## [4.7.2] — 2026-10-09
 
 ### Changed

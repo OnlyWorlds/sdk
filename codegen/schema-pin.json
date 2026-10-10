@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.31.0-dist.18",
-  "commit": "f2f35d9d4fab13b4de2fa4d1164eb6ac604b365a",
-  "manifest_sha256": "2e1783e607efe69500b92fdf283d84624c7b3f310cf4fc1bee185a83c8e35804",
+  "tag": "v0.31.0-dist.19",
+  "commit": "cf002cdf5f2086654fa48e3f05d4ace1d0a03b8a",
+  "manifest_sha256": "a157938b62f108e41ff0872a40ff30646071dfa1a2e25b952f16e35610bcab6f",
   "canonical_version": "00.31.00",
-  "dist_serial": 18,
-  "published": "2026-10-09",
-  "pinned_at": "2026-10-09",
-  "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; 31/31 files re-hashed against MANIFEST.json; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
+  "dist_serial": 19,
+  "published": "2026-10-10",
+  "pinned_at": "2026-10-10",
+  "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above. The publisher's own check: 68 of 68 files match (h37 #2678).",
   "previous_pins": [
+    {
+      "tag": "v0.31.0-dist.18",
+      "manifest_sha256": "2e1783e607efe69500b92fdf283d84624c7b3f310cf4fc1bee185a83c8e35804",
+      "note": "superseded by v0.31.0-dist.19 (same canonical 00.31.00; presentation icons: zone architecture -> pentagon, marker location_on -> polyline; the dist adds schema.json, the decoded schema for any language, and example/hyperion)"
+    },
     {
       "tag": "v0.30.2-dist.16",
       "manifest_sha256": "1dab5bc27464ae66c7952dd9b901ed651bd3cdc12d3fc396c190b4abbcc18529",

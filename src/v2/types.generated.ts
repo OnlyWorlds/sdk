@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.31.0-dist.18
-//         commit          f2f35d9d4fab13b4de2fa4d1164eb6ac604b365a
-//         MANIFEST sha256 2e1783e607efe69500b92fdf283d84624c7b3f310cf4fc1bee185a83c8e35804
-//         canonical 00.31.00, dist serial 18, published 2026-10-09
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.31.0-dist.19
+//         commit          cf002cdf5f2086654fa48e3f05d4ace1d0a03b8a
+//         MANIFEST sha256 a157938b62f108e41ff0872a40ff30646071dfa1a2e25b952f16e35610bcab6f
+//         canonical 00.31.00, dist serial 19, published 2026-10-10
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -104,7 +104,7 @@ export const ELEMENT_ICONS: Record<ElementType, string> = {
   law: 'gpp_bad',
   location: 'castle',
   map: 'map',
-  marker: 'location_on',
+  marker: 'polyline',
   narrative: 'menu_book',
   object: 'webhook',
   phenomenon: 'thunderstorm',
@@ -113,7 +113,7 @@ export const ELEMENT_ICONS: Record<ElementType, string> = {
   species: 'crib',
   title: 'military_tech',
   trait: 'flaky',
-  zone: 'architecture',
+  zone: 'pentagon',
 };
 
 /** Field grouping for display. DERIVED from the canonical schema's own document

@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.31.0-dist.18** — canonical schema **00.31.00**, published 2026-10-09.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.31.0-dist.19** — canonical schema **00.31.00**, published 2026-10-10.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -378,7 +378,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `location` (single link → location) — Location element that this map represents
 
 
-## marker  ·  family: world  ·  icon: location_on
+## marker  ·  family: world  ·  icon: polyline
 
 
 ### Details
@@ -611,7 +611,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `empowered_abilities` (multi link → ability) — Abilities strengthened or enabled by the trait
 
 
-## zone  ·  family: world  ·  icon: architecture
+## zone  ·  family: world  ·  icon: pentagon
 
 
 ### Scope
