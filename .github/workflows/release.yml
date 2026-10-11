@@ -1,0 +1,89 @@
+name: release
+
+# Publishes @onlyworlds/sdk to npm when a version tag (v4.8.1) is pushed, through npm's
+# trusted publishing: GitHub proves this workflow's identity to npm (OIDC), so no npm token
+# exists anywhere. Set up once on npmjs.com, the package's settings, "Trusted Publisher":
+# GitHub Actions, organization OnlyWorlds, repository sdk, workflow release.yml.
+#
+# Every gate runs first and a red one stops the publish. After the publish the job reads the
+# registry back: the version is live, and its tarball holds exactly what this commit packs.
+# The wire check against keel's OpenAPI document (Assembly's verify-sdk-wire.mjs) runs on the
+# maintainer's machine before the tag is pushed; it is not repeated here.
+#
+# Grant: the Captain, 2026-10-11 (OW Infra h37 #3053): releases are the maintainer's; a major
+# version asks him first.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing needs npm 11.5.1 or later; Node 22 ships npm 10.
+      - run: npm install -g npm@^11.5.1
+      - run: npm --version
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pyyaml
+
+      - name: The tag names the version package.json carries
+        run: |
+          v="$(node -p "require('./package.json').version")"
+          if [ "v$v" != "$GITHUB_REF_NAME" ]; then
+            echo "tag $GITHUB_REF_NAME, but package.json says $v"; exit 1
+          fi
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+
+      - name: A major version is not released from here
+        run: |
+          published="$(npm view @onlyworlds/sdk version)"
+          if [ "${VERSION%%.*}" != "${published%%.*}" ]; then
+            echo "major $VERSION against npm's $published: a major asks the Captain first"; exit 1
+          fi
+
+      - name: Not already on npm
+        run: |
+          if npm view "@onlyworlds/sdk@$VERSION" version > /dev/null 2>&1; then
+            echo "$VERSION is already on npm"; exit 1
+          fi
+
+      - run: npm ci || npm install
+      - run: npm run schema:verify
+      - run: npm run codegen:check
+      - run: npm test
+
+      - run: npm publish --access public
+
+      - name: Read it back from the registry
+        run: |
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if [ "$(npm view @onlyworlds/sdk@$VERSION version 2> /dev/null)" = "$VERSION" ]; then break; fi
+            echo "not visible yet ($i)"; sleep 15
+          done
+          [ "$(npm view @onlyworlds/sdk@$VERSION version)" = "$VERSION" ] || { echo "$VERSION never appeared"; exit 1; }
+          mkdir -p ../local ../remote
+          npm pack --pack-destination ../local > /dev/null
+          (cd ../remote && npm pack "@onlyworlds/sdk@$VERSION" > /dev/null)
+          tar -xzf ../local/*.tgz -C ../local
+          tar -xzf ../remote/*.tgz -C ../remote
+          diff -r ../local/package ../remote/package
+          echo "npm serves $VERSION, identical to this commit's pack"
