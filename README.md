@@ -135,6 +135,22 @@ try {
 
 The check is per element and the server never merges. Compare the copy you edited from with `err.current`: when the fields you changed are not the ones that moved, send again with `ifMatch: err.current.change_seq`; when the same field moved on both sides, ask the user which to keep. Without `ifMatch` a write is unconditional, as before.
 
+## World files
+
+A world file is one `.zip` holding a whole world folder (`world.json` and `elements/<type>/*.json`, as Atlas keeps a world on disk), the way Atlas downloads and opens one. It needs no account and works in the browser and in Node.
+
+```typescript
+import { readWorldFile, writeWorldFile, OwWorldFileError } from '@onlyworlds/sdk';
+
+const world = readWorldFile(bytes);   // a Uint8Array
+world.worldId; world.name; world.world; // world.json, parsed
+world.files;                            // [{ path, data }], relative to the world's folder, sorted
+
+const zip = writeWorldFile(world.files, 'hollow-reach-0192a000'); // one top-level folder
+```
+
+The reader refuses a file before returning anything: a path that could land outside the folder, more than 1 GiB or 200,000 files uncompressed (`maxBytes`, `maxEntries` to change them), no `world.json` with an `id`, or more than one world. Check `err.reason` on the `OwWorldFileError` it throws. The world's OnlyWorlds link and key (`world.json`'s `api`) never travel: both functions remove them. A tool's own folder (`.atlas/` and the like) comes back like any other file; pass `skip: path => …` to leave files out.
+
 ## Errors
 
 Every non-2xx response throws `OwApiError` with the API's envelope: `.status`, `.type`, `.code`, `.param` (the field that failed) and `.docUrl`, which is worth showing to your users. A transport failure throws `OwNetworkError`. `err.isValidationError` covers the common case. A write sent with `ifMatch` that found the element moved throws `OwPreconditionFailedError` (412, `err.isPreconditionFailed`), an `OwApiError` that also carries `current`.

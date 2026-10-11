@@ -40,6 +40,10 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Images: `uploadImage(bytes)` returns `{ url, ... }`; set `url` as `image_url`. The bytes go
   to the edge with a single-use ticket from keel, never with the API key. `removeImage(urlOrKey)`
   takes one back (its uploader or the world's owner); it leaves `image_url` on elements as is.
+- World files (no account needed; since 4.10.0): `readWorldFile(bytes)` opens a `.zip` holding one
+  world folder and returns `{ worldId, name, world, files: [{ path, data }] }`;
+  `writeWorldFile(files, topDir)` makes one. Refusals throw `OwWorldFileError` with a `reason`.
+  `world.json`'s `api` block (link and key) is removed both ways.
 - Ids: the client mints **UUIDv7** on an id-less `create` (since 4.2.0; keel mints v7 too).
   A v4 or v7 id you supply is accepted. **Never sort elements by id**: worlds mix v7, v4
   and legacy `06x…` ids (nibble 7 too, but seconds-first). For creation order use

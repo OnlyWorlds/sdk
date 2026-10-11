@@ -32,6 +32,14 @@ export {
 } from './v2';
 export type { FieldType, FieldInfo, SectionInfo } from './v2';
 
+// The world file: one .zip holding one world as a portable copy (Folder Format §4.1), read and written
+export {
+  readWorldFile, writeWorldFile, OwWorldFileError, WORLD_FILE_MAX_BYTES, WORLD_FILE_MAX_ENTRIES,
+} from './world-file';
+export type {
+  OwReadWorldFile, OwReadWorldFileOptions, OwWorldFileEntry, OwWorldFileReason,
+} from './world-file';
+
 // Token rating surface. RFC-001 §5 left its wire fate as an open question to the
 // platform owner and it was never answered in writing — so this comment said "may be
 // removed in a later 4.x" for months on nobody's authority. PROBED 2026-07-29 against

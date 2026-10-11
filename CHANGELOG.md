@@ -5,6 +5,28 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.10.0] — 2026-10-11
+
+### Added
+- **World files.** `readWorldFile(bytes, { maxBytes, maxEntries, skip })` opens a `.zip` that
+  holds one world folder (Folder Format §4.1, a portable copy) and returns
+  `{ worldId, name, world, files }`; `writeWorldFile(files, topDir)` makes one. Bytes in,
+  bytes out: no DOM or file system, so it runs in the browser and in Node. Absorbed from
+  Atlas's reader (Temper's), so Atlas, Lantern and scripts open one file the same way.
+  The reader refuses before returning anything, with **`OwWorldFileError`** and a `reason`:
+  `unsafe_path` (climbs out, absolute, a drive, a backslash, an empty part, a path that is
+  both a file and a folder), `too_big` / `too_many` (1 GiB and 200,000 files uncompressed,
+  `WORLD_FILE_MAX_BYTES` / `WORLD_FILE_MAX_ENTRIES`; the inflated bytes are counted again,
+  since a declared size can lie), `not_a_world` (no `world.json`, unreadable, no string
+  `id`), `more_than_one` (two worlds, loose files beside the folder, a nested world.json),
+  `not_openable` (not a zip). Archive junk (`__MACOSX`, `.DS_Store`, `Thumbs.db`) is
+  dropped. `world.json`'s `api` (the link and its key) is removed on read and on write; a
+  `world.json` without one keeps its exact bytes. The writer refuses a `world.json` that will
+  not parse rather than zip it raw. Every world in a real Atlas folder (15, up to 3,832
+  files) round-trips byte for byte.
+- **First runtime dependency**: `fflate` (zip, no dependencies of its own, the one Atlas
+  uses). Tree-shaken away for code that never calls the world-file functions.
+
 ## [4.9.0] — 2026-10-11
 
 ### Added
