@@ -20,7 +20,7 @@ earlier history lives in git log only.
   Retry-After); the edge's `ticket_expired`, `ticket_used`, `ticket_invalid`, `not_removable`,
   `remove_failed`.
 
-## [4.7.3] — 2026-10-10 (never published; shipped in 4.8.0)
+## [4.7.3] — 2026-10-10
 
 ### Changed
 - **Schema repinned `v0.31.0-dist.18` → `v0.31.0-dist.19`** (canonical unchanged, 00.31.00).
