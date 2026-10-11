@@ -5,6 +5,31 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.11.0] — 2026-10-12
+
+### Added
+- **World lookup.** `buildWorldIndex(elements)`, `lookupWorld(index, question, { limit })` and
+  `renderElement(element, index)` find the elements a plain-language question is about, in a
+  world held in memory: no model, no network, a few milliseconds. Ranking: names and short
+  forms first, then name words, supertype and subtype, one link step in both directions, then
+  other text and numbers (always below any name hit). Each hit says why it matched.
+  `renderElement` gives a compact text card with links by name, which is what a model reads
+  when one phrases the answer. Measured on two real worlds (Assembly's Lantern Ask trial):
+  the answer was in the first three results for 60 of 60 questions that name their subject
+  and 17 of 24 held-out questions that only describe it; this code returns the same top 8
+  as the trial's on all 100 questions. Names in any script are matched (Chinese and Japanese
+  only where spaces or punctuation separate the words: there is no word splitting). The question words
+  that steer the link step ("where", "rules", "allies") are English.
+- **Photo preparation.** `preparePhoto(blob, { maxSide, quality, maxBytes })` shrinks and
+  converts a picture in the browser before `uploadImage`: longest side 2048 by default, webp at
+  quality 0.82, from the upload page's converter. A browser that cannot encode webp returns a
+  PNG when asked; the result's real type is checked, and a photo then falls back to JPEG while a
+  PNG stays PNG. When re-encoding would only make a file bigger, the original is kept.
+  `planPhoto` is the pure part (sizes and type order). Walked in Chromium, WebKit and Firefox
+  (a 4032×3024 photo became a 2048-wide webp of about 0.5 MB) and with webp encoding forced off.
+  Needs a browser; in Node it throws a `TypeError` that says so. `PHOTO_TYPES`,
+  `PHOTO_MAX_BYTES` are keel's accepted types and its 15 MB limit.
+
 ## [4.10.0] — 2026-10-11
 
 ### Added

@@ -99,6 +99,8 @@ const image = await writer.uploadImage(file); // a Blob, File, ArrayBuffer or Ui
 await writer.patch('character', id, { image_url: image.url });
 ```
 
+In a browser, shrink a phone photo first: `const photo = await preparePhoto(file)` gives a webp (or JPEG where the browser can't encode webp) of at most 2048 px on its longest side; upload `photo.blob`.
+
 The SDK asks the API for a single-use ticket, then sends the bytes straight to the upload host, which never sees your key. webp, png, jpeg or avif (no SVG or gif), up to 15 MB. Each upload counts toward the world's daily limit and the account's storage. To upload yourself (for a progress bar), call `createMediaTicket()` and POST the bytes to its `upload_url` with `Authorization: Bearer <ticket>`.
 
 ```typescript
@@ -134,6 +136,21 @@ try {
 ```
 
 The check is per element and the server never merges. Compare the copy you edited from with `err.current`: when the fields you changed are not the ones that moved, send again with `ifMatch: err.current.change_seq`; when the same field moved on both sides, ask the user which to keep. Without `ifMatch` a write is unconditional, as before.
+
+## Finding things in a world
+
+When you hold a world's elements in memory (from a sync, or a world file), `lookupWorld` finds the ones a plain question is about, with no model and no network:
+
+```typescript
+import { buildWorldIndex, lookupWorld, renderElement } from '@onlyworlds/sdk';
+
+const index = buildWorldIndex(elements);          // once per world; each element needs id and type
+const hits = lookupWorld(index, 'who runs the mill in Ostvik?');
+hits[0].element; hits[0].reasons;                 // best first, with why each matched
+renderElement(hits[0].element, index);            // a short text card, links by name
+```
+
+Names come first, then supertype and subtype, then one link step in either direction, then the elements' other text. To have a model phrase an answer, give it the cards of the top hits and ask it to answer only from them.
 
 ## World files
 

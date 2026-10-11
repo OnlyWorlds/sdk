@@ -40,6 +40,16 @@ export type {
   OwReadWorldFile, OwReadWorldFileOptions, OwWorldFileEntry, OwWorldFileReason,
 } from './world-file';
 
+// World lookup: the elements a question is about, ranked, no model (the Lantern Ask trial, round 2)
+export { buildWorldIndex, lookupWorld, renderElement } from './lookup';
+export type {
+  OwWorldIndex, OwLookupHit, OwLookupReason, OwLookupLink, OwLookupElement, OwLookupOptions, OwRenderOptions,
+} from './lookup';
+
+// Photo preparation: shrink and convert a picture in the browser before uploadImage
+export { preparePhoto, planPhoto, PHOTO_TYPES, PHOTO_MAX_BYTES } from './photo';
+export type { OwPhotoOptions, OwPhotoPlan, OwPreparedPhoto } from './photo';
+
 // Token rating surface. RFC-001 §5 left its wire fate as an open question to the
 // platform owner and it was never answered in writing — so this comment said "may be
 // removed in a later 4.x" for months on nobody's authority. PROBED 2026-07-29 against
