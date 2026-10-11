@@ -75,6 +75,15 @@ test('archive junk is dropped; a tool\'s own files only through skip', () => {
   assert.deepEqual(readWorldFile(zip, { skip: p => p.startsWith('.atlas/') }).files.map(f => f.path), ['world.json']);
 });
 
+test('skip sees each file\'s exact path and drops only that file, never what sits under a name it matches', () => {
+  // Atlas's adapter skips the transient FILE `.atlas/making` and must still see `.atlas/making/x`, which it refuses.
+  const zip = zipSync({ ...world, 'w/.atlas/making/x': strToU8('x'), 'w/.atlas/lock': strToU8('{}') });
+  const seen = [];
+  const back = readWorldFile(zip, { skip: p => { seen.push(p); return p === '.atlas/making' || p === '.atlas/lock'; } });
+  assert.deepEqual(seen.sort(), ['.atlas/lock', '.atlas/making/x', 'world.json']);
+  assert.deepEqual(back.files.map(f => f.path), ['.atlas/making/x', 'world.json']);
+});
+
 test('a skipped file still counts against the budget', () => {
   const zip = zipSync({ ...world, 'w/.atlas/a': strToU8('1'), 'w/.atlas/b': strToU8('2') });
   refuses(zip, 'too_many', { maxEntries: 2, skip: p => p.startsWith('.atlas/') });
