@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.8.1] — 2026-10-11
+
 ### Changed
 - **Schema repinned `v0.31.0-dist.19` → `v0.32.0-dist.20`** (canonical 00.31.00 → 00.32.00).
   The standard's World gains `public_read`, the walk's first boolean field (`scalar_bool`).
