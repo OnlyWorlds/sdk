@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+- **Schema repinned `v0.31.0-dist.19` → `v0.32.0-dist.20`** (canonical 00.31.00 → 00.32.00).
+  The standard's World gains `public_read`, the walk's first boolean field (`scalar_bool`).
+  `OwWorldMeta` already carried `public_read` from `GET /world`; it stays read-only, since
+  `PATCH /world` refuses it (flipping a world public is an owner-level act on
+  onlyworlds.com). `ONLYWORLDS_VERSION` is now `'00.32.00'`. No element type, field or
+  `FIELD_SCHEMA` entry changed.
+
 ## [4.8.0] — 2026-10-10
 
 ### Added

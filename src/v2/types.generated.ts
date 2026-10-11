@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.31.0-dist.19
-//         commit          cf002cdf5f2086654fa48e3f05d4ace1d0a03b8a
-//         MANIFEST sha256 a157938b62f108e41ff0872a40ff30646071dfa1a2e25b952f16e35610bcab6f
-//         canonical 00.31.00, dist serial 19, published 2026-10-10
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.32.0-dist.20
+//         commit          b1050e7fdd5efe7371e3e25b0605235c9abc26a3
+//         MANIFEST sha256 6d092d8430fb385d47c43ce1d7ddebea23260d028f60d80b498cfca6d682fca6
+//         canonical 00.32.00, dist serial 20, published 2026-10-11
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -56,7 +56,7 @@ export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective
 
 /** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned
  *  distribution's VERSION file (see the provenance block at the top of this file). */
-export const ONLYWORLDS_VERSION = '00.31.00' as const;
+export const ONLYWORLDS_VERSION = '00.32.00' as const;
 
 /** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */
 export type ElementFamily = 'agents' | 'world' | 'abstract' | 'temporal';
