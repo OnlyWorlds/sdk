@@ -9,7 +9,7 @@
 
 // Client + wire machinery
 export { OwV2Client, parseErrorEnvelope } from './v2';
-export { OwApiError, OwNetworkError, errorFromResponse } from './v2';
+export { OwApiError, OwPreconditionFailedError, OwNetworkError, errorFromResponse } from './v2';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './v2';
 export type { OwKeyKind, OwAuthErrorCode } from './v2';
 

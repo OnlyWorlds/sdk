@@ -27,6 +27,9 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Never send a `"world"` field in payloads — world identity comes from the API key (422 otherwise).
 - v2 link fields use ONE name both directions (no `_ids` suffix — that is v1 dialect only).
 - PATCH is destructive on sent fields; use `editLinks` (atomic add/remove) for relationships.
+- Offline or stale edits: pass `{ ifMatch: el.change_seq }` to `patch`/`editLinks` (since 4.9.0).
+  If the element moved, nothing is written and `OwPreconditionFailedError` (412) carries
+  `current`; the server never merges, the client decides.
 - World-meta changes do NOT appear in `/changes` — poll `GET /world` separately.
 - Extension fields: `x_<toolname>_*` is the sanctioned namespace for tool-specific state;
   unknown unprefixed fields 422. Extensions are capped at **64 KB per element** (422,

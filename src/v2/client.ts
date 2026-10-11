@@ -126,9 +126,19 @@ export class OwV2Client {
    * PATCH /{type}/{id}/ -- partial update. DESTRUCTIVE on sent fields: arrays
    * replace wholesale, omitted fields stay untouched. For link arrays prefer
    * editLinks() -- atomic server-side merge, no read-before-write.
+   *
+   * `ifMatch` (keel #210): the element's `change_seq` as you read it. The update lands
+   * only if nobody changed the element since; otherwise nothing is written and this throws
+   * an OwPreconditionFailedError (412) whose `current` is the element as it is now. Omit
+   * it for today's unconditional write.
    */
-  async patch(type: ElementType | string, id: string, partial: Record<string, unknown>): Promise<OwElement> {
-    return this.request('PATCH', `/${type}/${id}/`, { body: sanitizePayload(partial) }) as Promise<OwElement>;
+  async patch(
+    type: ElementType | string,
+    id: string,
+    partial: Record<string, unknown>,
+    opts: { ifMatch?: number } = {},
+  ): Promise<OwElement> {
+    return this.request('PATCH', `/${type}/${id}/`, { body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   /**
@@ -144,10 +154,17 @@ export class OwV2Client {
    * POST /{type}/{id}/links/{field} with {add, remove} -- atomic link merge.
    * Dedupes, tolerates already-present/already-absent ids. Returns the FULL
    * updated element (fixture P5). Use this for all relationship editing; it
-   * retires the read-merge-PATCH dance.
+   * retires the read-merge-PATCH dance. `ifMatch` works as on patch(): a link write
+   * moves the element too.
    */
-  async editLinks(type: ElementType | string, id: string, field: string, edit: OwLinkEdit): Promise<OwElement> {
-    return this.request('POST', `/${type}/${id}/links/${field}`, { body: edit }) as Promise<OwElement>;
+  async editLinks(
+    type: ElementType | string,
+    id: string,
+    field: string,
+    edit: OwLinkEdit,
+    opts: { ifMatch?: number } = {},
+  ): Promise<OwElement> {
+    return this.request('POST', `/${type}/${id}/links/${field}`, { body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   // -- Bulk ----------------------------------------------------------------
@@ -321,8 +338,13 @@ export class OwV2Client {
       auth?: boolean;
       allowEmpty?: boolean;
       replayAware?: boolean;
+      /** A `change_seq` to send as `If-Match` (keel #210); a whole number, else TypeError before sending. */
+      ifMatch?: number;
     } = {},
   ): Promise<T> {
+    if (opts.ifMatch !== undefined && !(Number.isInteger(opts.ifMatch) && opts.ifMatch >= 0)) {
+      throw new TypeError(`ifMatch must be a whole number (an element's change_seq), got ${String(opts.ifMatch)}`);
+    }
     const url = `${this.baseUrl}${path}${opts.query ? `?${opts.query}` : ''}`;
     const headers: Record<string, string> = {};
     if (opts.auth !== false) {
@@ -335,6 +357,7 @@ export class OwV2Client {
     }
     if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
     if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
+    if (opts.ifMatch !== undefined) headers['If-Match'] = `"${opts.ifMatch}"`;
 
     let res: Response;
     try {

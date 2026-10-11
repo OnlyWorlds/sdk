@@ -7,7 +7,7 @@
  */
 
 export { OwV2Client, parseErrorEnvelope } from './client';
-export { OwApiError, OwNetworkError, errorFromResponse } from './errors';
+export { OwApiError, OwPreconditionFailedError, OwNetworkError, errorFromResponse } from './errors';
 export type { OwAuthErrorCode } from './errors';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './keys';
 export type { OwKeyKind } from './keys';

@@ -122,6 +122,44 @@ export class OwApiError extends Error {
   get isOwnerOnly(): boolean {
     return this.status === 403 && this.code === 'owner_only';
   }
+
+  /**
+   * A `patch` or `editLinks` sent with `ifMatch` found the element moved past that
+   * `change_seq` (412 `precondition_failed`, keel #210): nothing was written and nothing
+   * merged. The error is an OwPreconditionFailedError; its `current` is the element as it
+   * is now, so no second read is needed.
+   */
+  get isPreconditionFailed(): boolean {
+    return this.status === 412 && this.code === 'precondition_failed';
+  }
+}
+
+/**
+ * 412 `precondition_failed` (keel #210): the element changed since the `change_seq` sent as
+ * `ifMatch`. `current` is the element as it is now, as this key sees it (keel sends it beside
+ * the error envelope; null if a response ever lacks it). The check is per element and the
+ * server never merges: compare the copy you edited from with `current`; when the fields you
+ * changed are not the ones that moved, re-send with `ifMatch: current.change_seq`; when the
+ * same field moved on both sides, ask the user which to keep.
+ */
+export class OwPreconditionFailedError extends OwApiError {
+  readonly current: Record<string, unknown> | null;
+
+  constructor(
+    status: number,
+    code: string | null,
+    message: string,
+    docUrl: string | null,
+    detail: unknown,
+    type: string | null = null,
+    param: string | null = null,
+    retryAfter: number | null = null,
+  ) {
+    super(status, code, message, docUrl, detail, type, param, retryAfter);
+    this.name = 'OwPreconditionFailedError';
+    const cur = detail && typeof detail === 'object' ? (detail as { current?: unknown }).current : undefined;
+    this.current = cur && typeof cur === 'object' ? (cur as Record<string, unknown>) : null;
+  }
 }
 
 /** Network-level failure (fetch rejected) -- no envelope to parse. */
@@ -167,7 +205,8 @@ export function parseErrorEnvelope(status: number, body: unknown, retryAfter: nu
     env.message ?? nested?.message ??
     (typeof env.detail === 'string' ? env.detail : undefined) ??
     `OnlyWorlds API error ${status}${code ? ` (${code})` : ''}`;
-  return new OwApiError(status, code, message, docUrl, body, type, param, retryAfter);
+  const Cls = status === 412 && code === 'precondition_failed' ? OwPreconditionFailedError : OwApiError;
+  return new Cls(status, code, message, docUrl, body, type, param, retryAfter);
 }
 
 /** `Retry-After` as seconds: a non-negative delay, or an HTTP date turned into one. Else null. */

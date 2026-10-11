@@ -12,7 +12,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  OwV2Client, OwApiError, detectKeyKind, ELEMENT_TYPES,
+  OwV2Client, OwApiError, OwPreconditionFailedError, detectKeyKind, ELEMENT_TYPES,
 } from '../dist/index.js';
 
 // -- fake fetch harness -----------------------------------------------------
@@ -238,6 +238,65 @@ test('409 resync_required is isResyncRequired (the guest feed reset), and not a 
   const other = await thrown({ status: 409, body: envelope('invalid_request', 'id_conflict') },
     (c) => c.create('character', { name: 'K' }));
   assert.equal(other.isResyncRequired, false);
+});
+
+// -- If-Match: the PATCH precondition (keel #210, c1d5d2a) ---------------------
+
+const FIX_412 = {
+  error: {
+    type: 'invalid_request', code: 'precondition_failed',
+    message: 'The element has changed since change_seq 41 (now 44).',
+    param: 'If-Match', doc_url: 'https://onlyworlds.github.io/api/errors/#precondition_failed',
+  },
+  current: { type: 'character', id: 'x', name: 'Theirs', change_seq: 44 },
+};
+
+test('patch with ifMatch sends If-Match as a quoted change_seq; without it, no header', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', change_seq: 45 } });
+  await client.patch('character', 'x', { name: 'Mine' }, { ifMatch: 44 });
+  assert.equal(fetchImpl.calls.at(-1).init.headers['If-Match'], '"44"');
+  assert.equal(fetchImpl.calls.at(-1).init.method, 'PATCH');
+  await client.patch('character', 'x', { name: 'Mine' });
+  assert.equal('If-Match' in fetchImpl.calls.at(-1).init.headers, false);
+});
+
+test('editLinks with ifMatch sends If-Match too', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', change_seq: 45 } });
+  await client.editLinks('character', 'x', 'species', { add: ['y'] }, { ifMatch: 7 });
+  assert.equal(fetchImpl.calls.at(-1).init.headers['If-Match'], '"7"');
+});
+
+test('an ifMatch that is not a whole number throws before anything is sent', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: {} });
+  for (const bad of [4.5, -1, NaN, '44']) {
+    await assert.rejects(client.patch('character', 'x', { name: 'K' }, { ifMatch: bad }), TypeError);
+  }
+  assert.equal(fetchImpl.calls.length, 0);
+});
+
+test('412 precondition_failed is an OwPreconditionFailedError carrying current, and an OwApiError', async () => {
+  const err = await thrown({ status: 412, body: FIX_412 },
+    (c) => c.patch('character', 'x', { name: 'Mine' }, { ifMatch: 41 }));
+  assert.ok(err instanceof OwPreconditionFailedError);
+  assert.ok(err instanceof OwApiError);
+  assert.equal(err.name, 'OwPreconditionFailedError');
+  assert.equal(err.isPreconditionFailed, true);
+  assert.deepEqual(err.current, FIX_412.current);
+  assert.equal(err.current.change_seq, 44);
+  assert.equal(err.param, 'If-Match');
+  assert.equal(err.isValidationError, false);
+  assert.equal(err.isIdConflict, false);
+  const other = await thrown({ status: 409, body: envelope('invalid_request', 'id_conflict') },
+    (c) => c.create('character', { name: 'K' }));
+  assert.equal(other.isPreconditionFailed, false);
+  assert.equal(other instanceof OwPreconditionFailedError, false);
+});
+
+test('a 412 with no current still parses: current is null', async () => {
+  const err = await thrown({ status: 412, body: { error: FIX_412.error } },
+    (c) => c.patch('character', 'x', { name: 'Mine' }, { ifMatch: 41 }));
+  assert.equal(err.isPreconditionFailed, true);
+  assert.equal(err.current, null);
 });
 
 test('403 owner_only is isOwnerOnly, and not isNotAuthor', async () => {

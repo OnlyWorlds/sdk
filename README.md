@@ -119,9 +119,25 @@ for await (const change of client.changesAll(cursor)) {
 
 Edits to the world itself (its name, calendar, `public_read`) don't appear in the change feed. Read `client.getWorld()` and compare `updated_at`.
 
+### Only if unchanged
+
+A client that edits offline, or from a copy it has held a while, can ask for an update to land only if nobody changed the element since it was read: pass the `change_seq` you read as `ifMatch`, on `patch` or `editLinks`.
+
+```typescript
+try {
+  await client.patch('character', el.id, { name: 'Mine' }, { ifMatch: el.change_seq });
+} catch (err) {
+  if (err instanceof OwPreconditionFailedError) {
+    // nothing was written; err.current is the element as it is now
+  }
+}
+```
+
+The check is per element and the server never merges. Compare the copy you edited from with `err.current`: when the fields you changed are not the ones that moved, send again with `ifMatch: err.current.change_seq`; when the same field moved on both sides, ask the user which to keep. Without `ifMatch` a write is unconditional, as before.
+
 ## Errors
 
-Every non-2xx response throws `OwApiError` with the API's envelope: `.status`, `.type`, `.code`, `.param` (the field that failed) and `.docUrl`, which is worth showing to your users. A transport failure throws `OwNetworkError`. `err.isValidationError` covers the common case.
+Every non-2xx response throws `OwApiError` with the API's envelope: `.status`, `.type`, `.code`, `.param` (the field that failed) and `.docUrl`, which is worth showing to your users. A transport failure throws `OwNetworkError`. `err.isValidationError` covers the common case. A write sent with `ifMatch` that found the element moved throws `OwPreconditionFailedError` (412, `err.isPreconditionFailed`), an `OwApiError` that also carries `current`.
 
 ## Schema constants
 

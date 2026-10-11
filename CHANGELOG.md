@@ -5,6 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.9.0] — 2026-10-11
+
+### Added
+- **Only if unchanged (keel #210).** `patch(type, id, partial, { ifMatch })` and
+  `editLinks(type, id, field, edit, { ifMatch })` send `If-Match: "<change_seq>"`: the write
+  lands only if the element is still at that `change_seq`. When it has moved, nothing is
+  written and the call throws **`OwPreconditionFailedError`** (412 `precondition_failed`), an
+  `OwApiError` whose `current` is the element as it is now, so the client's re-read is free.
+  `OwApiError.isPreconditionFailed` names the case. The server never merges; the client
+  compares the copy it edited from with `current`. An `ifMatch` that is not a whole number
+  throws `TypeError` before anything is sent. Without `ifMatch`, nothing changes.
+  Checked live on keel-staging: a matching token lands, a stale one is refused with
+  `current` at the live `change_seq`, the refused write changes nothing, and the links
+  route behaves the same.
+
 ## [4.8.1] — 2026-10-11
 
 ### Changed
