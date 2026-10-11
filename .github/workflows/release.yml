@@ -84,7 +84,13 @@ jobs:
           [ "$(npm view @onlyworlds/sdk@$VERSION version)" = "$VERSION" ] || { echo "$VERSION never appeared"; exit 1; }
           mkdir -p ../local ../remote
           npm pack --pack-destination ../local > /dev/null
-          (cd ../remote && npm pack "@onlyworlds/sdk@$VERSION" > /dev/null)
+          # `npm view` can see a version before `npm pack` can fetch it (4.11.0: ETARGET right after
+          # publish, the same bytes a minute later), so the fetch retries too
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            (cd ../remote && npm pack "@onlyworlds/sdk@$VERSION" > /dev/null 2>&1) && break
+            echo "not fetchable yet ($i)"; sleep 15
+          done
+          ls ../remote/*.tgz > /dev/null || { echo "$VERSION never became fetchable"; exit 1; }
           tar -xzf ../local/*.tgz -C ../local
           tar -xzf ../remote/*.tgz -C ../remote
           diff -r ../local/package ../remote/package
