@@ -31,10 +31,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No registry-url: with it, setup-node writes an .npmrc and a placeholder NODE_AUTH_TOKEN
+      # (XXXXX-XXXXX-XXXXX-XXXXX), and npm sent that instead of the OIDC exchange: the first run,
+      # 2026-10-11, answered E404 on the PUT. The default registry is npmjs.org anyway.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
 
       # Trusted publishing needs npm 11.5.1 or later; Node 22 ships npm 10.
       - run: npm install -g npm@^11.5.1
