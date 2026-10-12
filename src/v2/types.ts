@@ -146,6 +146,18 @@ export interface OwRemovalTicket {
 }
 
 /** The edge's 200 for one removal. */
+/** POST /account/ask: keel's AI proxy's answer (keel #159). */
+export interface OwAskAnswer {
+  /** The answer, from the context only; "The world doesn't say." when it does not hold one. */
+  answer: string;
+  model: string;
+  stop_reason: string | null;
+  usage: { input_tokens: number; output_tokens: number };
+  /** Questions the account has left today. */
+  remaining: number;
+  [k: string]: unknown;
+}
+
 /** POST /join/preview: what a join code holds, read without using it (keel #212). */
 export interface OwJoinPreview {
   /** `person`: an invite link, accepted with acceptJoin. `agent`: redeemed by an AI agent at POST /join. */

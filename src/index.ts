@@ -19,7 +19,7 @@ export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
   OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta,
-  OwJoinPreview, OwJoinedMembership,
+  OwJoinPreview, OwJoinedMembership, OwAskAnswer,
 } from './v2';
 
 // Canonical element colour palette (families generated from schema; hexes CVD-validated)
@@ -46,6 +46,10 @@ export { buildWorldIndex, lookupWorld, renderElement } from './lookup';
 export type {
   OwWorldIndex, OwLookupHit, OwLookupReason, OwLookupLink, OwLookupElement, OwLookupOptions, OwRenderOptions,
 } from './lookup';
+
+// Ask your world: the context keel's AI proxy takes, from the elements the user sees
+export { buildAskContext, ASK_LIMITS } from './ask';
+export type { OwAskContext } from './ask';
 
 // Photo preparation: shrink and convert a picture in the browser before uploadImage
 export { preparePhoto, planPhoto, PHOTO_TYPES, PHOTO_MAX_BYTES } from './photo';

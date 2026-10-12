@@ -147,6 +147,21 @@ export class OwApiError extends Error {
   get isPinRequired(): boolean {
     return this.status === 409 && this.code === 'pin_required';
   }
+
+  /** A daily allowance is used up (429 `quota_exceeded`): the world's image tickets, or the account's asks. See retryAfter. */
+  get isQuotaExceeded(): boolean {
+    return this.status === 429 && this.code === 'quota_exceeded';
+  }
+
+  /** ask: the proxy is switched off, or paused for the day by the server-wide cap (503 `ask_unavailable`). Not counted. */
+  get isAskUnavailable(): boolean {
+    return this.status === 503 && this.code === 'ask_unavailable';
+  }
+
+  /** ask: the model gave no answer (502 `ask_failed`). Not counted; try again in a moment. */
+  get isAskFailed(): boolean {
+    return this.status === 502 && this.code === 'ask_failed';
+  }
 }
 
 /**

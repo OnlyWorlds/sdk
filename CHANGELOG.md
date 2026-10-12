@@ -5,6 +5,23 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.13.0] — 2026-10-12
+
+### Added
+- **Ask your world (keel #159).** `client.ask({ worldId, question, context })` sends a
+  question to keel's AI proxy with the account's `ow_a_` token (a world key is a `TypeError`
+  before sending) and returns `OwAskAnswer` (`answer`, `model`, `stop_reason`, `usage`,
+  `remaining`). The answer comes from `context` only, or is "The world doesn't say.".
+  `buildAskContext(items, index)` turns the elements the user sees (lookup hits or plain
+  elements, in the caller's order, never re-looked-up) into that `context` within keel's
+  limits (`ASK_LIMITS`: 8 items, 2,000 characters each, 12,000 in all, counted in characters
+  as keel counts them) and says what it did: `kept`, `dropped` (past the 8th, or from the first
+  one the total cannot hold, so what is sent is always the top of the list) and `truncated`.
+  New getters: `isQuotaExceeded` (429; `retryAfter` runs to midnight UTC), `isAskUnavailable`
+  (503), `isAskFailed` (502). keel's document gives no request schema for `/account/ask`, so
+  the body (`world_id`, `question`, `context`) is read from keel's code (`accounts/ask.py`).
+  Not yet run live: no crew session holds an account token.
+
 ## [4.12.0] — 2026-10-12
 
 ### Added

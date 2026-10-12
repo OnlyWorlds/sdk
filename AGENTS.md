@@ -40,6 +40,9 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Images: `uploadImage(bytes)` returns `{ url, ... }`; set `url` as `image_url`. The bytes go
   to the edge with a single-use ticket from keel, never with the API key. `removeImage(urlOrKey)`
   takes one back (its uploader or the world's owner); it leaves `image_url` on elements as is.
+- Ask (since 4.13.0, account token): `buildAskContext(hits, index)` then
+  `account.ask({ worldId, question, context })`; answers only from the context. 50 a day per
+  account (`err.isQuotaExceeded`); `isAskUnavailable`, `isAskFailed` count nothing.
 - Invite links (since 4.12.0): `previewJoin(code)` (no credential sent) shows who invites, to
   which world, in what role; `acceptJoin(code)` with an `ow_a_` account token joins. Bad code:
   `err.isNotFound`; `err.isAlreadyMember`, `err.isPinRequired` for the two 409s.

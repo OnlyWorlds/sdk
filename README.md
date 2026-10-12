@@ -161,7 +161,16 @@ hits[0].element; hits[0].reasons;                 // best first, with why each m
 renderElement(hits[0].element, index);            // a short text card, links by name
 ```
 
-Names come first, then supertype and subtype, then one link step in either direction, then the elements' other text. To have a model phrase an answer, give it the cards of the top hits and ask it to answer only from them.
+Names come first, then supertype and subtype, then one link step in either direction, then the elements' other text.
+
+To have an answer written from what you found, OnlyWorlds runs a small AI proxy for signed-in accounts (50 questions a day):
+
+```typescript
+const shown = hits.slice(0, 8);                          // what your screen lists
+const { context, kept } = buildAskContext(shown, index); // within the proxy's limits; kept = what was sent
+const reply = await account.ask({ worldId, question, context }); // account: a client with an ow_a_ token
+reply.answer;                                            // from those elements only, or "The world doesn't say."
+```
 
 ## World files
 

@@ -15,7 +15,7 @@ import type { ElementType } from './types.generated';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
-  OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership,
+  OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer,
 } from './types';
 import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
@@ -345,6 +345,27 @@ export class OwV2Client {
       throw new TypeError('acceptJoin needs an account token (ow_a_): a world key cannot join a world');
     }
     return this.request('POST', '/account/join', { body: { code } }) as Promise<OwJoinedMembership>;
+  }
+
+  // -- Ask your world (keel #159) -------------------------------------------
+
+  /**
+   * POST /account/ask -- a question about a world the account owns or is in, answered by
+   * keel's AI proxy from `context` only (build it with buildAskContext from the elements
+   * the user sees). The answer is "The world doesn't say." when the context does not hold
+   * it. Needs the client's `ow_a_` token (a world key is a TypeError before sending).
+   * Refusals: 429 `quota_exceeded` (`err.isQuotaExceeded`, the account's daily allowance;
+   * Retry-After runs to midnight UTC), 503 `ask_unavailable` (`err.isAskUnavailable`:
+   * switched off, or paused for the day), 502 `ask_failed` (`err.isAskFailed`); none of
+   * them counts. 422 for a question over 500 characters or context past its limits.
+   */
+  async ask(req: { worldId: string; question: string; context: string[] }): Promise<OwAskAnswer> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('ask needs an account token (ow_a_): the proxy meters per account');
+    }
+    return this.request('POST', '/account/ask', {
+      body: { world_id: req.worldId, question: req.question, context: req.context },
+    }) as Promise<OwAskAnswer>;
   }
 
   // -- Core request machinery ----------------------------------------------
