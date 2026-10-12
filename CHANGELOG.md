@@ -12,8 +12,8 @@ earlier history lives in git log only.
   review (`make`, `add_to`, `link`, `ask` with an optional `then`) and `not_proposed` with
   reasons; nothing is written. One allowance with `ask`, and the same refusals. Types
   `OwSortRef`, `OwSortNote`, `OwSortRow` and its four kinds, `OwSortAnswer`. **Held** until
-  the route is on keel main and in its document: built and gated against keel's `sort-route`
-  branch (6973119), which does not yet carry pictures, `then` or the slice of 100.
+  the route is on keel main and in its document: built and gated against keel PR #4
+  (`sort-route`, 90961fa, Skeld's final for the types, #3618).
 
 ## [4.17.0] — 2026-10-12
 

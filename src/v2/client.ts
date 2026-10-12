@@ -394,7 +394,8 @@ export class OwV2Client {
    * row is from the slice; keel moves any other row to `not_proposed` with its reason.
    * A sort counts as one ask: the same account token, allowance and refusals as ask. 422
    * names the param: notes 1 to 8, each up to 4,000 characters and 16,000 in all (text
-   * only), at most four pictures, each on this world's media prefix; slice up to 100.
+   * only), at most four pictures, each uploaded into this world; slice up to 100, names up
+   * to 200 characters, anchors up to 120.
    */
   async sort(req: { worldId: string; notes: OwSortNote[]; slice: OwSortRef[] }): Promise<OwSortAnswer> {
     if (this.keyKind !== 'account') {

@@ -124,7 +124,7 @@ test('client.sort: POST /account/sort with the account Bearer and keel\'s body, 
   };
   const f = fake({ status: 200, body: reply });
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
-  const notes = ['Mira lives at Balkonon', { text: 'the ring', image_url: 'https://media.onlyworlds.com/w1/note.webp' }];
+  const notes = ['Mira lives at Balkonon', { text: 'the ring', image_url: 'https://media.onlyworlds.com/u/w1/note.webp' }, { image_url: 'https://media.onlyworlds.com/u/w1/page.webp' }];
   const r = await c.sort({ worldId: 'w1', notes, slice: [mira, fort] });
   const { url, init } = f.calls[0];
   assert.equal(init.method, 'POST');

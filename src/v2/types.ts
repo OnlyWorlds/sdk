@@ -179,12 +179,16 @@ export interface OwSortRef {
   id: string;
   type: string;
   name: string;
-  /** A short phrase that tells two same-named elements apart. */
+  /** A short phrase that tells two same-named elements apart (up to 120 characters). */
   anchor?: string;
 }
 
-/** A note for sorting: its words, or its words and a picture already on media.onlyworlds.com under this world's prefix. */
-export type OwSortNote = string | { text: string; image_url: string };
+/**
+ * A note for sorting: its words, or an object with words and/or a picture already uploaded
+ * into this world (`https://media.onlyworlds.com/u/<world id>/<name>`, no query). An object
+ * needs at least one of the two; the picture is read as a photographed note.
+ */
+export type OwSortNote = string | { text?: string; image_url?: string | null };
 
 /** A new element the notes describe. */
 export interface OwSortMakeRow {
