@@ -681,18 +681,23 @@ test('acceptJoin with a world key is a TypeError before anything is sent', async
 // -- The feed's tip (keel S15, ?head=true) ---------------------------------------
 
 test('changesHead: GET /changes?head=true alone (no since, no limit), head and cursor back', async () => {
-  const { client, fetchImpl } = makeClient({ body: { cursor: 4021, changes: [], has_more: false, head: 4021 } });
+  const { client, fetchImpl } = makeClient({ body: { cursor: 4021, changes: [], has_more: false, head: 4021, epoch: null } });
   const tip = await client.changesHead();
   const u = new URL(fetchImpl.calls.at(-1).url);
   assert.equal(fetchImpl.calls.at(-1).init.method, 'GET');
   assert.ok(u.pathname.endsWith('/api/v2/changes/'));
   assert.deepEqual([...u.searchParams.entries()], [['head', 'true']]);
   // keel sends the owner's cursor as a number; every cursor the SDK hands out is a string
-  assert.deepEqual(tip, { head: 4021, cursor: '4021' });
+  assert.deepEqual(tip, { head: 4021, cursor: '4021', epoch: null });
 });
 
 test('changesHead: a guest\'s epoch-bearing cursor passes through verbatim', async () => {
   const c = '4021:ffffffff-ffff-ffff-ffff-ffffffffffff:3';
-  const { client } = makeClient({ body: { cursor: c, changes: [], has_more: false, head: 4021 } });
-  assert.deepEqual(await client.changesHead(), { head: 4021, cursor: c });
+  const { client } = makeClient({ body: { cursor: c, changes: [], has_more: false, head: 4021, epoch: 3 } });
+  assert.deepEqual(await client.changesHead(), { head: 4021, cursor: c, epoch: 3 });
+});
+
+test('changesHead: a keel from before the epoch field still answers, epoch null', async () => {
+  const { client } = makeClient({ body: { cursor: 7, changes: [], has_more: false, head: 7 } });
+  assert.deepEqual(await client.changesHead(), { head: 7, cursor: '7', epoch: null });
 });

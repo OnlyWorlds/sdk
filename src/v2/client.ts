@@ -216,12 +216,14 @@ export class OwV2Client {
    * re-sends nothing at the head (a guest's carries its view's epoch). The cheap "anything
    * new?" for a poll: compare `head` with the head you last APPLIED (not the previous
    * poll's, so a missed tick never drops a change) and walk changesAll only when it moved;
-   * a head below yours means the server rewound: walk again from zero. keel returns the
-   * owner's cursor as a number; it is handed back as a string, like every cursor here.
+   * a head below yours means the server rewound: walk again from zero. `epoch` is a
+   * guest's view epoch (null for other keys): it can move with `head` unchanged, so walk on
+   * either move. keel returns the owner's cursor as a number; it is handed back as a
+   * string, like every cursor here.
    */
-  async changesHead(): Promise<{ head: number; cursor: string }> {
-    const page = await this.request('GET', '/changes/', { query: buildQuery({ head: 'true' }) }) as { head: number; cursor: string | number };
-    return { head: page.head, cursor: String(page.cursor) };
+  async changesHead(): Promise<{ head: number; cursor: string; epoch: number | null }> {
+    const page = await this.request('GET', '/changes/', { query: buildQuery({ head: 'true' }) }) as { head: number; cursor: string | number; epoch?: number | null };
+    return { head: page.head, cursor: String(page.cursor), epoch: page.epoch ?? null };
   }
 
   /**

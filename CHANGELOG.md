@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.16.0] — 2026-10-12
+
+### Added
+- **`epoch` on the feed** (keel 979eb0c). `OwChangesPage.epoch` and `changesHead()`'s
+  `epoch`: a guest's view epoch (an integer), `null` for every other key. It moves when what a
+  guest may see changes, even with `head` unchanged, so a poll walks when either `head` or
+  `epoch` moved; nothing needs to read inside the cursor. `changesHead()` answers
+  `epoch: null` from a keel without the field. Checked live on Moppetopia (the head read and a
+  page both carry `epoch: null`). The wire gate now holds `OwChangesPage` and `OwBulkResponse`
+  to keel's `ChangesPage` and `BulkResult` (keel #108), and failed on 4.15.0 for the missing
+  `epoch` before this release.
+
 ## [4.15.0] — 2026-10-12
 
 ### Added

@@ -54,6 +54,12 @@ export interface OwChangesPage {
    * instead of assuming caught-up.
    */
   head: number;
+  /**
+   * A guest's view epoch (an integer), null for every other key. It moves when what the
+   * guest may see changes, even with `head` unchanged (a Character given or taken, a role):
+   * walk again on either move. Compare it, never read it out of the cursor (keel, 2026-10-12).
+   */
+  epoch: number | null;
 }
 
 export interface OwBulkItem {
