@@ -77,7 +77,9 @@ jobs:
 
       - name: Read it back from the registry
         run: |
-          for i in 1 2 3 4 5 6 7 8 9 10; do
+          # Up to 10 minutes: npm says a new version "may take a few minutes to become
+          # available" (4.16.0 took between 2.5 and 3.5; 150 s was too short)
+          for i in $(seq 1 40); do
             if [ "$(npm view @onlyworlds/sdk@$VERSION version 2> /dev/null)" = "$VERSION" ]; then break; fi
             echo "not visible yet ($i)"; sleep 15
           done

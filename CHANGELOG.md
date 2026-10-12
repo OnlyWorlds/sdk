@@ -16,6 +16,8 @@ earlier history lives in git log only.
   page both carry `epoch: null`). The wire gate now holds `OwChangesPage` and `OwBulkResponse`
   to keel's `ChangesPage` and `BulkResult` (keel #108), and failed on 4.15.0 for the missing
   `epoch` before this release.
+  Published from tag `v4.16.0`; the workflow's read-back gave up before npm showed the
+  version, so the tarball (shasum `d08de22b`) was read back by hand against a build of the tag.
 
 ## [4.15.0] — 2026-10-12
 
