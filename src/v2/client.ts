@@ -16,6 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer,
+  OwSortAnswer, OwSortNote, OwSortRef,
 } from './types';
 import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
@@ -383,6 +384,25 @@ export class OwV2Client {
     return this.request('POST', '/account/ask', {
       body: { world_id: req.worldId, question: req.question, context: req.context },
     }) as Promise<OwAskAnswer>;
+  }
+
+  /**
+   * POST /account/sort -- the user's unsorted notes, and the elements the app's own search
+   * found for them (`slice`: id, lowercase type, name, optional anchor; build it from
+   * lookupWorld's hits), sorted by the same proxy as ask into rows to review: `make`, `add_to`,
+   * `link`, `ask`. Nothing is written; the app applies what the user accepts. Every id in a
+   * row is from the slice; keel moves any other row to `not_proposed` with its reason.
+   * A sort counts as one ask: the same account token, allowance and refusals as ask. 422
+   * names the param: notes 1 to 8, each up to 4,000 characters and 16,000 in all (text
+   * only), at most four pictures, each on this world's media prefix; slice up to 100.
+   */
+  async sort(req: { worldId: string; notes: OwSortNote[]; slice: OwSortRef[] }): Promise<OwSortAnswer> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('sort needs an account token (ow_a_): the proxy meters per account');
+    }
+    return this.request('POST', '/account/sort', {
+      body: { world_id: req.worldId, notes: req.notes, slice: req.slice },
+    }) as Promise<OwSortAnswer>;
   }
 
   // -- Core request machinery ----------------------------------------------

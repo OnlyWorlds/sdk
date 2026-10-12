@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+- **`client.sort({ worldId, notes, slice })`**: POST /account/sort, ask's sibling (Temper for
+  Lantern, h37 #3599; Skeld's route, #3591, #3594, #3596, #3597). Notes as words or
+  `{ text, image_url }`; the slice is the app's own lookup. Rows of four kinds come back to
+  review (`make`, `add_to`, `link`, `ask` with an optional `then`) and `not_proposed` with
+  reasons; nothing is written. One allowance with `ask`, and the same refusals. Types
+  `OwSortRef`, `OwSortNote`, `OwSortRow` and its four kinds, `OwSortAnswer`. **Held** until
+  the route is on keel main and in its document: built and gated against keel's `sort-route`
+  branch (6973119), which does not yet carry pictures, `then` or the slice of 100.
+
 ## [4.17.0] — 2026-10-12
 
 ### Added

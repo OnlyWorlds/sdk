@@ -170,6 +170,78 @@ export interface OwAskAnswer {
   [k: string]: unknown;
 }
 
+/**
+ * One element the notes may be about, as POST /account/sort takes it (the slice), and as a
+ * row names it back: keel copies a target's name, type and anchor from the slice, never
+ * from the model. `type` is lowercase going in; keel answers with its own spelling.
+ */
+export interface OwSortRef {
+  id: string;
+  type: string;
+  name: string;
+  /** A short phrase that tells two same-named elements apart. */
+  anchor?: string;
+}
+
+/** A note for sorting: its words, or its words and a picture already on media.onlyworlds.com under this world's prefix. */
+export type OwSortNote = string | { text: string; image_url: string };
+
+/** A new element the notes describe. */
+export interface OwSortMakeRow {
+  kind: 'make';
+  source_line: string;
+  proposal: { type: string; name: string; description: string };
+}
+
+/** Text to append to a field of a slice element. */
+export interface OwSortAddToRow {
+  kind: 'add_to';
+  source_line: string;
+  target: OwSortRef;
+  field: string;
+  op: 'append';
+  value: string;
+}
+
+/** A link from one slice element to another, through a named field. */
+export interface OwSortLinkRow {
+  kind: 'link';
+  source_line: string;
+  target: OwSortRef;
+  field: string;
+  value_id: string;
+  value_name: string;
+}
+
+/**
+ * A question for the user: a name matches two or more slice elements, or the sorter is
+ * unsure a thing exists. `then`, when sent, is the add_to or link the question stands for,
+ * its target left out: the user's pick fills it.
+ */
+export interface OwSortAskRow {
+  kind: 'ask';
+  source_line: string;
+  question: string;
+  candidates: OwSortRef[];
+  then?: Omit<OwSortAddToRow, 'source_line' | 'target'> | Omit<OwSortLinkRow, 'source_line' | 'target'>;
+}
+
+export type OwSortRow = OwSortMakeRow | OwSortAddToRow | OwSortLinkRow | OwSortAskRow;
+
+/** POST /account/sort: proposed changes for the user to review. Nothing is written to the world. */
+export interface OwSortAnswer {
+  /** Every id in a row is from the request's slice. */
+  rows: OwSortRow[];
+  /** The lines the sorter could not place, and rows keel refused, each with a reason. */
+  not_proposed: { source_line: string; reason: string }[];
+  model: string;
+  stop_reason: string | null;
+  usage: { input_tokens: number; output_tokens: number };
+  /** Questions the account has left today: a sort counts as one ask. */
+  remaining: number;
+  [k: string]: unknown;
+}
+
 /** POST /join/preview: what a join code holds, read without using it (keel #212). */
 export interface OwJoinPreview {
   /** `person`: an invite link, accepted with acceptJoin. `agent`: redeemed by an AI agent at POST /join. */

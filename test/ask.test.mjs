@@ -105,3 +105,49 @@ test('client.ask: the three refusals, by code', async () => {
     });
   }
 });
+
+// -- client.sort (POST /account/sort): ask's sibling, one allowance ---------------------------
+
+const mira = { id: '0192f0a0-0000-7000-8000-000000000001', type: 'character', name: 'Mira Thel', anchor: 'holds the fort' };
+const fort = { id: '0192f0a0-0000-7000-8000-000000000002', type: 'location', name: 'Balkonon' };
+
+test('client.sort: POST /account/sort with the account Bearer and keel\'s body, the answer as sent', async () => {
+  const reply = {
+    rows: [
+      { kind: 'make', source_line: 'a new smith, Oren', proposal: { type: 'Character', name: 'Oren', description: 'A smith.' } },
+      { kind: 'link', source_line: 'Mira lives at Balkonon', target: { ...mira, type: 'Character' }, field: 'location', value_id: fort.id, value_name: 'Balkonon' },
+      { kind: 'ask', source_line: 'Mira took the ring', question: 'Which Mira?', candidates: [{ ...mira, type: 'Character' }],
+        then: { kind: 'add_to', field: 'background', op: 'append', value: 'Took the ring.' } },
+    ],
+    not_proposed: [{ source_line: 'weather was bad', reason: 'nothing in the world to place it on' }],
+    model: 'claude-haiku-5-5', stop_reason: 'end_turn', usage: { input_tokens: 900, output_tokens: 140 }, remaining: 48,
+  };
+  const f = fake({ status: 200, body: reply });
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+  const notes = ['Mira lives at Balkonon', { text: 'the ring', image_url: 'https://media.onlyworlds.com/w1/note.webp' }];
+  const r = await c.sort({ worldId: 'w1', notes, slice: [mira, fort] });
+  const { url, init } = f.calls[0];
+  assert.equal(init.method, 'POST');
+  assert.ok(url.endsWith('/api/v2/account/sort'));
+  assert.equal(init.headers['Authorization'], 'Bearer ow_a_acct');
+  assert.deepEqual(JSON.parse(init.body), { world_id: 'w1', notes, slice: [mira, fort] });
+  assert.deepEqual(r, reply);
+});
+
+test('client.sort: a world key is a TypeError before anything is sent', async () => {
+  const f = fake({ status: 200, body: {} });
+  const c = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1', fetch: f.fetch });
+  await assert.rejects(c.sort({ worldId: 'w', notes: ['x'], slice: [] }), TypeError);
+  assert.equal(f.calls.length, 0);
+});
+
+test('client.sort: ask\'s three refusals and a 422 naming its param', async () => {
+  for (const [status, code, getter] of [[429, 'quota_exceeded', 'isQuotaExceeded'], [503, 'ask_unavailable', 'isAskUnavailable'], [502, 'ask_failed', 'isAskFailed']]) {
+    const f = fake({ status, body: { error: { type: 'x', code, message: 'm' } }, headers: status === 429 ? { 'Retry-After': '3600' } : {} });
+    const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+    await assert.rejects(c.sort({ worldId: 'w', notes: ['x'], slice: [] }), (e) => e instanceof OwApiError && e[getter] === true && (status !== 429 || e.retryAfter === 3600));
+  }
+  const f = fake({ status: 422, body: { error: { type: 'invalid_request_error', code: 'invalid_request', message: 'slice holds at most 100 elements.', param: 'slice' } } });
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+  await assert.rejects(c.sort({ worldId: 'w', notes: ['x'], slice: [] }), (e) => e instanceof OwApiError && e.status === 422 && e.param === 'slice');
+});
