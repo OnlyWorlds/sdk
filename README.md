@@ -174,6 +174,14 @@ const reply = await account.ask({ worldId, question, context }); // account: a c
 reply.answer;                                            // from those elements only, or "The world doesn't say."
 ```
 
+The same proxy sorts loose notes into changes for the user to review. Send the elements your own lookup found for them as the `slice`; every id in a row comes from it, and nothing is written until your app applies what the user accepts. A sort counts as one question.
+
+```typescript
+const slice = hits.slice(0, 100).map(({ element: e }) => ({ id: e.id, type: e.type, name: e.name }));
+const { rows, not_proposed } = await account.sort({ worldId, notes: ['Mira moved to Ostvik.'], slice });
+// rows: make (a new element), add_to (text for a field), link (one element to another), ask (which one?)
+```
+
 ## World files
 
 A world file is one `.zip` holding a whole world folder (`world.json` and `elements/<type>/*.json`, as Atlas keeps a world on disk), the way Atlas downloads and opens one. It needs no account and works in the browser and in Node.

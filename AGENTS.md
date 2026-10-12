@@ -1,6 +1,6 @@
 # For AI agents using @onlyworlds/sdk
 
-**Current as of**: SDK **4.x** · schema-dist **v0.32.0-dist.20** (canonical 00.32.00).
+**Current as of**: SDK **4.x** · schema-dist **v0.32.0-dist.23** (canonical 00.32.00).
 This line is asserted by `codegen:check` in CI — if the pin moves and this file is not
 re-read against it, the check fails rather than letting this document rot quietly.
 
@@ -45,6 +45,10 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Ask (since 4.13.0, account token): `buildAskContext(hits, index)` then
   `account.ask({ worldId, question, context })`; answers only from the context. 50 a day per
   account (`err.isQuotaExceeded`); `isAskUnavailable`, `isAskFailed` count nothing.
+- Sort (since 4.18.0, account token): `account.sort({ worldId, notes, slice })` turns unsorted
+  notes (text, or a picture already uploaded into the world) into rows to review: `make`,
+  `add_to`, `link`, `ask`, plus `not_proposed` with reasons. Ids come only from your `slice`
+  (up to 100 elements your own lookup found); nothing is written. Counts as one ask.
 - Invite links (since 4.12.0): `previewJoin(code)` (no credential sent) shows who invites, to
   which world, in what role; `acceptJoin(code)` with an `ow_a_` account token joins. Bad code:
   `err.isNotFound`; `err.isAlreadyMember`, `err.isPinRequired` for the two 409s.

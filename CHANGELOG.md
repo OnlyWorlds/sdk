@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.18.1] — 2026-10-12
+
+### Changed
+- **Schema repinned to schema-dist v0.32.0-dist.23** (same canonical 00.32.00). The one
+  generated change is the `id` doc comment: a UUID, new ids minted as uuidv7, earlier uuidv4
+  ids still valid. No type changes. The vendored dist gains `walk/lint_folder.py`.
+- README and AGENTS.md describe `sort()`.
+
 ## [4.18.0] — 2026-10-12
 
 ### Added

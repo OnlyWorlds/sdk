@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.32.0-dist.20",
-  "commit": "b1050e7fdd5efe7371e3e25b0605235c9abc26a3",
-  "manifest_sha256": "6d092d8430fb385d47c43ce1d7ddebea23260d028f60d80b498cfca6d682fca6",
+  "tag": "v0.32.0-dist.23",
+  "commit": "a76a2a9ea4bbc8f26d8abd430dc8b1db7382902e",
+  "manifest_sha256": "94e4638be3a6e2e3ca8a13afaca461c6cf9da5b88e9ae49fbd0f072120ea45af",
   "canonical_version": "00.32.00",
-  "dist_serial": 20,
-  "published": "2026-10-11",
-  "pinned_at": "2026-10-11",
+  "dist_serial": 23,
+  "published": "2026-10-12",
+  "pinned_at": "2026-10-12",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.32.0-dist.20",
+      "manifest_sha256": "6d092d8430fb385d47c43ce1d7ddebea23260d028f60d80b498cfca6d682fca6",
+      "note": "superseded by v0.32.0-dist.23 (same canonical 00.32.00, the Id description trued: a UUID, new ids uuidv7, earlier uuidv4 ids valid; the dist adds walk/lint_folder.py, the folder check)"
+    },
     {
       "tag": "v0.31.0-dist.19",
       "manifest_sha256": "a157938b62f108e41ff0872a40ff30646071dfa1a2e25b952f16e35610bcab6f",
