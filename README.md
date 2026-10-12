@@ -130,6 +130,8 @@ for await (const change of client.changesAll(cursor)) {
 }
 ```
 
+To poll for news cheaply, `client.changesHead()` returns `{ head, cursor }` without reading any element: walk `changesAll` only when `head` moved past the head you last applied.
+
 Edits to the world itself (its name, calendar, `public_read`) don't appear in the change feed. Read `client.getWorld()` and compare `updated_at`.
 
 ### Only if unchanged

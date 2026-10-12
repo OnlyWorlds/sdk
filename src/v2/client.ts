@@ -211,6 +211,20 @@ export class OwV2Client {
   }
 
   /**
+   * GET /changes?head=true -- where the feed is now, without a page: no element is read.
+   * `head` is the world's change_seq; `cursor` is a position to pass as `since` that
+   * re-sends nothing at the head (a guest's carries its view's epoch). The cheap "anything
+   * new?" for a poll: compare `head` with the head you last APPLIED (not the previous
+   * poll's, so a missed tick never drops a change) and walk changesAll only when it moved;
+   * a head below yours means the server rewound: walk again from zero. keel returns the
+   * owner's cursor as a number; it is handed back as a string, like every cursor here.
+   */
+  async changesHead(): Promise<{ head: number; cursor: string }> {
+    const page = await this.request('GET', '/changes/', { query: buildQuery({ head: 'true' }) }) as { head: number; cursor: string | number };
+    return { head: page.head, cursor: String(page.cursor) };
+  }
+
+  /**
    * Walk the feed from `since` (or from zero = full export) to the current
    * tail, yielding ops in order. Returns the final cursor via the generator's
    * return value; persist it for the next incremental pull.

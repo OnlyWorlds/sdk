@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.15.0] — 2026-10-12
+
+### Added
+- **`changesHead()`**: `GET /changes?head=true`, the feed's position now without a page
+  (keel reads no element). Returns `{ head, cursor }`: `head` is the world's `change_seq`,
+  `cursor` a position to pass as `since` that re-sends nothing (a guest's carries its view's
+  epoch). The cheap "anything new?" for a poll: compare `head` with the head you last applied
+  and walk `changesAll` only when it moved. keel sends the owner's cursor as a number; it comes
+  back as a string, like every cursor the SDK hands out. Checked live on Moppetopia: a walk
+  from the returned cursor brings nothing. Asked for by Lantern's 20-second poll (Temper,
+  Skeld's S15).
+
 ## [4.14.0] — 2026-10-12
 
 ### Fixed
