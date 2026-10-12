@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.14.0] — 2026-10-12
+
+### Fixed
+- **The co-builder role is `co_builder` on the wire.** `OwJoinPreview.role` and
+  `OwJoinedMembership.role` listed `'co-builder'`, which is only the label keel shows (keel
+  `MemberRole.CO_BUILDER = "co_builder"`). The types were open, so nothing broke at runtime, but
+  a comparison written from them would never match. Caught by Temper from Lantern's fakes.
+
+### Added
+- `OwMemberRole` (`'co_builder' | 'contributor' | 'guest'`, open), the type both now use.
+
 ## [4.13.0] — 2026-10-12
 
 ### Added

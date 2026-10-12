@@ -19,7 +19,7 @@ export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
   OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta,
-  OwJoinPreview, OwJoinedMembership, OwAskAnswer,
+  OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwMemberRole,
 } from './v2';
 
 // Canonical element colour palette (families generated from schema; hexes CVD-validated)

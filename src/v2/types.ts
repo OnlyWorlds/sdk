@@ -146,6 +146,12 @@ export interface OwRemovalTicket {
 }
 
 /** The edge's 200 for one removal. */
+/**
+ * A member's role as the wire sends it (keel `MemberRole`, accounts/models.py). `co_builder`
+ * is the value; "co-builder" is only its label in prose. Open, so a new role still types.
+ */
+export type OwMemberRole = 'co_builder' | 'contributor' | 'guest' | (string & {});
+
 /** POST /account/ask: keel's AI proxy's answer (keel #159). */
 export interface OwAskAnswer {
   /** The answer, from the context only; "The world doesn't say." when it does not hold one. */
@@ -167,7 +173,7 @@ export interface OwJoinPreview {
   invited_by: string | null;
   /** The world owner's chosen Character's name, never a username; null when none is set. */
   owner_character: string | null;
-  role: 'co-builder' | 'contributor' | 'guest' | (string & {});
+  role: OwMemberRole;
   /** Whether joining gives the joiner a Character of their own (agent links). */
   with_character: boolean | null;
   /** ISO 8601, UTC. */
@@ -181,7 +187,7 @@ export interface OwJoinedMembership {
   id: string;
   world_id: string;
   world_name: string;
-  role: 'co-builder' | 'contributor' | 'guest' | (string & {});
+  role: OwMemberRole;
   joined_at: string | null;
   /** The id of the joiner's roster Character, or null. */
   roster_character: string | null;
