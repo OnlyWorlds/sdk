@@ -229,9 +229,10 @@ export class OwV2Client {
   /**
    * Walk the feed from `since` (or from zero = full export) to the current
    * tail, yielding ops in order. Returns the final cursor via the generator's
-   * return value; persist it for the next incremental pull.
+   * return value; persist it for the next incremental pull (with the last page's
+   * `head` and `epoch`: the view epoch the walk ran under, for a guest).
    */
-  async *changesAll(since?: string): AsyncGenerator<OwChange, { cursor: string; head: number }> {
+  async *changesAll(since?: string): AsyncGenerator<OwChange, { cursor: string; head: number; epoch: number | null }> {
     let cursor = since;
     let page: OwChangesPage;
     do {
@@ -239,7 +240,7 @@ export class OwV2Client {
       for (const op of page.changes) yield op;
       cursor = page.cursor;
     } while (page.has_more);
-    return { cursor: page.cursor, head: page.head };
+    return { cursor: page.cursor, head: page.head, epoch: page.epoch ?? null };
   }
 
   // -- Images ---------------------------------------------------------------

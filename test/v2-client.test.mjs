@@ -701,3 +701,27 @@ test('changesHead: a keel from before the epoch field still answers, epoch null'
   const { client } = makeClient({ body: { cursor: 7, changes: [], has_more: false, head: 7 } });
   assert.deepEqual(await client.changesHead(), { head: 7, cursor: '7', epoch: null });
 });
+
+test('changesAll: pages to the tail, yields in order, returns the last page cursor, head and epoch', async () => {
+  const pages = [
+    { cursor: '1:a', changes: [{ op: 'upsert', id: 'a' }], has_more: true, head: 9, epoch: 2 },
+    { cursor: '9:z:2', changes: [{ op: 'upsert', id: 'b' }], has_more: false, head: 9, epoch: 2 },
+  ];
+  let n = 0;
+  const { client, fetchImpl } = makeClient(() => ({ body: pages[n++] }));
+  const it = client.changesAll();
+  const seen = [];
+  let r = await it.next();
+  while (!r.done) { seen.push(r.value.id); r = await it.next(); }
+  assert.deepEqual(seen, ['a', 'b']);
+  assert.deepEqual(r.value, { cursor: '9:z:2', head: 9, epoch: 2 });
+  assert.equal(new URL(fetchImpl.calls[1].url).searchParams.get('since'), '1:a');
+});
+
+test('changesAll: a keel without the epoch field returns epoch null', async () => {
+  const { client } = makeClient({ body: { cursor: '5:x', changes: [], has_more: false, head: 5 } });
+  const it = client.changesAll();
+  let r = await it.next();
+  while (!r.done) r = await it.next();
+  assert.deepEqual(r.value, { cursor: '5:x', head: 5, epoch: null });
+});

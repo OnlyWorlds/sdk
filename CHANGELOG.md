@@ -5,6 +5,15 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.17.0] — 2026-10-12
+
+### Added
+- **`changesAll` returns `epoch`** beside `cursor` and `head`: the last page's, so a full walk
+  says which view epoch it ran under (a guest's integer; `null` for other keys or a keel
+  without the field) and the first poll after it needs no extra walk to learn it. Live on
+  Moppetopia: a full walk of 465 changes returns `{ cursor, head: 818, epoch: null }`. The first
+  tests of `changesAll`'s return value (Temper, h29 #3534).
+
 ## [4.16.0] — 2026-10-12
 
 ### Added
