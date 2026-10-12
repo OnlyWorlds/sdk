@@ -110,6 +110,17 @@ await writer.patch('character', id, { image_url: null });
 
 The image's uploader or the world's owner can remove an uploaded image; the space goes back to the uploader's storage. Removal leaves elements as they are, so clear their `image_url` yourself (`createRemovalTicket(key).referenced` says how many still show it). A copy the network already holds can keep answering for a while.
 
+## Invite links
+
+A world's owner can invite a person with a link (`https://www.onlyworlds.com/join#ow_j_…`). The code is the part after `#`:
+
+```typescript
+const invite = await client.previewJoin(code);   // who invites, which world, what role; sends no key
+const membership = await account.acceptJoin(code); // account = a client with an ow_a_ token
+```
+
+A bad code (unknown, used, revoked, expired) is one 404 (`err.isNotFound`). Accepting can answer `err.isAlreadyMember` or `err.isPinRequired` (set a PIN first); a refusal never uses up the code.
+
 ## Sync
 
 ```typescript

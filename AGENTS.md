@@ -40,6 +40,9 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Images: `uploadImage(bytes)` returns `{ url, ... }`; set `url` as `image_url`. The bytes go
   to the edge with a single-use ticket from keel, never with the API key. `removeImage(urlOrKey)`
   takes one back (its uploader or the world's owner); it leaves `image_url` on elements as is.
+- Invite links (since 4.12.0): `previewJoin(code)` (no credential sent) shows who invites, to
+  which world, in what role; `acceptJoin(code)` with an `ow_a_` account token joins. Bad code:
+  `err.isNotFound`; `err.isAlreadyMember`, `err.isPinRequired` for the two 409s.
 - Lookup without a model (since 4.11.0): `buildWorldIndex(elements)` then
   `lookupWorld(index, question)` ranks the elements a question is about (names, then kind, one
   link step, then text); `renderElement(el, index)` is a compact card with links by name.

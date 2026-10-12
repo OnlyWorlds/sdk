@@ -132,6 +132,21 @@ export class OwApiError extends Error {
   get isPreconditionFailed(): boolean {
     return this.status === 412 && this.code === 'precondition_failed';
   }
+
+  /** 404 `not_found`: no such element or route, or a join code that is unknown, used, revoked or expired. */
+  get isNotFound(): boolean {
+    return this.status === 404 && this.code === 'not_found';
+  }
+
+  /** acceptJoin: the account is already a member of that world (409 `already_member`). The code is not spent. */
+  get isAlreadyMember(): boolean {
+    return this.status === 409 && this.code === 'already_member';
+  }
+
+  /** acceptJoin: the account has no PIN yet, and a member writes with their own (409 `pin_required`). The code is not spent. */
+  get isPinRequired(): boolean {
+    return this.status === 409 && this.code === 'pin_required';
+  }
 }
 
 /**

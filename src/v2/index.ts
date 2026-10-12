@@ -20,6 +20,7 @@ export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
   OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta,
+  OwJoinPreview, OwJoinedMembership,
 } from './types';
 export {
   ELEMENT_LABELS, ELEMENT_SECTIONS, ELEMENT_ICONS, FIELD_SCHEMA,

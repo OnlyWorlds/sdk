@@ -146,6 +146,36 @@ export interface OwRemovalTicket {
 }
 
 /** The edge's 200 for one removal. */
+/** POST /join/preview: what a join code holds, read without using it (keel #212). */
+export interface OwJoinPreview {
+  /** `person`: an invite link, accepted with acceptJoin. `agent`: redeemed by an AI agent at POST /join. */
+  reader: 'person' | 'agent' | (string & {});
+  world: { name: string; description: string | null };
+  /** The name the inviter signed the link with, or null. */
+  invited_by: string | null;
+  /** The world owner's chosen Character's name, never a username; null when none is set. */
+  owner_character: string | null;
+  role: 'co-builder' | 'contributor' | 'guest' | (string & {});
+  /** Whether joining gives the joiner a Character of their own (agent links). */
+  with_character: boolean | null;
+  /** ISO 8601, UTC. */
+  expires_at: string;
+  [k: string]: unknown;
+}
+
+/** POST /account/join: the new membership (the same row as accepting an email invite). */
+export interface OwJoinedMembership {
+  /** The membership's id. */
+  id: string;
+  world_id: string;
+  world_name: string;
+  role: 'co-builder' | 'contributor' | 'guest' | (string & {});
+  joined_at: string | null;
+  /** The id of the joiner's roster Character, or null. */
+  roster_character: string | null;
+  [k: string]: unknown;
+}
+
 export interface OwRemovedImage {
   /** The object key that was removed. */
   removed: string;

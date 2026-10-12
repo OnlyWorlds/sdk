@@ -628,3 +628,52 @@ test('patchWorld carries the three unit settings (canonical 00.31.00) and still 
   assert.deepEqual(lastBody(fetchImpl), { length_unit: 'cm', mass_unit: 'kg', distance_unit: 'km' });
   assert.equal(w.length_unit, 'cm');
 });
+
+// -- Joining by link (keel #212) ---------------------------------------------
+
+const PREVIEW = { reader: 'person', world: { name: 'W', description: '' }, invited_by: 'Ana', owner_character: null, role: 'guest', with_character: false, expires_at: '2026-10-19T00:00:00+00:00' };
+
+test('previewJoin: POST /join/preview with the code and NO credential, whatever key the client holds', async () => {
+  for (const apiKey of ['ow_a_acct', 'ow_w_test']) {
+    const { client, fetchImpl } = makeClient({ body: PREVIEW }, { apiKey });
+    const p = await client.previewJoin('ow_j_abc');
+    const { url, init } = fetchImpl.calls.at(-1);
+    assert.equal(init.method, 'POST');
+    assert.ok(url.endsWith('/api/v2/join/preview'));
+    assert.deepEqual(JSON.parse(init.body), { code: 'ow_j_abc' });
+    assert.equal(init.headers['Authorization'], undefined);
+    assert.equal(init.headers['API-Key'], undefined);
+    assert.equal(init.headers['API-Pin'], undefined);
+    assert.equal(p.reader, 'person');
+  }
+});
+
+test('previewJoin: a bad code is one 404 not_found, isNotFound', async () => {
+  const { client } = makeClient({ status: 404, body: { error: { type: 'not_found', code: 'not_found', message: 'This join code is not valid.' } } });
+  await assert.rejects(client.previewJoin('ow_j_bad'), (e) => e instanceof OwApiError && e.isNotFound && !e.isAlreadyMember);
+});
+
+test('acceptJoin: POST /account/join with the account Bearer, 201 membership back', async () => {
+  const row = { id: 'm1', world_id: 'w1', world_name: 'W', role: 'guest', joined_at: '2026-10-12T00:00:00+00:00', roster_character: 'c1' };
+  const { client, fetchImpl } = makeClient({ status: 201, body: row }, { apiKey: 'ow_a_acct', apiPin: undefined });
+  const m = await client.acceptJoin('ow_j_abc');
+  const { url, init } = fetchImpl.calls.at(-1);
+  assert.ok(url.endsWith('/api/v2/account/join'));
+  assert.equal(init.headers['Authorization'], 'Bearer ow_a_acct');
+  assert.deepEqual(JSON.parse(init.body), { code: 'ow_j_abc' });
+  assert.deepEqual(m, row);
+});
+
+test('acceptJoin: the two 409s are told apart by code, without reading the message', async () => {
+  for (const [code, getter] of [['already_member', 'isAlreadyMember'], ['pin_required', 'isPinRequired']]) {
+    const { client } = makeClient({ status: 409, body: { error: { type: 'invalid_request', code, message: 'x' } } }, { apiKey: 'ow_a_acct' });
+    await assert.rejects(client.acceptJoin('ow_j_abc'), (e) => e instanceof OwApiError && e[getter] === true
+      && (getter === 'isAlreadyMember' ? !e.isPinRequired : !e.isAlreadyMember));
+  }
+});
+
+test('acceptJoin with a world key is a TypeError before anything is sent', async () => {
+  const { client, fetchImpl } = makeClient({ status: 201, body: {} });
+  await assert.rejects(client.acceptJoin('ow_j_abc'), TypeError);
+  assert.equal(fetchImpl.calls.length, 0);
+});

@@ -15,7 +15,7 @@ import type { ElementType } from './types.generated';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
-  OwUploadedImage, OwWorldMeta,
+  OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership,
 } from './types';
 import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
@@ -317,6 +317,34 @@ export class OwV2Client {
     }
     if (!res.ok) throw await errorFromResponse(res);
     return await res.json() as OwRemovedImage;
+  }
+
+  // -- Joining a world by link (keel #212) ----------------------------------
+
+  /**
+   * POST /join/preview -- what a join code holds, without using it: who invites, to
+   * which world, in what role, and `reader` (`person`: accept it with acceptJoin;
+   * `agent`: an AI agent redeems it at POST /join). Sends no credential, whatever key
+   * this client holds. Every bad code (unknown, used, revoked, expired) is the same
+   * 404 `not_found` (`err.isNotFound`). `code` is the part of the link after `#`.
+   */
+  async previewJoin(code: string): Promise<OwJoinPreview> {
+    return this.request('POST', '/join/preview', { auth: false, body: { code } }) as Promise<OwJoinPreview>;
+  }
+
+  /**
+   * POST /account/join -- accept an invite link's code as the account this client's
+   * `ow_a_` token belongs to: 201 with the new membership. Refusals: 404 `not_found`
+   * (every bad code, and a code made for an AI agent), 409 `already_member`
+   * (`err.isAlreadyMember`) and 409 `pin_required` (`err.isPinRequired`: the account
+   * has no PIN yet). A refusal never spends the code. A world key here is a TypeError
+   * before anything is sent.
+   */
+  async acceptJoin(code: string): Promise<OwJoinedMembership> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('acceptJoin needs an account token (ow_a_): a world key cannot join a world');
+    }
+    return this.request('POST', '/account/join', { body: { code } }) as Promise<OwJoinedMembership>;
   }
 
   // -- Core request machinery ----------------------------------------------

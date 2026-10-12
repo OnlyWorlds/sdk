@@ -5,6 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.12.0] — 2026-10-12
+
+### Added
+- **Joining a world by link (keel #212).** `previewJoin(code)` reads what a join code holds
+  without using it (`OwJoinPreview`: `reader`, `world`, `invited_by`, `owner_character`,
+  `role`, `with_character`, `expires_at`) and sends no credential, whatever key the client
+  holds. `acceptJoin(code)` accepts an invite link as the account behind the client's `ow_a_`
+  token and returns the new membership (`OwJoinedMembership`, `roster_character` included);
+  a world key is a `TypeError` before anything is sent. New getters on `OwApiError`:
+  `isNotFound` (every bad code is one 404), `isAlreadyMember` and `isPinRequired` (the two
+  409s, told apart by code). Shapes read from keel's code (`accounts/join_api.py`,
+  `accounts/api.py`), since the OpenAPI document gives no response bodies for these routes.
+  Checked live: a bad code on production answers `isNotFound`. A real accept has not been
+  run from here (no account token); Lantern's door is its first live use.
+
 ## [4.11.0] — 2026-10-12
 
 ### Added
