@@ -191,7 +191,7 @@ const { rows, not_proposed } = await account.sort({ worldId, notes: ['Mira moved
 // rows: make (a new element), add_to (text for a field), link (one element to another), ask (which one?)
 ```
 
-Asking and sorting spend tokens from the account's daily AI allowance, the same meter the Council uses. Each answer carries `tokens_remaining` and `token_rating`; `allowance()` reads the meter without spending anything (since 4.21.0):
+Asking and sorting spend tokens from the account's token rating, its daily budget, the same meter the Council uses. Each answer carries `tokens_remaining` and `token_rating`; `allowance()` reads the meter without spending anything (since 4.21.0):
 
 ```typescript
 const { token_rating, tokens_remaining, resets_at } = await account.allowance(); // resets_at: the next midnight UTC
@@ -254,7 +254,7 @@ The four colour families (agents, world, abstract, temporal) are checked for col
 
 ## Tokens
 
-The account's token allowance and ratings, which some OnlyWorlds tools use.
+The account's token rating, which some OnlyWorlds tools use. `getStatus()` and `getEncryptionInfo()` are what keel still serves under `/tokens/`; `consume()`, `getAccessKey()` and the two session revokes are deprecated (keel answers 404) and leave in 5.0. To read the token rating, prefer `account.allowance()` above.
 
 ```typescript
 import { TokenResource } from '@onlyworlds/sdk';

@@ -5,6 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.23.0] — 2026-10-14
+
+### Deprecated
+- **`TokenResource.consume()`, `getAccessKey()`, `revokeSession()`, `revokeAllSessions()`**: keel
+  serves none of these routes (each answers 404 `not_found` on production; `accounts/token_api.py`
+  mounts only `status/` and `encryption-info/`). Spending is server-side, in the route that does the
+  work (the Council's acts through keel's council proxy, keel #274, Skeld's ruling h37 #4632), and
+  `OwV2Client.allowance()` reads the token rating. They stay callable and leave in 5.0. A 404 from
+  any token route now says what keel serves instead of "an older server". Found by Assembly's wire
+  gate, which until now never drove this class (its routes are not in keel's document).
+
+### Changed
+- README and docs: "token rating" is the one word for the account's daily budget (the Captain,
+  h37 #4642, OW Infra #273). Names in the API (`allowance()`, `/account/allowance`) are unchanged.
+
 ## [4.22.0] — 2026-10-14
 
 ### Added

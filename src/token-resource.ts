@@ -10,6 +10,12 @@
  * `OwV2Client` (its `request()` is public since 4.0): `new TokenResource(client)`.
  * Wire ruling (2026-07-23): keel keeps the /tokens/* economy long-term
  * (Tangle ratings write it, Council voting reads it) — port, don't delete.
+ * Since then keel mounts only `status/` and `encryption-info/` under /tokens/
+ * (`accounts/token_api.py`; consume, access-key and both revokes answer 404 on
+ * production, 2026-10-14), and spending moved server-side: the Council spends
+ * through keel's council proxy (keel #274, Skeld's ruling h37 #4632), and
+ * `OwV2Client.allowance()` reads the token rating. The four dead methods are
+ * deprecated in 4.23.0 and leave in 5.0.
  */
 export interface TokenTransport {
   request<T>(method: string, path: string, opts?: { body?: unknown }): Promise<T>;
@@ -54,9 +60,9 @@ export class TokenResource {
   constructor(private client: TokenTransport) {}
 
   /**
-   * All token routes go through here: a 404 on /tokens/* almost always means
-   * the SERVER predates the v2 token mount (keel >= 2026-07-23, e181689) —
-   * not "user has no tokens". Annotate so the failure reads correctly.
+   * All token routes go through here: a 404 on /tokens/* means keel does not
+   * serve that route, not "user has no tokens". Annotate so the failure reads
+   * correctly.
    */
   private async req<T>(method: string, path: string, opts?: { body?: unknown }): Promise<T> {
     try {
@@ -64,7 +70,7 @@ export class TokenResource {
     } catch (err) {
       if (err && typeof err === 'object' && (err as { status?: number }).status === 404) {
         (err as { message: string }).message +=
-          ' [token routes require keel >= 2026-07-23 (e181689) on /api/v2 — a 404 here usually means an older server, not zero tokens]';
+          ' [keel serves only /tokens/status/ and /tokens/encryption-info/; this method is deprecated (4.23.0). The token rating: OwV2Client.allowance()]';
       }
       throw err;
     }
@@ -91,6 +97,10 @@ export class TokenResource {
 
   /**
    * Consume tokens for service usage
+   *
+   * @deprecated keel serves no consume route (404 on production since 2026-10;
+   * no client decides what its act costs, Skeld's ruling, keel #274): spending
+   * happens server-side in the route that does the work. Removed in 5.0.
    *
    * Reports token consumption to track daily usage. Allows consumption even if
    * exceeds available tokens (tracks as debt), but warns via error field.
@@ -131,6 +141,10 @@ export class TokenResource {
   /**
    * Get encrypted OpenAI API key (advanced use case)
    *
+   * @deprecated keel serves no access-key route (404 on production since
+   * 2026-10). AI answers come from keel's own proxy: `OwV2Client.ask()` and
+   * `sort()`. Removed in 5.0.
+   *
    * Requires minimum 100 tokens available. Creates a 1-hour session for tracking.
    * Returns encrypted key that must be decrypted client-side using Fernet.
    *
@@ -161,6 +175,9 @@ export class TokenResource {
   /**
    * Revoke a specific token session
    *
+   * @deprecated keel serves no revoke-session route (404 on production since
+   * 2026-10); sessions came from getAccessKey(), which is gone too. Removed in 5.0.
+   *
    * Invalidates the session ID obtained from getAccessKey().
    * Use when cleaning up or on logout.
    *
@@ -180,6 +197,9 @@ export class TokenResource {
 
   /**
    * Revoke all active sessions (emergency use)
+   *
+   * @deprecated keel serves no revoke-all-sessions route (404 on production
+   * since 2026-10). Removed in 5.0.
    *
    * Invalidates all token sessions for the authenticated user.
    * Use for security cleanup or when sessions are stuck.
