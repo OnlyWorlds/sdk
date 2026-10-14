@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+- The calendar kernel is the SDK's own: Atlas 245aad3 deleted its `core/calendar.ts` and imports
+  this one (Temper, h37 #4472), so the copy record (`src/calendar/SOURCES.json`) and the re-copy
+  script (`codegen/atlas-calendar.mjs`) are gone. A kernel change is an SDK release now. No code
+  change.
+
 ## [4.21.0] — 2026-10-14
 
 ### Added

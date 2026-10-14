@@ -56,7 +56,7 @@ export type { OwAskContext } from './ask';
 export { preparePhoto, planPhoto, PHOTO_TYPES, PHOTO_MAX_BYTES } from './photo';
 export type { OwPhotoOptions, OwPhotoPlan, OwPreparedPhoto } from './photo';
 
-// World calendars: Atlas's calendar kernel (a byte copy, Atlas owns atlas_calendar) and
+// World calendars: the calendar kernel (Atlas imports it from here; Atlas owns atlas_calendar) and
 // which calendars a world holds; dates on the world's integer time line, named
 export * from './calendar/index';
 

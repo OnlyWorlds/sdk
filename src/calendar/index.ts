@@ -1,9 +1,10 @@
 /**
- * World calendars: Atlas's calendar kernel, and which calendars a world holds.
+ * World calendars: the calendar kernel, and which calendars a world holds.
  *
- * `calendar.ts` beside this file is Atlas's `src/core/calendar.ts`, byte for byte
- * (Forge/tools/atlas; recorded in `SOURCES.json`, checked with Assembly's copy-drift).
- * Never edit it here: change Atlas's, then copy and re-record. This file adapts Atlas's
+ * `calendar.ts` beside this file came from Atlas's `src/core/calendar.ts` in 4.20.0, and is
+ * the one copy since Atlas 245aad3 deleted its own and imports this one (Temper, h37 #4472):
+ * a kernel change is an SDK release, and Atlas's 48 kernel tests run against it there too.
+ * Its contract is still Atlas's calendar design, §5 and §5b. This file adapts Atlas's
  * `src/core/calendar-lens.ts` (readCalendarValue, worldCalendars, resolveCalendarLens) to
  * any element shape, since the SDK has no Atlas `Element`.
  *

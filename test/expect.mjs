@@ -1,6 +1,6 @@
 /**
  * The few vitest matchers Atlas's calendar tests use, over node:test and node:assert, so
- * those tests run here as Atlas wrote them (codegen/atlas-calendar.mjs ports them). A
+ * those tests run here as Atlas wrote them (ported in 4.20.0). A
  * matcher the port meets that is not here fails loudly, as a TypeError, never silently.
  */
 import assert from 'node:assert/strict';
