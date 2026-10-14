@@ -5,6 +5,19 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.21.0] — 2026-10-14
+
+### Added
+- **`client.allowance()`**: GET /account/allowance (keel 872431f, Skeld h37 #4308), the
+  account's daily AI allowance read without spending: `token_rating`, `tokens_used_today`,
+  `tokens_remaining`, `resets_at` (the next midnight UTC). Account token only, like ask and
+  sort. Type `OwAllowance`, held by Assembly's wire gate to the route's declared schema, as
+  `OwAskAnswer`, `OwSortAnswer` and `OwJoinPreview` now are to theirs.
+
+### Fixed
+- README and AGENTS.md no longer say a sort counts as one ask: since keel a6244db both spend
+  tokens from the allowance.
+
 ## [4.20.0] — 2026-10-14
 
 ### Added

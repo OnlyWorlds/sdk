@@ -256,6 +256,19 @@ export interface OwSortAnswer {
   [k: string]: unknown;
 }
 
+/** GET /account/allowance: the account's daily AI allowance (keel 872431f, 2026-10-14). */
+export interface OwAllowance {
+  /** The account's daily allowance in tokens. */
+  token_rating: number;
+  /** Tokens spent today (UTC); may pass the rating by the size of the last call. */
+  tokens_used_today: number;
+  /** Tokens left today, never below 0. */
+  tokens_remaining: number;
+  /** When the allowance resets: the next midnight UTC (ISO 8601). */
+  resets_at: string;
+  [k: string]: unknown;
+}
+
 /** POST /join/preview: what a join code holds, read without using it (keel #212). */
 export interface OwJoinPreview {
   /** `person`: an invite link, accepted with acceptJoin. `agent`: redeemed by an AI agent at POST /join. */

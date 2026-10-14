@@ -15,7 +15,7 @@ import type { ElementType } from './types.generated';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
-  OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer,
+  OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance,
   OwSortAnswer, OwSortNote, OwSortRef,
 } from './types';
 import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
@@ -392,7 +392,7 @@ export class OwV2Client {
    * lookupWorld's hits), sorted by the same proxy as ask into rows to review: `make`, `add_to`,
    * `link`, `ask`. Nothing is written; the app applies what the user accepts. Every id in a
    * row is from the slice; keel moves any other row to `not_proposed` with its reason.
-   * A sort counts as one ask: the same account token, allowance and refusals as ask. 422
+   * The same account token, allowance (it spends the tokens it uses) and refusals as ask. 422
    * names the param: notes 1 to 8, each up to 4,000 characters and 16,000 in all (text
    * only), at most four pictures, each uploaded into this world; slice up to 100, names up
    * to 200 characters, anchors up to 120.
@@ -404,6 +404,18 @@ export class OwV2Client {
     return this.request('POST', '/account/sort', {
       body: { world_id: req.worldId, notes: req.notes, slice: req.slice },
     }) as Promise<OwSortAnswer>;
+  }
+
+  /**
+   * GET /account/allowance -- the account's daily AI allowance, the one meter ask, sort and
+   * the Council spend from (keel 872431f): the rating, what is used and left today, and
+   * when it resets (the next midnight UTC). Spends nothing. Needs the client's `ow_a_` token.
+   */
+  async allowance(): Promise<OwAllowance> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('allowance needs an account token (ow_a_): the allowance is per account');
+    }
+    return this.request('GET', '/account/allowance') as Promise<OwAllowance>;
   }
 
   // -- Core request machinery ----------------------------------------------

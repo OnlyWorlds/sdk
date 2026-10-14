@@ -174,12 +174,18 @@ const reply = await account.ask({ worldId, question, context }); // account: a c
 reply.answer;                                            // from those elements only, or "The world doesn't say."
 ```
 
-The same proxy sorts loose notes into changes for the user to review. Send the elements your own lookup found for them as the `slice`; every id in a row comes from it, and nothing is written until your app applies what the user accepts. A sort counts as one question.
+The same proxy sorts loose notes into changes for the user to review. Send the elements your own lookup found for them as the `slice`; every id in a row comes from it, and nothing is written until your app applies what the user accepts.
 
 ```typescript
 const slice = hits.slice(0, 100).map(({ element: e }) => ({ id: e.id, type: e.type, name: e.name }));
 const { rows, not_proposed } = await account.sort({ worldId, notes: ['Mira moved to Ostvik.'], slice });
 // rows: make (a new element), add_to (text for a field), link (one element to another), ask (which one?)
+```
+
+Asking and sorting spend tokens from the account's daily AI allowance, the same meter the Council uses. Each answer carries `tokens_remaining` and `token_rating`; `allowance()` reads the meter without spending anything (since 4.21.0):
+
+```typescript
+const { token_rating, tokens_remaining, resets_at } = await account.allowance(); // resets_at: the next midnight UTC
 ```
 
 ## World files

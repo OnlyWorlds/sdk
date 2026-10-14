@@ -19,7 +19,7 @@ export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
   OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta,
-  OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwMemberRole,
+  OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMemberRole,
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
 } from './v2';
 

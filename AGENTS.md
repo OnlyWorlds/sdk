@@ -50,7 +50,10 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Sort (since 4.18.0, account token): `account.sort({ worldId, notes, slice })` turns unsorted
   notes (text, or a picture already uploaded into the world) into rows to review: `make`,
   `add_to`, `link`, `ask`, plus `not_proposed` with reasons. Ids come only from your `slice`
-  (up to 100 elements your own lookup found); nothing is written. Counts as one ask.
+  (up to 100 elements your own lookup found); nothing is written. Spends from the same
+  allowance as ask.
+- Allowance (since 4.21.0, account token): `account.allowance()` reads the daily AI allowance
+  without spending: `{ token_rating, tokens_used_today, tokens_remaining, resets_at }`.
 - Invite links (since 4.12.0): `previewJoin(code)` (no credential sent) shows who invites, to
   which world, in what role; `acceptJoin(code)` with an `ow_a_` account token joins. Bad code:
   `err.isNotFound`; `err.isAlreadyMember`, `err.isPinRequired` for the two 409s.

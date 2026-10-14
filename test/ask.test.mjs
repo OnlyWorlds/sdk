@@ -151,3 +151,18 @@ test('client.sort: ask\'s three refusals and a 422 naming its param', async () =
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
   await assert.rejects(c.sort({ worldId: 'w', notes: ['x'], slice: [] }), (e) => e instanceof OwApiError && e.status === 422 && e.param === 'slice');
 });
+
+test('client.allowance: GET /account/allowance with the account Bearer, no body; a world key is a TypeError', async () => {
+  const reply = { token_rating: 300000, tokens_used_today: 292, tokens_remaining: 299708, resets_at: '2026-10-15T00:00:00+00:00' };
+  const f = fake({ status: 200, body: reply });
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+  assert.deepEqual(await c.allowance(), reply);
+  const { url, init } = f.calls[0];
+  assert.ok(url.endsWith('/api/v2/account/allowance'));
+  assert.equal(init.method, 'GET');
+  assert.equal(init.headers['Authorization'], 'Bearer ow_a_acct');
+  assert.equal(init.body, undefined);
+  const w = fake({ status: 200, body: {} });
+  await assert.rejects(new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1', fetch: w.fetch }).allowance(), TypeError);
+  assert.equal(w.calls.length, 0);
+});
