@@ -5,6 +5,11 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+- Doc comments say "token rating" for the account's daily budget (`ask`, `sort`, `allowance`,
+  `OwAllowance`, the answers' `token_rating`), as the README did in 4.23.0; the docs site's
+  generated reference reads them. No code change.
+
 ## [4.23.0] — 2026-10-14
 
 ### Deprecated

@@ -170,7 +170,7 @@ export interface OwAskAnswer {
   remaining: number;
   /** The account's tokens left today after this call (since keel a6244db, 2026-10-14). */
   tokens_remaining: number;
-  /** The account's daily allowance in tokens, one meter with the Council (since keel a6244db). */
+  /** The account's token rating: its daily budget in tokens, one meter with the Council (since keel a6244db). */
   token_rating: number;
   [k: string]: unknown;
 }
@@ -247,11 +247,11 @@ export interface OwSortAnswer {
   stop_reason: string | null;
   usage: { input_tokens: number; output_tokens: number };
   /** How many more calls of this one's size fit in what the account has left today; ask and
-   *  sort spend from one allowance. */
+   *  sort spend from one token rating. */
   remaining: number;
   /** The account's tokens left today after this call (since keel a6244db, 2026-10-14). */
   tokens_remaining: number;
-  /** The account's daily allowance in tokens, one meter with the Council (since keel a6244db). */
+  /** The account's token rating: its daily budget in tokens, one meter with the Council (since keel a6244db). */
   token_rating: number;
   [k: string]: unknown;
 }
@@ -286,15 +286,15 @@ export interface OwMember {
   [k: string]: unknown;
 }
 
-/** GET /account/allowance: the account's daily AI allowance (keel 872431f, 2026-10-14). */
+/** GET /account/allowance: the account's token rating and what is left of it today (keel 872431f, 2026-10-14). */
 export interface OwAllowance {
-  /** The account's daily allowance in tokens. */
+  /** The account's token rating: its daily budget in tokens. */
   token_rating: number;
   /** Tokens spent today (UTC); may pass the rating by the size of the last call. */
   tokens_used_today: number;
   /** Tokens left today, never below 0. */
   tokens_remaining: number;
-  /** When the allowance resets: the next midnight UTC (ISO 8601). */
+  /** When the day's tokens reset: the next midnight UTC (ISO 8601). */
   resets_at: string;
   [k: string]: unknown;
 }

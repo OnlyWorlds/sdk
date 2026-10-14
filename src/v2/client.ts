@@ -400,7 +400,7 @@ export class OwV2Client {
    * keel's AI proxy from `context` only (build it with buildAskContext from the elements
    * the user sees). The answer is "The world doesn't say." when the context does not hold
    * it. Needs the client's `ow_a_` token (a world key is a TypeError before sending).
-   * Refusals: 429 `quota_exceeded` (`err.isQuotaExceeded`, the account's daily allowance;
+   * Refusals: 429 `quota_exceeded` (`err.isQuotaExceeded`, the account's token rating used up for the day;
    * Retry-After runs to midnight UTC), 503 `ask_unavailable` (`err.isAskUnavailable`:
    * switched off, or paused for the day), 502 `ask_failed` (`err.isAskFailed`); none of
    * them counts. 422 for a question over 500 characters or context past its limits.
@@ -420,7 +420,7 @@ export class OwV2Client {
    * lookupWorld's hits), sorted by the same proxy as ask into rows to review: `make`, `add_to`,
    * `link`, `ask`. Nothing is written; the app applies what the user accepts. Every id in a
    * row is from the slice; keel moves any other row to `not_proposed` with its reason.
-   * The same account token, allowance (it spends the tokens it uses) and refusals as ask. 422
+   * The same account token, token rating (it spends the tokens it uses) and refusals as ask. 422
    * names the param: notes 1 to 8, each up to 4,000 characters and 16,000 in all (text
    * only), at most four pictures, each uploaded into this world; slice up to 100, names up
    * to 200 characters, anchors up to 120.
@@ -435,7 +435,7 @@ export class OwV2Client {
   }
 
   /**
-   * GET /account/allowance -- the account's daily AI allowance, the one meter ask, sort and
+   * GET /account/allowance -- the account's token rating, the one daily meter ask, sort and
    * the Council spend from (keel 872431f): the rating, what is used and left today, and
    * when it resets (the next midnight UTC). Spends nothing. Needs the client's `ow_a_` token.
    */
