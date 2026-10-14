@@ -56,6 +56,10 @@ export type { OwAskContext } from './ask';
 export { preparePhoto, planPhoto, PHOTO_TYPES, PHOTO_MAX_BYTES } from './photo';
 export type { OwPhotoOptions, OwPhotoPlan, OwPreparedPhoto } from './photo';
 
+// World calendars: Atlas's calendar kernel (a byte copy, Atlas owns atlas_calendar) and
+// which calendars a world holds; dates on the world's integer time line, named
+export * from './calendar/index';
+
 // Token rating surface. RFC-001 §5 left its wire fate as an open question to the
 // platform owner and it was never answered in writing — so this comment said "may be
 // removed in a later 4.x" for months on nobody's authority. PROBED 2026-07-29 against

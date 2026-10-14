@@ -5,6 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.20.0] — 2026-10-14
+
+### Added
+- **World calendars**, Atlas's calendar code in the SDK so Lantern can name dates (Temper,
+  h37 #4284): `formatStep`, `formatYearLabel`, `breakdownStep`, `parseDate` and the rest of
+  Atlas's `src/core/calendar.ts` (Atlas 02d6a6d), plus `worldCalendars`,
+  `resolveCalendarLens` and `readCalendarValue` from its `calendar-lens.ts`, on any element
+  shape. `CALENDAR_FIELD` is `atlas_calendar`: Atlas owns the field, its meaning and its
+  writes, and other tools read it (Skeld, h37 #4286).
+- `src/calendar/calendar.ts` is Atlas's file byte for byte, recorded in
+  `src/calendar/SOURCES.json` (Assembly's copy-drift); `codegen/atlas-calendar.mjs` re-copies it
+  and ports Atlas's 48 kernel tests (TypeScript's transpiler, a five-matcher `test/expect.mjs`
+  over node:test). Watched failing: a planted `floorMod` edit failed two tests and the record
+  (EDITED); a lens edit failed its test. An app that imports none of it bundles none of it.
+
 ## [4.19.0] — 2026-10-14
 
 ### Added

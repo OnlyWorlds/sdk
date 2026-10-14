@@ -63,6 +63,10 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   world folder and returns `{ worldId, name, world, files: [{ path, data }] }`;
   `writeWorldFile(files, topDir)` makes one. Refusals throw `OwWorldFileError` with a `reason`.
   `world.json`'s `api` block (link and key) is removed both ways.
+- World calendars (since 4.20.0): `worldCalendars(elements)` finds the elements carrying
+  `atlas_calendar` (Atlas owns the field: read it, never write it); `resolveCalendarLens` picks
+  one; `formatStep(config, step)` names a point on the world's integer time line, `parseDate`
+  reads one back. No calendar or a broken one is null: show the bare number.
 - Ids: the client mints **UUIDv7** on an id-less `create` (since 4.2.0; keel mints v7 too).
   A v4 or v7 id you supply is accepted. **Never sort elements by id**: worlds mix v7, v4
   and legacy `06x…` ids (nibble 7 too, but seconds-first). For creation order use

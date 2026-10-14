@@ -198,6 +198,24 @@ const zip = writeWorldFile(world.files, 'hollow-reach-0192a000'); // one top-lev
 
 The reader refuses a file before returning anything: a path that could land outside the folder, more than 1 GiB or 200,000 files uncompressed (`maxBytes`, `maxEntries` to change them), no `world.json` with an `id`, or more than one world. Check `err.reason` on the `OwWorldFileError` it throws. The world's OnlyWorlds link and key (`world.json`'s `api`) never travel: both functions remove them. A tool's own folder (`.atlas/` and the like) comes back like any other file; pass `skip: path => …` to leave files out.
 
+## World calendars
+
+A world's time is an integer line (`time_range_current` is a point on it, and so is an Event's `start_date`). A calendar names its points: months, days, eras. Atlas keeps a calendar on an element (a Construct by convention) in its `atlas_calendar` field, and the SDK reads it with Atlas's own calendar code (since 4.20.0). Atlas owns that field and is its only writer; read it, never write it.
+
+```typescript
+import { worldCalendars, resolveCalendarLens, formatStep, formatYearLabel, parseDate } from '@onlyworlds/sdk';
+
+const calendars = worldCalendars(elements);  // [{ id, name, config }]: every element with a valid atlas_calendar
+const cal = resolveCalendarLens(elements, chosenId, { fallbackToOnly: true }); // a world with one calendar uses it
+if (cal) {
+  formatStep(cal.config, 400);      // "4 Alturiak, 1 DR" (with Harptos, from Atlas's tests)
+  formatYearLabel(cal.config, 400); // "1 DR"
+  parseDate(cal.config, '4 Alturiak, 1 DR'); // { step: 400 }; a bare number is always the raw step
+}
+```
+
+No calendar, or a broken one, gives null: show the bare number. `breakdownStep` gives the parts (year, era, month, day, weekday, an intercalary day). The rules are Atlas's calendar design, §5 and §5b.
+
 ## Errors
 
 Every non-2xx response throws `OwApiError` with the API's envelope: `.status`, `.type`, `.code`, `.param` (the field that failed) and `.docUrl`, which is worth showing to your users. A transport failure throws `OwNetworkError`. `err.isValidationError` covers the common case. A write sent with `ifMatch` that found the element moved throws `OwPreconditionFailedError` (412, `err.isPreconditionFailed`), an `OwApiError` that also carries `current`.
