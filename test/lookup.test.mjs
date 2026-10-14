@@ -217,3 +217,21 @@ test('parity: the same ordered ids as the trial lookup on ten questions', () => 
   assert.equal(PARITY_IDS.length, PARITY.length);
   PARITY.forEach((q, i) => assert.deepEqual(ids(ask(q)), PARITY_IDS[i], q));
 });
+
+test('custom fields (x_*) are found and shown by their own name; atlas_* stays out', () => {
+  const els = [
+    { id: u(101), type: 'character', name: 'Ada', x_mood: 'melancholy', x_eye_colour: 'grey', x_age_seen: 41,
+      x_notes_long: 'w'.repeat(900), atlas_layout: 'hidden-machinery', x_tool_state: { a: 1 }, x_rival: u(102) },
+    { id: u(102), type: 'character', name: 'Bram' },
+  ];
+  const index = buildWorldIndex(els);
+  assert.deepEqual(lookupWorld(index, 'who is melancholy?').map((h) => h.element.id), [u(101)]);
+  assert.deepEqual(lookupWorld(index, 'hidden machinery'), []);
+  const card = renderElement(index.byId.get(u(101)), index);
+  assert.match(card, /^mood: melancholy$/m);
+  assert.match(card, /^eye colour: grey$/m);
+  assert.match(card, /^age seen: 41$/m);
+  assert.match(card, /^rival: Bram$/m, 'an id in a custom field is a link, by name');
+  assert.match(card, /^notes long: w{500}\.\.\.$/m, 'a long custom value is cut like a description');
+  assert.doesNotMatch(card, /atlas_|layout|tool state/);
+});

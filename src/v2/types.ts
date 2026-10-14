@@ -165,8 +165,13 @@ export interface OwAskAnswer {
   model: string;
   stop_reason: string | null;
   usage: { input_tokens: number; output_tokens: number };
-  /** Questions the account has left today. */
+  /** How many more calls of this one's size fit in what the account has left today (a count of
+   *  answers, never tokens; it never over-promises). */
   remaining: number;
+  /** The account's tokens left today after this call (since keel a6244db, 2026-10-14). */
+  tokens_remaining: number;
+  /** The account's daily allowance in tokens, one meter with the Council (since keel a6244db). */
+  token_rating: number;
   [k: string]: unknown;
 }
 
@@ -241,8 +246,13 @@ export interface OwSortAnswer {
   model: string;
   stop_reason: string | null;
   usage: { input_tokens: number; output_tokens: number };
-  /** Questions the account has left today: a sort counts as one ask. */
+  /** How many more calls of this one's size fit in what the account has left today; ask and
+   *  sort spend from one allowance. */
   remaining: number;
+  /** The account's tokens left today after this call (since keel a6244db, 2026-10-14). */
+  tokens_remaining: number;
+  /** The account's daily allowance in tokens, one meter with the Council (since keel a6244db). */
+  token_rating: number;
   [k: string]: unknown;
 }
 

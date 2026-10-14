@@ -5,6 +5,26 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.19.0] — 2026-10-14
+
+### Added
+- **`tokens_remaining` and `token_rating` on `OwAskAnswer` and `OwSortAnswer`**: since keel
+  a6244db (Skeld, h37 #4233) ask and sort spend from the account's daily token rating, one
+  meter with the Council. `remaining` stays a count of answers: how many more calls of this
+  size fit in what is left today (keel 504437b), never tokens. Typed from keel's code
+  (`accounts/ask.py`), since its OpenAPI document gives these answers no schema.
+
+### Changed
+- **Custom fields (`x_*`) are in the lookup and on the card.** `buildWorldIndex` finds an
+  element by its custom text and numbers, and `renderElement` (so `buildAskContext`) shows
+  each one by its own name: `x_eye_colour` reads `eye colour: grey`; an id in one is a link,
+  by name; a long value is cut like a description. `atlas_*` machinery stays out, and so do
+  object values (a tool's state). Lantern shows and edits custom fields now, so Ask can answer
+  what find already could (Temper, h37 #4069). The trial's lookup (`dossiers/lantern-ask`)
+  still skips them; parity holds on its ten questions, whose fixture has no custom text.
+- The lookup's stopword set is an array literal, so bundlers mark it pure and drop it from
+  apps that never call the lookup (451 bytes; Temper, h17 #4247).
+
 ## [4.18.1] — 2026-10-12
 
 ### Changed

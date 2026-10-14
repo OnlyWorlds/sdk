@@ -43,8 +43,10 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   to the edge with a single-use ticket from keel, never with the API key. `removeImage(urlOrKey)`
   takes one back (its uploader or the world's owner); it leaves `image_url` on elements as is.
 - Ask (since 4.13.0, account token): `buildAskContext(hits, index)` then
-  `account.ask({ worldId, question, context })`; answers only from the context. 50 a day per
-  account (`err.isQuotaExceeded`); `isAskUnavailable`, `isAskFailed` count nothing.
+  `account.ask({ worldId, question, context })`; answers only from the context. Spends from the
+  account's daily token rating (`tokens_remaining`, `token_rating`; `remaining` counts answers of
+  this size still in it); used up → `err.isQuotaExceeded`. `isAskUnavailable`, `isAskFailed`
+  count nothing. Custom fields (`x_*`) are in the lookup and the context; `atlas_*` is not.
 - Sort (since 4.18.0, account token): `account.sort({ worldId, notes, slice })` turns unsorted
   notes (text, or a picture already uploaded into the world) into rows to review: `make`,
   `add_to`, `link`, `ask`, plus `not_proposed` with reasons. Ids come only from your `slice`

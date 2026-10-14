@@ -112,11 +112,16 @@ export interface OwRenderOptions {
   incomingMax?: number;
 }
 
-const STOP = new Set(('a an the of in on at to for from by with and or is are was were be been ' +
-  'who whom whose what which where when why how does do did doesn has have had it its this that ' +
-  'these those there their they them he she his her him i me my we our you your about tell know ' +
-  'any some all can could would should will not no yes than then so if into out up down over ' +
-  'under one two own same other more most much many very just also only s t don isn').split(' '));
+// an array literal, not a split string: the bundler can only drop a set it can prove pure
+// (a .split() call kept these 451 bytes in every app importing the SDK; Temper, h17 #4247)
+const STOP = new Set(['a', 'an', 'the', 'of', 'in', 'on', 'at', 'to', 'for', 'from', 'by', 'with',
+  'and', 'or', 'is', 'are', 'was', 'were', 'be', 'been', 'who', 'whom', 'whose', 'what', 'which',
+  'where', 'when', 'why', 'how', 'does', 'do', 'did', 'doesn', 'has', 'have', 'had', 'it', 'its',
+  'this', 'that', 'these', 'those', 'there', 'their', 'they', 'them', 'he', 'she', 'his', 'her',
+  'him', 'i', 'me', 'my', 'we', 'our', 'you', 'your', 'about', 'tell', 'know', 'any', 'some', 'all',
+  'can', 'could', 'would', 'should', 'will', 'not', 'no', 'yes', 'than', 'then', 'so', 'if', 'into',
+  'out', 'up', 'down', 'over', 'under', 'one', 'two', 'own', 'same', 'other', 'more', 'most',
+  'much', 'many', 'very', 'just', 'also', 'only', 's', 't', 'don', 'isn']);
 
 const SPATIAL = new Set(['pin', 'marker', 'zone', 'map']);
 
@@ -241,7 +246,7 @@ export function buildWorldIndex<T extends OwLookupElement>(elements: Iterable<T>
     if (!SPATIAL.has(el.type)) {
       const tw = new Set<string>();
       for (const [field, v] of Object.entries(el)) {
-        if (TEXT_SKIP.has(field) || linkFields.has(field) || field.startsWith('x_') || field.startsWith('atlas_')) continue;
+        if (TEXT_SKIP.has(field) || linkFields.has(field) || field.startsWith('atlas_')) continue;
         const vals = Array.isArray(v) ? v : [v];
         for (const x of vals) {
           if (typeof x === 'number' && Number.isFinite(x)) tw.add(String(x));
@@ -434,18 +439,22 @@ export function renderElement<T extends OwLookupElement>(
   const unres = new Map<string, number>();
   for (const { field } of index.unresolved.get(el.id) || []) unres.set(field, (unres.get(field) || 0) + 1);
   for (const [field, v] of Object.entries(el)) {
-    if (RENDER_SKIP.has(field) || field.startsWith('x_') || field.startsWith('atlas_')) continue;
+    if (RENDER_SKIP.has(field) || field.startsWith('atlas_')) continue;
+    // a custom field reads by its own name: Atlas and Lantern store "Eye colour" as x_eye_colour
+    const custom = field.startsWith('x_');
+    const label = custom ? field.slice(2).replace(/_/g, ' ') : field;
     if (outBy.has(field) || unres.has(field)) {
       const names = outBy.get(field) || [];
       let s = names.slice(0, linkMax).join(', ');
       if (names.length > linkMax) s += ` (+${names.length - linkMax} more)`;
       const u = unres.get(field);
       if (u) s += `${s ? '; ' : ''}${u} linked element(s) not present in the world data`;
-      lines.push(`${field}: ${s}`);
+      lines.push(`${label}: ${s}`);
       continue;
     }
     if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length) || (typeof v === 'object' && !Array.isArray(v))) continue;
-    lines.push(`${field}: ${Array.isArray(v) ? v.join(', ') : v}`);
+    const s = Array.isArray(v) ? v.join(', ') : String(v);
+    lines.push(`${label}: ${custom && s.length > descMax ? s.slice(0, descMax) + '...' : s}`);
   }
   const inBy = new Map<string, (string | undefined)[]>();
   for (const { field, id } of index.inn.get(el.id) || []) {
