@@ -256,6 +256,36 @@ export interface OwSortAnswer {
   [k: string]: unknown;
 }
 
+/** GET /me: who this world key is. */
+export interface OwMe {
+  world: { id: string; name: string };
+  scope: 'read' | 'write';
+  kind: 'owner' | 'person' | 'agent';
+  role: 'owner' | OwMemberRole;
+  /** The membership id (what `created_by` holds for what this key creates), or null for the owner. */
+  membership: string | null;
+  /** The member's Character, or null. */
+  character: string | null;
+  /** Agent seats only: the agent's name. */
+  name?: string;
+  [k: string]: unknown;
+}
+
+/** One row of GET /members, the world's roster. */
+export interface OwMember {
+  /** The membership id (what `created_by` holds), or null for the owner. */
+  id: string | null;
+  kind: 'owner' | 'person' | 'agent';
+  role: 'owner' | OwMemberRole;
+  /** The Character that is this member, or null. */
+  character: string | null;
+  /** `removed` rows stay, so their elements keep `created_by`. */
+  status: 'active' | 'removed';
+  /** Agent rows only: the agent's name. */
+  name?: string;
+  [k: string]: unknown;
+}
+
 /** GET /account/allowance: the account's daily AI allowance (keel 872431f, 2026-10-14). */
 export interface OwAllowance {
   /** The account's daily allowance in tokens. */

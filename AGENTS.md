@@ -54,6 +54,9 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   allowance as ask.
 - Allowance (since 4.21.0, account token): `account.allowance()` reads the daily AI allowance
   without spending: `{ token_rating, tokens_used_today, tokens_remaining, resets_at }`.
+- Who am I (since 4.22.0, a world key): `client.me()` is `{ world, scope, kind, role,
+  membership, character }` (`membership` is what `created_by` holds for what you create; null
+  for the owner); `client.members()` is the roster's rows. An account token is a TypeError.
 - Invite links (since 4.12.0): `previewJoin(code)` (no credential sent) shows who invites, to
   which world, in what role; `acceptJoin(code)` with an `ow_a_` account token joins. Bad code:
   `err.isNotFound`; `err.isAlreadyMember`, `err.isPinRequired` for the two 409s.

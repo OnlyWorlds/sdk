@@ -121,6 +121,15 @@ const membership = await account.acceptJoin(code); // account = a client with an
 
 A bad code (unknown, used, revoked, expired) is one 404 (`err.isNotFound`). Accepting can answer `err.isAlreadyMember` or `err.isPinRequired` (set a PIN first); a refusal never uses up the code.
 
+Once in, a world key can ask who it is and who else is there (since 4.22.0):
+
+```typescript
+const me = await client.me();           // { world, scope, kind, role, membership, character }
+const roster = await client.members();  // [{ id, kind, role, character, status }], the owner's id is null
+```
+
+`me.membership` is what `created_by` holds on the elements this key creates; `me.role` decides what it may change.
+
 ## Sync
 
 ```typescript

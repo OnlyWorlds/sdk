@@ -15,7 +15,7 @@ import type { ElementType } from './types.generated';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
-  OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance,
+  OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
   OwSortAnswer, OwSortNote, OwSortRef,
 } from './types';
 import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
@@ -68,6 +68,34 @@ export class OwV2Client {
   /** PATCH /world -- partial world-meta update. */
   async patchWorld(partial: Record<string, unknown>): Promise<OwWorldMeta> {
     return this.request('PATCH', '/world/', { body: sanitizePayload(partial) }) as Promise<OwWorldMeta>;
+  }
+
+  // -- Who am I, and who is here ---------------------------------------------
+
+  /**
+   * GET /me -- who this world key is: the world, read or write scope, the kind (owner,
+   * person, agent), the role, the membership id (what `created_by` holds for what this key
+   * creates; null for the owner) and the member's Character. A world key's call; an account
+   * token is a TypeError before sending.
+   */
+  async me(): Promise<OwMe> {
+    if (this.keyKind === 'account') {
+      throw new TypeError('me needs a world key: an account token is not a member of one world');
+    }
+    return this.request('GET', '/me/') as Promise<OwMe>;
+  }
+
+  /**
+   * GET /members -- the world's roster: each member's id (null for the owner), kind, role,
+   * Character and status (`removed` rows stay, so their elements keep `created_by`). Returns
+   * the rows; keel sends them as `{ data }` with no paging. A world key's call.
+   */
+  async members(): Promise<OwMember[]> {
+    if (this.keyKind === 'account') {
+      throw new TypeError('members needs a world key: an account token is not a member of one world');
+    }
+    const page = (await this.request('GET', '/members/')) as { data?: OwMember[] };
+    return page.data ?? [];
   }
 
   // -- Element CRUD --------------------------------------------------------

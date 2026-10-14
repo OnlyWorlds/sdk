@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.22.0] — 2026-10-14
+
+### Added
+- **`client.me()` and `client.members()`**: GET /me (who this world key is: world, scope, kind,
+  role, membership id, Character) and GET /members (the roster's rows, unwrapped from `{ data }`).
+  Lantern reads a player's role from /me by hand today. Types `OwMe`, `OwMember`, typed from
+  keel's declared schemas and held to them by Assembly's wire gate. An account token is a
+  TypeError before sending; the tests fail with that guard removed, or with the rows left
+  wrapped.
+
 ### Changed
 - The calendar kernel is the SDK's own: Atlas 245aad3 deleted its `core/calendar.ts` and imports
   this one (Temper, h37 #4472), so the copy record (`src/calendar/SOURCES.json`) and the re-copy
