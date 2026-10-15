@@ -14,6 +14,7 @@ earlier history lives in git log only.
   `changed_via` (its door: `seat`, `mcp`, `declared`, `api`, `v1`, `sync`, `server`); a `/changes`
   delete op gains `deleted_by` and `deleted_via`. Keel drops them from a write body, like `created_by`.
 - `OwWriteDoor`, `AGENT_DOORS` and `isAgentDoor(door)`: seat, mcp and declared are agent-made.
+- The two kinds of `/changes` item are named types, `OwChangeUpsert` and `OwChangeDelete` (`OwChange` is their union, as before), and both declare `change_seq`, which keel always sends and the type never named.
 
 ## [4.25.0] — 2026-10-15
 

@@ -68,16 +68,27 @@ export interface OwPage<T = OwElement> {
 }
 
 /** /changes feed -- discriminated union on `op`. Apply in order -> convergence. */
-export type OwChange =
-  | { op: 'upsert'; id: string; type: string; element: OwElement; updated_at: string; [k: string]: unknown }
-  | {
-      op: 'delete'; id: string; type: string; deleted_at: string;
-      /** The membership whose write deleted it; null for the world's owner, and for deletes before writes recorded it (keel #299). */
-      deleted_by?: string | null;
-      /** The door the delete came through (see {@link OwWriteDoor}); null for deletes before writes recorded it. */
-      deleted_via?: OwWriteDoor | null;
-      [k: string]: unknown;
-    };
+export type OwChange = OwChangeUpsert | OwChangeDelete;
+
+/** A /changes item for an element written: the element whole, as GET returns it. */
+export interface OwChangeUpsert {
+  op: 'upsert'; id: string; type: string; element: OwElement; updated_at: string;
+  /** The change's place in the world's feed. */
+  change_seq: number;
+  [k: string]: unknown;
+}
+
+/** A /changes item for an element deleted. */
+export interface OwChangeDelete {
+  op: 'delete'; id: string; type: string; deleted_at: string;
+  /** The change's place in the world's feed. */
+  change_seq: number;
+  /** The membership whose write deleted it; null for the world's owner, and for deletes before writes recorded it (keel #299). */
+  deleted_by?: string | null;
+  /** The door the delete came through (see {@link OwWriteDoor}); null for deletes before writes recorded it. */
+  deleted_via?: OwWriteDoor | null;
+  [k: string]: unknown;
+}
 
 /**
  * The door a write came through, as keel records it on every element (`changed_via`) and on a
