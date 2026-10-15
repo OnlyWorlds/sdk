@@ -90,7 +90,7 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   they created: anything else is 403 `not_author` (`err.isNotAuthor`; retrying will not help).
   `/bulk` reports it per slot, not as a throw.
 - **If you are an agent, say so** (since 4.26.0): `new OwV2Client({ ..., agent: true })` sends
-  `X-OW-Agent` on every request, and keel records your writes as agent-made. Every element read
+  `X-OW-Agent` on every element write, and keel records those writes as agent-made. Every element read
   carries `changed_by` and `changed_via` (the last write's membership and its door: `seat`,
   `mcp`, `declared`, `api`, `v1`, `sync`, `server`), and a `/changes` delete carries
   `deleted_by` and `deleted_via`; `isAgentDoor(door)` is true for the first three. An agent

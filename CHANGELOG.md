@@ -7,8 +7,9 @@ earlier history lives in git log only.
 
 ### Added
 - **The door of every write** (keel #299, D104; publish only once keel's #299 is live). An opt-in
-  `agent: true` on `OwClientConfig` sends `X-OW-Agent` on every request to keel (never to the image
-  edge); keel records such writes as `declared`, agent-made, and stores only that the header was
+  `agent: true` on `OwClientConfig` sends `X-OW-Agent` on every element write (create, upsert,
+  patch, delete, editLinks, bulk: the operations keel's document declares it on; never on reads,
+  account routes or the image edge); keel records such writes as `declared`, agent-made, and stores only that the header was
   there. Off by default: it describes the caller, so a tool people use never sets it.
 - `OwElementBase` gains the read-only `changed_by` (the membership of the last write) and
   `changed_via` (its door: `seat`, `mcp`, `declared`, `api`, `v1`, `sync`, `server`); a `/changes`

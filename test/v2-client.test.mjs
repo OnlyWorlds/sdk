@@ -735,22 +735,35 @@ test('agent: off by default, no X-OW-Agent on reads or writes', async () => {
   for (const c of fetchImpl.calls) assert.equal('X-OW-Agent' in c.init.headers, false);
 });
 
-test('agent: true sends X-OW-Agent on every keel request, an account token included', async () => {
-  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', type: 'character', name: 'A' } }, { agent: true });
-  await client.get('character', 'x');
+test('agent: true sends X-OW-Agent on the six element writes, where keel declares it', async () => {
+  const body = { id: 'x', type: 'character', name: 'A', results: [] };
+  const { client, fetchImpl } = makeClient({ status: 200, body }, { agent: true });
   await client.create('character', { name: 'B' });
-  for (const c of fetchImpl.calls) assert.equal(c.init.headers['X-OW-Agent'], '1');
-  const acct = makeClient({ status: 200, body: {} }, { apiKey: 'ow_a_test', agent: true });
-  await acct.client.request('GET', '/account/allowance');
-  assert.equal(acct.fetchImpl.calls.at(-1).init.headers['X-OW-Agent'], '1');
+  await client.upsert('character', 'x', { name: 'B' });
+  await client.patch('character', 'x', { name: 'C' });
+  await client.editLinks('character', 'x', 'species', { add: ['y'] });
+  await client.bulk([{ type: 'character', element: { name: 'D' } }]);
+  const del = makeClient({ status: 204 }, { agent: true });
+  await del.client.delete('character', 'x');
+  const sent = [...fetchImpl.calls, ...del.fetchImpl.calls].map((c) => [c.init.method, c.init.headers['X-OW-Agent']]);
+  assert.deepEqual(sent, [['POST', '1'], ['PUT', '1'], ['PATCH', '1'], ['POST', '1'], ['POST', '1'], ['DELETE', '1']]);
 });
 
-test('agent: the image edge never gets X-OW-Agent (it is keel\'s header, not the edge\'s)', async () => {
-  const fetchImpl = imageFetch();
-  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: fetchImpl, agent: true });
-  await client.uploadImage(new Uint8Array([1, 2, 3]), { key: 'u/w1/x.png' });
-  assert.equal(fetchImpl.calls[0].init.headers['X-OW-Agent'], '1');
-  assert.deepEqual(fetchImpl.calls[1].init.headers, { Authorization: 'Bearer tkt.sig', 'X-Key': 'u/w1/x.png' });
+test('agent: true sends no X-OW-Agent on reads, world meta, account routes or the image edge', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', type: 'character', name: 'A', data: [] } }, { agent: true });
+  await client.get('character', 'x');
+  await client.list('character');
+  await client.patchWorld({ name: 'W' });
+  await client.me();
+  for (const c of fetchImpl.calls) assert.equal('X-OW-Agent' in c.init.headers, false, `${c.init.method} ${c.url}`);
+  const acct = makeClient({ status: 200, body: {} }, { apiKey: 'ow_a_test', agent: true });
+  await acct.client.allowance();
+  assert.equal('X-OW-Agent' in acct.fetchImpl.calls.at(-1).init.headers, false);
+  const img = imageFetch();
+  const up = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: img, agent: true });
+  await up.uploadImage(new Uint8Array([1, 2, 3]), { key: 'u/w1/x.png' });
+  assert.equal('X-OW-Agent' in img.calls[0].init.headers, false);
+  assert.deepEqual(img.calls[1].init.headers, { Authorization: 'Bearer tkt.sig', 'X-Key': 'u/w1/x.png' });
 });
 
 test('isAgentDoor: seat, mcp and declared are agent-made; the surfaces and null are not', async () => {

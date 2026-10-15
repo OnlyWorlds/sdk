@@ -499,7 +499,8 @@ export interface OwClientConfig {
   /** A fetch implementation to use instead of globalThis.fetch (for tests and other runtimes). */
   fetch?: typeof globalThis.fetch;
   /**
-   * Declare this client an AI agent: every request to keel carries `X-OW-Agent`, and keel
+   * Declare this client an AI agent: every element write (create, upsert, patch, delete,
+   * editLinks, bulk) carries `X-OW-Agent`, the operations keel declares it on, and keel
    * records its writes as agent-made (`changed_via: 'declared'`; keel stores that the header
    * was there, never its value). Off by default, and it must stay off in a tool people use:
    * it describes the caller, so only the caller can set it. An agent seat's key is recorded

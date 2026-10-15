@@ -143,6 +143,7 @@ export class OwV2Client {
       body.id = mintUuid();
     }
     return this.request('POST', `/${type}/`, {
+      write: true,
       body,
       idempotencyKey: opts.idempotencyKey,
     }) as Promise<OwElement>;
@@ -150,7 +151,7 @@ export class OwV2Client {
 
   /** PUT /{type}/{id}/ -- upsert-by-client-id. The local-first write primitive. */
   async upsert(type: ElementType | string, id: string, element: OwElement | Record<string, unknown>): Promise<OwElement> {
-    return this.request('PUT', `/${type}/${id}/`, { body: sanitizePayload(element) }) as Promise<OwElement>;
+    return this.request('PUT', `/${type}/${id}/`, { write: true, body: sanitizePayload(element) }) as Promise<OwElement>;
   }
 
   /**
@@ -169,7 +170,7 @@ export class OwV2Client {
     partial: Record<string, unknown>,
     opts: { ifMatch?: number } = {},
   ): Promise<OwElement> {
-    return this.request('PATCH', `/${type}/${id}/`, { body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
+    return this.request('PATCH', `/${type}/${id}/`, { write: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   /**
@@ -178,7 +179,7 @@ export class OwV2Client {
    * transaction -- no client-side unlink pass needed, ever.
    */
   async delete(type: ElementType | string, id: string): Promise<void> {
-    await this.request('DELETE', `/${type}/${id}/`, { allowEmpty: true });
+    await this.request('DELETE', `/${type}/${id}/`, { write: true, allowEmpty: true });
   }
 
   /**
@@ -195,7 +196,7 @@ export class OwV2Client {
     edit: OwLinkEdit,
     opts: { ifMatch?: number } = {},
   ): Promise<OwElement> {
-    return this.request('POST', `/${type}/${id}/links/${field}`, { body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
+    return this.request('POST', `/${type}/${id}/links/${field}`, { write: true, body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   // -- Bulk ----------------------------------------------------------------
@@ -218,6 +219,7 @@ export class OwV2Client {
       atomic: opts.atomic ?? false,
     };
     return this.request('POST', '/bulk/', {
+      write: true,
       body,
       idempotencyKey: opts.idempotencyKey,
       replayAware: true,
@@ -523,6 +525,8 @@ export class OwV2Client {
       allowEmpty?: boolean;
       replayAware?: boolean;
       /** A `change_seq` to send as `If-Match` (keel #210); a whole number, else TypeError before sending. */
+      /** An element write (create, put, patch, delete, links, bulk): where an agent client sends X-OW-Agent. */
+      write?: boolean;
       ifMatch?: number;
     } = {},
   ): Promise<T> {
@@ -542,8 +546,9 @@ export class OwV2Client {
     if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
     if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
     if (opts.ifMatch !== undefined) headers['If-Match'] = `"${opts.ifMatch}"`;
-    // keel #299 (D104): presence is the declaration, the value is never stored. Opt-in only.
-    if (this.agent) headers['X-OW-Agent'] = '1';
+    // keel #299 (D104): presence is the declaration, the value is never stored. Opt-in only, and
+    // on the element writes alone, the operations keel's document declares it on.
+    if (this.agent && opts.write) headers['X-OW-Agent'] = '1';
 
     let res: Response;
     try {
