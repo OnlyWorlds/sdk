@@ -316,6 +316,41 @@ export interface OwJoinPreview {
   [k: string]: unknown;
 }
 
+/** One of a world's invite links, as GET /account/worlds/{id}/links lists it (keel C1, 48c10d4). */
+export interface OwWorldLink {
+  /** The link's id: revokeWorldLink takes it. */
+  id: string;
+  /** `person`: accepted signed in, with acceptJoin. `agent`: redeemed by an AI agent at POST /join. */
+  reader: 'person' | 'agent';
+  role: OwMemberRole;
+  /** The name the owner gave an agent link on the website, or empty. */
+  label: string;
+  /** The name the link is signed with, or empty (the invite line then reads "Someone"). */
+  inviter_name: string;
+  /** Whether redeeming gives the agent a Character of its own. Always false on a person link. */
+  with_character: boolean;
+  /** The code's last four characters, to tell links apart. */
+  last4: string;
+  /** ISO 8601, UTC. */
+  created_at: string;
+  /** ISO 8601, UTC. */
+  expires_at: string;
+  /** 0 or 1: a link works once. */
+  uses: number;
+  status: 'pending' | 'used' | 'revoked' | 'expired';
+  [k: string]: unknown;
+}
+
+/** POST /account/worlds/{id}/links: the new link, with its code. The code is in this answer only: keel keeps a hash. */
+export interface OwCreatedWorldLink extends OwWorldLink {
+  /** The `ow_j_` join code. Shown once; it can never be read again. */
+  code: string;
+  /** The invite link: the /join page with the code after `#`. */
+  link: string;
+  /** The one line to send: who invites, to which world, and the link. */
+  line: string;
+}
+
 /** POST /account/join: the new membership (the same row as accepting an email invite). */
 export interface OwJoinedMembership {
   /** The membership's id. */

@@ -5,7 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.24.0] — 2026-10-15
+
+### Added
+- **A world's invite links** (keel C1, 48c10d4), on the owner's account token (`ow_a_`):
+  `createWorldLink(worldId, { reader, role?, days?, inviterName?, withCharacter? })` answers the
+  new link with its `code`, `link` and the one `line` to send (the code is in this answer only:
+  keel keeps a hash); `listWorldLinks(worldId)` the links without codes, each with its `status`
+  and `uses`; `revokeWorldLink(worldId, linkId)`. Types `OwWorldLink`, `OwCreatedWorldLink`. A
+  non-owner, and a world that doesn't exist, get 404; a world key is a TypeError before sending.
+  For Lantern's Invite someone (Temper, h29 #5152).
+
 ### Changed
+- `acceptJoin`'s doc comment and the README: accepting needs no account PIN for any role (keel
+  #297, ed73c90), so its refusals are 404 and 409 `already_member`; `pin_required` now belongs to
+  minting a write key for the membership. `isPinRequired` stays.
 - Doc comments say "token rating" for the account's daily budget (`ask`, `sort`, `allowance`,
   `OwAllowance`, the answers' `token_rating`), as the README did in 4.23.0; the docs site's
   generated reference reads them. No code change.

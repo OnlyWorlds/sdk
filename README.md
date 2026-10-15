@@ -119,7 +119,18 @@ const invite = await client.previewJoin(code);   // who invites, which world, wh
 const membership = await account.acceptJoin(code); // account = a client with an ow_a_ token
 ```
 
-A bad code (unknown, used, revoked, expired) is one 404 (`err.isNotFound`). Accepting can answer `err.isAlreadyMember` or `err.isPinRequired` (set a PIN first); a refusal never uses up the code.
+A bad code (unknown, used, revoked, expired) is one 404 (`err.isNotFound`). Accepting can answer `err.isAlreadyMember`; it needs no account PIN, though a write key for the new membership waits for one. A refusal never uses up the code.
+
+The owner makes, lists and revokes the links with the account token (since 4.24.0). The code comes back once, in the answer that makes it:
+
+```typescript
+const made = await account.createWorldLink(worldId, { reader: 'person', role: 'contributor', days: 7 });
+// made.line: the one line to send (who invites, to which world, the link); made.code: the ow_j_ code
+const links = await account.listWorldLinks(worldId);  // no codes: status pending | used | revoked | expired
+await account.revokeWorldLink(worldId, made.id);
+```
+
+`reader: 'agent'` makes a link an AI agent redeems for a seat instead. Anyone but the owner gets a 404.
 
 Once in, a world key can ask who it is and who else is there (since 4.22.0):
 

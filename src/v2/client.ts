@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
-  OwSortAnswer, OwSortNote, OwSortRef,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink,
 } from './types';
 import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
@@ -381,16 +381,71 @@ export class OwV2Client {
   /**
    * POST /account/join -- accept an invite link's code as the account this client's
    * `ow_a_` token belongs to: 201 with the new membership. Refusals: 404 `not_found`
-   * (every bad code, and a code made for an AI agent), 409 `already_member`
-   * (`err.isAlreadyMember`) and 409 `pin_required` (`err.isPinRequired`: the account
-   * has no PIN yet). A refusal never spends the code. A world key here is a TypeError
-   * before anything is sent.
+   * (every bad code, and a code made for an AI agent) and 409 `already_member`
+   * (`err.isAlreadyMember`). Accepting needs no account PIN, for any role (keel #297,
+   * ed73c90); a write key for the membership waits for one (`pin_required`). A refusal
+   * never spends the code. A world key here is a TypeError before anything is sent.
    */
   async acceptJoin(code: string): Promise<OwJoinedMembership> {
     if (this.keyKind !== 'account') {
       throw new TypeError('acceptJoin needs an account token (ow_a_): a world key cannot join a world');
     }
     return this.request('POST', '/account/join', { body: { code } }) as Promise<OwJoinedMembership>;
+  }
+
+  /**
+   * POST /account/worlds/{worldId}/links -- a new invite link for a world this client's
+   * `ow_a_` token owns (keel C1): `reader` is required (`person`, accepted with acceptJoin;
+   * `agent`, redeemed at POST /join); `role` defaults to contributor, `days` (1, 7 or 30)
+   * to 7; `withCharacter` (agent links only) to true. 201 with the code, shown in this
+   * answer only. Owner only: anyone else, and a world that doesn't exist, gets 404
+   * `not_found` (`err.isNotFound`). A world key is a TypeError before anything is sent.
+   */
+  async createWorldLink(
+    worldId: string,
+    opts: {
+      reader: 'person' | 'agent';
+      role?: OwMemberRole;
+      days?: 1 | 7 | 30;
+      inviterName?: string;
+      withCharacter?: boolean;
+    },
+  ): Promise<OwCreatedWorldLink> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('createWorldLink needs an account token (ow_a_): only the world\'s owner makes links');
+    }
+    const body: Record<string, unknown> = { reader: opts.reader };
+    if (opts.role !== undefined) body.role = opts.role;
+    if (opts.days !== undefined) body.days = opts.days;
+    if (opts.inviterName !== undefined) body.inviter_name = opts.inviterName;
+    if (opts.withCharacter !== undefined) body.with_character = opts.withCharacter;
+    return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/links`, { body }) as Promise<OwCreatedWorldLink>;
+  }
+
+  /**
+   * GET /account/worlds/{worldId}/links -- the world's invite links, without their codes:
+   * each with its status (pending, used, revoked or expired) and uses. Owner only, as
+   * createWorldLink. Needs the client's `ow_a_` token.
+   */
+  async listWorldLinks(worldId: string): Promise<OwWorldLink[]> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('listWorldLinks needs an account token (ow_a_): only the world\'s owner sees its links');
+    }
+    const page = await this.request('GET', `/account/worlds/${encodeURIComponent(worldId)}/links`) as { data: OwWorldLink[] };
+    return page.data;
+  }
+
+  /**
+   * DELETE /account/worlds/{worldId}/links/{linkId} -- revoke a link: its code no longer
+   * works. A used, revoked or expired link answers the same and stays as it was; whoever
+   * joined with it stays a member (remove them from the roster). Owner only, as
+   * createWorldLink. Needs the client's `ow_a_` token.
+   */
+  async revokeWorldLink(worldId: string, linkId: string): Promise<void> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('revokeWorldLink needs an account token (ow_a_): only the world\'s owner revokes links');
+    }
+    await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/links/${encodeURIComponent(linkId)}`);
   }
 
   // -- Ask your world (keel #159) -------------------------------------------

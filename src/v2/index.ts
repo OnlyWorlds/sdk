@@ -20,7 +20,7 @@ export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
   OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta,
-  OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwMemberRole,
+  OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink,
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
 } from './types';
 export {
