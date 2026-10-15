@@ -13,14 +13,15 @@
 //
 // One interface per element type, extending OwElementBase. Field shapes are the v2
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
-// `number | null`. Link fields use bare schema names (no `_ids` suffix). The five
-// server-managed fields (type, created_at, updated_at, change_seq, created_by) and the
+// `number | null`. Link fields use bare schema names (no `_ids` suffix). The seven
+// server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
+// changed_via) and the
 // extension index signature live on OwElementBase.
 
 /** Every element carries these. The extension index signature admits namespaced
  *  pass-through fields (atlas_* / shadow_* / x_*) returned verbatim by the server.
  *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in
- *  bodies -- the key determines the world) and the five server-managed fields are
+ *  bodies -- the key determines the world) and the seven server-managed fields are
  *  added, since they ride every wire body and appear in no element YAML. */
 export interface OwElementBase {
   /** Element type slug (server-managed, read-only). */
@@ -45,6 +46,10 @@ export interface OwElementBase {
   change_seq?: number;
   /** The membership that created this element (server-managed, read-only); null for the world's owner and for anything created before memberships existed. */
   created_by?: string | null;
+  /** The membership whose write last changed this element (server-managed, read-only); null for the world's owner and for anything last changed before writes recorded it. */
+  changed_by?: string | null;
+  /** The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, or `server` (keel's own writes). The first three are agent-made. Null for anything last changed before writes recorded it. */
+  changed_via?: 'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | null;
   /** Namespaced extension fields (atlas_* / shadow_* / x_*), returned verbatim. */
   [ext: string]: unknown;
 }

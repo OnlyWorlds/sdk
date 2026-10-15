@@ -70,7 +70,30 @@ export interface OwPage<T = OwElement> {
 /** /changes feed -- discriminated union on `op`. Apply in order -> convergence. */
 export type OwChange =
   | { op: 'upsert'; id: string; type: string; element: OwElement; updated_at: string; [k: string]: unknown }
-  | { op: 'delete'; id: string; type: string; deleted_at: string; [k: string]: unknown };
+  | {
+      op: 'delete'; id: string; type: string; deleted_at: string;
+      /** The membership whose write deleted it; null for the world's owner, and for deletes before writes recorded it (keel #299). */
+      deleted_by?: string | null;
+      /** The door the delete came through (see {@link OwWriteDoor}); null for deletes before writes recorded it. */
+      deleted_via?: OwWriteDoor | null;
+      [k: string]: unknown;
+    };
+
+/**
+ * The door a write came through, as keel records it on every element (`changed_via`) and on a
+ * delete (`deleted_via`) since keel #299: `seat` (an agent seat), `mcp` (the MCP server),
+ * `declared` (a client that sent `X-OW-Agent`; see {@link OwClientConfig.agent}), then the
+ * surface for everything else: `api`, `v1`, `sync`, and `server` for keel's own writes.
+ */
+export type OwWriteDoor = NonNullable<OwElementBase['changed_via']>;
+
+/** The doors that mean agent-made: an agent seat, the MCP server, or a client that declared itself. */
+export const AGENT_DOORS: readonly OwWriteDoor[] = ['seat', 'mcp', 'declared'];
+
+/** Whether a write came through an agent's door (`changed_via` or `deleted_via`); false for null. */
+export function isAgentDoor(door: OwWriteDoor | null | undefined): boolean {
+  return door != null && AGENT_DOORS.includes(door);
+}
 
 /**
  * /changes response. Wire shape verified in keel source (core/changes.py) and
@@ -464,4 +487,12 @@ export interface OwClientConfig {
   changesPageSize?: number;
   /** A fetch implementation to use instead of globalThis.fetch (for tests and other runtimes). */
   fetch?: typeof globalThis.fetch;
+  /**
+   * Declare this client an AI agent: every request to keel carries `X-OW-Agent`, and keel
+   * records its writes as agent-made (`changed_via: 'declared'`; keel stores that the header
+   * was there, never its value). Off by default, and it must stay off in a tool people use:
+   * it describes the caller, so only the caller can set it. An agent seat's key is recorded
+   * as an agent without it.
+   */
+  agent?: boolean;
 }

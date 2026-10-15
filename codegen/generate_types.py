@@ -8,8 +8,9 @@ client uses for link-aware helpers.
 Field-kind parsing mirrors keel/codegen/generate_models.py -- the proven consumer
 of these YAMLs. TypeScript shapes are pinned to the v2 wire, not to Django columns:
 single-links serialize as `string | null`, multi-links as `string[]`, ints as
-`number | null`, link fields use BARE schema names (no `_ids` suffix), and the five
-server-managed fields (type, created_at, updated_at, change_seq, created_by) plus an extension
+`number | null`, link fields use BARE schema names (no `_ids` suffix), and the seven
+server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
+changed_via) plus an extension
 index signature ride the shared base.
 
 Run:  python codegen/generate_types.py [--schema ../keel/schema]
@@ -101,8 +102,9 @@ __PROVENANCE__
 //
 // One interface per element type, extending OwElementBase. Field shapes are the v2
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
-// `number | null`. Link fields use bare schema names (no `_ids` suffix). The five
-// server-managed fields (type, created_at, updated_at, change_seq, created_by) and the
+// `number | null`. Link fields use bare schema names (no `_ids` suffix). The seven
+// server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
+// changed_via) and the
 // extension index signature live on OwElementBase.
 
 __ELEMENT_BASE__
@@ -125,8 +127,9 @@ __ELEMENT_BASE__
 #     truth -- every element row has a world -- while the v2 API REJECTS `world` in a
 #     request body, because the API key determines the world. (rulings.yaml:
 #     required-world-wire-caveat. Canonical truing rides a later YAML bump.)
-#   - Five server-managed fields are ADDED. They exist on every wire body and in no
-#     element YAML: type, created_at, updated_at, change_seq, created_by.
+#   - Seven server-managed fields are ADDED. They exist on every wire body and in no
+#     element YAML: type, created_at, updated_at, change_seq, created_by, changed_by,
+#     changed_via.
 #   - Only Id and Name stay non-optional. Everything else is optional per
 #     rulings.yaml: nullable-by-default -- only `name` is truly required, and `id` is
 #     present on every body the server returns.
@@ -139,6 +142,9 @@ WIRE_ONLY_BASE_FIELDS = [
     ("updated_at", "Last-update timestamp (server-managed, read-only).", "string", False),
     ("change_seq", "Per-world change cursor, stamped on every write (server-managed, read-only).", "number", False),
     ("created_by", "The membership that created this element (server-managed, read-only); null for the world's owner and for anything created before memberships existed.", "string | null", False),
+    # keel #299, D104: the last write's author and the door it came through.
+    ("changed_by", "The membership whose write last changed this element (server-managed, read-only); null for the world's owner and for anything last changed before writes recorded it.", "string | null", False),
+    ("changed_via", "The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, or `server` (keel's own writes). The first three are agent-made. Null for anything last changed before writes recorded it.", "'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | null", False),
 ]
 BASE_KEY_TO_WIRE = {
     "Id": "id", "Name": "name", "Description": "description",
@@ -172,7 +178,7 @@ def render_element_base(schema_dir: Path) -> str:
         "/** Every element carries these. The extension index signature admits namespaced",
         " *  pass-through fields (atlas_* / shadow_* / x_*) returned verbatim by the server.",
         " *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in",
-        " *  bodies -- the key determines the world) and the five server-managed fields are",
+        " *  bodies -- the key determines the world) and the seven server-managed fields are",
         " *  added, since they ride every wire body and appear in no element YAML. */",
         "export interface OwElementBase {",
     ]

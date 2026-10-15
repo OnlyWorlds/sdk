@@ -34,6 +34,7 @@ export class OwV2Client {
   private readonly apiKey: string;
   private readonly apiPin: string | undefined;
   private readonly fetchImpl: typeof globalThis.fetch;
+  private readonly agent: boolean;
 
   constructor(config: OwClientConfig) {
     if (!config.apiKey) throw new Error('OwV2Client: apiKey is required');
@@ -44,6 +45,7 @@ export class OwV2Client {
     this.pageSize = config.pageSize ?? DEFAULT_PAGE_SIZE;
     this.changesPageSize = config.changesPageSize ?? DEFAULT_CHANGES_PAGE_SIZE;
     this.fetchImpl = config.fetch ?? globalThis.fetch.bind(globalThis);
+    this.agent = config.agent === true;
     if (typeof this.fetchImpl !== 'function') {
       throw new Error('OwV2Client: no fetch available -- supply config.fetch');
     }
@@ -540,6 +542,8 @@ export class OwV2Client {
     if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
     if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
     if (opts.ifMatch !== undefined) headers['If-Match'] = `"${opts.ifMatch}"`;
+    // keel #299 (D104): presence is the declaration, the value is never stored. Opt-in only.
+    if (this.agent) headers['X-OW-Agent'] = '1';
 
     let res: Response;
     try {

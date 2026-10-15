@@ -14,13 +14,14 @@ export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './v2';
 export type { OwKeyKind, OwAuthErrorCode } from './v2';
 
 // Schema-generated types (the single ElementType) + wire shapes
-export { ELEMENT_TYPES, SPATIAL_TYPES } from './v2';
+export { ELEMENT_TYPES, SPATIAL_TYPES, AGENT_DOORS, isAgentDoor } from './v2';
 export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
   OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta,
   OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink,
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
+  OwWriteDoor,
 } from './v2';
 
 // Canonical element colour palette (families generated from schema; hexes CVD-validated)

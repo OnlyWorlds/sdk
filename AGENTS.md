@@ -89,6 +89,12 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   body that carries it has it dropped, never an error. A **contributor** can change only what
   they created: anything else is 403 `not_author` (`err.isNotAuthor`; retrying will not help).
   `/bulk` reports it per slot, not as a throw.
+- **If you are an agent, say so** (since 4.26.0): `new OwV2Client({ ..., agent: true })` sends
+  `X-OW-Agent` on every request, and keel records your writes as agent-made. Every element read
+  carries `changed_by` and `changed_via` (the last write's membership and its door: `seat`,
+  `mcp`, `declared`, `api`, `v1`, `sync`, `server`), and a `/changes` delete carries
+  `deleted_by` and `deleted_via`; `isAgentDoor(door)` is true for the first three. An agent
+  seat's key is recorded as an agent without the option. Never set it in a tool people use.
 - A string holding an unpaired surrogate (text cut mid-emoji) is a 422 naming the field.
   Slice strings by code point, not by UTF-16 unit.
 - Colour carries the element's FAMILY (`elementColor(type, mode)`); the icon

@@ -725,3 +725,37 @@ test('changesAll: a keel without the epoch field returns epoch null', async () =
   while (!r.done) r = await it.next();
   assert.deepEqual(r.value, { cursor: '5:x', head: 5, epoch: null });
 });
+
+// -- keel #299: the agent declaration (X-OW-Agent) ---------------------------
+
+test('agent: off by default, no X-OW-Agent on reads or writes', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', type: 'character', name: 'A' } });
+  await client.get('character', 'x');
+  await client.patch('character', 'x', { name: 'B' });
+  for (const c of fetchImpl.calls) assert.equal('X-OW-Agent' in c.init.headers, false);
+});
+
+test('agent: true sends X-OW-Agent on every keel request, an account token included', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', type: 'character', name: 'A' } }, { agent: true });
+  await client.get('character', 'x');
+  await client.create('character', { name: 'B' });
+  for (const c of fetchImpl.calls) assert.equal(c.init.headers['X-OW-Agent'], '1');
+  const acct = makeClient({ status: 200, body: {} }, { apiKey: 'ow_a_test', agent: true });
+  await acct.client.request('GET', '/account/allowance');
+  assert.equal(acct.fetchImpl.calls.at(-1).init.headers['X-OW-Agent'], '1');
+});
+
+test('agent: the image edge never gets X-OW-Agent (it is keel\'s header, not the edge\'s)', async () => {
+  const fetchImpl = imageFetch();
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: fetchImpl, agent: true });
+  await client.uploadImage(new Uint8Array([1, 2, 3]), { key: 'u/w1/x.png' });
+  assert.equal(fetchImpl.calls[0].init.headers['X-OW-Agent'], '1');
+  assert.deepEqual(fetchImpl.calls[1].init.headers, { Authorization: 'Bearer tkt.sig', 'X-Key': 'u/w1/x.png' });
+});
+
+test('isAgentDoor: seat, mcp and declared are agent-made; the surfaces and null are not', async () => {
+  const { isAgentDoor, AGENT_DOORS } = await import('../dist/index.js');
+  assert.deepEqual([...AGENT_DOORS], ['seat', 'mcp', 'declared']);
+  for (const d of ['seat', 'mcp', 'declared']) assert.equal(isAgentDoor(d), true, d);
+  for (const d of ['api', 'v1', 'sync', 'server', null, undefined]) assert.equal(isAgentDoor(d), false, String(d));
+});
