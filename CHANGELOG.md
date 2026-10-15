@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.27.0] — 2026-10-16
+
+### Added
+- `OwApiError.isIdempotencyInFlight` (keel #307, D105): a request with the same Idempotency-Key is still
+  running (409 `idempotency_in_flight`, `retryAfter` 1). Nothing was written by this one; send again with
+  the same key and body after `retryAfter` and it replays the first answer. `isIdempotencyConflict` stays
+  the different-body case only. The client still does not retry for you.
+
 ## [4.26.0] — 2026-10-15
 
 ### Added

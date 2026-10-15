@@ -212,6 +212,15 @@ test('409 idempotency_error is an idempotency conflict, NOT an id conflict', asy
     (c) => c.create('character', { name: 'K' }, { idempotencyKey: 'k1' }));
   assert.equal(err.isIdempotencyConflict, true);
   assert.equal(err.isIdConflict, false);
+  assert.equal(err.isIdempotencyInFlight, false);
+});
+
+test('409 idempotency_in_flight is in flight with Retry-After, NOT a key conflict (keel #307)', async () => {
+  const err = await thrown({ status: 409, headers: { 'retry-after': '1' }, body: envelope('idempotency_error', 'idempotency_in_flight') },
+    (c) => c.bulk([{ type: 'character', element: { name: 'K' } }], { idempotencyKey: 'k1' }));
+  assert.equal(err.isIdempotencyInFlight, true);
+  assert.equal(err.isIdempotencyConflict, false);
+  assert.equal(err.retryAfter, 1);
 });
 
 test('503 server_busy carries isBusy and Retry-After in seconds', async () => {

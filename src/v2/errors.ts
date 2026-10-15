@@ -79,6 +79,16 @@ export class OwApiError extends Error {
   }
 
   /**
+   * A request with this Idempotency-Key is still running (409 `idempotency_in_flight`, keel
+   * #307, D105): two sends of one create or bulk overlapped. Nothing was written by this one.
+   * Wait `retryAfter` seconds (keel sends 1) and send again with the SAME key and body: once
+   * the first has answered, that retry replays its answer. Not a key conflict (see above).
+   */
+  get isIdempotencyInFlight(): boolean {
+    return this.status === 409 && this.code === 'idempotency_in_flight';
+  }
+
+  /**
    * The id is already taken (409 `id_conflict`): a create with an id that exists
    * (keel D39), or a PUT whose id belongs to another world (D70). Retrying will not
    * help; the id is the problem. `/bulk` never throws for this: it answers 200 with a
