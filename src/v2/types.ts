@@ -19,11 +19,44 @@ export type OwElement = OwElementBase;
 /** Spatial types live under spatial/ in the OW Folder Format. */
 export const SPATIAL_TYPES: readonly ElementType[] = ['map', 'pin', 'marker', 'zone'] as const;
 
+/**
+ * GET /world: the world's own fields, as keel's `World` component declares them (since 4.25.0
+ * every one is typed). keel always sends all of them; past `id` and `name` they are optional
+ * here only so that code building a world meta keeps compiling within 4.x. Dates and durations
+ * count in `time_basic_unit`; the three units are free-text labels, nothing converts.
+ */
 export interface OwWorldMeta {
   id: string;
   name: string;
-  updated_at?: string;
+  description?: string;
+  image_url?: string;
+  /** The names of the calendar's steps, e.g. ['Day', 'Week', 'Month', 'Year']. */
+  time_format_names?: string[];
+  /** How many time_basic_unit each step holds, in the same order. Whole numbers in the standard; an older world may read back strings. */
+  time_format_equivalents?: Array<number | string>;
+  /** The unit every element date and duration counts in (e.g. 'Year'). */
+  time_basic_unit?: string;
+  time_range_min?: number | null;
+  time_range_max?: number | null;
+  /** The world's present moment (in a world folder: `time_current`). */
+  time_range_current?: number | null;
+  length_unit?: string;
+  mass_unit?: string;
+  distance_unit?: string;
+  /** Whether the world can be read without its PIN. Read-only on the wire. */
   public_read?: boolean;
+  /**
+   * Whether a Narrative written through an agent seat is narrated by that seat's own Character,
+   * as a guest's is (keel #298, D103): set by the owner on the world page; read-only on the wire.
+   * With it on, an agent naming another narrator is a 422 (`param: narrator`), and a seat with no
+   * Character a 403 `guest_not_supported`.
+   */
+  agent_narrator_rule?: boolean;
+  /** The owner's "this Character is me": a Character id in this world, or null. */
+  owner_character?: string | null;
+  created_at?: string | null;
+  /** Moves when the world's own fields change, not on element writes. */
+  updated_at?: string | null;
   [field: string]: unknown;
 }
 

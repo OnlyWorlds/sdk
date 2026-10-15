@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.25.0] — 2026-10-15
+
+### Changed
+- **`OwWorldMeta` types every field keel's `World` declares** (it named four): the description and
+  picture, the calendar (`time_format_names`, `time_format_equivalents`, `time_basic_unit`, the three
+  `time_range_*`), the three unit labels, `public_read`, `owner_character`, `created_at`, and new
+  **`agent_narrator_rule`** (keel #298, D103: whether a Narrative written through an agent seat is
+  narrated by that seat's own Character; read-only, set on the world page). Past `id` and `name`
+  they stay optional so code that builds a world meta keeps compiling; keel always sends all of them.
+  `updated_at` and `created_at` read `string | null`, as the document says. Assembly's wire gate now
+  holds this type to `World` (it had held only the PATCH body). Council and Lantern type-check on it.
+
 ## [4.24.0] — 2026-10-15
 
 ### Added
