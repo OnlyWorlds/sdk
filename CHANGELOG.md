@@ -5,8 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.26.0] — 2026-10-15
+
 ### Added
-- **The door of every write** (keel #299, D104; publish only once keel's #299 is live). An opt-in
+- **The door of every write** (keel #299, D104; keel 7c1b493). An opt-in
   `agent: true` on `OwClientConfig` sends `X-OW-Agent` on every element write (create, upsert,
   patch, delete, editLinks, bulk: the operations keel's document declares it on; never on reads,
   account routes or the image edge); keel records such writes as `declared`, agent-made, and stores only that the header was
