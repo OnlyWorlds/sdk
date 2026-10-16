@@ -124,6 +124,34 @@ test('bulk request wraps items[] and defaults atomic:false', async () => {
   assert.equal(sent.items[0].element.name, 'A');
 });
 
+test('bulk mints each id-less element its id by position: from the key, the ids Python mints, so a retry sends the same body', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: FIX_P2a });
+  // vectors from the Python package's _minted_id(key, index) (onlyworlds 0.4.0), positions 0-2
+  const vectors = {
+    k1: ['9b55790c-5bcb-5173-8478-80a431ad7bd5', '814d0153-3fa9-558a-b715-ad2196e1bad2', '2441243d-bc6b-5ea2-b175-cd498000ad47'],
+    'é-ünï-🐉': ['f73005eb-b2a6-512f-b8ae-205a504f298a', '1b888364-1b61-5c25-9664-4bcee1407a10', '366b67ad-ceb1-5aed-8777-7c215fc62a01'],
+  };
+  const items = [
+    { type: 'character', element: { name: 'A' } },
+    { type: 'event', element: { id: 'mine', name: 'B' } },
+    { type: 'location', element: { name: 'C', id: '' } },
+  ];
+  for (const [key, ids] of Object.entries(vectors)) {
+    await client.bulk(items, { idempotencyKey: key });
+    await client.bulk(items, { idempotencyKey: key });
+    const [one, two] = fetchImpl.calls.slice(-2);
+    const sent = lastBody({ calls: [one] }).items.map((it) => it.element.id);
+    assert.deepEqual(sent, [ids[0], 'mine', ids[2]], `${key}: by position, an id you pass kept`);
+    assert.equal(one.init.body, two.init.body, `${key}: a retry sends the same body`);
+  }
+  assert.equal('id' in items[0].element, false, "the caller's items are not changed");
+  await client.bulk(items);
+  const fresh = lastBody(fetchImpl).items.map((it) => it.element.id);
+  assert.match(fresh[0], /^[0-9a-f]{8}-[0-9a-f]{4}-7/, 'without a key, a fresh UUIDv7');
+  assert.notEqual(fresh[0], fresh[2]);
+  assert.equal(fresh[1], 'mine');
+});
+
 test('bulk atomic:true is forwarded', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: FIX_P2a });
   await client.bulk([{ type: 'character', element: { name: 'A' } }], { atomic: true });

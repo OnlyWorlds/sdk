@@ -216,10 +216,20 @@ export class OwV2Client {
    * After an atomic:true request with errors:true NOTHING was written, yet the slots of
    * the items that would have succeeded still say 201 with the ids and timestamps they
    * would have had (keel's "counterfactual 201s"): do not record those ids as created.
+   * An element without an id gets one, as `create` mints it, by its position in `items`: with an
+   * `idempotencyKey`, derived from the key and the position (the ids the Python package mints),
+   * so a retry with the same key and items sends the same body; without one, a
+   * fresh UUIDv7. Ids you supply are kept.
    */
   async bulk(items: OwBulkItem[], opts: { atomic?: boolean; idempotencyKey?: string } = {}): Promise<OwBulkResponse> {
     const body = {
-      items: items.map((it) => ({ type: it.type, element: sanitizePayload(it.element) })),
+      items: items.map((it, index) => {
+        const element = sanitizePayload(it.element);
+        if (element.id === undefined || element.id === null || element.id === '') {
+          element.id = opts.idempotencyKey ? keyedId(opts.idempotencyKey, index) : mintUuid();
+        }
+        return { type: it.type, element };
+      }),
       atomic: opts.atomic ?? false,
     };
     return this.request('POST', '/bulk/', {

@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.27.2] — 2026-10-16
+
+### Fixed
+- **`bulk` mints an id for each element that has none, as `create` does.** It sent id-less elements
+  bare and keel minted them. With an `idempotencyKey`, each id is now derived from the key and the
+  element's position in `items` (the ids the Python package mints), so the same key and items send the
+  same body from either client, and a resend after keel's 24-hour replay window rewrites the same
+  elements instead of creating new ones. Without a key, a fresh UUIDv7 each. Ids you pass are kept, and
+  your items are not changed. Found by Quillon's parity audit of the Unity SDK (h37 #5794).
+
 ## [4.27.1] — 2026-10-16
 
 ### Fixed
