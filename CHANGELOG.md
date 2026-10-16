@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.29.0] — 2026-10-16
+
+### Added
+- `rekeySeat(worldId, seatId)` (keel #355 piece 3, D108): a new key and secret for a seat whose AI lost
+  its own, by its sponsor or the world's owner. The old key and secret stop at once; the answer has
+  `createSeat`'s shape (`OwSeatCreated`: `key`, `pin`, `env`), shown once. No Idempotency-Key, by keel's
+  rule: if the answer is lost too, ask for another.
+
+### Changed
+- `createSeat`'s doc names `rekeySeat` as the way back from a lost answer.
+- `OwApiError.param`'s doc: `API-Pin` on a 401 PIN refusal (keel #357, D107), not only a 422/400's field.
+
 ## [4.28.0] — 2026-10-16
 
 ### Added

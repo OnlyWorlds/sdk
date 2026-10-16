@@ -64,11 +64,23 @@ test('removeSeat: DELETE the seat by id; a 204 resolves', async () => {
   assert.equal(f.calls[0].init.method, 'DELETE');
 });
 
-test('the three seat methods: a world key is a TypeError before anything is sent', async () => {
+test('rekeySeat: POST .../seats/{id}/key with no body and no Idempotency-Key; the new key comes back', async () => {
+  const f = fake(201, CREATED);
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+  assert.deepEqual(await c.rekeySeat('w1', 's/1'), CREATED);
+  const { url, init } = f.calls[0];
+  assert.match(url, /\/api\/v2\/account\/worlds\/w1\/seats\/s%2F1\/key$/);
+  assert.equal(init.method, 'POST');
+  assert.equal(init.body, undefined);
+  assert.equal(Object.keys(init.headers).some((h) => h.toLowerCase() === 'idempotency-key'), false);
+});
+
+test('the four seat methods: a world key is a TypeError before anything is sent', async () => {
   const f = fake(200, {});
   const c = new OwV2Client({ apiKey: 'ow_w_world', apiPin: '1234', fetch: f.fetch });
   await assert.rejects(c.createSeat('w1', { name: 'Quill' }), TypeError);
   await assert.rejects(c.listSeats('w1'), TypeError);
+  await assert.rejects(c.rekeySeat('w1', 's1'), TypeError);
   await assert.rejects(c.removeSeat('w1', 's1'), TypeError);
   assert.equal(f.calls.length, 0);
 });

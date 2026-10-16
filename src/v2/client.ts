@@ -477,7 +477,7 @@ export class OwV2Client {
    * `mine` (members only: it plays the Character you play). 201 with `key`, `pin` and the
    * `.env` lines in `env`, shown in this answer only. Sends no Idempotency-Key, by keel's rule:
    * a replay would have to keep the key. If the answer is lost, listSeats shows the seat without
-   * its key: remove it with removeSeat and make another. Needs the client's `ow_a_` token.
+   * its key: rekeySeat gives it a new one (or removeSeat and make another). Needs the client's `ow_a_` token.
    */
   async createSeat(
     worldId: string,
@@ -502,6 +502,20 @@ export class OwV2Client {
     }
     const page = await this.request('GET', `/account/worlds/${encodeURIComponent(worldId)}/seats`) as { data: OwSeat[] };
     return page.data;
+  }
+
+  /**
+   * POST /account/worlds/{worldId}/seats/{seatId}/key -- a new key and secret for a seat whose AI
+   * lost its own: its sponsor or the world's owner may. The old key and secret stop at once;
+   * nothing else about the seat changes. 201 with the same shape as createSeat (`key`, `pin`,
+   * `env`), shown in this answer only. No Idempotency-Key, by keel's rule: if this answer is lost
+   * too, ask for another new key. Needs the client's `ow_a_` token.
+   */
+  async rekeySeat(worldId: string, seatId: string): Promise<OwSeatCreated> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('rekeySeat needs an account token (ow_a_)');
+    }
+    return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/seats/${encodeURIComponent(seatId)}/key`) as Promise<OwSeatCreated>;
   }
 
   /**
