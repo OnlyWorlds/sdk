@@ -215,6 +215,23 @@ test('409 idempotency_error is an idempotency conflict, NOT an id conflict', asy
   assert.equal(err.isIdempotencyInFlight, false);
 });
 
+test('create with a key derives its id from the key, the same id Python mints, so a retry sends the same body', async () => {
+  const { client, fetchImpl } = makeClient({ status: 201, body: { id: 'x' } });
+  // vectors from the Python package's _minted_id(key, 0) (onlyworlds 0.4.0)
+  const vectors = { k1: '9b55790c-5bcb-5173-8478-80a431ad7bd5', 'retry-7f3a': '0962a4a5-2f46-5909-82f1-7d260ee368b0', 'é-ünï-🐉': 'f73005eb-b2a6-512f-b8ae-205a504f298a' };
+  for (const [key, id] of Object.entries(vectors)) {
+    await client.create('character', { name: 'A' }, { idempotencyKey: key });
+    await client.create('character', { name: 'A' }, { idempotencyKey: key });
+    const [one, two] = fetchImpl.calls.slice(-2);
+    assert.equal(lastBody({ calls: [one] }).id, id, key);
+    assert.equal(one.init.body, two.init.body, `${key}: a retry sends the same body`);
+  }
+  await client.create('character', { name: 'A' });
+  assert.match(lastBody(fetchImpl).id, /^[0-9a-f]{8}-[0-9a-f]{4}-7/, 'without a key, a fresh UUIDv7');
+  await client.create('character', { id: 'mine', name: 'A' }, { idempotencyKey: 'k1' });
+  assert.equal(lastBody(fetchImpl).id, 'mine', 'an id you pass is kept');
+});
+
 test('409 idempotency_in_flight is in flight with Retry-After, NOT a key conflict (keel #307)', async () => {
   const err = await thrown({ status: 409, headers: { 'retry-after': '1' }, body: envelope('idempotency_error', 'idempotency_in_flight') },
     (c) => c.bulk([{ type: 'character', element: { name: 'K' } }], { idempotencyKey: 'k1' }));

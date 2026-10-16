@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.27.1] — 2026-10-16
+
+### Fixed
+- **A retried `create` with the same `idempotencyKey` now replays instead of failing.** `create` minted a
+  fresh id on every call, so a retry of an id-less element sent a different body and keel answered 409
+  `idempotency_error`. With a key and no id, the id is now derived from the key (a UUIDv5, the same id the
+  Python package mints), so the retry sends the same body and gets the first answer back. Without a key,
+  a fresh UUIDv7 as before; an id you pass is kept.
+- `create`'s doc said a keyed retry "rewrites the same element"; keel's replay writes nothing. Found by
+  Quillon's parity audit of the Unity SDK (h37 #5764).
+
 ## [4.27.0] — 2026-10-16
 
 ### Added

@@ -18,6 +18,7 @@ import type {
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
   OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink,
 } from './types';
+import { keyedId } from './keyed-id';
 import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
 
@@ -131,16 +132,19 @@ export class OwV2Client {
   }
 
   /**
-   * POST /{type}/ -- create one element, minting a UUIDv7 id on the client when you leave id out.
-   * The client-side id makes a retry carrying the same Idempotency-Key safe: it rewrites
-   * the same element instead of creating a second one. You may still supply your own id.
+   * POST /{type}/ -- create one element, minting an id on the client when you leave id out.
+   * With an `idempotencyKey`, the minted id is derived from the key (a UUIDv5, the same one the
+   * Python package mints), so a retry with the same key and element sends the same body and keel
+   * replays its first answer: nothing is written twice, and the stored 201 comes back. Without a
+   * key, a fresh UUIDv7. You may still supply your own id. A new create meant to write again
+   * (an undo that re-creates) needs a new key, or none: within 24 h a reused key only replays.
    * `name` is the one required field, and required means the key is present: `''` and
    * `null` are accepted and stored as `''` (nameless Markers exist).
    */
   async create(type: ElementType | string, element: OwElement | Record<string, unknown>, opts: { idempotencyKey?: string } = {}): Promise<OwElement> {
     const body = sanitizePayload(element);
     if (body.id === undefined || body.id === null || body.id === '') {
-      body.id = mintUuid();
+      body.id = opts.idempotencyKey ? keyedId(opts.idempotencyKey, 0) : mintUuid();
     }
     return this.request('POST', `/${type}/`, {
       write: true,
