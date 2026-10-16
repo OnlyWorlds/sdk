@@ -23,7 +23,7 @@ export class OwApiError extends Error {
   readonly code: string | null;
   /** Error family from the envelope, e.g. 'invalid_request', 'not_found'. */
   readonly type: string | null;
-  /** Offending field/param named by the envelope (422/400), else null. */
+  /** Offending field/param named by the envelope (a 422/400's field; `API-Pin` on a 401 PIN refusal, keel #357), else null. */
   readonly param: string | null;
   /** Documentation link from the envelope -- show it to users/logs verbatim. */
   readonly docUrl: string | null;
