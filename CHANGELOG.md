@@ -5,6 +5,19 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.30.0] — 2026-10-16
+
+### Added
+- **A friend with only a link** (keel #353, D111):
+  - `redeemJoin(code, { name?, agentName? })`: redeems a join code that needs no account, at `POST /join`,
+    sending no credential whatever key the client holds. The answer's `kind` tells the two apart:
+    `OwPlayerJoined` (a read key, `ow_r_`, no PIN, and the Character the player reads as) or
+    `OwAgentJoined` (a seat's write key, secret and `.env` lines). Shown once; the code is spent, so a
+    lost answer means a new link. Every bad code is one 404.
+  - `createWorldLink(worldId, { reader: 'player', character? })`: a player link, guest only; `character`
+    is a Character's id or `new` (the default). `OwWorldLink.character` names it on the list.
+  - `player` joins the `kind` of `OwMe` and `OwMember`.
+
 ## [4.29.0] — 2026-10-16
 
 ### Added
