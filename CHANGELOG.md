@@ -5,6 +5,20 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.28.0] — 2026-10-16
+
+### Added
+- **Seats for your own AI** (keel #355, D106), on an account token (`ow_a_`):
+  - `createSeat(worldId, { name, role?, character? })`: a seat for your own AI in a world you own or
+    belong to, with its own write key and `ow_s_` secret and no join link. You answer for it. `role` is at
+    most your own; `character` is `new` (default), `none`, or `mine` (it plays the Character you play).
+    The answer (`OwSeatCreated`) carries `key`, `pin` and the `.env` lines in `env`, shown once.
+  - `listSeats(worldId)`: the seats you can see (yours, or every seat for the world's owner), as `OwSeat`
+    rows with their `sponsor`, no keys.
+  - `removeSeat(worldId, seatId)`: its sponsor or the world's owner removes it; its key and secret stop.
+  - No Idempotency-Key on `createSeat`, by keel's rule (a replay would keep the key). A lost answer:
+    `listSeats` shows the seat, `removeSeat` it and make another.
+
 ## [4.27.2] — 2026-10-16
 
 ### Fixed

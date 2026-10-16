@@ -418,6 +418,41 @@ export interface OwCreatedWorldLink extends OwWorldLink {
   line: string;
 }
 
+/** One live agent seat, as GET /account/worlds/{id}/seats lists it (keel #355, D106). No key or secret. */
+export interface OwSeat {
+  /** The seat's membership id: removeSeat takes it, and GET /members names the seat by it. */
+  id: string;
+  /** The AI's own name in the world. */
+  name: string;
+  role: OwMemberRole;
+  /** Always `agent`: a seat has no account of its own. */
+  kind: 'agent';
+  /** The Character the seat plays, or null. With `character: 'mine'` it is its sponsor's own: two rows, one Character. */
+  character: string | null;
+  /** Who answers for the seat: a username when they are the world's owner or a member; null for a seat from an email invite, or a sponsor who left. */
+  sponsor: string | null;
+  /** ISO 8601, UTC. */
+  joined_at: string | null;
+  /** The latest use of the seat's key, or null. */
+  last_active: string | null;
+  [k: string]: unknown;
+}
+
+/** POST /account/worlds/{id}/seats's answer: the seat, its key and secret, shown in this answer only. */
+export interface OwSeatCreated {
+  world: { id: string; name: string; [k: string]: unknown };
+  seat: { id: string; name: string; role: OwMemberRole; kind: 'agent'; [k: string]: unknown };
+  /** The Character the seat plays, or null for none. */
+  character: string | null;
+  /** The seat's write key (`API-Key`). */
+  key: string;
+  /** The seat's `ow_s_` secret, sent as `API-Pin` where a person sends their PIN. */
+  pin: string;
+  /** The lines of a `.env` file for the AI: OW_API_KEY, OW_API_PIN, OW_WORLD, OW_CHARACTER when it plays one, OW_API_BASE. */
+  env: string;
+  [k: string]: unknown;
+}
+
 /** POST /account/join: the new membership (the same row as accepting an email invite). */
 export interface OwJoinedMembership {
   /** The membership's id. */

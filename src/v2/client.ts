@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
-  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated,
 } from './types';
 import { keyedId } from './keyed-id';
 import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
@@ -464,6 +464,56 @@ export class OwV2Client {
       throw new TypeError('revokeWorldLink needs an account token (ow_a_): only the world\'s owner revokes links');
     }
     await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/links/${encodeURIComponent(linkId)}`);
+  }
+
+  // -- Seats for your own AI (keel #355, D106) ------------------------------
+
+  /**
+   * POST /account/worlds/{worldId}/seats -- a seat for your own AI in a world you own or are a
+   * member of: its own membership, write key and `ow_s_` secret, no join link. You answer for
+   * it, and its writes are marked as an agent's. `name` is required (1 to 80 characters);
+   * `role` is at most your own (the owner may give any; default contributor, or your own role
+   * when that is lower); `character` is `new` (default: a Character of its own), `none`, or
+   * `mine` (members only: it plays the Character you play). 201 with `key`, `pin` and the
+   * `.env` lines in `env`, shown in this answer only. Sends no Idempotency-Key, by keel's rule:
+   * a replay would have to keep the key. If the answer is lost, listSeats shows the seat without
+   * its key: remove it with removeSeat and make another. Needs the client's `ow_a_` token.
+   */
+  async createSeat(
+    worldId: string,
+    opts: { name: string; role?: OwMemberRole; character?: 'new' | 'none' | 'mine' },
+  ): Promise<OwSeatCreated> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('createSeat needs an account token (ow_a_): a seat is made by the person who answers for it');
+    }
+    const body: Record<string, unknown> = { name: opts.name };
+    if (opts.role !== undefined) body.role = opts.role;
+    if (opts.character !== undefined) body.character = opts.character;
+    return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/seats`, { body }) as Promise<OwSeatCreated>;
+  }
+
+  /**
+   * GET /account/worlds/{worldId}/seats -- the live agent seats you can see: your own AI's, or,
+   * as the world's owner, every seat. No keys or secrets. Needs the client's `ow_a_` token.
+   */
+  async listSeats(worldId: string): Promise<OwSeat[]> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('listSeats needs an account token (ow_a_)');
+    }
+    const page = await this.request('GET', `/account/worlds/${encodeURIComponent(worldId)}/seats`) as { data: OwSeat[] };
+    return page.data;
+  }
+
+  /**
+   * DELETE /account/worlds/{worldId}/seats/{seatId} -- remove an agent seat: its sponsor or the
+   * world's owner may. Its key and secret stop at once; a Character it made that nobody touched
+   * goes with it, any other stays. Needs the client's `ow_a_` token.
+   */
+  async removeSeat(worldId: string, seatId: string): Promise<void> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('removeSeat needs an account token (ow_a_)');
+    }
+    await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/seats/${encodeURIComponent(seatId)}`);
   }
 
   // -- Ask your world (keel #159) -------------------------------------------
