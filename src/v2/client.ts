@@ -250,10 +250,13 @@ export class OwV2Client {
    * view changed (a guest's, or its role): drop the cursor, walk from zero, and
    * replace the local copy rather than merging into it.
    * Citizenship: heaviest route on the platform; default page size is polite.
+   * keel sends the cursor of a page at the head as a number (an empty page, for anyone
+   * but a guest); it is handed back as a string, like every cursor here.
    */
   async changes(opts: { since?: string; limit?: number } = {}): Promise<OwChangesPage> {
     const query = buildQuery({ since: opts.since, limit: opts.limit ?? this.changesPageSize });
-    return this.request('GET', '/changes/', { query }) as Promise<OwChangesPage>;
+    const page = await this.request('GET', '/changes/', { query }) as Omit<OwChangesPage, 'cursor'> & { cursor: string | number };
+    return { ...page, cursor: String(page.cursor) };
   }
 
   /**

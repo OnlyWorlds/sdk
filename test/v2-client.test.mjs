@@ -520,6 +520,17 @@ test('changes parses {cursor, changes, has_more, head}', async () => {
   assert.equal(res.changes[0].op, 'upsert');
 });
 
+test('changes and changesAll: a page at the head carries a number cursor; it comes back a string', async () => {
+  // production, demo key, 2026-10-16: since=<head> answered {cursor: 818, changes: [], has_more: false}
+  const page = { cursor: 818, changes: [], has_more: false, head: 818, epoch: null };
+  const { client } = makeClient({ status: 200, body: page });
+  assert.equal((await client.changes({ since: '818' })).cursor, '818');
+  const it = client.changesAll('818');
+  const end = await it.next();
+  assert.equal(end.done, true);
+  assert.deepEqual(end.value, { cursor: '818', head: 818, epoch: null });
+});
+
 // -- key-kind detection ------------------------------------------------------
 
 test('detectKeyKind classifies all four kinds', () => {

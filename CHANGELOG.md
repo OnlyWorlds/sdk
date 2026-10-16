@@ -5,6 +5,15 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.30.1] — 2026-10-16
+
+### Fixed
+- **`changes()` and `changesAll()` hand back every cursor as a string**, as `OwChangesPage.cursor` has
+  always said. keel sends the cursor of a page at the head of the feed (an empty page, for any key but
+  a guest's) as a number, and it passed through as one: a walk of an up-to-date world returned
+  `{ cursor: 818 }`, so a cursor stored and compared as a string could miss. `changesHead()` already
+  did this. Found on production with a demo key.
+
 ## [4.30.0] — 2026-10-16
 
 ### Added
