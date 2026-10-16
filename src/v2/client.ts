@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
-  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwJoined, OwAgentJoined, OwPlayerJoined,
 } from './types';
 import { keyedId } from './keyed-id';
 import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
@@ -397,6 +397,24 @@ export class OwV2Client {
   }
 
   /**
+   * POST /join -- redeem a join code that needs no account: a player's (a friend reading as
+   * a guest, keel #353) or an AI agent's. Sends no credential, whatever key this client holds.
+   * 201 with `kind` telling the two answers apart: `player` gives a read key (`ow_r_`, no PIN)
+   * and the Character it reads as; `agent` gives a seat's write key, secret and `.env` lines.
+   * Both are shown once, and the code is spent: a lost answer cannot be replayed (the owner
+   * sees the row never used, and makes a new link). `name` (a player's, optional: the
+   * Character's name or "Player" when left out) and `agentName` (an agent's, required for an
+   * agent code). Every bad code is the same 404 `not_found`; a person's code is redeemed with
+   * acceptJoin instead.
+   */
+  async redeemJoin(code: string, opts: { name?: string; agentName?: string } = {}): Promise<OwJoined> {
+    const body: Record<string, unknown> = { code };
+    if (opts.name !== undefined) body.name = opts.name;
+    if (opts.agentName !== undefined) body.agent_name = opts.agentName;
+    return this.request('POST', '/join', { auth: false, body }) as Promise<OwJoined>;
+  }
+
+  /**
    * POST /account/join -- accept an invite link's code as the account this client's
    * `ow_a_` token belongs to: 201 with the new membership. Refusals: 404 `not_found`
    * (every bad code, and a code made for an AI agent) and 409 `already_member`
@@ -414,19 +432,23 @@ export class OwV2Client {
   /**
    * POST /account/worlds/{worldId}/links -- a new invite link for a world this client's
    * `ow_a_` token owns (keel C1): `reader` is required (`person`, accepted with acceptJoin;
-   * `agent`, redeemed at POST /join); `role` defaults to contributor, `days` (1, 7 or 30)
-   * to 7; `withCharacter` (agent links only) to true. 201 with the code, shown in this
+   * `agent`, redeemed at POST /join; `player`, a friend with no account, redeemed with
+   * redeemJoin for a read key, keel #353); `role` defaults to contributor (a player link is
+   * guest, and refuses any other), `days` (1, 7 or 30) to 7; `withCharacter` (agent links
+   * only) to true; `character` (player links only) a Character's id or `new` (the default):
+   * whoever opens the link first reads as it, until removed. 201 with the code, shown in this
    * answer only. Owner only: anyone else, and a world that doesn't exist, gets 404
    * `not_found` (`err.isNotFound`). A world key is a TypeError before anything is sent.
    */
   async createWorldLink(
     worldId: string,
     opts: {
-      reader: 'person' | 'agent';
+      reader: 'person' | 'agent' | 'player';
       role?: OwMemberRole;
       days?: 1 | 7 | 30;
       inviterName?: string;
       withCharacter?: boolean;
+      character?: string;
     },
   ): Promise<OwCreatedWorldLink> {
     if (this.keyKind !== 'account') {
@@ -437,6 +459,7 @@ export class OwV2Client {
     if (opts.days !== undefined) body.days = opts.days;
     if (opts.inviterName !== undefined) body.inviter_name = opts.inviterName;
     if (opts.withCharacter !== undefined) body.with_character = opts.withCharacter;
+    if (opts.character !== undefined) body.character = opts.character;
     return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/links`, { body }) as Promise<OwCreatedWorldLink>;
   }
 

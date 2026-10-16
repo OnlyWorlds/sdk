@@ -327,7 +327,8 @@ export interface OwSortAnswer {
 export interface OwMe {
   world: { id: string; name: string };
   scope: 'read' | 'write';
-  kind: 'owner' | 'person' | 'agent';
+  /** `player`: a friend with no account, reading as a guest (keel #353). */
+  kind: 'owner' | 'person' | 'agent' | 'player';
   role: 'owner' | OwMemberRole;
   /** The membership id (what `created_by` holds for what this key creates), or null for the owner. */
   membership: string | null;
@@ -342,7 +343,7 @@ export interface OwMe {
 export interface OwMember {
   /** The membership id (what `created_by` holds), or null for the owner. */
   id: string | null;
-  kind: 'owner' | 'person' | 'agent';
+  kind: 'owner' | 'person' | 'agent' | 'player';
   role: 'owner' | OwMemberRole;
   /** The Character that is this member, or null. */
   character: string | null;
@@ -368,8 +369,8 @@ export interface OwAllowance {
 
 /** POST /join/preview: what a join code holds, read without using it (keel #212). */
 export interface OwJoinPreview {
-  /** `person`: an invite link, accepted with acceptJoin. `agent`: redeemed by an AI agent at POST /join. */
-  reader: 'person' | 'agent' | (string & {});
+  /** `person`: an invite link, accepted with acceptJoin. `agent`: redeemed by an AI agent at POST /join. `player`: a friend with no account redeems it with redeemJoin for a read key (keel #353). */
+  reader: 'person' | 'agent' | 'player' | (string & {});
   world: { name: string; description: string | null };
   /** The name the inviter signed the link with, or null. */
   invited_by: string | null;
@@ -387,14 +388,14 @@ export interface OwJoinPreview {
 export interface OwWorldLink {
   /** The link's id: revokeWorldLink takes it. */
   id: string;
-  /** `person`: accepted signed in, with acceptJoin. `agent`: redeemed by an AI agent at POST /join. */
-  reader: 'person' | 'agent';
+  /** `person`: accepted signed in, with acceptJoin. `agent`: redeemed by an AI agent at POST /join. `player`: redeemed with no account at POST /join, for a read key. */
+  reader: 'person' | 'agent' | 'player';
   role: OwMemberRole;
   /** The name the owner gave an agent link on the website, or empty. */
   label: string;
   /** The name the link is signed with, or empty (the invite line then reads "Someone"). */
   inviter_name: string;
-  /** Whether redeeming gives the agent a Character of its own. Always false on a person link. */
+  /** Whether redeeming gives the agent a Character of its own. Always false on a person link, always true on a player link. */
   with_character: boolean;
   /** The code's last four characters, to tell links apart. */
   last4: string;
@@ -405,6 +406,8 @@ export interface OwWorldLink {
   /** 0 or 1: a link works once. */
   uses: number;
   status: 'pending' | 'used' | 'revoked' | 'expired';
+  /** A player link only: the Character the player reads as; null while a link for a fresh Character is unused. `name` is null if that Character was deleted (the redeem then makes a fresh one). */
+  character?: { id: string; name: string | null } | null;
   [k: string]: unknown;
 }
 
@@ -417,6 +420,40 @@ export interface OwCreatedWorldLink extends OwWorldLink {
   /** The one line to send: who invites, to which world, and the link. */
   line: string;
 }
+
+/** POST /join, an agent's code: its seat, write key and secret, shown once (keel #212; `kind` since #353). */
+export interface OwAgentJoined {
+  kind: 'agent';
+  world: { id: string; name: string; description: string; [k: string]: unknown };
+  seat: { id: string; role: OwMemberRole; agent_name: string; [k: string]: unknown };
+  with_character: boolean;
+  character: { id: string; name: string } | null;
+  /** The seat's write key (`API-Key`). */
+  key: string;
+  /** The seat's secret, sent as `API-Pin`. */
+  pin: string;
+  base_url: string;
+  /** The lines of a `.env` file for the agent. */
+  env: string;
+  next: string[];
+  members: Array<Record<string, unknown>>;
+  [k: string]: unknown;
+}
+
+/** POST /join, a player's code: a read key for a friend with no account, reading as a guest (keel #353). Shown once. */
+export interface OwPlayerJoined {
+  kind: 'player';
+  /** A read key (`ow_r_`): no PIN, a player reads only. */
+  key: string;
+  world: { id: string; name: string; description: string; [k: string]: unknown };
+  /** The Character the player reads as. */
+  character: { id: string; name: string };
+  role: 'guest';
+  [k: string]: unknown;
+}
+
+/** POST /join's answer: tell the two apart by `kind`. */
+export type OwJoined = OwAgentJoined | OwPlayerJoined;
 
 /** One live agent seat, as GET /account/worlds/{id}/seats lists it (keel #355, D106). No key or secret. */
 export interface OwSeat {
