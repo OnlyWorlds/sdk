@@ -76,7 +76,7 @@ export class OwV2Client {
 
   /**
    * GET /me -- who this world key is: the world, read or write scope, the kind (owner,
-   * person, agent), the role, the membership id (what `created_by` holds for what this key
+   * person, agent, player), the role, the membership id (what `created_by` holds for what this key
    * creates; null for the owner) and the member's Character. A world key's call; an account
    * token is a TypeError before sending.
    */
