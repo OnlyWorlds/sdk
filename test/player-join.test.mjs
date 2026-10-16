@@ -48,6 +48,20 @@ test('redeemJoin: a player\'s name and an agent\'s name in keel\'s spelling, onl
   assert.deepEqual(JSON.parse(f.calls[1].init.body), { code: 'ow_j_code', agent_name: 'Quill' });
 });
 
+test('a client with no key: preview and redeem work, sending none; any keyed call is a TypeError before sending', async () => {
+  const f = fake(201, PLAYER);
+  const c = new OwV2Client({ fetch: f.fetch });
+  assert.equal(c.keyKind, 'none');
+  assert.equal((await c.redeemJoin('ow_j_code', { name: 'Ana' })).kind, 'player');
+  await c.previewJoin('ow_j_code');
+  assert.deepEqual(f.calls.map((x) => credentials(x.init)), [[], []]);
+  for (const call of [() => c.list('character'), () => c.getWorld(), () => c.me(), () => c.createSeat('w1', { name: 'x' })]) {
+    await assert.rejects(call(), TypeError);
+  }
+  assert.equal(f.calls.length, 2, 'nothing sent for the keyed calls');
+  assert.equal(new OwV2Client({ apiKey: '', fetch: f.fetch }).keyKind, 'none', 'an empty key is no key');
+});
+
 test('createWorldLink: a player link with its Character', async () => {
   const f = fake(201, {});
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });

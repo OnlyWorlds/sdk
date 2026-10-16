@@ -549,8 +549,12 @@ export interface ListParams {
 }
 
 export interface OwClientConfig {
-  /** The key: an ow_w_ (write) or ow_r_ (read) world key, an ow_a_ account token (sent as a Bearer token, for the account routes), or a 10-digit legacy key. */
-  apiKey: string;
+  /**
+   * The key: an ow_w_ (write) or ow_r_ (read) world key, an ow_a_ account token (sent as a Bearer token, for the account routes), or a 10-digit legacy key.
+   * Leave it out for a client that holds none, such as a friend with only a link (since 4.30.0): it can call health,
+   * previewJoin and redeemJoin, and any other call is a TypeError before anything is sent.
+   */
+  apiKey?: string;
   /**
    * The PIN, needed for writes when the world has one, and for legacy-key reads of private worlds.
    * Prefixed keys read without a PIN. A string, not a number: '0123' !== 123.

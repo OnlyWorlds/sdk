@@ -15,7 +15,9 @@ export type OwKeyKind =
   | 'account'
   /** Grandfathered 10-digit key. Needs PIN to read private worlds. */
   | 'legacy'
-  | 'unknown';
+  | 'unknown'
+  /** No key: a client for the routes that send none (health, previewJoin, redeemJoin), as a friend with only a link has. */
+  | 'none';
 
 const LEGACY_RE = /^[0-9]{10}$/;
 

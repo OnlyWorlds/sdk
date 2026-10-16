@@ -37,11 +37,10 @@ export class OwV2Client {
   private readonly fetchImpl: typeof globalThis.fetch;
   private readonly agent: boolean;
 
-  constructor(config: OwClientConfig) {
-    if (!config.apiKey) throw new Error('OwV2Client: apiKey is required');
-    this.apiKey = config.apiKey;
+  constructor(config: OwClientConfig = {}) {
+    this.apiKey = config.apiKey ?? '';
     this.apiPin = config.apiPin || undefined;
-    this.keyKind = detectKeyKind(config.apiKey);
+    this.keyKind = config.apiKey ? detectKeyKind(config.apiKey) : 'none';
     this.baseUrl = (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, '');
     this.pageSize = config.pageSize ?? DEFAULT_PAGE_SIZE;
     this.changesPageSize = config.changesPageSize ?? DEFAULT_CHANGES_PAGE_SIZE;
@@ -633,6 +632,9 @@ export class OwV2Client {
   ): Promise<T> {
     if (opts.ifMatch !== undefined && !(Number.isInteger(opts.ifMatch) && opts.ifMatch >= 0)) {
       throw new TypeError(`ifMatch must be a whole number (an element's change_seq), got ${String(opts.ifMatch)}`);
+    }
+    if (opts.auth !== false && this.keyKind === 'none') {
+      throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin and redeemJoin work`);
     }
     const url = `${this.baseUrl}${path}${opts.query ? `?${opts.query}` : ''}`;
     const headers: Record<string, string> = {};

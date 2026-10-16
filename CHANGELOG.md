@@ -17,6 +17,10 @@ earlier history lives in git log only.
   - `createWorldLink(worldId, { reader: 'player', character? })`: a player link, guest only; `character`
     is a Character's id or `new` (the default). `OwWorldLink.character` names it on the list.
   - `player` joins the `kind` of `OwMe` and `OwMember`.
+- **A client with no key**: `apiKey` is optional. `new OwV2Client()` (or an empty key) has `keyKind: 'none'`
+  and can call `health`, `previewJoin` and `redeemJoin`, which is what a friend with only a link has; any
+  other call is a TypeError before anything is sent. Until now a key was required even for the routes
+  that send none.
 
 ## [4.29.0] — 2026-10-16
 
