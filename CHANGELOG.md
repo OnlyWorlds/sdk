@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.31.0] — 2026-10-18
+
 ### Added
 - **Signing in with a password** (keel #211): `signInWithPassword({ email | username, password, tokenName })`
   turns an email address (or username) and password into a new account token (`ow_a_`) for this device,
@@ -15,7 +17,13 @@ earlier history lives in git log only.
   whatever the client holds. Exactly one of `email` and `username`, else a TypeError before sending.
 - `OwSignInError`, with a `reason`: `invalid_credentials`, `email_unverified`, `rate_limited` (with
   `retryAfter` when keel sends it), `offline`, `mint_failed` or `failed`, plus keel's `status` and `code`.
-  The password is never in its message or properties. Replaces the copy Lantern carried.
+  The password is never in its message or properties. For Atlas's sign-in (atlas #387) and Lantern, which
+  carried its own copy. The session's end is cut off after five seconds, so a hung network never holds a
+  sign-in whose token is already made. Checked live on production (a sign-in, the token reading the
+  account's worlds, revoked and read back as `key_revoked`).
+
+### Changed
+- `me()`'s doc names the player kind (keel #353).
 
 ## [4.30.1] — 2026-10-16
 
