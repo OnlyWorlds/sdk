@@ -455,6 +455,18 @@ export interface OwPlayerJoined {
 /** POST /join's answer: tell the two apart by `kind`. */
 export type OwJoined = OwAgentJoined | OwPlayerJoined;
 
+/** signInWithPassword's answer: the new account token, shown once, and its row on the account's tokens page. */
+export interface OwSignedIn {
+  /** The account token (`ow_a_`): keep it, it is the only copy. */
+  token: string;
+  /** The token's id, for revoking it. */
+  id: string;
+  /** The name it was made under (`tokenName`). */
+  name: string;
+  /** Its last four characters, as the account's tokens page shows them. */
+  last4: string;
+}
+
 /** One live agent seat, as GET /account/worlds/{id}/seats lists it (keel #355, D106). No key or secret. */
 export interface OwSeat {
   /** The seat's membership id: removeSeat takes it, and GET /members names the seat by it. */
@@ -552,7 +564,7 @@ export interface OwClientConfig {
   /**
    * The key: an ow_w_ (write) or ow_r_ (read) world key, an ow_a_ account token (sent as a Bearer token, for the account routes), or a 10-digit legacy key.
    * Leave it out for a client that holds none, such as a friend with only a link (since 4.30.0): it can call health,
-   * previewJoin and redeemJoin, and any other call is a TypeError before anything is sent.
+   * previewJoin, redeemJoin and signInWithPassword, and any other call is a TypeError before anything is sent.
    */
   apiKey?: string;
   /**

@@ -9,9 +9,9 @@
 
 // Client + wire machinery
 export { OwV2Client, parseErrorEnvelope } from './v2';
-export { OwApiError, OwPreconditionFailedError, OwNetworkError, errorFromResponse } from './v2';
+export { OwApiError, OwPreconditionFailedError, OwNetworkError, OwSignInError, errorFromResponse } from './v2';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './v2';
-export type { OwKeyKind, OwAuthErrorCode } from './v2';
+export type { OwKeyKind, OwAuthErrorCode, OwSignInReason } from './v2';
 
 // Schema-generated types (the single ElementType) + wire shapes
 export { ELEMENT_TYPES, SPATIAL_TYPES, AGENT_DOORS, isAgentDoor } from './v2';
@@ -19,7 +19,7 @@ export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
   OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta,
-  OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwJoined, OwAgentJoined, OwPlayerJoined, OwSignedIn,
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
   OwWriteDoor, OwChangeUpsert, OwChangeDelete,
 } from './v2';

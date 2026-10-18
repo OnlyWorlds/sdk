@@ -212,6 +212,53 @@ export class OwNetworkError extends Error {
   }
 }
 
+/**
+ * Why `signInWithPassword` refused:
+ * - `invalid_credentials`: keel does not know that email (or username) with that password.
+ * - `email_unverified`: the account's email address is not confirmed yet; the link is in the
+ *   mail onlyworlds.com sent when the account was made.
+ * - `rate_limited`: too many sign-ins (a 429), or too many failed ones for this account
+ *   (`too_many_login_attempts`); wait `retryAfter` seconds when it is set.
+ * - `offline`: the request never reached keel.
+ * - `mint_failed`: the password was right, but keel made no token; the session was still ended.
+ * - `failed`: any other refusal; the message is keel's when it gave one.
+ */
+export type OwSignInReason =
+  | 'invalid_credentials'
+  | 'email_unverified'
+  | 'rate_limited'
+  | 'offline'
+  | 'mint_failed'
+  | 'failed';
+
+/**
+ * A refused `signInWithPassword`. `reason` is what to tell the user; `status` and `code` are
+ * keel's answer when there was one (`code`: keel's error code, e.g. `email_password_mismatch`).
+ * The password is never in the message or in any property.
+ */
+export class OwSignInError extends Error {
+  readonly reason: OwSignInReason;
+  /** The HTTP status of the refusing answer; absent when nothing came back (`offline`). */
+  readonly status?: number;
+  /** keel's error code, when its answer carried one. */
+  readonly code?: string;
+  /** Seconds to wait before trying again, from `Retry-After` (on a 429). */
+  readonly retryAfter?: number;
+
+  constructor(
+    reason: OwSignInReason,
+    message: string,
+    opts: { status?: number; code?: string; retryAfter?: number } = {},
+  ) {
+    super(message);
+    this.name = 'OwSignInError';
+    this.reason = reason;
+    if (opts.status !== undefined) this.status = opts.status;
+    if (opts.code !== undefined) this.code = opts.code;
+    if (opts.retryAfter !== undefined) this.retryAfter = opts.retryAfter;
+  }
+}
+
 /** The live wire error envelope: error.{type, code, message, param?, doc_url?}. */
 interface OwErrorBody {
   type?: string;

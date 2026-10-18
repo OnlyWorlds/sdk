@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+- **Signing in with a password** (keel #211): `signInWithPassword({ email | username, password, tokenName })`
+  turns an email address (or username) and password into a new account token (`ow_a_`) for this device,
+  named `tokenName`, the name the account's tokens page lists it under. It signs in at keel's sign-in service
+  (`{baseUrl}/auth/app/v1`), mints the token with that session at `POST /account/tokens`, then ends the
+  session, whether the mint worked or not. Only the token comes back (`OwSignedIn`: `token`, `id`, `name`,
+  `last4`); the password is sent once and held nowhere. Works on a client with no key, and sends no key
+  whatever the client holds. Exactly one of `email` and `username`, else a TypeError before sending.
+- `OwSignInError`, with a `reason`: `invalid_credentials`, `email_unverified`, `rate_limited` (with
+  `retryAfter` when keel sends it), `offline`, `mint_failed` or `failed`, plus keel's `status` and `code`.
+  The password is never in its message or properties. Replaces the copy Lantern carried.
+
 ## [4.30.1] — 2026-10-16
 
 ### Fixed

@@ -17,9 +17,10 @@ import type {
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
   OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwSignedIn,
 } from './types';
 import { keyedId } from './keyed-id';
-import { OwApiError, OwNetworkError, errorFromResponse, parseErrorEnvelope } from './errors';
+import { OwApiError, OwNetworkError, OwSignInError, errorFromResponse, parseErrorEnvelope, parseRetryAfter } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
 
 const DEFAULT_BASE_URL = 'https://www.onlyworlds.com/api/v2';
@@ -416,6 +417,141 @@ export class OwV2Client {
     return this.request('POST', '/join', { auth: false, body }) as Promise<OwJoined>;
   }
 
+  // -- Signing in with a password (keel #211) --------------------------------
+
+  /**
+   * Sign in with an email address (or a username) and password, and get a new account token
+   * (`ow_a_`) for this device, named `tokenName` (say, "Lantern on iPhone"): the name the
+   * account's tokens page lists it under, where it can be revoked. Pass exactly one of
+   * `email` and `username`; both or neither is a TypeError before anything is sent.
+   *
+   * Works on a client with no key, and sends no key whatever this client holds. Three
+   * requests: a sign-in at keel's sign-in service (`{baseUrl}/auth/app/v1/auth/login`), which
+   * answers with a short-lived session; `POST /account/tokens` with that session, which mints
+   * the token; then the session is ended, whether the mint worked or not. Only the token is
+   * kept: the password is sent once and held nowhere, and the session never leaves this call.
+   * Store the token as you would any account token, and make a client with it
+   * (`new OwV2Client({ apiKey: token })`).
+   *
+   * A refusal is an `OwSignInError` whose `reason` says why: `invalid_credentials` (wrong
+   * email, username or password), `email_unverified` (the account's email address is not
+   * confirmed yet), `rate_limited` (too many attempts; `retryAfter` when keel sent it),
+   * `offline` (keel was not reached), `mint_failed` (signed in, but no token was made) or
+   * `failed` (anything else, with keel's message). The password is never in an error.
+   */
+  async signInWithPassword(opts: {
+    email?: string;
+    username?: string;
+    password: string;
+    tokenName: string;
+  }): Promise<OwSignedIn> {
+    const { email, username, password, tokenName } = opts ?? ({} as typeof opts);
+    const login = typeof email === 'string' ? email.trim() : '';
+    const user = typeof username === 'string' ? username.trim() : '';
+    if (Boolean(login) === Boolean(user)) {
+      throw new TypeError('signInWithPassword takes exactly one of email and username');
+    }
+    if (typeof password !== 'string' || password === '') {
+      throw new TypeError('signInWithPassword needs a password');
+    }
+    if (typeof tokenName !== 'string' || tokenName.trim() === '') {
+      throw new TypeError('signInWithPassword needs a tokenName: the name the new token is listed under');
+    }
+
+    const auth = `${this.baseUrl}/auth/app/v1`;
+    // Any text keel sends back is shown only if it does not hold the password.
+    const safe = (text: unknown, fallback: string): string =>
+      typeof text === 'string' && text !== '' && !text.includes(password) ? text : fallback;
+
+    let res: Response;
+    try {
+      res = await this.fetchImpl(`${auth}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(login ? { email: login, password } : { username: user, password }),
+      });
+    } catch {
+      // No cause attached: a fetch's failure can carry the request, and the request holds the password.
+      throw new OwSignInError('offline', 'OnlyWorlds could not be reached: signing in needs a connection.');
+    }
+
+    const retryAfter = parseRetryAfter(res.headers?.get?.('Retry-After') ?? null) ?? undefined;
+    if (res.status === 429) {
+      // allauth's 429 may be an HTML page: the status alone says it.
+      throw new OwSignInError('rate_limited', 'Too many sign-in attempts. Wait a while, then try again.', {
+        status: 429, retryAfter,
+      });
+    }
+
+    const body = await readJsonBody(res) as {
+      meta?: { session_token?: unknown };
+      errors?: Array<{ code?: unknown; message?: unknown }>;
+      data?: { flows?: Array<{ id?: unknown; is_pending?: unknown }> };
+    } | null;
+    const sessionToken = body?.meta?.session_token;
+    const session = typeof sessionToken === 'string' && sessionToken !== '' ? sessionToken : undefined;
+
+    if (!res.ok || !session) {
+      // A pending flow can still hand out a session: it is ended too.
+      if (session) await endAuthSession(this.fetchImpl, auth, session);
+      const errors = Array.isArray(body?.errors) ? body!.errors : [];
+      const codes = errors.map((e) => e?.code).filter((c): c is string => typeof c === 'string');
+      const first = errors.find((e) => typeof e?.message === 'string')?.message;
+      const code = codes.find((c) => !c.includes(password));
+      const status = res.status;
+      const mismatch = codes.find((c) => c === 'email_password_mismatch' || c === 'username_password_mismatch');
+      if (mismatch) {
+        throw new OwSignInError('invalid_credentials',
+          safe(first, 'The email address and/or password you specified are not correct.'), { status, code: mismatch });
+      }
+      if (codes.includes('too_many_login_attempts')) {
+        throw new OwSignInError('rate_limited',
+          safe(first, 'Too many failed sign-in attempts. Try again later.'), { status, code: 'too_many_login_attempts', retryAfter });
+      }
+      const flows = Array.isArray(body?.data?.flows) ? body!.data!.flows! : [];
+      if (status === 401 && flows.some((f) => f?.id === 'verify_email' && f?.is_pending === true)) {
+        throw new OwSignInError('email_unverified',
+          'Confirm the account\'s email address first: the link is in the mail onlyworlds.com sent.', { status, code });
+      }
+      throw new OwSignInError('failed',
+        safe(first, res.ok ? 'Signing in did not work: keel sent no session.' : `Signing in did not work (${status}).`),
+        { status, code });
+    }
+
+    try {
+      let minted: Response;
+      try {
+        minted = await this.fetchImpl(`${this.baseUrl}/account/tokens`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Session-Token': session },
+          body: JSON.stringify({ name: tokenName }),
+        });
+      } catch {
+        throw new OwSignInError('offline', 'The connection dropped after signing in: no token was made. Try again.');
+      }
+      const row = await readJsonBody(minted) as Record<string, unknown> | null;
+      const token = row?.token;
+      if (minted.status !== 201 || typeof token !== 'string' || token === '') {
+        // keel's envelope: { error: { code, message, ... } }.
+        const err = row && typeof row.error === 'object' && row.error !== null
+          ? row.error as { code?: unknown; message?: unknown } : undefined;
+        const said = err?.code;
+        const code = typeof said === 'string' && !said.includes(password) ? said : undefined;
+        throw new OwSignInError('mint_failed',
+          safe(err?.message, `Signed in, but no token was made (${minted.status}). Try again.`),
+          { status: minted.status, code });
+      }
+      return {
+        token,
+        id: typeof row!.id === 'string' ? row!.id : '',
+        name: typeof row!.name === 'string' ? row!.name : tokenName,
+        last4: typeof row!.last4 === 'string' ? row!.last4 : token.slice(-4),
+      };
+    } finally {
+      await endAuthSession(this.fetchImpl, auth, session);
+    }
+  }
+
   /**
    * POST /account/join -- accept an invite link's code as the account this client's
    * `ow_a_` token belongs to: 201 with the new membership. Refusals: 404 `not_found`
@@ -637,7 +773,7 @@ export class OwV2Client {
       throw new TypeError(`ifMatch must be a whole number (an element's change_seq), got ${String(opts.ifMatch)}`);
     }
     if (opts.auth !== false && this.keyKind === 'none') {
-      throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin and redeemJoin work`);
+      throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin, redeemJoin and signInWithPassword work`);
     }
     const url = `${this.baseUrl}${path}${opts.query ? `?${opts.query}` : ''}`;
     const headers: Record<string, string> = {};
@@ -707,6 +843,29 @@ function sanitizePayload<T extends Record<string, unknown>>(payload: T): Record<
   const rest: Record<string, unknown> = { ...(payload as Record<string, unknown>) };
   for (const field of READ_ONLY_FIELDS) delete rest[field];
   return rest;
+}
+
+/**
+ * End a sign-in session (DELETE {auth}/auth/session). allauth answers 401 once it has signed
+ * out (seen on production, 2026-10-17), so the answer is never read, and a failure here never
+ * turns a sign-in into a refusal.
+ */
+async function endAuthSession(fetchImpl: typeof globalThis.fetch, auth: string, session: string): Promise<void> {
+  try {
+    await fetchImpl(`${auth}/auth/session`, { method: 'DELETE', headers: { 'X-Session-Token': session } });
+  } catch {
+    // Swallowed on purpose.
+  }
+}
+
+/** A body as JSON, or null when it is empty or not JSON (allauth can answer with an HTML page). */
+async function readJsonBody(res: Response): Promise<unknown> {
+  try {
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Case-insensitive read of the (lowercase-on-wire) Idempotent-Replay header. */

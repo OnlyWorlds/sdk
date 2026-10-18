@@ -7,8 +7,8 @@
  */
 
 export { OwV2Client, parseErrorEnvelope } from './client';
-export { OwApiError, OwPreconditionFailedError, OwNetworkError, errorFromResponse } from './errors';
-export type { OwAuthErrorCode } from './errors';
+export { OwApiError, OwPreconditionFailedError, OwNetworkError, OwSignInError, errorFromResponse } from './errors';
+export type { OwAuthErrorCode, OwSignInReason } from './errors';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './keys';
 export type { OwKeyKind } from './keys';
 export { ELEMENT_TYPES, SPATIAL_TYPES, AGENT_DOORS, isAgentDoor } from './types';
@@ -20,7 +20,7 @@ export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
   OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta,
-  OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwJoined, OwAgentJoined, OwPlayerJoined, OwSignedIn,
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
   OwWriteDoor, OwChangeUpsert, OwChangeDelete,
 } from './types';

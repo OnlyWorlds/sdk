@@ -110,6 +110,19 @@ await writer.patch('character', id, { image_url: null });
 
 The image's uploader or the world's owner can remove an uploaded image; the space goes back to the uploader's storage. Removal leaves elements as they are, so clear their `image_url` yourself (`createRemovalTicket(key).referenced` says how many still show it). A copy the network already holds can keep answering for a while.
 
+## Signing in
+
+An app where people sign in with their OnlyWorlds email (or username) and password turns that into an account token for the device. A client with no key can do it:
+
+```typescript
+const { token } = await new OwV2Client().signInWithPassword({
+  email, password, tokenName: 'My app on iPhone', // the name the account's tokens page lists it under
+});
+const account = new OwV2Client({ apiKey: token }); // keep the token; the password is not kept anywhere
+```
+
+The SDK signs in, mints the token, and ends the sign-in session. A refusal is an `OwSignInError` whose `reason` is `invalid_credentials`, `email_unverified`, `rate_limited` (see `retryAfter`), `offline`, `mint_failed` or `failed`.
+
 ## Invite links
 
 A world's owner can invite a person with a link (`https://www.onlyworlds.com/join#ow_j_…`). The code is the part after `#`:
