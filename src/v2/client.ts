@@ -514,7 +514,7 @@ export class OwV2Client {
           'Confirm the account\'s email address first: the link is in the mail onlyworlds.com sent.', { status, code });
       }
       throw new OwSignInError('failed',
-        safe(first, res.ok ? 'Signing in did not work: keel sent no session.' : `Signing in did not work (${status}).`),
+        safe(first, res.ok ? 'Signing in did not work: onlyworlds.com sent no session.' : `Signing in did not work (${status}).`),
         { status, code });
     }
 
@@ -851,10 +851,16 @@ function sanitizePayload<T extends Record<string, unknown>>(payload: T): Record<
  * turns a sign-in into a refusal.
  */
 async function endAuthSession(fetchImpl: typeof globalThis.fetch, auth: string, session: string): Promise<void> {
+  // Five seconds at most: the token is already minted, and a DELETE hanging on a
+  // bad network must not hold the sign-in.
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), 5000);
   try {
-    await fetchImpl(`${auth}/auth/session`, { method: 'DELETE', headers: { 'X-Session-Token': session } });
+    await fetchImpl(`${auth}/auth/session`, { method: 'DELETE', headers: { 'X-Session-Token': session }, signal: abort.signal });
   } catch {
     // Swallowed on purpose.
+  } finally {
+    clearTimeout(timer);
   }
 }
 

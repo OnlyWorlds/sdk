@@ -252,3 +252,21 @@ test('a client with no key names signInWithPassword among the calls it can make'
   const c = keyless(script().fetch);
   await assert.rejects(c.list('character'), (e) => e instanceof TypeError && /signInWithPassword/.test(e.message));
 });
+
+test('a session DELETE that never answers is cut off: the sign-in still resolves with its token', async () => {
+  const calls = [];
+  const fetch = async (url, init = {}) => {
+    calls.push(init.method);
+    if (calls.length === 1) return LOGGED_IN();
+    if (calls.length === 2) return MINTED();
+    // The DELETE hangs until its signal aborts, as a dead network would.
+    return new Promise((_, reject) => {
+      init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+    });
+  };
+  const started = Date.now();
+  const out = await keyless(fetch).signInWithPassword({ email: 'ana@example.org', password: PASSWORD, tokenName: 'Lantern on iPhone' });
+  assert.equal(out.token, 'ow_a_secretwxyz');
+  assert.deepEqual(calls, ['POST', 'POST', 'DELETE']);
+  assert.ok(Date.now() - started < 7000, 'cut off within the five seconds, not left hanging');
+});
