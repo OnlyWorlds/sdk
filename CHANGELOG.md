@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.32.0] - 2026-10-19
+
 ### Added
 - **Files on elements** (keel #393), for Atlas's file list on an element:
   - `listFiles(type, id)`: the element's files, newest first (`OwFileRow`: `id`, `name`, `kind`,
