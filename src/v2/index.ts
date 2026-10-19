@@ -24,7 +24,7 @@ export type {
   OwFileKind, OwFileAddedBy, OwFileRow, OwWorldFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwJoined, OwAgentJoined, OwPlayerJoined, OwSignedIn,
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
-  OwWriteDoor, OwChangeUpsert, OwChangeDelete,
+  OwWriteDoor, OwChangeUpsert, OwChangeDelete, OwDeleteReason,
 } from './types';
 export {
   ELEMENT_LABELS, ELEMENT_SECTIONS, ELEMENT_ICONS, FIELD_SCHEMA,

@@ -22,7 +22,7 @@ export type {
   OwFileKind, OwFileAddedBy, OwFileRow, OwWorldFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwJoined, OwAgentJoined, OwPlayerJoined, OwSignedIn,
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
-  OwWriteDoor, OwChangeUpsert, OwChangeDelete,
+  OwWriteDoor, OwChangeUpsert, OwChangeDelete, OwDeleteReason,
 } from './v2';
 
 // Canonical element colour palette (families generated from schema; hexes CVD-validated)

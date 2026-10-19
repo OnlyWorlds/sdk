@@ -5,6 +5,11 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+- A `/changes` delete row's `reason` (`OwDeleteReason`: `deleted` | `hidden` | `out_of_view`; keel #421's hidden
+  mark): an element hidden from this reader leaves its copy as a deleted one does, and a GET of it answers 404,
+  not 410. `isResyncRequired`'s comment names every case keel now sends it for, not only a guest's.
+
 ## [4.36.2] - 2026-10-20
 
 ### Changed

@@ -87,8 +87,18 @@ export interface OwChangeDelete {
   deleted_by?: string | null;
   /** The door the delete came through (see {@link OwWriteDoor}); null for deletes before writes recorded it. */
   deleted_via?: OwWriteDoor | null;
+  /**
+   * Why the element left this reader's view (keel #421): `deleted` (it is gone; a GET answers 410),
+   * `hidden` (the world's owner or a co-builder hid it from this reader; it still exists, a GET answers
+   * 404, and an unhide brings it back by a 409 `resync_required`), or `out_of_view` (declared, sent by
+   * nothing yet). Remove the element from the local copy in every case.
+   */
+  reason?: OwDeleteReason;
   [k: string]: unknown;
 }
+
+/** Why a /changes delete row says the element left the reader's view (keel #421). */
+export type OwDeleteReason = 'deleted' | 'hidden' | 'out_of_view';
 
 /**
  * The door a write came through, as keel records it on every element (`changed_via`) and on a

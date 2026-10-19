@@ -99,11 +99,12 @@ export class OwApiError extends Error {
   }
 
   /**
-   * `/changes` refused the cursor (409 `resync_required`): a guest's view of the world
-   * changed, or the key's role did (a guest's cursor has another shape). Drop the stored
-   * cursor, walk again from the start, and keep what the local copy holds that the new walk
-   * does not name: a reset never empties a copy (keel PR 104, the Captain's ruling: sharing
-   * is forward-only).
+   * `/changes` refused the cursor (409 `resync_required`): what this key may see changed
+   * (a guest's slice moved; an element hidden from a contributor was unhidden; the key's role
+   * moved to or from guest or contributor, whose cursors have other shapes; keel #421). Drop
+   * the stored cursor, walk again from the start, and keep what the local copy holds that the
+   * new walk does not name: a reset never empties a copy (keel PR 104, the Captain's ruling:
+   * sharing is forward-only).
    */
   get isResyncRequired(): boolean {
     return this.status === 409 && this.code === 'resync_required';
