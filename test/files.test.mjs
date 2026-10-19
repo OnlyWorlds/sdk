@@ -8,7 +8,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { OwV2Client, OwApiError, OwNetworkError } from '../dist/index.js';
+import { OwV2Client, OwApiError, OwNetworkError, FILE_EXTENSIONS, fileKindOf } from '../dist/index.js';
 
 const API = 'https://www.onlyworlds.com/api/v2';
 const EL = '018f0000-0000-7000-8000-0000000000e1';
@@ -357,4 +357,13 @@ test('without onProgress the configured fetch is used even where XMLHttpRequest 
   await withXhr(FakeXhr, () => client(f.fetch).uploadFile('location', EL, pdf(), { name: 'a.pdf' }));
   assert.equal(made.length, 0);
   assert.equal(f.calls[1].url, TICKET.upload_url);
+});
+
+test('FILE_EXTENSIONS and fileKindOf are exported for a file picker', () => {
+  assert.deepEqual(Object.keys(FILE_EXTENSIONS).sort(), ['csv', 'json', 'markdown', 'md', 'pdf', 'toml', 'txt', 'yaml', 'yml', 'zip']);
+  assert.ok(Object.isFrozen(FILE_EXTENSIONS));
+  assert.equal(fileKindOf('Notes/Letters.PDF'), 'pdf');
+  assert.equal(fileKindOf('rules.yml'), 'yaml');
+  assert.equal(fileKindOf('photo.png'), undefined);
+  assert.equal(fileKindOf('.md'), undefined);
 });

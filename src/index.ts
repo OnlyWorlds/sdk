@@ -8,7 +8,7 @@
  */
 
 // Client + wire machinery
-export { OwV2Client, parseErrorEnvelope } from './v2';
+export { OwV2Client, parseErrorEnvelope, FILE_EXTENSIONS, fileKindOf } from './v2';
 export { OwApiError, OwPreconditionFailedError, OwNetworkError, OwSignInError, errorFromResponse } from './v2';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './v2';
 export type { OwKeyKind, OwAuthErrorCode, OwSignInReason } from './v2';

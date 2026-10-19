@@ -439,7 +439,7 @@ export class OwV2Client {
     if (typeof name !== 'string' || name.trim() === '') {
       throw new TypeError('createFileTicket needs the file\'s name, with its extension');
     }
-    const kind = req.kind ?? fileKindOf(name);
+    const kind = req.kind ?? requireFileKind(name);
     const body: Record<string, unknown> = { name, kind, size };
     if (req.label !== undefined) body.label = req.label;
     return this.request('POST', `/${type}/${encodeURIComponent(id)}/files`, { body }) as Promise<OwFileTicket>;
@@ -1077,24 +1077,34 @@ function mintUuid(now: number = Date.now()): string {
   );
 }
 
-/** A file name's extension to its kind: keel's NAME_EXTS (files/service.py), `.yml` and `.markdown` included. */
-const FILE_NAME_EXTS: Readonly<Record<string, OwFileKind>> = {
+/**
+ * Every extension a file on an element may end in, to the kind it gives: keel's NAME_EXTS
+ * (files/service.py), `.yml` and `.markdown` included. A file picker's accept list is
+ * `Object.keys(FILE_EXTENSIONS).map((e) => '.' + e)`.
+ */
+export const FILE_EXTENSIONS: Readonly<Record<string, OwFileKind>> = Object.freeze({
   pdf: 'pdf', txt: 'txt', md: 'md', markdown: 'md', json: 'json',
   csv: 'csv', yaml: 'yaml', yml: 'yaml', toml: 'toml', zip: 'zip',
-};
+});
 
 /**
  * The kind a file name's extension gives, read as keel reads it: the last path part, then
- * what follows its last dot, which must have something before it. A TypeError naming the
- * extensions keel takes when there is none or it is not one of them.
+ * what follows its last dot, which must have something before it. `undefined` when there is
+ * none or keel takes no file with it (uploadFile then refuses before any request).
  */
-function fileKindOf(name: string): OwFileKind {
+export function fileKindOf(name: string): OwFileKind | undefined {
   const base = name.split(/[\\/]/).pop() ?? '';
   const dot = base.lastIndexOf('.');
   const ext = dot > 0 ? base.slice(dot + 1).trim().toLowerCase() : '';
-  const kind = Object.prototype.hasOwnProperty.call(FILE_NAME_EXTS, ext) ? FILE_NAME_EXTS[ext] : undefined;
+  return Object.prototype.hasOwnProperty.call(FILE_EXTENSIONS, ext) ? FILE_EXTENSIONS[ext] : undefined;
+}
+
+/** fileKindOf, or a TypeError naming the extensions keel takes. */
+function requireFileKind(name: string): OwFileKind {
+  const kind = fileKindOf(name);
   if (!kind) {
-    const allowed = Object.keys(FILE_NAME_EXTS).map((e) => `.${e}`).join(' ');
+    const base = name.split(/[\\/]/).pop() ?? '';
+    const allowed = Object.keys(FILE_EXTENSIONS).map((e) => `.${e}`).join(' ');
     throw new TypeError(`Cannot tell the kind of "${base}" from its name: a file on an element must end in one of ${allowed} (or pass opts.kind)`);
   }
   return kind;

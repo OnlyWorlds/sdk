@@ -6,7 +6,7 @@
  * Re-exported from the package root under v2-scoped names (OwV2Client + Ow* types).
  */
 
-export { OwV2Client, parseErrorEnvelope } from './client';
+export { OwV2Client, parseErrorEnvelope, FILE_EXTENSIONS, fileKindOf } from './client';
 export { OwApiError, OwPreconditionFailedError, OwNetworkError, OwSignInError, errorFromResponse } from './errors';
 export type { OwAuthErrorCode, OwSignInReason } from './errors';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './keys';

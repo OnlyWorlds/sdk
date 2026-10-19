@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.33.0] - 2026-10-19
+
+### Added
+- `FILE_EXTENSIONS` (every extension a file on an element may end in, to its kind: keel's list, `.yml` and
+  `.markdown` included) and `fileKindOf(name)` (the kind, or `undefined`), so a file picker's accept list reads
+  the SDK's instead of a copy (Atlas, h20 #7841).
+
 ## [4.32.0] - 2026-10-19
 
 ### Added
