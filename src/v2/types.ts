@@ -52,7 +52,7 @@ export interface OwWorldMeta {
    * Character a 403 `guest_not_supported`.
    */
   agent_narrator_rule?: boolean;
-  /** The owner's "this Character is me": a Character id in this world, or null. */
+  /** The owner's "this Character is me": a Character id in this world, or null (null too, to a reader it is hidden from: keel #421). */
   owner_character?: string | null;
   created_at?: string | null;
   /** Moves when the world's own fields change, not on element writes. */
@@ -132,8 +132,9 @@ export interface OwChangesPage {
    */
   head: number;
   /**
-   * A guest's view epoch (an integer), null for every other key. It moves when what the
-   * guest may see changes, even with `head` unchanged (a Character given or taken, a role):
+   * A guest's or a contributor's view epoch (an integer; a contributor's since keel #421), null for
+   * every other key. It moves when what the key may see changes, even with `head` unchanged (a
+   * Character given or taken, an element unhidden, a role):
    * walk again on either move. Compare it, never read it out of the cursor (keel, 2026-10-12).
    */
   epoch: number | null;
@@ -342,7 +343,7 @@ export interface OwMe {
   role: 'owner' | OwMemberRole;
   /** The membership id (what `created_by` holds for what this key creates), or null for the owner. */
   membership: string | null;
-  /** The member's Character, or null. */
+  /** The member's Character, or null (null too when it is hidden from this key: keel #421). */
   character: string | null;
   /** Agent seats only: the agent's name. */
   name?: string;
@@ -355,7 +356,7 @@ export interface OwMember {
   id: string | null;
   kind: 'owner' | 'person' | 'agent' | 'player';
   role: 'owner' | OwMemberRole;
-  /** The Character that is this member, or null. */
+  /** The Character that is this member, or null (null too when it is hidden from the reader: keel #421). */
   character: string | null;
   /** `removed` rows stay, so their elements keep `created_by`. */
   status: 'active' | 'removed';
@@ -384,7 +385,7 @@ export interface OwJoinPreview {
   world: { name: string; description: string | null };
   /** The name the inviter signed the link with, or null. */
   invited_by: string | null;
-  /** The world owner's chosen Character's name, never a username; null when none is set. */
+  /** The world owner's chosen Character's name, never a username; null when none is set, or when it is hidden (keel #421). */
   owner_character: string | null;
   role: OwMemberRole;
   /** Whether joining gives the joiner a Character of their own (agent links). */

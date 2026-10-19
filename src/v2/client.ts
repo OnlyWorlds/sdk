@@ -244,15 +244,16 @@ export class OwV2Client {
 
   /**
    * GET /changes -- one page of the world's ordered change feed.
-   * Cursor is OPAQUE: persist verbatim, never parse or build one (a guest's has
-   * another shape than everyone else's).
+   * Cursor is OPAQUE: persist verbatim, never parse or build one (a guest's and a
+   * contributor's carry their view's epoch, since keel #421 for a contributor).
    * Zero/absent cursor = full export (byte-aligned with the Folder Format).
    * Reset rule: a 409 `resync_required` (err.isResyncRequired) means the key's
-   * view changed (a guest's, or its role): drop the cursor, walk from zero, and keep what the
-   * local copy holds that the new walk does not name (keel's own words; sharing is forward-only).
+   * view changed (a guest's slice, an element unhidden from a contributor, or its role): drop
+   * the cursor, walk from zero, and keep what the local copy holds that the new walk does not
+   * name (keel's own words; sharing is forward-only).
    * Citizenship: heaviest route on the platform; default page size is polite.
-   * keel sends the cursor of a page at the head as a number (an empty page, for anyone
-   * but a guest); it is handed back as a string, like every cursor here.
+   * keel sends the cursor of a page at the head as a number (an empty page, for a key
+   * whose cursor carries no epoch); it is handed back as a string, like every cursor here.
    */
   async changes(opts: { since?: string; limit?: number } = {}): Promise<OwChangesPage> {
     const query = buildQuery({ since: opts.since, limit: opts.limit ?? this.changesPageSize });
@@ -263,11 +264,11 @@ export class OwV2Client {
   /**
    * GET /changes?head=true -- where the feed is now, without a page: no element is read.
    * `head` is the world's change_seq; `cursor` is a position to pass as `since` that
-   * re-sends nothing at the head (a guest's carries its view's epoch). The cheap "anything
+   * re-sends nothing at the head (a guest's or a contributor's carries its view's epoch). The cheap "anything
    * new?" for a poll: compare `head` with the head you last APPLIED (not the previous
    * poll's, so a missed tick never drops a change) and walk changesAll only when it moved;
    * a head below yours means the server rewound: walk again from zero. `epoch` is a
-   * guest's view epoch (null for other keys): it can move with `head` unchanged, so walk on
+   * guest's or a contributor's view epoch (null for other keys): it can move with `head` unchanged, so walk on
    * either move. keel returns the owner's cursor as a number; it is handed back as a
    * string, like every cursor here.
    */
@@ -280,7 +281,7 @@ export class OwV2Client {
    * Walk the feed from `since` (or from zero = full export) to the current
    * tail, yielding ops in order. Returns the final cursor via the generator's
    * return value; persist it for the next incremental pull (with the last page's
-   * `head` and `epoch`: the view epoch the walk ran under, for a guest).
+   * `head` and `epoch`: the view epoch the walk ran under, for a guest or a contributor).
    */
   async *changesAll(since?: string): AsyncGenerator<OwChange, { cursor: string; head: number; epoch: number | null }> {
     let cursor = since;
