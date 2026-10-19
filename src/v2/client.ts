@@ -571,8 +571,8 @@ export class OwV2Client {
    * POST /account/worlds/{worldId}/links -- a new invite link for a world this client's
    * `ow_a_` token owns (keel C1): `reader` is required (`person`, accepted with acceptJoin;
    * `agent`, redeemed at POST /join; `player`, a friend with no account, redeemed with
-   * redeemJoin for a read key, keel #353); `role` defaults to contributor (a player link is
-   * guest, and refuses any other), `days` (1, 7 or 30) to 7; `withCharacter` (agent links
+   * redeemJoin for a read key, keel #353); `role`, when left out, is keel's default: guest for a
+   * person link, contributor for an agent link (a player link is guest, and refuses any other), `days` (1, 7 or 30) to 7; `withCharacter` (agent links
    * only) to true; `character` (player links only) a Character's id or `new` (the default):
    * whoever opens the link first reads as it, until removed. 201 with the code, shown in this
    * answer only. Owner only: anyone else, and a world that doesn't exist, gets 404
