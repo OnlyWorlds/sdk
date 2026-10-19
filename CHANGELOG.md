@@ -9,6 +9,10 @@ earlier history lives in git log only.
 - A `/changes` delete row's `reason` (`OwDeleteReason`: `deleted` | `hidden` | `out_of_view`; keel #421's hidden
   mark): an element hidden from this reader leaves its copy as a deleted one does, and a GET of it answers 404,
   not 410. `isResyncRequired`'s comment names every case keel now sends it for, not only a guest's.
+- `viewAs` on `get`, `list` and `listAll`, sent as `as` (keel #421 PR 3, view as): the owner's key reads as a
+  member (a membership id), as a Character's guest (a Character id) or as the public (`'public'`). A member key
+  gets 403 `view_as_owner_only` (`err.isViewAsOwnerOnly`); an element hidden from that reader is 404, never 410;
+  an unknown value is 422. Until keel's hidden mark is on, keel answers 422 (an unknown parameter).
 
 ## [4.36.2] - 2026-10-20
 

@@ -136,6 +136,15 @@ export class OwApiError extends Error {
   }
 
   /**
+   * A member key sent `viewAs` (403 `view_as_owner_only`, keel #421): reading as another
+   * reader is the owner's, from a key with no member. Retrying will not help. Only while
+   * keel's hidden mark is on; until then `viewAs` is an unknown parameter (422).
+   */
+  get isViewAsOwnerOnly(): boolean {
+    return this.status === 403 && this.code === 'view_as_owner_only';
+  }
+
+  /**
    * A `patch` or `editLinks` sent with `ifMatch` found the element moved past that
    * `change_seq` (412 `precondition_failed`, keel #210): nothing was written and nothing
    * merged. The error is an OwPreconditionFailedError; its `current` is the element as it

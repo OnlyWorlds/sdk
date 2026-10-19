@@ -676,6 +676,16 @@ export interface ListParams {
    * `__isnull` are designed in keel's spec but not built; `ordering` 422s too.)
    */
   filter?: Record<string, string | number | boolean>;
+  /**
+   * View as (keel #421), sent as `as`: read as another reader of this world would. A membership
+   * id (a person, an agent seat or a player seat) reads as that member's own key; a Character id
+   * reads as a guest of that Character with no membership; `'public'` reads everything not
+   * hidden. The owner's keys only (a key with no member): a member key gets 403
+   * `view_as_owner_only` (`err.isViewAsOwnerOnly`). An element hidden from that reader is 404,
+   * never 410. An unknown value is 422 (`param` as). Only while keel's hidden mark is on; until
+   * then keel answers 422 (an unknown parameter).
+   */
+  viewAs?: string;
 }
 
 export interface OwClientConfig {

@@ -368,6 +368,39 @@ test('403 owner_only is isOwnerOnly, and not isNotAuthor', async () => {
   assert.equal(bare.isOwnerOnly, false);
 });
 
+test('viewAs is sent as `as` on list, listAll and get, and not sent when absent (keel #421)', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', type: 'character', name: 'A', data: [], has_more: false } });
+  await client.list('character', { viewAs: 'public', filter: { supertype: 'npc' } });
+  await client.get('character', 'x', { viewAs: '0190a1b2-0000-7000-8000-000000000001', fields: ['name'] });
+  for await (const _ of client.listAll('character', { viewAs: 'public' })) { /* empty page */ }
+  await client.list('character');
+  await client.get('character', 'x');
+  const qs = fetchImpl.calls.map((c) => new URL(c.url).searchParams);
+  assert.equal(qs[0].get('as'), 'public');
+  assert.equal(qs[0].get('supertype'), 'npc');
+  assert.equal(qs[1].get('as'), '0190a1b2-0000-7000-8000-000000000001');
+  assert.equal(qs[1].get('fields'), 'name');
+  assert.equal(qs[2].get('as'), 'public');
+  assert.equal(qs[3].has('as'), false);
+  assert.equal(qs[4].has('as'), false);
+});
+
+test('403 view_as_owner_only is isViewAsOwnerOnly, and not isOwnerOnly (keel #421)', async () => {
+  const err = await thrown({ status: 403, body: envelope('permission_error', 'view_as_owner_only') },
+    (c) => c.list('character', { viewAs: 'public' }));
+  assert.equal(err.isViewAsOwnerOnly, true);
+  assert.equal(err.isOwnerOnly, false);
+  assert.equal(err.isNotAuthor, false);
+  for (const code of ['owner_only', 'not_author', 'insufficient_scope']) {
+    const other = await thrown({ status: 403, body: envelope('permission_error', code) },
+      (c) => c.list('character'));
+    assert.equal(other.isViewAsOwnerOnly, false, code);
+  }
+  const unknown = await thrown({ status: 422, body: envelope('invalid_request', 'invalid_request') },
+    (c) => c.get('character', 'x', { viewAs: 'nobody' }));
+  assert.equal(unknown.isViewAsOwnerOnly, false);
+});
+
 test('a 403 with another code is not isNotAuthor', async () => {
   for (const code of ['owner_only', 'insufficient_scope']) {
     const err = await thrown({ status: 403, body: envelope('permission_error', code) },

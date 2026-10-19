@@ -111,6 +111,7 @@ export class OwV2Client {
       expand: params.expand?.join(','),
       fields: params.fields?.join(','),
       ...params.filter,
+      as: params.viewAs,
     });
     return this.request('GET', `/${type}/`, { query }) as Promise<OwPage>;
   }
@@ -125,9 +126,12 @@ export class OwV2Client {
     } while (cursor);
   }
 
-  /** GET /{type}/{id}/ -- optional one-level stub expansion / sparse fields. */
-  async get(type: ElementType | string, id: string, opts: Pick<ListParams, 'expand' | 'fields'> = {}): Promise<OwElement> {
-    const query = buildQuery({ expand: opts.expand?.join(','), fields: opts.fields?.join(',') });
+  /**
+   * GET /{type}/{id}/ -- optional one-level stub expansion / sparse fields, and `viewAs` (keel
+   * #421: the owner reads as another reader; see ListParams.viewAs).
+   */
+  async get(type: ElementType | string, id: string, opts: Pick<ListParams, 'expand' | 'fields' | 'viewAs'> = {}): Promise<OwElement> {
+    const query = buildQuery({ expand: opts.expand?.join(','), fields: opts.fields?.join(','), as: opts.viewAs });
     return this.request('GET', `/${type}/${id}/`, { query }) as Promise<OwElement>;
   }
 
