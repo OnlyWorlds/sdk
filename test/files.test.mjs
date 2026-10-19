@@ -238,7 +238,7 @@ test('uploadFile: a host that cannot be reached is an OwNetworkError', async () 
   await assert.rejects(client(f.fetch).uploadFile('location', EL, pdf(), { name: 'a.pdf' }), OwNetworkError);
 });
 
-test('agent: true sends no X-OW-Agent on any files route or to the upload host', async () => {
+test('agent: true sends X-OW-Agent on the ticket alone, never on the other files routes or to the upload host', async () => {
   const f = fake((url, init) => {
     if (!url.startsWith(API)) return { status: 201, body: STORED };
     if (init.method === 'DELETE') return { status: 204 };
@@ -252,7 +252,13 @@ test('agent: true sends no X-OW-Agent on any files route or to the upload host',
   await c.fileDownloadLink('location', EL, FID);
   await c.removeFile('location', EL, FID);
   assert.equal(f.calls.length, 6);
-  for (const { url, init } of f.calls) assert.equal('X-OW-Agent' in init.headers, false, `${init.method} ${url}`);
+  for (const { url, init } of f.calls) {
+    const ticket = init.method === 'POST' && url.startsWith(API) && url.endsWith('/files');
+    assert.equal('X-OW-Agent' in init.headers, ticket, `${init.method} ${url}`);
+  }
+  const plain = fake(() => ({ status: 201, body: TICKET }));
+  await client(plain.fetch).createFileTicket('location', EL, { name: 'a.pdf', size: 3 });
+  assert.equal('X-OW-Agent' in plain.calls[0].init.headers, false, 'a person\'s client never declares an agent');
 });
 
 // -- progress -------------------------------------------------------------------------------------

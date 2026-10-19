@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.33.1] - 2026-10-19
+
+### Fixed
+- An `agent: true` client's file uploads now declare it: `createFileTicket` (and so `uploadFile`) sends
+  `X-OW-Agent`, the one files route keel's document lists it on (keel PR 95), so the file reads
+  `added_by.agent: true`. The other files routes and the upload host get no such header.
+
 ## [4.33.0] - 2026-10-19
 
 ### Added

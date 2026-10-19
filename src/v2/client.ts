@@ -442,7 +442,9 @@ export class OwV2Client {
     const kind = req.kind ?? requireFileKind(name);
     const body: Record<string, unknown> = { name, kind, size };
     if (req.label !== undefined) body.label = req.label;
-    return this.request('POST', `/${type}/${encodeURIComponent(id)}/files`, { body }) as Promise<OwFileTicket>;
+    // An agent client declares itself here, the one files route keel's document lists it on (keel PR 95):
+    // the upload's added_by.agent then reads true.
+    return this.request('POST', `/${type}/${encodeURIComponent(id)}/files`, { body, write: true }) as Promise<OwFileTicket>;
   }
 
   /**
