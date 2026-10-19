@@ -5,6 +5,31 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+- **Files on elements** (keel #393), for Atlas's file list on an element:
+  - `listFiles(type, id)`: the element's files, newest first (`OwFileRow`: `id`, `name`, `kind`,
+    `size`, `label`, `added_by` with `name`, `membership` and `agent`, `added_at`), as keel sends them.
+  - `uploadFile(type, id, file, { name?, kind?, label?, ticket?, onProgress? })`: a ticket from the API,
+    then the bytes to the upload host, as `uploadImage` does. Takes a File, Blob, ArrayBuffer or
+    Uint8Array; the name is a File's own unless given; the kind comes from the name's extension
+    (`.yml` is yaml, `.markdown` is md; anything else not taken is a TypeError before any request).
+    `onProgress(loaded, total)` reports the bytes sent through XMLHttpRequest where there is one (a
+    browser); elsewhere it is called once, at the end. Returns the host's 201 (`OwUploadedFile`).
+  - `createFileTicket(type, id, { name, kind?, size, label? })`: the first step alone. No
+    Idempotency-Key, by keel's rule.
+  - `fileDownloadLink(type, id, fileId)`: the link (`url`) and when it stops working (`exp`, 5 minutes
+    on); the link is the credential, so fetch it when the file is opened and don't keep it.
+  - `removeFile(type, id, fileId)`: the world's owner or whoever added the file.
+  - `worldFiles()`: every file the key may see, with `used_bytes` and `cap_bytes` for "41 MB of 250 MB".
+  - `err.isFileTooLarge` (413 `file_too_large`, over 25 MB) and `err.isFilesFull` (403 `files_full`, the
+    world's 250 MB has no room). The world's 200 file tickets a day use up as `err.isQuotaExceeded` (429,
+    with `retryAfter`), as image tickets do. The upload host's refusals (409 `exists`, 415
+    `unsupported_type`, 401 `ticket_*`) arrive as `OwApiError` with their codes, as the image edge's do.
+  - Types: `OwFileKind`, `OwFileAddedBy`, `OwFileRow`, `OwWorldFileRow`, `OwWorldFiles`, `OwFileTicket`,
+    `OwUploadedFile`, `OwFileDownload`.
+  - An `agent: true` client sends no `X-OW-Agent` on the files routes: keel's document declares it
+    on the element writes only.
+
 ## [4.31.0] — 2026-10-18
 
 ### Added

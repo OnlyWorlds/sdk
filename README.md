@@ -110,6 +110,23 @@ await writer.patch('character', id, { image_url: null });
 
 The image's uploader or the world's owner can remove an uploaded image; the space goes back to the uploader's storage. Removal leaves elements as they are, so clear their `image_url` yourself (`createRemovalTicket(key).referenced` says how many still show it). A copy the network already holds can keep answering for a while.
 
+## Files on elements
+
+A pdf, a text file (txt, md, json, csv, yaml, toml) or a world's own bundle (zip), attached to an element. Files are not fields: they never appear in the element's body, its `change_seq` or `/changes`.
+
+```typescript
+const rows = await writer.listFiles('location', id);   // newest first: name, kind, size, label, added_by, added_at
+const stored = await writer.uploadFile('location', id, file, {
+  label: 'description',                                   // optional: a field the file belongs to, or your own words
+  onProgress: (loaded, total) => bar.set(loaded / total),
+});
+const { url, exp } = await writer.fileDownloadLink('location', id, rows[0].id); // fetch it now: the link lives 5 minutes
+await writer.removeFile('location', id, rows[0].id);      // the world's owner or whoever added it
+const { data, used_bytes, cap_bytes } = await writer.worldFiles();               // every file, and the world's total
+```
+
+`uploadFile` takes a File, Blob, ArrayBuffer or Uint8Array. It asks the API for a single-use ticket (`createFileTicket` alone, if you send the bytes yourself), then sends the bytes to the upload host. The name is a File's own unless you pass `name`; the kind comes from its extension (`.yml` and `.markdown` count). Up to 25 MB a file, 250 MB a world, 200 tickets a world a day: the refusals are `err.isFileTooLarge` (413), `err.isFilesFull` (403) and `err.isQuotaExceeded` (429, see `retryAfter`). In a browser, progress comes through XMLHttpRequest; elsewhere `onProgress` is called once, at the end. The download link is the credential to the file: ask for it when the file is opened, and don't keep it.
+
 ## Signing in
 
 An app where people sign in with their OnlyWorlds email (or username) and password turns that into an account token for the device. A client with no key can do it:

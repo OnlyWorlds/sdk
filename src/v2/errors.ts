@@ -158,9 +158,30 @@ export class OwApiError extends Error {
     return this.status === 409 && this.code === 'pin_required';
   }
 
-  /** A daily allowance is used up (429 `quota_exceeded`): the world's image tickets, or the account's asks. See retryAfter. */
+  /**
+   * A daily allowance is used up (429 `quota_exceeded`): the world's image tickets, its file
+   * tickets (200 a day, keel #393), or the account's asks. See retryAfter.
+   */
   get isQuotaExceeded(): boolean {
     return this.status === 429 && this.code === 'quota_exceeded';
+  }
+
+  /**
+   * createFileTicket / uploadFile: the file is over the 25 MB a file may be (413
+   * `file_too_large`, `param` size, keel #393); the message gives both sizes. Nothing was
+   * issued. Not the upload host's 413 `too_large` (bytes past a ticket's `max_bytes`).
+   */
+  get isFileTooLarge(): boolean {
+    return this.status === 413 && this.code === 'file_too_large';
+  }
+
+  /**
+   * createFileTicket / uploadFile: the world's files have no room for this one (403
+   * `files_full`, keel #393: 250 MB a world); the message gives the world's use, its cap and
+   * the file's size. Remove a file, or ask the owner. Nothing was issued.
+   */
+  get isFilesFull(): boolean {
+    return this.status === 403 && this.code === 'files_full';
   }
 
   /** ask: the proxy is switched off, or paused for the day by the server-wide cap (503 `ask_unavailable`). Not counted. */

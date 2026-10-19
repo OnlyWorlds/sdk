@@ -17,7 +17,7 @@ import type {
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
   OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwJoined, OwAgentJoined, OwPlayerJoined,
-  OwSignedIn,
+  OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
 } from './types';
 import { keyedId } from './keyed-id';
 import { OwApiError, OwNetworkError, OwSignInError, errorFromResponse, parseErrorEnvelope, parseRetryAfter } from './errors';
@@ -384,6 +384,162 @@ export class OwV2Client {
     }
     if (!res.ok) throw await errorFromResponse(res);
     return await res.json() as OwRemovedImage;
+  }
+
+  // -- Files on elements (keel #393) ---------------------------------------------
+
+  /**
+   * GET /{type}/{id}/files -- the element's files, newest first: each with its name, kind,
+   * size in bytes, label (or null), who added it (`added_by.agent` is true when an agent did)
+   * and when. Any key that may read the element; a file is seen by whoever may see its
+   * element, and an element the key cannot see answers 404 `not_found`. Returns the rows
+   * (keel sends them as `{ data }`, with no paging). Files never ride on the element: they
+   * are not in its body, its `change_seq` or /changes.
+   */
+  async listFiles(type: ElementType | string, id: string): Promise<OwFileRow[]> {
+    const page = await this.request('GET', `/${type}/${encodeURIComponent(id)}/files`) as { data?: OwFileRow[] };
+    return page.data ?? [];
+  }
+
+  /**
+   * GET /world/files -- every file in the world this key may see, newest first, each with its
+   * element's `element_type` and `element_id`; and the world's total, `used_bytes` of
+   * `cap_bytes` (for a line like "41 MB of 250 MB"). `used_bytes` counts all the world's
+   * files, also those on elements this key cannot see. Any key.
+   */
+  async worldFiles(): Promise<OwWorldFiles> {
+    return this.request('GET', '/world/files') as Promise<OwWorldFiles>;
+  }
+
+  /**
+   * POST /{type}/{id}/files -- permission to upload ONE file onto this element: a write key
+   * (and its PIN) that may change the element. `name` is the file's name with its extension;
+   * `kind` is read from that extension when you leave it out (a TypeError, before anything
+   * is sent, when the extension is not one of .pdf .txt .md .markdown .json .csv .yaml .yml
+   * .toml .zip); `size` is the file's size in bytes; `label` (at most 80 characters) is a
+   * field of the element's type the file belongs to, or your own words. Short-lived (`exp`,
+   * 10 minutes) and single-use. Sends no Idempotency-Key, by keel's rule: the single-use
+   * ticket is the idempotency, and a second call is a second ticket.
+   *
+   * Use it directly to send the bytes yourself: POST them, raw, to `upload_url` with
+   * `Authorization: Bearer <ticket>`. Otherwise call uploadFile(), which does both steps.
+   * Refusals: 413 `file_too_large` (`err.isFileTooLarge`: over 25 MB, `param` size), 403
+   * `files_full` (`err.isFilesFull`: the world's 250 MB has no room for it) or `not_author`
+   * (a contributor's key on an element someone else made), 422 `invalid_request` (`param`
+   * names kind, name, size or label), 429 `quota_exceeded` (`err.isQuotaExceeded`: the
+   * world's 200 tickets a day are used up) or `rate_limited` (wrong PINs), both with
+   * `retryAfter`; 503 `media_unavailable`.
+   */
+  async createFileTicket(
+    type: ElementType | string,
+    id: string,
+    req: { name: string; kind?: OwFileKind; size: number; label?: string | null },
+  ): Promise<OwFileTicket> {
+    const { name, size } = req;
+    if (typeof name !== 'string' || name.trim() === '') {
+      throw new TypeError('createFileTicket needs the file\'s name, with its extension');
+    }
+    const kind = req.kind ?? fileKindOf(name);
+    const body: Record<string, unknown> = { name, kind, size };
+    if (req.label !== undefined) body.label = req.label;
+    return this.request('POST', `/${type}/${encodeURIComponent(id)}/files`, { body }) as Promise<OwFileTicket>;
+  }
+
+  /**
+   * Attach one file to an element: a ticket from the API (createFileTicket), then the bytes
+   * straight to the upload host (the API never sees them, and the key and PIN never leave
+   * for the host). Takes a File, a Blob, an ArrayBuffer or a Uint8Array. Returns the host's
+   * 201 (`key`, `fid`: the file's id, `bytes`, `type`, `etag`). The file appears in
+   * listFiles once the host has reported it to the API, which can be a moment after this
+   * returns.
+   *
+   * `name` defaults to a File's own name (anything else needs one: a TypeError before
+   * anything is sent); `kind` is read from the name's extension when left out, as
+   * createFileTicket reads it; `size` is the byte length; `label` as createFileTicket's.
+   * Pass a `ticket` from createFileTicket() to use it instead of fetching one (then `name`,
+   * `kind` and `label` are not needed: the ticket already carries them).
+   *
+   * `onProgress(loaded, total)` reports the bytes sent. fetch cannot report an upload's
+   * progress, so where XMLHttpRequest exists (a browser) the bytes go through it, with a
+   * call for each progress event; elsewhere (Node), the bytes go through fetch and
+   * onProgress is called once, with (total, total), when the upload has succeeded. Without
+   * onProgress, the bytes always go through fetch (config.fetch when you set one).
+   *
+   * A file larger than the ticket's `max_bytes` throws 413 `too_large` before any byte is
+   * sent. The API's refusals are createFileTicket's; the upload host's arrive as OwApiError
+   * with its code: 401 `ticket_expired` / `ticket_invalid` / `ticket_used`, 409 `exists`
+   * (the ticket's file is already stored: an earlier send with this ticket succeeded, so the
+   * file is there), 413 `too_large`, 415 `unsupported_type` (the bytes are not the kind:
+   * a pdf must start as one, a text file must be UTF-8 with no NUL in its first 8 KB, a zip
+   * must be a world's own bundle; nothing is stored and the ticket is still unspent), 502
+   * `write_failed` (nothing stored; the ticket is still unspent). A ticket is spent once the
+   * upload succeeds: another file needs a new one.
+   */
+  async uploadFile(
+    type: ElementType | string,
+    id: string,
+    file: Blob | ArrayBuffer | ArrayBufferView,
+    opts: {
+      name?: string;
+      kind?: OwFileKind;
+      label?: string | null;
+      ticket?: OwFileTicket;
+      onProgress?: (loaded: number, total: number) => void;
+    } = {},
+  ): Promise<OwUploadedFile> {
+    const size = typeof Blob !== 'undefined' && file instanceof Blob ? file.size : (file as ArrayBuffer).byteLength;
+    let ticket = opts.ticket;
+    if (!ticket) {
+      const name = opts.name ?? fileNameOf(file);
+      if (typeof name !== 'string' || name.trim() === '') {
+        throw new TypeError('uploadFile needs a name (with its extension) for anything but a File: pass opts.name');
+      }
+      ticket = await this.createFileTicket(type, id, { name, kind: opts.kind, size, label: opts.label });
+    }
+    if (size > ticket.max_bytes) {
+      throw new OwApiError(413, 'too_large', `File is ${size} bytes; this ticket accepts at most ${ticket.max_bytes}. Nothing was sent.`,
+        null, { error: 'too_large', max_bytes: ticket.max_bytes, got: size });
+    }
+    const headers: Record<string, string> = { Authorization: `Bearer ${ticket.ticket}` };
+    const onProgress = opts.onProgress;
+    const XHR = (globalThis as { XMLHttpRequest?: XhrConstructor }).XMLHttpRequest;
+    let res: Response;
+    if (onProgress && typeof XHR === 'function') {
+      res = await xhrUpload(XHR, ticket.upload_url, headers, file, size, onProgress);
+    } else {
+      try {
+        res = await this.fetchImpl(ticket.upload_url, { method: 'POST', headers, body: file as BodyInit });
+      } catch (cause) {
+        throw new OwNetworkError(`OnlyWorlds file upload failed: POST ${ticket.upload_url}`, cause);
+      }
+    }
+    if (!res.ok) throw await errorFromResponse(res);
+    const uploaded = await res.json() as OwUploadedFile;
+    if (onProgress && typeof XHR !== 'function') onProgress(size, size);
+    return uploaded;
+  }
+
+  /**
+   * GET /{type}/{id}/files/{fileId}/download -- a link to the file and when it stops
+   * working: `url` (the file as an attachment, from the download host), `exp` (unix
+   * seconds, 5 minutes after issue), and the file's `name`, `kind` and `size`. The link is
+   * the credential: anyone holding it can fetch the file until `exp`, more than once. So
+   * ask for it when the file is opened, use it at once, and never store or share it. Any
+   * key that may read the element.
+   */
+  async fileDownloadLink(type: ElementType | string, id: string, fileId: string): Promise<OwFileDownload> {
+    return this.request('GET', `/${type}/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}/download`) as Promise<OwFileDownload>;
+  }
+
+  /**
+   * DELETE /{type}/{id}/files/{fileId} -- remove a file for real: it leaves the lists and
+   * the world's total at once, and its bytes are deleted from the store. The world's owner
+   * key may, and so may the key of whoever added it (an agent seat answers as its sponsor);
+   * any other key is 403 `permission_error`. A file that is not there is 404 `not_found`.
+   * Deleting an element removes its files too.
+   */
+  async removeFile(type: ElementType | string, id: string, fileId: string): Promise<void> {
+    await this.request('DELETE', `/${type}/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}`);
   }
 
   // -- Joining a world by link (keel #212) ----------------------------------
@@ -919,6 +1075,88 @@ function mintUuid(now: number = Date.now()): string {
     hex[bytes[8]] + hex[bytes[9]] + '-' +
     hex[bytes[10]] + hex[bytes[11]] + hex[bytes[12]] + hex[bytes[13]] + hex[bytes[14]] + hex[bytes[15]]
   );
+}
+
+/** A file name's extension to its kind: keel's NAME_EXTS (files/service.py), `.yml` and `.markdown` included. */
+const FILE_NAME_EXTS: Readonly<Record<string, OwFileKind>> = {
+  pdf: 'pdf', txt: 'txt', md: 'md', markdown: 'md', json: 'json',
+  csv: 'csv', yaml: 'yaml', yml: 'yaml', toml: 'toml', zip: 'zip',
+};
+
+/**
+ * The kind a file name's extension gives, read as keel reads it: the last path part, then
+ * what follows its last dot, which must have something before it. A TypeError naming the
+ * extensions keel takes when there is none or it is not one of them.
+ */
+function fileKindOf(name: string): OwFileKind {
+  const base = name.split(/[\\/]/).pop() ?? '';
+  const dot = base.lastIndexOf('.');
+  const ext = dot > 0 ? base.slice(dot + 1).trim().toLowerCase() : '';
+  const kind = Object.prototype.hasOwnProperty.call(FILE_NAME_EXTS, ext) ? FILE_NAME_EXTS[ext] : undefined;
+  if (!kind) {
+    const allowed = Object.keys(FILE_NAME_EXTS).map((e) => `.${e}`).join(' ');
+    throw new TypeError(`Cannot tell the kind of "${base}" from its name: a file on an element must end in one of ${allowed} (or pass opts.kind)`);
+  }
+  return kind;
+}
+
+/** A File's own name, else undefined. */
+function fileNameOf(file: unknown): string | undefined {
+  if (typeof Blob === 'undefined' || !(file instanceof Blob)) return undefined;
+  const name = (file as { name?: unknown }).name;
+  return typeof name === 'string' && name !== '' ? name : undefined;
+}
+
+type XhrConstructor = new () => XMLHttpRequest;
+
+/**
+ * POST the bytes with XMLHttpRequest, reporting upload progress (fetch cannot). Resolves with
+ * a Response-shaped answer for errorFromResponse and the caller; a request that never got an
+ * answer rejects with OwNetworkError. The last call to onProgress is always (total, total) on
+ * a successful send.
+ */
+function xhrUpload(
+  XHR: XhrConstructor,
+  url: string,
+  headers: Record<string, string>,
+  body: Blob | ArrayBuffer | ArrayBufferView,
+  total: number,
+  onProgress: (loaded: number, total: number) => void,
+): Promise<Response> {
+  return new Promise<Response>((resolve, reject) => {
+    const xhr = new XHR();
+    let last = -1;
+    const report = (loaded: number) => {
+      last = loaded;
+      onProgress(loaded, total);
+    };
+    const fail = (why: string) => () =>
+      reject(new OwNetworkError(`OnlyWorlds file upload failed: POST ${url}`, new Error(why)));
+    xhr.open('POST', url);
+    for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
+    if (xhr.upload) xhr.upload.onprogress = (e: ProgressEvent) => report(Math.min(e.loaded, total));
+    xhr.onerror = fail('network error');
+    xhr.onabort = fail('aborted');
+    xhr.ontimeout = fail('timed out');
+    xhr.onload = () => {
+      const status = xhr.status;
+      if (!status) {
+        fail('no answer')();
+        return;
+      }
+      const ok = status >= 200 && status < 300;
+      if (ok && last !== total) report(total);
+      const text = typeof xhr.responseText === 'string' ? xhr.responseText : '';
+      resolve({
+        ok,
+        status,
+        headers: { get: (n: string) => xhr.getResponseHeader(n) },
+        text: async () => text,
+        json: async () => JSON.parse(text),
+      } as unknown as Response);
+    };
+    xhr.send(body as XMLHttpRequestBodyInit);
+  });
 }
 
 /** An image's object key: the key as given, or the path of a full image_url without its leading slash. */

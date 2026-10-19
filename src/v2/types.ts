@@ -542,6 +542,111 @@ export interface OwUploadedImage {
   [k: string]: unknown;
 }
 
+// -- Files on elements (keel #393) ---------------------------------------------
+
+/**
+ * What a file on an element can be (keel `FileKind`): text (`txt`, `md`, `json`, `csv`,
+ * `yaml`, `toml`), `pdf`, and `zip` only as a world's own bundle. The upload host checks each
+ * against the file's first bytes. A file's name ends in its kind's extension; `.yml` counts as
+ * yaml and `.markdown` as md.
+ */
+export type OwFileKind = 'pdf' | 'txt' | 'md' | 'json' | 'csv' | 'yaml' | 'toml' | 'zip';
+
+/** Who added a file. */
+export interface OwFileAddedBy {
+  /** A member's or a seat's name; the owner's username for the owner's keys. */
+  name: string;
+  /** Their membership id; null for the owner's keys. */
+  membership: string | null;
+  /** True when an agent added it: an agent seat, the MCP surface, or a key that declared an agent. */
+  agent: boolean;
+}
+
+/** One file on an element, as listFiles returns it. */
+export interface OwFileRow {
+  id: string;
+  /** The file's name as uploaded. */
+  name: string;
+  kind: OwFileKind;
+  /** Bytes, as the upload host stored them. */
+  size: number;
+  /** A field of the element's type the file belongs to, free text (at most 80 characters), or null. */
+  label: string | null;
+  added_by: OwFileAddedBy;
+  /** When the upload host stored it (ISO 8601). */
+  added_at: string;
+}
+
+/** One file in the world's list: a file row with its element's type and id. */
+export interface OwWorldFileRow extends OwFileRow {
+  element_type: ElementType;
+  element_id: string;
+}
+
+/** GET /world/files: every file this key may see, newest first, and the world's total against its cap. */
+export interface OwWorldFiles {
+  data: OwWorldFileRow[];
+  /** The bytes of the world's live files (all of them, also those this key cannot see). */
+  used_bytes: number;
+  /** The world's room for files (250 MB on onlyworlds.com). */
+  cap_bytes: number;
+}
+
+/**
+ * The 201 of POST /{type}/{id}/files: a short-lived, single-use permission to upload one
+ * file onto one element (the image ticket's shape, with `kind: 'file'` and the file's id).
+ */
+export interface OwFileTicket {
+  /** Opaque: send it to `upload_url` as `Authorization: Bearer <ticket>`, as is. */
+  ticket: string;
+  /** Where the bytes go (https://upload.onlyworlds.com/v1/file on production). */
+  upload_url: string;
+  /** `w/<world_id>/<element_id>/`. */
+  prefix: string;
+  /** The object key the file lands under: `w/<world_id>/<element_id>/<file_id>.<kind>`. */
+  key: string;
+  /** The most this ticket accepts: 25 MB, or what the world has left, whichever is smaller. */
+  max_bytes: number;
+  /** Unix seconds after which the upload host refuses the ticket (10 minutes after issue). */
+  exp: number;
+  /** Always 1: one ticket, one upload. */
+  uses: number;
+  /** Who answers for the upload. */
+  issued_to: { account: string | null; membership: string | null };
+  /** Always `file` (an image ticket has none). */
+  kind: 'file';
+  /** The file's id, minted before a byte moves: the `id` its row will have. */
+  file_id: string;
+}
+
+/** The upload host's 201 for one file. */
+export interface OwUploadedFile {
+  /** The object key, the ticket's `key`. */
+  key: string;
+  /** The file's id, the ticket's `file_id`. */
+  fid: string;
+  /** The bytes stored. */
+  bytes: number;
+  /** The MIME type the file is served with. */
+  type: string;
+  etag: string;
+  [k: string]: unknown;
+}
+
+/** GET /{type}/{id}/files/{file_id}/download: a link to the file, and when it stops working. */
+export interface OwFileDownload {
+  /**
+   * The file on the download host, as an attachment. The link is the credential: anyone who
+   * holds it can fetch the file until `exp`, more than once (ranges honoured, CORS open).
+   */
+  url: string;
+  /** Unix seconds after which the link is refused (5 minutes after issue). */
+  exp: number;
+  name: string;
+  kind: OwFileKind;
+  size: number;
+}
+
 export interface ListParams {
   limit?: number;
   cursor?: string;
