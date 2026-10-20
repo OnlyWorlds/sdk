@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.37.0] - 2026-10-20
+
+The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked on staging with the mark on, 25 of 25.
+
 ### Added
 - A `/changes` delete row's `reason` (`OwDeleteReason`: `deleted` | `hidden` | `out_of_view`; keel #421's hidden
   mark): an element hidden from this reader leaves its copy as a deleted one does, and a GET of it answers 404,
