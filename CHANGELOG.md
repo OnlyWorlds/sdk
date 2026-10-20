@@ -24,7 +24,7 @@ The party link (keel #422 PR 2, keel PR 110), live in production since 2026-10-2
   lost to another player is the one 404 (`err.isNotFound`).
 
 ### Changed
-- Repinned to schema-dist v0.32.1-dist.27: only `example/world-export.json` moved (its `schema_version` now 00.32.01, Skeld h29 #8455); no schema file, so no generated output changed.
+- Repinned to schema-dist v0.32.1-dist.27: only `example/world-export.json` moved (its `schema_version` now 00.32.01, Skeld h29 #8455); no schema file moved, so the generated files change only their source lines.
 
 ## [4.38.0] - 2026-10-20
 

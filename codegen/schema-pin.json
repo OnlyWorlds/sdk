@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.32.1-dist.26",
-  "commit": "4f09189e41455f694c8d530829dd0d8afc7013db",
-  "manifest_sha256": "fb9dad29155804ae4007d2e115787b1d3b8dc26bb46f62d9a69620943179a5e9",
+  "tag": "v0.32.1-dist.27",
+  "commit": "dae4ffeb4d03fce753f69fbc28e7fdabf66b324f",
+  "manifest_sha256": "0d6564666eda5041947ad2fb74a396c016b03d36ef38d013d2745d27171e6f9a",
   "canonical_version": "00.32.01",
-  "dist_serial": 26,
+  "dist_serial": 27,
   "published": "2026-10-20",
   "pinned_at": "2026-10-20",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.32.1-dist.26",
+      "manifest_sha256": "fb9dad29155804ae4007d2e115787b1d3b8dc26bb46f62d9a69620943179a5e9",
+      "note": "superseded by v0.32.1-dist.27 (same canonical 00.32.01; only example/world-export.json moved, its schema_version now 00.32.01)"
+    },
     {
       "tag": "v0.32.0-dist.23",
       "manifest_sha256": "94e4638be3a6e2e3ca8a13afaca461c6cf9da5b88e9ae49fbd0f072120ea45af",
