@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.36.1] - 2026-10-20
+
+### Changed
+
+- The reset rule in `isResyncRequired`'s and `changes`' doc comments: on a 409 `resync_required`, walk from zero and keep what the local copy holds that the new walk does not name; a reset never empties a copy. It said replace. Keel says keep since PR 104 (the Captain's ruling, 2026-10-20: sharing is forward-only). No code change.
+
 ## [4.36.0] - 2026-10-20
 
 ### Changed

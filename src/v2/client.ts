@@ -248,8 +248,8 @@ export class OwV2Client {
    * another shape than everyone else's).
    * Zero/absent cursor = full export (byte-aligned with the Folder Format).
    * Reset rule: a 409 `resync_required` (err.isResyncRequired) means the key's
-   * view changed (a guest's, or its role): drop the cursor, walk from zero, and
-   * replace the local copy rather than merging into it.
+   * view changed (a guest's, or its role): drop the cursor, walk from zero, and keep what the
+   * local copy holds that the new walk does not name (keel's own words; sharing is forward-only).
    * Citizenship: heaviest route on the platform; default page size is polite.
    * keel sends the cursor of a page at the head as a number (an empty page, for anyone
    * but a guest); it is handed back as a string, like every cursor here.
