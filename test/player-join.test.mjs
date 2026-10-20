@@ -103,6 +103,13 @@ test('422 character_taken is isCharacterTaken, and a 422 off the list is not', a
   assert.equal(gone.isCharacterInvalid, false);
   const otherStatus = await thrown(409, env('character_taken', 'character'));
   assert.equal(otherStatus.isCharacterTaken, false, 'the code on another status is not it');
+  const full = await thrown(422, env('world_full', null));
+  assert.equal(full.isWorldFull, true);
+  assert.equal(full.isCharacterTaken, false);
+  assert.equal(full.isCharacterInvalid, false);
+  assert.equal(taken.isWorldFull, false, 'a taken pick is not a full world');
+  assert.equal(offList.isWorldFull, false);
+  assert.equal((await thrown(409, env('world_full', null))).isWorldFull, false, 'the code on another status is not it');
 });
 
 test('422 invalid_request with param character is isCharacterInvalid; any other invalid_request is not', async () => {

@@ -201,6 +201,15 @@ export class OwApiError extends Error {
     return this.status === 422 && this.code === 'invalid_request' && this.param === 'character';
   }
 
+  /**
+   * redeemJoin (keel #422 PR 2): the world already has its 50 live players (422 `world_full`),
+   * at any player link, a table's or a link for one's. Nothing is spent; a place frees when the
+   * owner removes a player.
+   */
+  get isWorldFull(): boolean {
+    return this.status === 422 && this.code === 'world_full';
+  }
+
   /** acceptJoin: the account is already a member of that world (409 `already_member`). The code is not spent. */
   get isAlreadyMember(): boolean {
     return this.status === 409 && this.code === 'already_member';
