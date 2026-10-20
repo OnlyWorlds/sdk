@@ -5,7 +5,9 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
-The "known of" stub's client half (keel PR 113, B16; keel #421 §7g). Not live: keel PR 113 is not merged.
+## [4.40.0] - 2026-10-20
+
+The "known of" stub's client half (keel PR 113, B16; keel #421 §7g), live in production since 2026-10-20 13:47.
 
 ### Added
 - **`known_of?: true`** on `OwElementBase` (generated; `SCHEMA.md` says it too): present, and true, only on a
