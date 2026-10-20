@@ -27,7 +27,7 @@ export type {
   OwWriteDoor, OwChangeUpsert, OwChangeDelete, OwDeleteReason, OwResyncReason,
 } from './types';
 export {
-  ELEMENT_LABELS, ELEMENT_SECTIONS, ELEMENT_ICONS, FIELD_SCHEMA,
+  ELEMENT_LABELS, ELEMENT_SECTIONS, ELEMENT_ICONS, FIELD_SCHEMA, PUBLIC_FIELDS,
   ONLYWORLDS_VERSION, getElementIcon, getElementLabel,
 } from './constants';
 export type { FieldType, FieldInfo, SectionInfo } from './constants';

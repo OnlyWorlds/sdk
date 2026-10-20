@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.32.1-dist.27
-//         commit          dae4ffeb4d03fce753f69fbc28e7fdabf66b324f
-//         MANIFEST sha256 0d6564666eda5041947ad2fb74a396c016b03d36ef38d013d2745d27171e6f9a
-//         canonical 00.32.01, dist serial 27, published 2026-10-20
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.32.1-dist.28
+//         commit          96c3ffa2edc6f7df6a9ac1a86606eacf7d8d89a4
+//         MANIFEST sha256 9ce11f0d15c9632c55aec0fb0cbfebf07600d282aec641de7ba8c160279b0515
+//         canonical 00.32.01, dist serial 28, published 2026-10-20
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -51,7 +51,7 @@ export interface OwElementBase {
   changed_by?: string | null;
   /** The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, or `server` (keel's own writes). The first three are agent-made. Null for anything last changed before writes recorded it. */
   changed_via?: 'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | null;
-  /** Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq; every other field reads unset ("", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf(). */
+  /** Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq, and the fields its type lists in PUBLIC_FIELDS with their values; every other field reads unset ("", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf(). */
   known_of?: true;
   /** Namespaced extension fields (atlas_* / shadow_* / x_*), returned verbatim. */
   [ext: string]: unknown;
@@ -123,6 +123,35 @@ export const ELEMENT_ICONS: Record<ElementType, string> = {
   trait: 'flaky',
   zone: 'pentagon',
 };
+
+/** The fields onlyworlds.com shows on a known-of element (`known_of: true`, see isKnownOf)
+ *  besides the base fields, with their values; every other field of a stub reads unset.
+ *  Platform behaviour, not a default to override. Source: the distribution's
+ *  `presentation.json` sidecar, `types.<type>.public` (keel PR 117). */
+export const PUBLIC_FIELDS = {
+  ability: [],
+  character: ['physicality', 'height', 'weight', 'species', 'reputation'],
+  collective: [],
+  construct: [],
+  creature: [],
+  event: [],
+  family: [],
+  institution: [],
+  language: [],
+  law: [],
+  location: [],
+  map: [],
+  marker: [],
+  narrative: [],
+  object: [],
+  phenomenon: [],
+  pin: [],
+  relation: [],
+  species: [],
+  title: [],
+  trait: [],
+  zone: [],
+} as const satisfies Record<ElementType, readonly string[]>;
 
 /** Field grouping for display. DERIVED from the canonical schema's own document
  *  structure (top-level property groups, document order = display order). */

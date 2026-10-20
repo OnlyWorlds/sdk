@@ -148,7 +148,7 @@ WIRE_ONLY_BASE_FIELDS = [
     ("changed_by", "The membership whose write last changed this element (server-managed, read-only); null for the world's owner and for anything last changed before writes recorded it.", "string | null", False),
     ("changed_via", "The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, or `server` (keel's own writes). The first three are agent-made. Null for anything last changed before writes recorded it.", "'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | null", False),
     # keel PR 113 (B16, keel #421 §7g): the sheet grant's stub marker.
-    ("known_of", "Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq; every other field reads unset (\"\", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf().", "true", False),
+    ("known_of", "Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq, and the fields its type lists in PUBLIC_FIELDS with their values; every other field reads unset (\"\", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf().", "true", False),
 ]
 BASE_KEY_TO_WIRE = {
     "Id": "id", "Name": "name", "Description": "description",
@@ -279,7 +279,8 @@ def parse_sections(doc: dict, tslug: str) -> list[dict]:
 
 
 def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str],
-                icons: dict[str, str], sections: dict[str, list[dict]]) -> str:
+                icons: dict[str, str], sections: dict[str, list[dict]],
+                public: dict[str, list[str]]) -> str:
     types_sorted = sorted(ELEMENT_TYPES)
     lines: list[str] = []
 
@@ -315,6 +316,17 @@ def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str],
     for t in types_sorted:
         lines.append(f"  {t}: '{icons[t]}',")
     lines.append("};")
+    lines.append("")
+
+    lines.append("/** The fields onlyworlds.com shows on a known-of element (`known_of: true`, see isKnownOf)")
+    lines.append(" *  besides the base fields, with their values; every other field of a stub reads unset.")
+    lines.append(" *  Platform behaviour, not a default to override. Source: the distribution's")
+    lines.append(" *  `presentation.json` sidecar, `types.<type>.public` (keel PR 117). */")
+    lines.append("export const PUBLIC_FIELDS = {")
+    for t in types_sorted:
+        arr = ", ".join(f"'{n}'" for n in public[t])
+        lines.append(f"  {t}: [{arr}],")
+    lines.append("} as const satisfies Record<ElementType, readonly string[]>;")
     lines.append("")
 
     lines.append("/** Field grouping for display. DERIVED from the canonical schema's own document")
@@ -516,7 +528,7 @@ Written for both humans and AI agents reading this package locally.
 **The shape rules** (v2 wire dialect): every element carries `id` (UUID), `name`, optional
 `description`/`supertype`/`subtype`/`image_url`, server-managed `type`/`created_at`/`updated_at`/`change_seq`/`created_by`,
 `known_of: true` only on a stub (an element a guest knows of through its Character's sheet:
-its other fields read unset and are not values; never write a stub back),
+its type's `PUBLIC_FIELDS` carry values, its other fields read unset and are not values; never write a stub back),
 and namespaced extension fields (`x_*` etc.) returned verbatim. Link fields use ONE bare
 name in both read and write (no `_ids` suffix). Single links are `UUID | null`; multi links
 are `UUID[]`. **Links are owned one-way**: the type listed below owns the field (e.g.
@@ -697,6 +709,41 @@ def presentation_for(presentation: dict | None, doc: dict, tslug: str) -> tuple[
     return fam, icon
 
 
+def public_for(presentation: dict | None, tslug: str, fields: list[dict]) -> list[str]:
+    """The type's `public` list from the sidecar (schema-dist serial 28 on, keel PR 117):
+    the fields the platform shows on a known-of element besides the base fields.
+
+    Platform behaviour, not a default, so there is no fallback: a tree without the
+    sidecar, a type without the key, or a name that is not a field of the type exits 1
+    rather than emitting an empty list that reads as "nothing shown"."""
+    if presentation is None:
+        raise SystemExit(
+            f"{tslug}: PUBLIC_FIELDS comes only from the distribution's presentation.json "
+            "(`types.<type>.public`, serial 28 on); this tree has no sidecar."
+        )
+    entry = presentation.get(tslug) or {}
+    if "public" not in entry:
+        raise SystemExit(
+            f"{tslug}: `public` missing from presentation.json. Every type carries it since "
+            "serial 28 (an empty list means the base fields only); a missing key is a wiped "
+            "or older sidecar, never an empty list."
+        )
+    pub = entry["public"]
+    if not isinstance(pub, list) or not all(isinstance(n, str) and n for n in pub):
+        raise SystemExit(f"{tslug}: presentation.json `public` is {pub!r}, expected a list of field names.")
+    if len(set(pub)) != len(pub):
+        raise SystemExit(f"{tslug}: presentation.json `public` repeats a name: {pub!r}.")
+    known = {f["name"] for f in fields}
+    stray = [n for n in pub if n not in known]
+    if stray:
+        raise SystemExit(
+            f"{tslug}: presentation.json `public` names {stray}, which the walk does not give "
+            "as fields of this type. Route it to the schema-dist owner; never emit a name the "
+            "standard does not have."
+        )
+    return list(pub)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--schema", default=str(DEFAULT_SCHEMA_DIR))
@@ -723,6 +770,7 @@ def main() -> None:
     all_fields: dict[str, list[dict]] = {}
     families: dict[str, str] = {}
     icons: dict[str, str] = {}
+    public: dict[str, list[str]] = {}
     sections: dict[str, list[dict]] = {}
     required_sets: dict[str, set[str]] = {}
     dropped_required: dict[str, list[str]] = {}
@@ -744,6 +792,7 @@ def main() -> None:
         required_sets[tslug] = set()
         fields = flatten_fields(doc, tslug)
         all_fields[tslug] = fields
+        public[tslug] = public_for(presentation, tslug, fields)
         interfaces.append(render_interface(tslug, fields))
 
     if dropped_required:
@@ -755,7 +804,7 @@ def main() -> None:
               .replace("__PROVENANCE__", render_provenance(schema_dir))
               .replace("__ELEMENT_BASE__", render_element_base(schema_dir)))
     parts = [header, ""]
-    parts.append(render_maps(all_fields, families, icons, sections))
+    parts.append(render_maps(all_fields, families, icons, sections, public))
     parts.append(render_field_schema(all_fields, sections, required_sets))
     parts.append("\n\n".join(interfaces))
     parts.append("")

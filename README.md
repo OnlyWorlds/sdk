@@ -285,6 +285,7 @@ import {
   ELEMENT_LABELS,   // plural display labels
   ELEMENT_SECTIONS, // field grouping and display order
   FIELD_SCHEMA,     // per-field type and link target
+  PUBLIC_FIELDS,    // per type, the fields a known-of stub carries besides the base fields
   elementColor,     // colour by family; the icon carries the type
 } from '@onlyworlds/sdk';
 

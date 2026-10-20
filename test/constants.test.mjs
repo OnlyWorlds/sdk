@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ELEMENT_TYPES, ELEMENT_ICONS, ELEMENT_SECTIONS, ELEMENT_LABELS,
-  FIELD_SCHEMA, getElementIcon,
+  FIELD_SCHEMA, PUBLIC_FIELDS, getElementIcon,
 } from '../dist/index.js';
 
 const SORTED_TYPES = [...ELEMENT_TYPES].sort();
@@ -26,6 +26,13 @@ test('ELEMENT_LABELS keys equal ELEMENT_TYPES', () => {
 });
 test('FIELD_SCHEMA keys equal ELEMENT_TYPES', () => {
   assert.deepEqual(keysSorted(FIELD_SCHEMA), SORTED_TYPES);
+});
+test('PUBLIC_FIELDS keys equal ELEMENT_TYPES, and every name is a field of its type', () => {
+  assert.deepEqual(keysSorted(PUBLIC_FIELDS), SORTED_TYPES);
+  for (const [et, names] of Object.entries(PUBLIC_FIELDS)) {
+    assert.ok(Array.isArray(names), et);
+    for (const n of names) assert.ok(n in FIELD_SCHEMA[et], `${et}.${n} is not a field of ${et}`);
+  }
 });
 
 // The FieldType union, mirrored from constants.ts (dropped 'number' in 4.0).

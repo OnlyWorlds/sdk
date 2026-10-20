@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.32.1-dist.27",
-  "commit": "dae4ffeb4d03fce753f69fbc28e7fdabf66b324f",
-  "manifest_sha256": "0d6564666eda5041947ad2fb74a396c016b03d36ef38d013d2745d27171e6f9a",
+  "tag": "v0.32.1-dist.28",
+  "commit": "96c3ffa2edc6f7df6a9ac1a86606eacf7d8d89a4",
+  "manifest_sha256": "9ce11f0d15c9632c55aec0fb0cbfebf07600d282aec641de7ba8c160279b0515",
   "canonical_version": "00.32.01",
-  "dist_serial": 27,
+  "dist_serial": 28,
   "published": "2026-10-20",
   "pinned_at": "2026-10-20",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.32.1-dist.27",
+      "manifest_sha256": "0d6564666eda5041947ad2fb74a396c016b03d36ef38d013d2745d27171e6f9a",
+      "note": "superseded by v0.32.1-dist.28 (same canonical 00.32.01; presentation.json gains types.<type>.public, the fields the platform shows on a known-of element, keel PR 117, and _meta.public; no schema file moved)"
+    },
     {
       "tag": "v0.32.1-dist.26",
       "manifest_sha256": "fb9dad29155804ae4007d2e115787b1d3b8dc26bb46f62d9a69620943179a5e9",

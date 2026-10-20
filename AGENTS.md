@@ -1,6 +1,6 @@
 # For AI agents using @onlyworlds/sdk
 
-**Current as of**: SDK **4.x** · schema-dist **v0.32.1-dist.27** (canonical 00.32.01).
+**Current as of**: SDK **4.x** · schema-dist **v0.32.1-dist.28** (canonical 00.32.01).
 This line is asserted by `codegen:check` in CI — if the pin moves and this file is not
 re-read against it, the check fails rather than letting this document rot quietly.
 
@@ -108,9 +108,11 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   seat's key is recorded as an agent without the option. Never set it in a tool people use.
 - A guest or player reads what its own Character's sheet links to as a **stub**, marked
   `known_of: true` (`isKnownOf(el)`): only `id`, `type`, `name`, `description`, `supertype`,
-  `subtype`, `image_url` and the timestamps are real; every other field reads unset, and its
-  files are 404. Render it as known of, never merge its empties over a whole copy, and never
-  write it back: `upsert`, `patch`, `create` and `bulk` throw a TypeError on one before sending.
+  `subtype`, `image_url`, the timestamps and the fields its type lists in `PUBLIC_FIELDS` are
+  real; every other field reads unset, and its files are 404. Render it as known of, never
+  merge its empties over a whole copy, and never write it back: `upsert`, `patch`, `create`
+  and `bulk` throw a TypeError on one before sending. keel refuses any write carrying
+  `known_of` with 422 `known_of_not_writable` (`err.isKnownOfNotWritable`).
 - A string holding an unpaired surrogate (text cut mid-emoji) is a 422 naming the field.
   Slice strings by code point, not by UTF-16 unit.
 - Colour carries the element's FAMILY (`elementColor(type, mode)`); the icon

@@ -34,7 +34,7 @@ export { FIELD_ACRONYMS, fieldLabel } from './v2';
 
 // Element metadata (ported onto v2 slugs in 4.0; contents unchanged except number→integer)
 export {
-  ELEMENT_ICONS, ELEMENT_LABELS, ELEMENT_SECTIONS, FIELD_SCHEMA,
+  ELEMENT_ICONS, ELEMENT_LABELS, ELEMENT_SECTIONS, FIELD_SCHEMA, PUBLIC_FIELDS,
   ONLYWORLDS_VERSION, getElementIcon, getElementLabel,
 } from './v2';
 export type { FieldType, FieldInfo, SectionInfo } from './v2';

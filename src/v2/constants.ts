@@ -4,12 +4,12 @@
 // wrapper keys land (icons:/sections: — like family:).
 
 import type { ElementType } from './types.generated';
-import { ELEMENT_TYPES, ELEMENT_ICONS, ELEMENT_SECTIONS, ONLYWORLDS_VERSION, FIELD_SCHEMA } from './types.generated';
+import { ELEMENT_TYPES, ELEMENT_ICONS, ELEMENT_SECTIONS, ONLYWORLDS_VERSION, FIELD_SCHEMA, PUBLIC_FIELDS } from './types.generated';
 // Icons + sections are GENERATED since 4.0: icon: is a keel wrapper key (56c124a),
 // sections derive from the canonical document structure (ruling 2026-07-23).
 // FIELD_SCHEMA joined them on 2026-07-29 — it was the last hand-maintained table
 // in this file and the only publicly-exported one with no comparison to schema.
-export { ELEMENT_ICONS, ELEMENT_SECTIONS, ONLYWORLDS_VERSION, FIELD_SCHEMA };
+export { ELEMENT_ICONS, ELEMENT_SECTIONS, ONLYWORLDS_VERSION, FIELD_SCHEMA, PUBLIC_FIELDS };
 export type { SectionInfo, FieldType, FieldInfo } from './types.generated';
 
 

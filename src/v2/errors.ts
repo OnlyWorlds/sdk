@@ -165,6 +165,17 @@ export class OwApiError extends Error {
   }
 
   /**
+   * An element write carried `known_of` (422 `known_of_not_writable`, `param` known_of; keel
+   * PR 117), true or false: the key marks a stub and is never written. Drop it and send only
+   * the fields you mean. This client never sends it (`known_of` is stripped, a stub is a
+   * TypeError before sending), so it reaches you only through `request()`. `/bulk` never
+   * throws for it: the item's slot carries the code, and its siblings apply.
+   */
+  get isKnownOfNotWritable(): boolean {
+    return this.status === 422 && this.code === 'known_of_not_writable';
+  }
+
+  /**
    * A `patch` or `editLinks` sent with `ifMatch` found the element moved past that
    * `change_seq` (412 `precondition_failed`, keel #210): nothing was written and nothing
    * merged. The error is an OwPreconditionFailedError; its `current` is the element as it

@@ -3,7 +3,7 @@
 `generate_types.py` reads the OnlyWorlds schema YAML (the 22 element types)
 and emits `src/v2/types.generated.ts` and `SCHEMA.md`: the `ElementType` union, one `<Type>V2`
 interface per element type extending a shared `OwElementBase`, and the `ELEMENT_TYPES` /
-`ELEMENT_FAMILIES` / `ELEMENT_ICONS` / `ELEMENT_SECTIONS` constants. Field shapes are pinned to
+`ELEMENT_FAMILIES` / `ELEMENT_ICONS` / `PUBLIC_FIELDS` / `ELEMENT_SECTIONS` constants. Field shapes are pinned to
 the v2 wire, not to Django columns -- single-links are `string | null`, multi-links `string[]`,
 integers `number | null`, link fields use bare schema names (no `_ids` suffix), and the four
 server-managed fields plus a namespaced-extension index signature (`atlas_*` / `shadow_*` / `x_*`)
@@ -49,6 +49,10 @@ consequences, both now closed:
 rollback artifact). Presentation metadata is read from the distribution's `presentation.json`
 sidecar when present, and from the inline wrapper keys otherwise. **Colour values are not in the
 sidecar** -- `FAMILY_COLORS` is hand-authored in `src/v2/palette.ts` and stays there.
+`PUBLIC_FIELDS` (serial 28 on: `types.<type>.public`, the fields the platform shows on a
+known-of stub) has no wrapper-key fallback: it is platform behaviour, not a default, so a tree
+without the sidecar, a type without the key, or a name the walk does not give for that type
+exits 1.
 
 One trap worth knowing: the distribution's `VERSION` lives at the dist root and is three lines of
 YAML (`canonical:` / `serial:` / `published:`), while keel's is the bare string inside `schema/`.

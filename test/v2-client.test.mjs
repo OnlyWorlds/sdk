@@ -112,8 +112,9 @@ const WHOLE_READ = {
   created_at: '2026-10-20T00:00:00Z', updated_at: '2026-10-20T00:00:00Z', change_seq: 9,
   created_by: null, changed_by: null, changed_via: 'api', x_note: 'kept',
 };
+// physicality is one of a Character's PUBLIC_FIELDS: a stub carries its value (keel PR 117).
 const STUB_READ = {
-  type: 'character', id: 'x', name: 'Dev', description: 'Dev desc', physicality: '', location: null,
+  type: 'character', id: 'x', name: 'Dev', description: 'Dev desc', physicality: 'tall', location: null,
   friends: [], created_at: '2026-10-20T00:00:00Z', updated_at: '2026-10-20T00:00:00Z', change_seq: 9,
   created_by: null, changed_by: null, changed_via: null, known_of: true,
 };
@@ -146,6 +147,26 @@ test('a known-of stub is a TypeError on every element write, before anything is 
     /items\[1\].*known-of stub/,
   );
   assert.equal(fetchImpl.calls.length, 0);
+});
+
+test('422 known_of_not_writable is isKnownOfNotWritable (keel PR 117); another 422 or the code on another status is not', async () => {
+  const env = (code, param) => ({ error: { type: 'invalid_request', code, message: code, param,
+    doc_url: `https://onlyworlds.github.io/api/errors#${code}` } });
+  const thrown = async (status, body) => {
+    const { client } = makeClient({ status, body });
+    try { await client.request('POST', '/character/', { body: { name: 'Echo', known_of: false }, write: true }); } catch (err) { return err; }
+    assert.fail('expected a throw');
+  };
+  const refused = await thrown(422, env('known_of_not_writable', 'known_of'));
+  assert.ok(refused instanceof OwApiError);
+  assert.equal(refused.isKnownOfNotWritable, true);
+  assert.equal(refused.param, 'known_of');
+  assert.equal(refused.isValidationError, true);
+  assert.equal((await thrown(422, env('invalid_request', 'known_of'))).isKnownOfNotWritable, false, 'the generic unknown-field 422 is not it');
+  assert.equal((await thrown(422, env('character_taken', 'character'))).isKnownOfNotWritable, false);
+  assert.equal((await thrown(400, env('known_of_not_writable', 'known_of'))).isKnownOfNotWritable, false, 'the code on another status is not it');
+  assert.equal(refused.isCharacterTaken, false);
+  assert.equal(refused.isWorldFull, false);
 });
 
 // -- bulk request shape -----------------------------------------------------

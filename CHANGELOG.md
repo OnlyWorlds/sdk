@@ -5,6 +5,26 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.41.0] - 2026-10-20
+
+A known-of stub's public fields (keel PR 117, keel #448), live in production, and schema-dist v0.32.1-dist.28, which publishes them.
+
+### Added
+- **`PUBLIC_FIELDS`** (generated from the distribution's `presentation.json`, `types.<type>.public`): per element type,
+  the fields onlyworlds.com shows on a known-of stub besides the base fields, with their values, as a readonly
+  `as const` array; all 22 types present. A Character's are `physicality`, `height`, `weight`, `species` and
+  `reputation`; every other type's list is empty for now. Platform behaviour, not a default to override. Codegen
+  exits 1 on a tree without the sidecar, a type without the key, or a name that is not a field of its type.
+- **`err.isKnownOfNotWritable`**: keel's named refusal of a write carrying `known_of`, true or false (422
+  `known_of_not_writable`, `param` known_of). This client never sends `known_of` (4.40.0's strip and refusal are
+  unchanged), so it reaches you only through `request()`; `/bulk` puts it in the item's slot.
+
+### Changed
+- Repinned to schema-dist v0.32.1-dist.28: `presentation.json` gains `types.<type>.public` and `_meta.public`; no
+  schema file moved, so the generated interfaces change only their source lines.
+- **A stub's description** on `known_of` (the generated doc comment, `SCHEMA.md` and `AGENTS.md`) says a stub
+  keeps its type's `PUBLIC_FIELDS` with their values too; it said every other field reads unset.
+
 ## [4.40.0] - 2026-10-20
 
 The "known of" stub's client half (keel PR 113, B16; keel #421 §7g), live in production since 2026-10-20 13:47.
