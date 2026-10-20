@@ -16,6 +16,7 @@ export {
   ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf, elementColor,
 } from './palette';
 export type { ElementFamily } from './palette';
+export { FIELD_ACRONYMS, fieldLabel } from './labels';
 export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,

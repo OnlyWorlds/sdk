@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.34.0] - 2026-10-20
+
+### Added
+
+- **`fieldLabel(name)`** and **`FIELD_ACRONYMS`**: a field name as the words a tool shows, by the house rule (OW Style, the Captain 2026-10-20): sentence case, acronyms kept wherever they fall (`birth_date` → "Birth date", `image_url` → "Image URL"). Seeded from Atlas's `humanizeFieldName` as of 1.59.1, so Atlas, Lantern and Council read one copy (h63 #8109, #8119). The name is taken as given: a tool that hides an extension prefix drops it first.
+
 ## [4.33.1] - 2026-10-19
 
 ### Fixed

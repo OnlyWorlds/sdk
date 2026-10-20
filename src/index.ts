@@ -29,6 +29,9 @@ export type {
 export { ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf, elementColor } from './v2';
 export type { ElementFamily } from './v2';
 
+// Field labels: a field name as the words a tool shows (sentence case, acronyms kept)
+export { FIELD_ACRONYMS, fieldLabel } from './v2';
+
 // Element metadata (ported onto v2 slugs in 4.0; contents unchanged except number→integer)
 export {
   ELEMENT_ICONS, ELEMENT_LABELS, ELEMENT_SECTIONS, FIELD_SCHEMA,
