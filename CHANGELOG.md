@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.42.2] - 2026-10-20
+
+Two calendar reading fixes, found writing the `atlas_calendar` profile's conformance fixture (OW Council h58 #8943, #8946).
+
+### Fixed
+- **A down era has no year zero, even when its pivot falls mid-year.** Its year is now counted from the year holding the step just before the pivot, which reads `year_base` (1 by default). With the pivot mid-year, the earlier steps of the pivot's own year read year 0 ("0 BG") and every year before it one lower; with the pivot on a year's first step, nothing changes. The mirror of an up era, whose first partial year is year 1.
+- **Equal-start eras resolve by a stated rule:** an up era over a down one, then the later era in the list. The comparator returned `-1` for any pair led by an up era, so two eras of one direction came out in the sort's order rather than the list's.
+
 ## [4.42.1] - 2026-10-20
 
 The calendar reader refuses what the `atlas_calendar` profile refuses (schema-dist `profiles/calendar.md`; Quillon's Unity read, OW Council h58 #8917).

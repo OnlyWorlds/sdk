@@ -319,14 +319,22 @@ export function resolveEraDomains(eras: CalendarEra[]): EraDomain[] {
   return out;
 }
 
-/** The era owning a step: domain containment; wild overlaps resolve to latest start (up wins ties). */
+/**
+ * The era owning a step: domain containment; overlaps resolve to the latest start, then an
+ * up era over a down one, then the later era in the list (the profile, calendar.md). The
+ * comparator was `up ? -1 : 1` before 4.42.2: inconsistent for two eras of one direction,
+ * so their order was the sort's, not the list's.
+ */
 export function eraForStep(cfg: CalendarConfig, step: number): CalendarEra | null {
   const eras = cfg.eras ?? [];
   if (eras.length === 0) return null;
   const holding = resolveEraDomains(eras).filter((d) => step >= d.lo && step < d.hi);
   if (holding.length === 0) return null;
+  const place = new Map(eras.map((e, i) => [e, i]));
+  const down = (e: CalendarEra) => ((e.direction ?? 'up') === 'down' ? 1 : 0);
   holding.sort((a, b) => (b.era.start - a.era.start)
-    || ((a.era.direction ?? 'up') === 'up' ? -1 : 1));
+    || (down(a.era) - down(b.era))
+    || ((place.get(b.era) ?? 0) - (place.get(a.era) ?? 0)));
   return holding[0].era;
 }
 
@@ -336,8 +344,11 @@ export function displayYear(cfg: CalendarConfig, step: number, era: CalendarEra 
   if (!era || era.restart === false) return abs;
   const base = era.year_base ?? 1;
   if ((era.direction ?? 'up') === 'down') {
-    // Step -1 with pivot 0 and base 1 => year 1 (no year zero on the down side).
-    return absoluteYear(cfg, era.start) - abs + base - 1;
+    // Counted from the year holding the step just before the pivot, which is year `base`
+    // (step -1 with pivot 0 and base 1 => year 1: no year zero on the down side). A pivot
+    // mid-year read its own year's earlier steps as year base - 1 (0) before 4.42.2; a
+    // pivot on a year's first step reads as it always did. The mirror of the up side.
+    return absoluteYear(cfg, era.start - 1) - abs + base;
   }
   return abs - absoluteYear(cfg, era.start) + base;
 }

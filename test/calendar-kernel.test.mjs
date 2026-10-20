@@ -456,6 +456,30 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         expect(readCalendarConfig(named(['a', 2]))).toBe(null);
         expect(readCalendarConfig(named(['a', 'b'], { length: 2, names: ['x', null] }))).toBe(null);
     });
+    // 4.42.2: a mid-year down pivot (the profile's fixture, h58 #8943) and equal-start ties.
+    it('a down era has no year zero, even with a mid-year pivot', () => {
+        const months = { names: ['Frost', 'Thaw'], lengths: [10, 10] }; // a 20-step year
+        const cal = (pivot) => ({ version: 1, grain: 'day', bundles: { months }, eras: [
+            { name: 'Before', abbrev: 'BG', start: pivot, direction: 'down' }, { name: 'After', abbrev: 'AG', start: pivot }] });
+        // pivot on a year's first step: unchanged
+        expect(formatStep(cal(0), -1)).toBe('10 Thaw, 1 BG');
+        expect(formatStep(cal(0), -21)).toBe('10 Thaw, 2 BG');
+        // pivot mid-year (step 5): the steps before it in that year are year 1, never 0
+        expect(formatStep(cal(5), 4)).toBe('5 Frost, 1 BG');
+        expect(formatStep(cal(5), 0)).toBe('1 Frost, 1 BG');
+        expect(formatStep(cal(5), -1)).toBe('10 Thaw, 2 BG');
+        expect(formatStep(cal(5), 5)).toBe('6 Frost, 1 AG');
+    });
+    it('equal starts: up over down, then the later era in the list', () => {
+        const base = { version: 1, grain: 'year' };
+        const ups = (a, b) => ({ ...base, eras: [{ name: a, start: 0, end: 10 }, { name: b, start: 0, end: 10 }] });
+        expect(eraForStep(ups('A', 'B'), 3).name).toBe('B');
+        expect(eraForStep(ups('B', 'A'), 3).name).toBe('A');
+        const downs = { ...base, eras: [{ name: 'D1', start: 10, end: 0, direction: 'down' }, { name: 'D2', start: 10, end: 0, direction: 'down' }] };
+        expect(eraForStep(downs, 3).name).toBe('D2');
+        const nulled = { ...base, eras: [{ name: 'Down', start: 0, end: -10, direction: 'down' }, { name: 'Up', start: 0, end: 10, direction: null }] };
+        expect(eraForStep(nulled, 0).name).toBe('Up');
+    });
     it('accepts every fixture', () => {
         for (const cfg of [KIRROWMOSS, VESSACH, DUNE, HARPTOS, SHIRE, MINIMAL]) {
             expect(readCalendarConfig(JSON.parse(JSON.stringify(cfg)))).not.toBe(null);
