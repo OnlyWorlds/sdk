@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.36.0] - 2026-10-20
+
+### Changed
+
+- **`fieldLabel`** keeps a word written all in capitals as written (`STR` reads "STR", `plan_B` "Plan B"), so a custom stat block reads the same in every tool (Temper, h63 #8197; Lantern and Atlas both call it). Schema field names are all lowercase, so no schema label changes.
+
 ## [4.35.0] - 2026-10-20
 
 ### Added

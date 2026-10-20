@@ -18,7 +18,10 @@ const ACRONYM_SET = new Set(FIELD_ACRONYMS);
 /**
  * A field name as a label: split on `_`, the first word capitalised, every other word
  * lowercase, an acronym in capitals wherever it falls ("image_url" → "Image URL",
- * "url" → "URL", "time_range_current" → "Time range current").
+ * "url" → "URL", "time_range_current" → "Time range current"). A word written all in
+ * capitals stays as written: a custom field named `STR` reads "STR"
+ * (Lantern's stat blocks; Temper, h63 #8197). Every schema field name is lowercase, so this
+ * reaches only names a person or tool chose.
  *
  * The name is taken as given: a tool that hides an extension prefix (`atlas_`, `x_`,
  * `shadow_`) drops it before calling this.
@@ -29,6 +32,7 @@ export function fieldLabel(name: string): string {
     .map((word, i) => {
       const lower = word.toLowerCase();
       if (ACRONYM_SET.has(lower)) return lower.toUpperCase();
+      if (/[A-Z]/.test(word) && word === word.toUpperCase()) return word;
       return i === 0 ? lower.charAt(0).toUpperCase() + lower.slice(1) : lower;
     })
     .join(' ');

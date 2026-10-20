@@ -13,7 +13,15 @@ test('fieldLabel: sentence case, acronyms kept wherever they fall', () => {
   assert.equal(fieldLabel('id_card'), 'ID card');
   assert.equal(fieldLabel('time_range_current'), 'Time range current');
   assert.equal(fieldLabel('name'), 'Name');
-  assert.equal(fieldLabel('Mixed_CASE_Name'), 'Mixed case name');
+  assert.equal(fieldLabel('Mixed_CASE_Name'), 'Mixed CASE name');
+});
+
+test('fieldLabel keeps a word written all in capitals', () => {
+  assert.equal(fieldLabel('STR'), 'STR');
+  assert.equal(fieldLabel('max_HP'), 'Max HP');
+  assert.equal(fieldLabel('STR2_bonus'), 'STR2 bonus');
+  assert.equal(fieldLabel('plan_B'), 'Plan B');
+  assert.equal(fieldLabel('Strength'), 'Strength');
 });
 
 test('fieldLabel takes the name as given: an extension prefix is the caller\'s to drop', () => {
