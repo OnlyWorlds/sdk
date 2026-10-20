@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.36.2] - 2026-10-20
+
+### Changed
+
+- `pinExpectation`'s doc comment: a legacy key that can write sends its PIN on every read of a world that has one, whether or not the world is open to read (keel #421 PR 105, the demo split). The `'required-for-private-reads'` literal keeps its name until 5.0, since renaming a literal in a published union is a type break. A demo-range key is kind `legacy` too and never needs a PIN. No code change.
+
 ## [4.36.1] - 2026-10-20
 
 ### Changed
