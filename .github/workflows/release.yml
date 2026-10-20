@@ -97,8 +97,9 @@ jobs:
           mkdir -p ../local ../remote
           npm pack --pack-destination ../local > /dev/null
           # `npm view` can see a version before `npm pack` can fetch it (4.11.0: ETARGET right after
-          # publish, the same bytes a minute later), so the fetch retries too
-          for i in 1 2 3 4 5 6 7 8 9 10; do
+          # publish, the same bytes a minute later), so the fetch retries too: up to 10 minutes,
+          # as the view does (4.42.1: the tarball 404'd for about 5 minutes after the version showed)
+          for i in $(seq 1 40); do
             (cd ../remote && npm pack "@onlyworlds/sdk@$VERSION" > /dev/null 2>&1) && break
             echo "not fetchable yet ($i)"; sleep 15
           done
