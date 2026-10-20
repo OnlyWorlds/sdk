@@ -14,7 +14,7 @@ export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './v2';
 export type { OwKeyKind, OwAuthErrorCode, OwSignInReason } from './v2';
 
 // Schema-generated types (the single ElementType) + wire shapes
-export { ELEMENT_TYPES, SPATIAL_TYPES, AGENT_DOORS, isAgentDoor } from './v2';
+export { ELEMENT_TYPES, SPATIAL_TYPES, AGENT_DOORS, isAgentDoor, isKnownOf } from './v2';
 export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,

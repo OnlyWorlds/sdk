@@ -7,6 +7,8 @@ Written for both humans and AI agents reading this package locally.
 
 **The shape rules** (v2 wire dialect): every element carries `id` (UUID), `name`, optional
 `description`/`supertype`/`subtype`/`image_url`, server-managed `type`/`created_at`/`updated_at`/`change_seq`/`created_by`,
+`known_of: true` only on a stub (an element a guest knows of through its Character's sheet:
+its other fields read unset and are not values; never write a stub back),
 and namespaced extension fields (`x_*` etc.) returned verbatim. Link fields use ONE bare
 name in both read and write (no `_ids` suffix). Single links are `UUID | null`; multi links
 are `UUID[]`. **Links are owned one-way**: the type listed below owns the field (e.g.

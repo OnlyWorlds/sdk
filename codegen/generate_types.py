@@ -10,7 +10,7 @@ of these YAMLs. TypeScript shapes are pinned to the v2 wire, not to Django colum
 single-links serialize as `string | null`, multi-links as `string[]`, ints as
 `number | null`, link fields use BARE schema names (no `_ids` suffix), and the seven
 server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
-changed_via) plus an extension
+changed_via), the stub marker `known_of` (present only on a stub), plus an extension
 index signature ride the shared base.
 
 Run:  python codegen/generate_types.py [--schema ../keel/schema]
@@ -104,7 +104,7 @@ __PROVENANCE__
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
 // `number | null`. Link fields use bare schema names (no `_ids` suffix). The seven
 // server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
-// changed_via) and the
+// changed_via), the stub marker `known_of` (present only on a stub) and the
 // extension index signature live on OwElementBase.
 
 __ELEMENT_BASE__
@@ -130,6 +130,8 @@ __ELEMENT_BASE__
 #   - Seven server-managed fields are ADDED. They exist on every wire body and in no
 #     element YAML: type, created_at, updated_at, change_seq, created_by, changed_by,
 #     changed_via.
+#   - One server-managed marker is ADDED that rides only some bodies: `known_of`
+#     (keel PR 113, B16), present and true only on a stub, never on a whole element.
 #   - Only Id and Name stay non-optional. Everything else is optional per
 #     rulings.yaml: nullable-by-default -- only `name` is truly required, and `id` is
 #     present on every body the server returns.
@@ -145,6 +147,8 @@ WIRE_ONLY_BASE_FIELDS = [
     # keel #299, D104: the last write's author and the door it came through.
     ("changed_by", "The membership whose write last changed this element (server-managed, read-only); null for the world's owner and for anything last changed before writes recorded it.", "string | null", False),
     ("changed_via", "The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, or `server` (keel's own writes). The first three are agent-made. Null for anything last changed before writes recorded it.", "'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | null", False),
+    # keel PR 113 (B16, keel #421 §7g): the sheet grant's stub marker.
+    ("known_of", "Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq; every other field reads unset (\"\", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf().", "true", False),
 ]
 BASE_KEY_TO_WIRE = {
     "Id": "id", "Name": "name", "Description": "description",
@@ -179,7 +183,8 @@ def render_element_base(schema_dir: Path) -> str:
         " *  pass-through fields (atlas_* / shadow_* / x_*) returned verbatim by the server.",
         " *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in",
         " *  bodies -- the key determines the world) and the seven server-managed fields are",
-        " *  added, since they ride every wire body and appear in no element YAML. */",
+        " *  added, since they ride every wire body and appear in no element YAML; `known_of`",
+        " *  rides only a stub. */",
         "export interface OwElementBase {",
     ]
     emitted: set[str] = set()
@@ -510,6 +515,8 @@ Written for both humans and AI agents reading this package locally.
 
 **The shape rules** (v2 wire dialect): every element carries `id` (UUID), `name`, optional
 `description`/`supertype`/`subtype`/`image_url`, server-managed `type`/`created_at`/`updated_at`/`change_seq`/`created_by`,
+`known_of: true` only on a stub (an element a guest knows of through its Character's sheet:
+its other fields read unset and are not values; never write a stub back),
 and namespaced extension fields (`x_*` etc.) returned verbatim. Link fields use ONE bare
 name in both read and write (no `_ids` suffix). Single links are `UUID | null`; multi links
 are `UUID[]`. **Links are owned one-way**: the type listed below owns the field (e.g.

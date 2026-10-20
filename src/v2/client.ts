@@ -147,6 +147,7 @@ export class OwV2Client {
    * `null` are accepted and stored as `''` (nameless Markers exist).
    */
   async create(type: ElementType | string, element: OwElement | Record<string, unknown>, opts: { idempotencyKey?: string } = {}): Promise<OwElement> {
+    refuseKnownOf(element, 'create');
     const body = sanitizePayload(element);
     if (body.id === undefined || body.id === null || body.id === '') {
       body.id = opts.idempotencyKey ? keyedId(opts.idempotencyKey, 0) : mintUuid();
@@ -158,8 +159,13 @@ export class OwV2Client {
     }) as Promise<OwElement>;
   }
 
-  /** PUT /{type}/{id}/ -- upsert-by-client-id. The local-first write primitive. */
+  /**
+   * PUT /{type}/{id}/ -- upsert-by-client-id. The local-first write primitive. A known-of
+   * stub (`known_of: true`, see isKnownOf) is a TypeError before sending, here and on every
+   * element write: a PUT of one would blank every field it does not keep.
+   */
   async upsert(type: ElementType | string, id: string, element: OwElement | Record<string, unknown>): Promise<OwElement> {
+    refuseKnownOf(element, 'upsert');
     return this.request('PUT', `/${type}/${id}/`, { write: true, body: sanitizePayload(element) }) as Promise<OwElement>;
   }
 
@@ -179,6 +185,7 @@ export class OwV2Client {
     partial: Record<string, unknown>,
     opts: { ifMatch?: number } = {},
   ): Promise<OwElement> {
+    refuseKnownOf(partial, 'patch');
     return this.request('PATCH', `/${type}/${id}/`, { write: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
@@ -227,6 +234,9 @@ export class OwV2Client {
    * fresh UUIDv7. Ids you supply are kept.
    */
   async bulk(items: OwBulkItem[], opts: { atomic?: boolean; idempotencyKey?: string } = {}): Promise<OwBulkResponse> {
+    // A stub anywhere refuses the whole call before sending (never a skipped slot:
+    // the response's slots line up with `items`).
+    items.forEach((it, index) => refuseKnownOf(it.element, `bulk: items[${index}]`));
     const body = {
       items: items.map((it, index) => {
         const element = sanitizePayload(it.element);
@@ -1031,19 +1041,37 @@ export class OwV2Client {
  * silently strip them and corrupt cross-tool state. Consumer-review-upheld
  * (2026-07-18, reaffirmed 2026-07-23).
  */
-const READ_ONLY_FIELDS = ['world', 'type', 'created_at', 'updated_at', 'change_seq'] as const;
+const READ_ONLY_FIELDS = ['world', 'type', 'created_at', 'updated_at', 'change_seq', 'known_of'] as const;
 
 /**
  * Strip fields the API rejects on write. WIRE-CORRECTED (fixtures P3a/P3b/P6):
  * beyond `world` (world identity comes from the key), the server 422s on
  * created_at / type / change_seq. Round-tripped read bodies carry all five, so
  * stripping (rather than throwing) keeps a read body directly writable.
+ * `known_of` (keel PR 113) is an unknown field to keel's write path (a 422) and
+ * is stripped too; a body where it is `true` never gets here (refuseKnownOf).
  */
 function sanitizePayload<T extends Record<string, unknown>>(payload: T): Record<string, unknown> {
   if (!payload || typeof payload !== 'object') return payload;
   const rest: Record<string, unknown> = { ...(payload as Record<string, unknown>) };
   for (const field of READ_ONLY_FIELDS) delete rest[field];
   return rest;
+}
+
+/**
+ * An element write of a known-of stub (keel PR 113, B16) is a TypeError before
+ * anything is sent. A stub's empty fields are not the element's values: stripping the
+ * marker and sending the rest would turn keel's 422 into a write that blanks the
+ * element (a PUT replaces it whole; a PATCH clears every field it names) for anyone
+ * whose key may write it, such as an owner pushing a copy a player made.
+ */
+function refuseKnownOf(payload: unknown, where: string): void {
+  if (payload && typeof payload === 'object' && (payload as Record<string, unknown>).known_of === true) {
+    throw new TypeError(
+      `${where}: this body is a known-of stub (known_of: true), not the element: its empty fields are not its values, ` +
+      'and writing it would blank them. Write from a whole copy, or send only the fields you mean to change.',
+    );
+  }
 }
 
 /**

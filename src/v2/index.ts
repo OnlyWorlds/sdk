@@ -11,7 +11,7 @@ export { OwApiError, OwPreconditionFailedError, OwNetworkError, OwSignInError, e
 export type { OwAuthErrorCode, OwSignInReason } from './errors';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './keys';
 export type { OwKeyKind } from './keys';
-export { ELEMENT_TYPES, SPATIAL_TYPES, AGENT_DOORS, isAgentDoor } from './types';
+export { ELEMENT_TYPES, SPATIAL_TYPES, AGENT_DOORS, isAgentDoor, isKnownOf } from './types';
 export {
   ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf, elementColor,
 } from './palette';

@@ -106,6 +106,11 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   `mcp`, `declared`, `api`, `v1`, `sync`, `server`), and a `/changes` delete carries
   `deleted_by` and `deleted_via`; `isAgentDoor(door)` is true for the first three. An agent
   seat's key is recorded as an agent without the option. Never set it in a tool people use.
+- A guest or player reads what its own Character's sheet links to as a **stub**, marked
+  `known_of: true` (`isKnownOf(el)`): only `id`, `type`, `name`, `description`, `supertype`,
+  `subtype`, `image_url` and the timestamps are real; every other field reads unset, and its
+  files are 404. Render it as known of, never merge its empties over a whole copy, and never
+  write it back: `upsert`, `patch`, `create` and `bulk` throw a TypeError on one before sending.
 - A string holding an unpaired surrogate (text cut mid-emoji) is a 422 naming the field.
   Slice strings by code point, not by UTF-16 unit.
 - Colour carries the element's FAMILY (`elementColor(type, mode)`); the icon

@@ -5,6 +5,23 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+The "known of" stub's client half (keel PR 113, B16; keel #421 §7g). Not live: keel PR 113 is not merged.
+
+### Added
+- **`known_of?: true`** on `OwElementBase` (generated; `SCHEMA.md` says it too): present, and true, only on a
+  stub, an element a guest or player reaches only through its own Character's sheet, one step out. A stub
+  keeps `id`, `type`, `name`, `description`, `supertype`, `subtype`, `image_url`, `created_at`, `updated_at`
+  and `change_seq`; every other field reads unset (`""`, `null`, `[]`), `created_by`, `changed_by` and
+  `changed_via` are null, it has no extension fields, and its files are 404. For Lantern and Atlas, which
+  render stubs (Temper).
+- **`isKnownOf(el)`**: true only for `known_of: true`; absent or anything else is a whole element.
+
+### Changed
+- **A stub is never written**: `upsert`, `patch`, `create` and `bulk` throw a `TypeError` before sending a
+  body with `known_of: true` (`bulk` names the item, and sends none of the batch). Stripping the marker would
+  turn keel's 422 into a write that blanks the element for any key that may write it (an owner pushing a
+  player's copy). `known_of` joins the strip list, so any other value of it is never sent.
+
 ## [4.39.0] - 2026-10-20
 
 The party link (keel #422 PR 2, keel PR 110), live in production since 2026-10-20 13:15.

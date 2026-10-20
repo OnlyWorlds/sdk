@@ -105,6 +105,49 @@ test('sanitizePayload strips world/type/created_at/updated_at/change_seq on patc
   }
 });
 
+// -- known_of (keel PR 113, B16): never sent; a stub is never written ----------
+
+const WHOLE_READ = {
+  type: 'character', id: 'x', name: 'Dev', description: 'Dev desc', physicality: 'tall',
+  created_at: '2026-10-20T00:00:00Z', updated_at: '2026-10-20T00:00:00Z', change_seq: 9,
+  created_by: null, changed_by: null, changed_via: 'api', x_note: 'kept',
+};
+const STUB_READ = {
+  type: 'character', id: 'x', name: 'Dev', description: 'Dev desc', physicality: '', location: null,
+  friends: [], created_at: '2026-10-20T00:00:00Z', updated_at: '2026-10-20T00:00:00Z', change_seq: 9,
+  created_by: null, changed_by: null, changed_via: null, known_of: true,
+};
+
+test('a read body echoed into upsert, patch, create and bulk sends no known_of', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', name: 'Dev' } });
+  // A whole read body has none; a stray non-true marker is stripped like any read-only key.
+  for (const body of [WHOLE_READ, { ...WHOLE_READ, known_of: false }]) {
+    await client.upsert('character', 'x', body);
+    assert.equal('known_of' in lastBody(fetchImpl), false);
+    assert.equal(lastBody(fetchImpl).physicality, 'tall');
+    assert.equal(lastBody(fetchImpl).x_note, 'kept');
+    await client.patch('character', 'x', body);
+    assert.equal('known_of' in lastBody(fetchImpl), false);
+    await client.create('character', body);
+    assert.equal('known_of' in lastBody(fetchImpl), false);
+  }
+  const bulk = makeClient({ status: 200, body: FIX_P2a });
+  await bulk.client.bulk([{ type: 'character', element: { ...WHOLE_READ, known_of: false } }]);
+  assert.equal('known_of' in lastBody(bulk.fetchImpl).items[0].element, false);
+});
+
+test('a known-of stub is a TypeError on every element write, before anything is sent', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', name: 'Dev' } });
+  await assert.rejects(client.upsert('character', 'x', STUB_READ), TypeError);
+  await assert.rejects(client.patch('character', 'x', STUB_READ), TypeError);
+  await assert.rejects(client.create('character', STUB_READ), TypeError);
+  await assert.rejects(
+    client.bulk([{ type: 'character', element: WHOLE_READ }, { type: 'character', element: STUB_READ }]),
+    /items\[1\].*known-of stub/,
+  );
+  assert.equal(fetchImpl.calls.length, 0);
+});
+
 // -- bulk request shape -----------------------------------------------------
 
 test('bulk request wraps items[] and defaults atomic:false', async () => {
@@ -899,4 +942,12 @@ test('isAgentDoor: seat, mcp and declared are agent-made; the surfaces and null 
   assert.deepEqual([...AGENT_DOORS], ['seat', 'mcp', 'declared']);
   for (const d of ['seat', 'mcp', 'declared']) assert.equal(isAgentDoor(d), true, d);
   for (const d of ['api', 'v1', 'sync', 'server', null, undefined]) assert.equal(isAgentDoor(d), false, String(d));
+});
+
+test('isKnownOf: true only for known_of: true (keel PR 113); absent, false or anything else is whole', async () => {
+  const { isKnownOf } = await import('../dist/index.js');
+  assert.equal(isKnownOf({ id: 'x', name: 'Dev', known_of: true }), true);
+  for (const el of [{ id: 'x', name: 'Dev' }, { known_of: false }, { known_of: 'true' }, { known_of: 1 }, {}, null, undefined]) {
+    assert.equal(isKnownOf(el), false, JSON.stringify(el));
+  }
 });

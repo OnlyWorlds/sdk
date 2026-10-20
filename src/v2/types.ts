@@ -117,6 +117,20 @@ export function isAgentDoor(door: OwWriteDoor | null | undefined): boolean {
 }
 
 /**
+ * Whether an element body is a stub the reader only knows of (keel PR 113, B16; keel #421
+ * §7g): a guest or player reaches it only through its own Character's sheet, one step out.
+ * A stub keeps `id`, `type`, `name`, `description`, `supertype`, `subtype`, `image_url`,
+ * `created_at`, `updated_at` and `change_seq`; every other field reads unset (`""`, `null`,
+ * `[]`), `created_by`, `changed_by` and `changed_via` are null, it carries no extension
+ * fields, and its files answer 404. Those empties are not the element's values and not a
+ * deletion: never merge them over a whole copy, and never write a stub back (this client
+ * refuses to). True only for `known_of: true`; absent or anything else is a whole element.
+ */
+export function isKnownOf(element: { known_of?: unknown } | null | undefined): boolean {
+  return element != null && element.known_of === true;
+}
+
+/**
  * /changes response. Wire shape verified in keel source (core/changes.py) and
  * pinned here: {cursor, changes, has_more, head}.
  */
