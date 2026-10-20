@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.32.0-dist.23** — canonical schema **00.32.00**, published 2026-10-12.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.32.1-dist.26** — canonical schema **00.32.01**, published 2026-10-20.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -206,7 +206,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 
 ### Involves
 
-- `characters` (multi link → character) — Key characters relevant to the event
+- `characters` (multi link → character) — Characters who know about the event: they were present, aware of it, or involved in it
 - `objects` (multi link → object) — Objects relevant to the event
 - `locations` (multi link → location) — Locations relevant to the event
 - `species` (multi link → species) — Species relevant to the event

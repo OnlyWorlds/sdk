@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.38.0] - 2026-10-20
+
+Schema 00.32.01 (the Captain's word, h55 #8395): repinned to schema-dist v0.32.1-dist.26.
+
+### Changed
+- **An Event's `characters`** reads "Characters who know about the event: they were present, aware of it, or involved in it" (it read "Key characters relevant to the event"), in the generated doc comment and `SCHEMA.md`. No field, type or link changed.
+- **`ONLYWORLDS_VERSION`** is `'00.32.01'`. It is an `as const` export, so its literal type moves too, which is why this is a minor and not a patch.
+
 ## [4.37.0] - 2026-10-20
 
 The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked on staging with the mark on, 25 of 25.
