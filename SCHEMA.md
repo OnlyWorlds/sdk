@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.32.1-dist.28** — canonical schema **00.32.01**, published 2026-10-20.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.32.2-dist.29** — canonical schema **00.32.02**, published 2026-10-20.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -400,8 +400,8 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 
 - `story` (text) — Content of the narrative, as told or remembered
 - `consequences` (text) — Outcomes or legacy of the narrative
-- `start_date` (integer) — Date when the narrative begins, measured in world TIME units
-- `end_date` (integer) — Date when the narrative ends, measured in world TIME units
+- `start_date` (integer) — Date when the narrative is first told or recorded, measured in world TIME units; the span it recounts lives on its events
+- `end_date` (integer) — Date when the narrative stops being told, measured in world TIME units; empty while it is still told
 - `order` (integer) — Position of this narrative within a parent narrative's sequence
 - `parent_narrative` (single link → narrative) — Larger narrative that this narrative takes place in
 - `protagonist` (single link → character) — Primary character of the narrative

@@ -1,6 +1,6 @@
 # For AI agents using @onlyworlds/sdk
 
-**Current as of**: SDK **4.x** · schema-dist **v0.32.1-dist.28** (canonical 00.32.01).
+**Current as of**: SDK **4.x** · schema-dist **v0.32.2-dist.29** (canonical 00.32.02).
 This line is asserted by `codegen:check` in CI — if the pin moves and this file is not
 re-read against it, the check fails rather than letting this document rot quietly.
 

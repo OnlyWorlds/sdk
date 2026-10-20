@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.42.0] - 2026-10-20
+
+Schema 00.32.02 (Skeld, OW Council h58 #8811): repinned to schema-dist v0.32.2-dist.29.
+
+### Changed
+- **A Narrative's `start_date`** reads "Date when the narrative is first told or recorded, measured in world TIME units; the span it recounts lives on its events" (it read "Date when the narrative begins"), and **its `end_date`** reads "Date when the narrative stops being told, measured in world TIME units; empty while it is still told" (it read "Date when the narrative ends"), in the generated doc comments and `SCHEMA.md`. No field, type or link changed.
+- **`ONLYWORLDS_VERSION`** is `'00.32.02'`. It is an `as const` export, so its literal type moves too, which is why this is a minor and not a patch.
+
 ## [4.41.0] - 2026-10-20
 
 A known-of stub's public fields (keel PR 117, keel #448), live in production, and schema-dist v0.32.1-dist.28, which publishes them.

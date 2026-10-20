@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.32.1-dist.28
-//         commit          96c3ffa2edc6f7df6a9ac1a86606eacf7d8d89a4
-//         MANIFEST sha256 9ce11f0d15c9632c55aec0fb0cbfebf07600d282aec641de7ba8c160279b0515
-//         canonical 00.32.01, dist serial 28, published 2026-10-20
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.32.2-dist.29
+//         commit          106b5791249c4f4a3e13ac1640b9f5f82d9356ae
+//         MANIFEST sha256 d8fc5d942ab2ab64f1a0a88970fa3d4ba920c7144ee929b8fbb48c8f61fa715d
+//         canonical 00.32.02, dist serial 29, published 2026-10-20
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -64,7 +64,7 @@ export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective
 
 /** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned
  *  distribution's VERSION file (see the provenance block at the top of this file). */
-export const ONLYWORLDS_VERSION = '00.32.01' as const;
+export const ONLYWORLDS_VERSION = '00.32.02' as const;
 
 /** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */
 export type ElementFamily = 'agents' | 'world' | 'abstract' | 'temporal';
@@ -1449,9 +1449,9 @@ export interface NarrativeV2 extends OwElementBase {
   story?: string;
   /** Outcomes or legacy of the narrative */
   consequences?: string;
-  /** Date when the narrative begins, measured in world TIME units */
+  /** Date when the narrative is first told or recorded, measured in world TIME units; the span it recounts lives on its events */
   start_date: number | null;
-  /** Date when the narrative ends, measured in world TIME units */
+  /** Date when the narrative stops being told, measured in world TIME units; empty while it is still told */
   end_date: number | null;
   /** Position of this narrative within a parent narrative's sequence */
   order: number | null;
