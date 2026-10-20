@@ -18,10 +18,11 @@ earlier history lives in git log only.
   `epoch_reason` beside `epoch` on `OwChangesPage` and on `changesHead()`'s answer: why the epoch last moved.
 
 ### Changed
-- The resync instruction is the one rule (the Captain, 2026-10-20), no longer "replace the local copy": after a
+- The resync instruction adds the hidden mark's reasons to 4.36.1's keep (the Captain, 2026-10-20): after a
   409 `resync_required`, walk again from the start; reason `role` (the key's own role or membership moved):
   keep what the local copy holds that the walk no longer names; reason `view`, or a delete row with reason
-  `hidden`: drop it. A tool never empties a copy on its own. `isResyncRequired`'s comment and the `changes`,
+  `hidden`: drop it; no reason (keel's hidden mark off): keep it, a reset never empties a copy. A tool never
+  empties a copy on its own. `isResyncRequired`'s comment and the `changes`,
   `changesHead` and `OwChangesPage` comments say so.
 
 ## [4.36.2] - 2026-10-20
