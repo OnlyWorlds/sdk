@@ -436,6 +436,26 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { months: { names: ['a'], lengths: [1, 2] } } })).toBe(null);
         expect(readCalendarConfig({ version: 1, grain: 'day', eras: [{ name: 'X' }] })).toBe(null);
     });
+    // 4.42.1 (Quillon h58 #8917): a falsy non-list threw a TypeError; the profile's whole numbers and string names.
+    it('refuses a falsy eras or intercalary instead of throwing', () => {
+        for (const bad of [false, 0, '']) {
+            expect(readCalendarConfig({ version: 1, grain: 'day', eras: bad })).toBe(null);
+            expect(readCalendarConfig({ version: 1, grain: 'day', intercalary: bad })).toBe(null);
+        }
+    });
+    it('refuses what a step, being an integer, cannot be', () => {
+        const era = (e) => ({ version: 1, grain: 'year', eras: [{ name: 'A', start: 0, ...e }] });
+        expect(readCalendarConfig(era({}))).not.toBe(null);
+        expect(readCalendarConfig(era({ start: 0.5 }))).toBe(null);
+        expect(readCalendarConfig(era({ end: 10.5 }))).toBe(null);
+        expect(readCalendarConfig(era({ year_base: '1' }))).toBe(null);
+        expect(readCalendarConfig(era({ year_base: 2 }))).toBe(null);
+        expect(readCalendarConfig(era({ year_base: 0 }))).not.toBe(null);
+        const named = (months, week) => ({ version: 1, grain: 'day', bundles: { months: { names: months, lengths: [1, 1] }, ...(week ? { week } : {}) } });
+        expect(readCalendarConfig(named(['a', 'b']))).not.toBe(null);
+        expect(readCalendarConfig(named(['a', 2]))).toBe(null);
+        expect(readCalendarConfig(named(['a', 'b'], { length: 2, names: ['x', null] }))).toBe(null);
+    });
     it('accepts every fixture', () => {
         for (const cfg of [KIRROWMOSS, VESSACH, DUNE, HARPTOS, SHIRE, MINIMAL]) {
             expect(readCalendarConfig(JSON.parse(JSON.stringify(cfg)))).not.toBe(null);

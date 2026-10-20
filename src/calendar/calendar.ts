@@ -198,10 +198,16 @@ export function readCalendarConfig(value: unknown): CalendarConfig | null {
   // with semantic errors (overlaps) still formats via deterministic fallbacks.
   const months = cfg.bundles?.months;
   if (months && (!Array.isArray(months.names) || !Array.isArray(months.lengths)
-    || months.names.length !== months.lengths.length || months.names.length === 0)) return null;
-  if (cfg.eras && !Array.isArray(cfg.eras)) return null;
-  if (cfg.eras?.some((e) => typeof e?.name !== 'string' || !Number.isFinite(e?.start))) return null;
-  if (cfg.intercalary && (!Array.isArray(cfg.intercalary)
+    || months.names.length !== months.lengths.length || months.names.length === 0
+    || !months.names.every(isString))) return null;
+  // A present eras or intercalary that is not a list refuses, a falsy one too: `eras: false`
+  // threw a TypeError below before 4.42.1 (Quillon h58 #8917). A step is an integer, so an
+  // era's start and end are whole, and year_base is 0 or 1 (the profile, calendar.md).
+  if (cfg.eras != null && !Array.isArray(cfg.eras)) return null;
+  if (cfg.eras?.some((e) => typeof e?.name !== 'string' || !Number.isSafeInteger(e?.start)
+    || (e.end != null && !Number.isSafeInteger(e.end))
+    || (e.year_base != null && e.year_base !== 0 && e.year_base !== 1))) return null;
+  if (cfg.intercalary != null && (!Array.isArray(cfg.intercalary)
     || cfg.intercalary.some((i) => typeof i?.name !== 'string' || !Number.isInteger(i?.after_month)))) return null;
   // S367 critic K1: every divisor and step size must be a positive integer, or
   // the year arithmetic can loop forever. Values, not just shapes.
@@ -209,9 +215,13 @@ export function readCalendarConfig(value: unknown): CalendarConfig | null {
   const year = cfg.bundles?.year;
   if (year != null && !isPositiveInt(year.steps)) return null;
   const week = cfg.bundles?.week;
-  if (week != null && (!isPositiveInt(week.length) || !Array.isArray(week.names))) return null;
+  if (week != null && (!isPositiveInt(week.length) || !Array.isArray(week.names) || !week.names.every(isString))) return null;
   if (cfg.intercalary?.some((i) => i.every_years != null && !isPositiveInt(i.every_years))) return null;
   return cfg;
+}
+
+function isString(s: unknown): s is string {
+  return typeof s === 'string';
 }
 
 function isPositiveInt(n: unknown): n is number {

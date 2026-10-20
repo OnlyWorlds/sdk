@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.42.1] - 2026-10-20
+
+The calendar reader refuses what the `atlas_calendar` profile refuses (schema-dist `profiles/calendar.md`; Quillon's Unity read, OW Council h58 #8917).
+
+### Fixed
+- **`readCalendarValue` / `readCalendarConfig` no longer throw on a falsy `eras` or `intercalary`** (`false`, `0`, `""`): it threw a `TypeError` where the profile says a reader refuses and shows bare numbers. It now returns `null`.
+- **A step is an integer, so the reader now refuses** an era whose `start` or `end` is not a whole number, a `year_base` other than `0` or `1` (a string `"1"` printed as `"01"` before), and month or weekday names that are not strings. Atlas writes none of these; the Unity SDK refuses them the same way.
+
 ## [4.42.0] - 2026-10-20
 
 Schema 00.32.02 (Skeld, OW Council h58 #8811): repinned to schema-dist v0.32.2-dist.29.
