@@ -412,6 +412,14 @@ export interface OwJoinPreview {
   with_character: boolean | null;
   /** ISO 8601, UTC. */
   expires_at: string;
+  /** A table only (a player link that works 2 to 50 times, keel #422 PR 2): how many times it works. Absent on a link for one. */
+  max_uses?: number;
+  /** A table only: how many places are left. */
+  uses_left?: number;
+  /** A table only: true when the owner listed no Characters, so each player sends a `name` to redeemJoin and gets a fresh Character with it. */
+  name_required?: boolean;
+  /** A table only: the Characters a player may pick, in the owner's order; empty when `name_required`. `taken` while a live seat in the world plays it (a pick screen keeps the order and puts taken ones last). A Character hidden or deleted since the link was made is left out. */
+  characters?: Array<{ id: string; name: string; image_url: string | null; taken: boolean }>;
   [k: string]: unknown;
 }
 
@@ -434,13 +442,18 @@ export interface OwWorldLink {
   created_at: string;
   /** ISO 8601, UTC. */
   expires_at: string;
-  /** 0 or 1: a link works once. */
+  /** 0 or 1 for a link for one; a table's seats made, removed ones included (keel #422 PR 2). */
   uses: number;
+  /** A table is `pending` while `uses < max_uses` (and neither revoked nor expired), `used` once full. */
   status: 'pending' | 'used' | 'revoked' | 'expired';
   /** Whether the link shows the world's name and picture when it is pasted into a chat (keel #422): then the link is `/join/<world_id>#<code>`, else `/join#<code>`. Never on an agent link. */
   preview?: boolean;
-  /** A player link only: the Character the player reads as; null while a link for a fresh Character is unused. `name` is null if that Character was deleted (the redeem then makes a fresh one). */
+  /** A player link only: the Character the player reads as; null while a link for a fresh Character is unused, and always null on a table. `name` is null if that Character was deleted (the redeem then makes a fresh one). */
   character?: { id: string; name: string | null } | null;
+  /** A table only (a player link that works 2 to 50 times, keel #422 PR 2): how many times it works. Absent on a link for one. */
+  max_uses?: number;
+  /** A table only: the Characters its players may pick, in the owner's order; empty when each player gets a fresh Character named after them. `taken`: a live seat in the world plays it. `name` is null if the Character was deleted. */
+  characters?: Array<{ id: string; name: string | null; taken: boolean }>;
   [k: string]: unknown;
 }
 

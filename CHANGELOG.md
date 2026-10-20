@@ -5,6 +5,27 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.39.0] - 2026-10-20
+
+The party link (keel #422 PR 2, keel PR 110), live in production since 2026-10-20 13:15.
+
+### Added
+- The party link (keel #422 PR 2, keel PR 110; for Lantern's pick screen, Temper): one player link for a
+  table of players. `createWorldLink(worldId, { reader: 'player', maxUses, characters })`, sent as `max_uses`
+  and `characters`: 2 to 50 uses, each player picking one Character from the owner's list, in its order; no
+  list, each player names a fresh Character after themselves. A table takes no `character`. A link for one
+  sends what it sent before. `OwWorldLink` and `OwCreatedWorldLink` gain a table's `max_uses` and
+  `characters` (`{ id, name, taken }`); `uses` counts a table's seats. `OwJoinPreview` gains a table's
+  `max_uses`, `uses_left`, `name_required` and `characters` (`{ id, name, image_url, taken }`).
+  `redeemJoin(code, { character })` sends the pick; with `name_required`, `name` alone. A pick a live seat
+  already plays is 422 `character_taken` (`err.isCharacterTaken`); a pick off the list, hidden or deleted
+  since the link was made, or missing, is 422 `invalid_request` with param `character`
+  (`err.isCharacterInvalid`, true for that param only); a world with its 50 players is 422 `world_full` (`err.isWorldFull`, its own code at my ask, Skeld h29 #8394); the last place
+  lost to another player is the one 404 (`err.isNotFound`).
+
+### Changed
+- Repinned to schema-dist v0.32.1-dist.27: only `example/world-export.json` moved (its `schema_version` now 00.32.01, Skeld h29 #8455); no schema file, so no generated output changed.
+
 ## [4.38.0] - 2026-10-20
 
 Schema 00.32.01 (the Captain's word, h55 #8395): repinned to schema-dist v0.32.1-dist.26.

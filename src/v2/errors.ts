@@ -179,6 +179,28 @@ export class OwApiError extends Error {
     return this.status === 404 && this.code === 'not_found';
   }
 
+  /**
+   * redeemJoin on a table (keel #422 PR 2): the picked Character is one a live seat in the
+   * world already plays (422 `character_taken`, `param` character). Pick another from a fresh
+   * previewJoin, whose `characters` mark each `taken`. The code is not spent.
+   */
+  get isCharacterTaken(): boolean {
+    return this.status === 422 && this.code === 'character_taken';
+  }
+
+  /**
+   * The `character` sent was refused (422 `invalid_request`, `param` character). On redeemJoin
+   * at a table (keel #422 PR 2): the pick is off the link's list, hidden or deleted since the
+   * link was made, or missing, or sent to a table with no list (send `name` instead); one
+   * answer for all, so read previewJoin again and pick from its `characters`. The code is not
+   * spent. On createWorldLink: a `character` keel refused (not a Character of the world, a
+   * hidden one, or any `character` on a table). Never true for another param's 422, nor for
+   * `character_taken` (see isCharacterTaken).
+   */
+  get isCharacterInvalid(): boolean {
+    return this.status === 422 && this.code === 'invalid_request' && this.param === 'character';
+  }
+
   /** acceptJoin: the account is already a member of that world (409 `already_member`). The code is not spent. */
   get isAlreadyMember(): boolean {
     return this.status === 409 && this.code === 'already_member';

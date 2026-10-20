@@ -564,7 +564,9 @@ export class OwV2Client {
    * which world, in what role, and `reader` (`person`: accept it with acceptJoin;
    * `agent`: an AI agent redeems it at POST /join). Sends no credential, whatever key
    * this client holds. Every bad code (unknown, used, revoked, expired) is the same
-   * 404 `not_found` (`err.isNotFound`). `code` is the part of the link after `#`.
+   * 404 `not_found` (`err.isNotFound`). `code` is the part of the link after `#`. A table
+   * (keel #422 PR 2) adds `max_uses`, `uses_left`, `name_required` and `characters`, the
+   * pick screen's list; a link for one answers without them.
    */
   async previewJoin(code: string): Promise<OwJoinPreview> {
     return this.request('POST', '/join/preview', { auth: false, body: { code } }) as Promise<OwJoinPreview>;
@@ -580,11 +582,23 @@ export class OwV2Client {
    * Character's name or "Player" when left out) and `agentName` (an agent's, required for an
    * agent code). Every bad code is the same 404 `not_found`; a person's code is redeemed with
    * acceptJoin instead.
+   *
+   * A table (a player code whose preview carries `max_uses`, keel #422 PR 2) seats one player
+   * per redeem, until `uses_left` is 0. With a list, `character` is the player's pick, the `id`
+   * of one of the preview's `characters` not `taken`: a Character a live seat already plays is
+   * 422 `character_taken` (`err.isCharacterTaken`; pick another), one off the list, hidden or
+   * deleted since, or none sent, is 422 `invalid_request`, param `character`
+   * (`err.isCharacterInvalid`; read the preview again). With no list
+   * (`name_required`), send `name` and no `character`: the player's fresh Character takes the
+   * name (missing: 422, param `name`). A world with its 50 players is 422 `invalid_request`;
+   * the last place taken by someone else first is the one 404. A refusal spends nothing. A link
+   * for one ignores `character`.
    */
-  async redeemJoin(code: string, opts: { name?: string; agentName?: string } = {}): Promise<OwJoined> {
+  async redeemJoin(code: string, opts: { name?: string; agentName?: string; character?: string } = {}): Promise<OwJoined> {
     const body: Record<string, unknown> = { code };
     if (opts.name !== undefined) body.name = opts.name;
     if (opts.agentName !== undefined) body.agent_name = opts.agentName;
+    if (opts.character !== undefined) body.character = opts.character;
     return this.request('POST', '/join', { auth: false, body }) as Promise<OwJoined>;
   }
 
@@ -748,7 +762,14 @@ export class OwV2Client {
    * whoever opens the link first reads as it, until removed. `preview` (person and player links,
    * keel #422) to false: true puts the world's id in the link's path, so a chat that unfurls it
    * shows the world's name and picture (the code stays after `#`); true on an agent link is
-   * 422, param `preview`. 201 with the code, shown in this
+   * 422, param `preview`. `maxUses` (player links only, keel #422 PR 2) to 1, a link for one:
+   * 2 to 50 makes a table, one link that seats that many players, each picking one of
+   * `characters` (Character ids of the world, in the order a pick screen shows them; a hidden
+   * one is 422, param `characters`). `characters` empty or left out: each player names a fresh
+   * Character after themselves. A table takes no `character`, not even `new` (422, param
+   * `character`), and `characters` on a link for one is 422, even empty. A table counts once
+   * against the 50 pending invites; its seats count against the world's 50 players as each is
+   * made, so a full world refuses the pick, never the link. 201 with the code, shown in this
    * answer only. Owner only: anyone else, and a world that doesn't exist, gets 404
    * `not_found` (`err.isNotFound`). A world key is a TypeError before anything is sent.
    */
@@ -762,6 +783,8 @@ export class OwV2Client {
       withCharacter?: boolean;
       character?: string;
       preview?: boolean;
+      maxUses?: number;
+      characters?: string[];
     },
   ): Promise<OwCreatedWorldLink> {
     if (this.keyKind !== 'account') {
@@ -774,6 +797,8 @@ export class OwV2Client {
     if (opts.withCharacter !== undefined) body.with_character = opts.withCharacter;
     if (opts.character !== undefined) body.character = opts.character;
     if (opts.preview !== undefined) body.preview = opts.preview;
+    if (opts.maxUses !== undefined) body.max_uses = opts.maxUses;
+    if (opts.characters !== undefined) body.characters = opts.characters;
     return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/links`, { body }) as Promise<OwCreatedWorldLink>;
   }
 
