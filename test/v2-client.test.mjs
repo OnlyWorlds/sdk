@@ -294,6 +294,28 @@ test('409 resync_required is isResyncRequired (the guest feed reset), and not a 
   assert.equal(other.isResyncRequired, false);
 });
 
+test('resyncReason reads the 409 envelope\'s reason (keel #421), and is undefined without one or on another error', async () => {
+  for (const reason of ['role', 'view']) {
+    const body = envelope('invalid_request', 'resync_required');
+    body.error.reason = reason;
+    const err = await thrown({ status: 409, body }, (c) => c.changes({ since: '12:abc:3' }));
+    assert.equal(err.isResyncRequired, true);
+    assert.equal(err.resyncReason, reason);
+  }
+  const plain = await thrown({ status: 409, body: envelope('invalid_request', 'resync_required') },
+    (c) => c.changes({ since: '12:abc' }));
+  assert.equal(plain.isResyncRequired, true);
+  assert.equal(plain.resyncReason, undefined);
+  const odd = envelope('invalid_request', 'resync_required');
+  odd.error.reason = 'something';
+  const unknown = await thrown({ status: 409, body: odd }, (c) => c.changes({ since: '12:abc' }));
+  assert.equal(unknown.resyncReason, undefined);
+  const otherBody = envelope('invalid_request', 'id_conflict');
+  otherBody.error.reason = 'role';
+  const other = await thrown({ status: 409, body: otherBody }, (c) => c.create('character', { name: 'K' }));
+  assert.equal(other.resyncReason, undefined);
+});
+
 // -- If-Match: the PATCH precondition (keel #210, c1d5d2a) ---------------------
 
 const FIX_412 = {
@@ -798,6 +820,14 @@ test('changesHead: a guest\'s epoch-bearing cursor passes through verbatim', asy
 test('changesHead: a keel from before the epoch field still answers, epoch null', async () => {
   const { client } = makeClient({ body: { cursor: 7, changes: [], has_more: false, head: 7 } });
   assert.deepEqual(await client.changesHead(), { head: 7, cursor: '7', epoch: null });
+});
+
+test('changesHead: epoch_reason passes through when keel sends it (keel #421, hidden mark on)', async () => {
+  const c = '4021:ffffffff-ffff-ffff-ffff-ffffffffffff:3';
+  const { client } = makeClient({ body: { cursor: c, changes: [], has_more: false, head: 4021, epoch: 3, epoch_reason: 'role' } });
+  assert.deepEqual(await client.changesHead(), { head: 4021, cursor: c, epoch: 3, epoch_reason: 'role' });
+  const owner = makeClient({ body: { cursor: 7, changes: [], has_more: false, head: 7, epoch: null, epoch_reason: null } });
+  assert.deepEqual(await owner.client.changesHead(), { head: 7, cursor: '7', epoch: null, epoch_reason: null });
 });
 
 test('changesAll: pages to the tail, yields in order, returns the last page cursor, head and epoch', async () => {

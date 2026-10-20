@@ -9,6 +9,8 @@
  * surfaced on the thrown error.
  */
 
+import type { OwResyncReason } from './types';
+
 /**
  * Auth codes are distinguishable by design; client recovery UX differs per code.
  * `world_gone` is RESERVED: keel's spec promises it but the server never emits it (a deleted
@@ -102,12 +104,30 @@ export class OwApiError extends Error {
    * `/changes` refused the cursor (409 `resync_required`): what this key may see changed
    * (a guest's slice moved; an element hidden from a contributor was unhidden; the key's role
    * moved to or from guest or contributor, whose cursors have other shapes; keel #421). Drop
-   * the stored cursor, walk again from the start, and keep what the local copy holds that the
-   * new walk does not name: a reset never empties a copy (keel PR 104, the Captain's ruling:
-   * sharing is forward-only).
+   * the stored cursor and walk again from the start. What to do with what the local copy holds
+   * that the new walk does not name is `resyncReason`'s: `role`, keep it; `view`, drop it.
+   * Without a reason (keel's hidden mark off), keep it: a reset never empties a copy (keel PR
+   * 104, the Captain's ruling: sharing is forward-only). Never empty the copy on your own.
    */
   get isResyncRequired(): boolean {
     return this.status === 409 && this.code === 'resync_required';
+  }
+
+  /**
+   * Why `/changes` refused the cursor, from the 409 `resync_required` envelope's `reason`
+   * (keel #421, only while keel's hidden mark is on): `role` (this key's own role or
+   * membership moved: keep what the local copy holds that the new walk does not name; it is
+   * out of view now, not gone) or `view` (something left this key's view: a delete, a hide, an
+   * unhide, a Character change; drop what the new walk does not name). When both happened
+   * since the cursor, keel says `role`. Undefined for any other error, or when keel sends no
+   * reason.
+   */
+  get resyncReason(): OwResyncReason | undefined {
+    if (!this.isResyncRequired) return undefined;
+    const env = this.detail && typeof this.detail === 'object' ? (this.detail as { error?: unknown }) : undefined;
+    const nested = env?.error && typeof env.error === 'object' ? (env.error as { reason?: unknown }) : undefined;
+    const reason = nested?.reason;
+    return reason === 'role' || reason === 'view' ? reason : undefined;
   }
 
   /** keel's admission control turned the request away (503 `server_busy`); see retryAfter. */
@@ -291,13 +311,14 @@ export class OwSignInError extends Error {
   }
 }
 
-/** The live wire error envelope: error.{type, code, message, param?, doc_url?}. */
+/** The live wire error envelope: error.{type, code, message, param?, doc_url?, reason?}. */
 interface OwErrorBody {
   type?: string;
   code?: string;
   message?: string;
   param?: string | null;
   doc_url?: string;
+  reason?: string;
 }
 
 interface EnvelopeShape {

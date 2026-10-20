@@ -138,7 +138,25 @@ export interface OwChangesPage {
    * walk again on either move. Compare it, never read it out of the cursor (keel, 2026-10-12).
    */
   epoch: number | null;
+  /**
+   * Why `epoch` last moved (keel #421, only while keel's hidden mark is on; null when `epoch` is
+   * null): `role` (this key's own role or membership moved: keep what the local copy holds that a
+   * walk from the start no longer names) or `view` (something left its view: drop it; also `view`
+   * for an epoch that never moved). It names the last move only: when the epoch moved more than
+   * once since the one you applied, walk with your cursor and read the 409's
+   * `reason` (`err.resyncReason`), which covers every move since it. Never empty a copy on your own.
+   */
+  epoch_reason?: OwResyncReason | null;
 }
+
+/**
+ * Why a key's view restarted (keel #421, only while keel's hidden mark is on): on a 409
+ * `resync_required` as the envelope's `reason`, on a /changes page and the head as `epoch_reason`.
+ * `role`: the key's own role or membership moved; keep what the new walk does not name (it is out
+ * of view now, not gone). `view`: something left its view (a delete, a hide, an unhide, a
+ * Character change); drop what the new walk does not name. Both since the cursor: `role`.
+ */
+export type OwResyncReason = 'role' | 'view';
 
 export interface OwBulkItem {
   type: ElementType | string;
@@ -170,6 +188,8 @@ export interface OwErrorBody {
   message?: string;
   param?: string | null;
   doc_url?: string;
+  /** On a 409 `resync_required` only, while keel's hidden mark is on: why (see {@link OwResyncReason}). */
+  reason?: OwResyncReason;
 }
 
 /**

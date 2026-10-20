@@ -13,6 +13,16 @@ earlier history lives in git log only.
   member (a membership id), as a Character's guest (a Character id) or as the public (`'public'`). A member key
   gets 403 `view_as_owner_only` (`err.isViewAsOwnerOnly`); an element hidden from that reader is 404, never 410;
   an unknown value is 422. Until keel's hidden mark is on, keel answers 422 (an unknown parameter).
+- `err.resyncReason` (`'role'` | `'view'` | `undefined`) and `OwResyncReason`: why `/changes` answered 409
+  `resync_required`, from the envelope's `reason` (keel #421, keel PR 103; only while keel's hidden mark is on).
+  `epoch_reason` beside `epoch` on `OwChangesPage` and on `changesHead()`'s answer: why the epoch last moved.
+
+### Changed
+- The resync instruction is the one rule (the Captain, 2026-10-20), no longer "replace the local copy": after a
+  409 `resync_required`, walk again from the start; reason `role` (the key's own role or membership moved):
+  keep what the local copy holds that the walk no longer names; reason `view`, or a delete row with reason
+  `hidden`: drop it. A tool never empties a copy on its own. `isResyncRequired`'s comment and the `changes`,
+  `changesHead` and `OwChangesPage` comments say so.
 
 ## [4.36.2] - 2026-10-20
 

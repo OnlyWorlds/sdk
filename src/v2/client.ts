@@ -18,6 +18,7 @@ import type {
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
   OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
+  OwResyncReason,
 } from './types';
 import { keyedId } from './keyed-id';
 import { OwApiError, OwNetworkError, OwSignInError, errorFromResponse, parseErrorEnvelope, parseRetryAfter } from './errors';
@@ -253,8 +254,10 @@ export class OwV2Client {
    * Zero/absent cursor = full export (byte-aligned with the Folder Format).
    * Reset rule: a 409 `resync_required` (err.isResyncRequired) means the key's
    * view changed (a guest's slice, an element unhidden from a contributor, or its role): drop
-   * the cursor, walk from zero, and keep what the local copy holds that the new walk does not
-   * name (keel's own words; sharing is forward-only).
+   * the cursor and walk from zero. For what the local copy holds that the walk no longer names,
+   * read err.resyncReason (keel #421, while keel's hidden mark is on): `role`, keep it; `view`,
+   * drop it (as for a delete row with reason `hidden`). Without a reason, keep it (keel's own
+   * words since PR 104; sharing is forward-only). Never empty a copy on your own.
    * Citizenship: heaviest route on the platform; default page size is polite.
    * keel sends the cursor of a page at the head as a number (an empty page, for a key
    * whose cursor carries no epoch); it is handed back as a string, like every cursor here.
@@ -273,12 +276,17 @@ export class OwV2Client {
    * poll's, so a missed tick never drops a change) and walk changesAll only when it moved;
    * a head below yours means the server rewound: walk again from zero. `epoch` is a
    * guest's or a contributor's view epoch (null for other keys): it can move with `head` unchanged, so walk on
-   * either move. keel returns the owner's cursor as a number; it is handed back as a
+   * either move. `epoch_reason` (keel #421, while keel's hidden mark is on; absent otherwise)
+   * says why the epoch last moved, `role` or `view` (see OwChangesPage.epoch_reason).
+   * keel returns the owner's cursor as a number; it is handed back as a
    * string, like every cursor here.
    */
-  async changesHead(): Promise<{ head: number; cursor: string; epoch: number | null }> {
-    const page = await this.request('GET', '/changes/', { query: buildQuery({ head: 'true' }) }) as { head: number; cursor: string | number; epoch?: number | null };
-    return { head: page.head, cursor: String(page.cursor), epoch: page.epoch ?? null };
+  async changesHead(): Promise<{ head: number; cursor: string; epoch: number | null; epoch_reason?: OwResyncReason | null }> {
+    const page = await this.request('GET', '/changes/', { query: buildQuery({ head: 'true' }) }) as { head: number; cursor: string | number; epoch?: number | null; epoch_reason?: OwResyncReason | null };
+    const out: { head: number; cursor: string; epoch: number | null; epoch_reason?: OwResyncReason | null } =
+      { head: page.head, cursor: String(page.cursor), epoch: page.epoch ?? null };
+    if (page.epoch_reason !== undefined) out.epoch_reason = page.epoch_reason;
+    return out;
   }
 
   /**
