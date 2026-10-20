@@ -39,6 +39,8 @@ test('createWorldLink: each option in keel\'s spelling', async () => {
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
   await c.createWorldLink('w1', { reader: 'agent', role: 'guest', days: 30, inviterName: 'Titus', withCharacter: false });
   assert.deepEqual(JSON.parse(f.calls[0].init.body), { reader: 'agent', role: 'guest', days: 30, inviter_name: 'Titus', with_character: false });
+  await c.createWorldLink('w1', { reader: 'player', preview: true });
+  assert.deepEqual(JSON.parse(f.calls[1].init.body), { reader: 'player', preview: true });
 });
 
 test('listWorldLinks: GET, the rows unwrapped from { data }', async () => {

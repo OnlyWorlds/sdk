@@ -406,6 +406,8 @@ export interface OwWorldLink {
   /** 0 or 1: a link works once. */
   uses: number;
   status: 'pending' | 'used' | 'revoked' | 'expired';
+  /** Whether the link shows the world's name and picture when it is pasted into a chat (keel #422): then the link is `/join/<world_id>#<code>`, else `/join#<code>`. Never on an agent link. */
+  preview?: boolean;
   /** A player link only: the Character the player reads as; null while a link for a fresh Character is unused. `name` is null if that Character was deleted (the redeem then makes a fresh one). */
   character?: { id: string; name: string | null } | null;
   [k: string]: unknown;
@@ -415,7 +417,7 @@ export interface OwWorldLink {
 export interface OwCreatedWorldLink extends OwWorldLink {
   /** The `ow_j_` join code. Shown once; it can never be read again. */
   code: string;
-  /** The invite link: the /join page with the code after `#`. */
+  /** The invite link: the /join page (`/join/<world_id>` when `preview` is on) with the code after `#`. */
   link: string;
   /** The one line to send: who invites, to which world, and the link. */
   line: string;

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.35.0] - 2026-10-20
+
+### Added
+
+- **`createWorldLink(worldId, { preview })`** and `preview` on `OwWorldLink` (keel #422 PR 1, live 2026-10-20): a person or player link with `preview: true` is `/join/<world_id>#<code>`, so a chat that unfurls it shows the world's name and picture; the code stays in the fragment. Absent means off, as keel rules for the API; `true` on an agent link is 422, param `preview`. The wire gate failed on production's document until this release.
+
 ## [4.34.0] - 2026-10-20
 
 ### Added

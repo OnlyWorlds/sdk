@@ -732,7 +732,10 @@ export class OwV2Client {
    * redeemJoin for a read key, keel #353); `role`, when left out, is keel's default: guest for a
    * person link, contributor for an agent link (a player link is guest, and refuses any other), `days` (1, 7 or 30) to 7; `withCharacter` (agent links
    * only) to true; `character` (player links only) a Character's id or `new` (the default):
-   * whoever opens the link first reads as it, until removed. 201 with the code, shown in this
+   * whoever opens the link first reads as it, until removed. `preview` (person and player links,
+   * keel #422) to false: true puts the world's id in the link's path, so a chat that unfurls it
+   * shows the world's name and picture (the code stays after `#`); true on an agent link is
+   * 422, param `preview`. 201 with the code, shown in this
    * answer only. Owner only: anyone else, and a world that doesn't exist, gets 404
    * `not_found` (`err.isNotFound`). A world key is a TypeError before anything is sent.
    */
@@ -745,6 +748,7 @@ export class OwV2Client {
       inviterName?: string;
       withCharacter?: boolean;
       character?: string;
+      preview?: boolean;
     },
   ): Promise<OwCreatedWorldLink> {
     if (this.keyKind !== 'account') {
@@ -756,6 +760,7 @@ export class OwV2Client {
     if (opts.inviterName !== undefined) body.inviter_name = opts.inviterName;
     if (opts.withCharacter !== undefined) body.with_character = opts.withCharacter;
     if (opts.character !== undefined) body.character = opts.character;
+    if (opts.preview !== undefined) body.preview = opts.preview;
     return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/links`, { body }) as Promise<OwCreatedWorldLink>;
   }
 
