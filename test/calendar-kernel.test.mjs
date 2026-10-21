@@ -484,6 +484,17 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
             }
         }
     });
+    // 4.42.4: a typed era names the date's era (Temper h58 #9304).
+    it('a date the typed era does not hold is refused, not read in another era', () => {
+        const cfg = { version: 1, grain: 'day', bundles: { months: { names: ['Frost', 'Thaw'], lengths: [10, 10] } }, eras: [
+            { name: 'Before Gate', abbrev: 'BG', start: 5, direction: 'down' }, { name: 'After Gate', abbrev: 'AG', start: 5 }] };
+        // year 1 BG holds 1 to 5 Frost only; the absolute reading landed in AG (step 39) before
+        expect(isParseError(parseDate(cfg, '10 Thaw, 1 BG'))).toBe(true);
+        // there is no year 0 BG; the absolute reading landed on 3 Frost, 1 BG (step 2) before
+        expect(isParseError(parseDate(cfg, '3 Frost, 0 BG'))).toBe(true);
+        expect(parseDate(cfg, '3 Frost, 1 BG').step).toBe(2);
+        expect(parseDate(cfg, '10 Thaw, 1 AG').step).toBe(19);
+    });
     it('equal starts: up over down, then the later era in the list', () => {
         const base = { version: 1, grain: 'year' };
         const ups = (a, b) => ({ ...base, eras: [{ name: a, start: 0, end: 10 }, { name: b, start: 0, end: 10 }] });

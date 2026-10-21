@@ -753,7 +753,15 @@ export function parseDate(cfg: CalendarConfig, input: string, opts: ParseOptions
   const viaEra = resolveInYear(absYearForEraYear(cfg, target, year));
   if (isParseError(viaEra)) return viaEra;
   if (eraForStep(cfg, viaEra.step) === target) return viaEra;
-  return resolveInYear(year);
+  const viaAbs = resolveInYear(year);
+  // A typed era names the date's era: an absolute reading that lands in an era
+  // is a date the input never named ("10 Thaw, 1 BG" read as "10 Thaw, 2 AG"
+  // when year 1 BG holds only 1 to 5 Frost). Refused; the fallback stays for a
+  // step in no era, where format prints the absolute year (4.42.4; Temper h58 #9304).
+  if (era && !isParseError(viaAbs) && eraForStep(cfg, viaAbs.step) !== null) {
+    return { error: `not a date in ${era.name}` };
+  }
+  return viaAbs;
 }
 
 export function isParseError(r: ParseResult | ParseError): r is ParseError {

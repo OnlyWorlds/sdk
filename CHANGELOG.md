@@ -5,6 +5,11 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.42.4] - 2026-10-21
+
+### Fixed
+- **`parseDate` refuses a date the typed era does not hold**, rather than reading its number as an absolute year in another era. With a down era Before Gate turning on 6 Frost, "10 Thaw, 1 BG" read as step 39 ("10 Thaw, 2 AG") and "3 Frost, 0 BG" as "3 Frost, 1 BG"; both now answer `not a date in Before Gate`. The absolute reading stays for a step in no era, where `formatStep` prints the absolute year. No date `formatStep` prints changes how it parses: 20,826 round trips over the profile fixture's calendars read the same before and after. Found by Temper in Atlas 1.67.1 (OW Council h58 #9304).
+
 ## [4.42.3] - 2026-10-21
 
 ### Fixed
