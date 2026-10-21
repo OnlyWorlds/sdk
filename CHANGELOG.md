@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.43.0] - 2026-10-22
+
+### Added
+- `adopt(type, id, member)`: change who made an element, `POST /{type}/{id}/adopt` with `{member}` (keel #427, D141, live 2026-10-22 00:43). `member` is a membership id of the world or `'owner'` (`created_by` null). The owner's key or a co-builder's with its PIN; a contributor's is 403 `not_author` (`isNotAuthor`). Returns the updated element; the write takes a new `change_seq` and the feed carries the element with its new `created_by`.
+- `createWorldLink`'s `maxUses` is documented for person links too (keel #390, D140, live the same hour): 2 to 50 lets in that many accounts, each joining once with the link's role. The client sent it already; the comment said player links only.
+
 ## [4.42.4] - 2026-10-21
 
 ### Fixed

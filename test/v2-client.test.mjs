@@ -400,6 +400,22 @@ test('patch with ifMatch sends If-Match as a quoted change_seq; without it, no h
   assert.equal('If-Match' in fetchImpl.calls.at(-1).init.headers, false);
 });
 
+test('adopt posts {member} to /{type}/{id}/adopt and returns the element (keel #427)', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', type: 'character', created_by: 'm1', change_seq: 9 } });
+  const el = await client.adopt('character', 'x', 'm1');
+  const call = fetchImpl.calls.at(-1);
+  assert.equal(call.init.method, 'POST');
+  assert.ok(call.url.endsWith('/character/x/adopt'), call.url);
+  assert.deepEqual(JSON.parse(call.init.body), { member: 'm1' });
+  assert.equal(el.created_by, 'm1');
+  await client.adopt('character', 'x', 'owner');
+  assert.deepEqual(lastBody(fetchImpl), { member: 'owner' });
+  for (const bad of ['', null, undefined, 4]) {
+    await assert.rejects(client.adopt('character', 'x', bad), TypeError);
+  }
+  assert.equal(fetchImpl.calls.length, 2);
+});
+
 test('editLinks with ifMatch sends If-Match too', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', change_seq: 45 } });
   await client.editLinks('character', 'x', 'species', { add: ['y'] }, { ifMatch: 7 });

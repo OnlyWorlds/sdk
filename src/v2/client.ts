@@ -215,6 +215,23 @@ export class OwV2Client {
     return this.request('POST', `/${type}/${id}/links/${field}`, { write: true, body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
+  /**
+   * POST /{type}/{id}/adopt with {member} -- change who made an element (keel #427, D141).
+   * `member` is a membership id of this world (a person or an AI seat, as `members()` lists
+   * them) or `'owner'`, which sets `created_by` to null. The world's owner key or a
+   * co-builder's (a person's or a seat's) with its PIN; a contributor's is 403 `not_author`
+   * (`err.isNotAuthor`), a member id the world lacks 404. Nothing else in the element changes,
+   * but the write stamps `changed_by` and `changed_via` and takes a new `change_seq`, so the
+   * feed carries the element with its new `created_by`. Returns the updated element. A
+   * contributor only changes what it created, so this hands it an element someone else made,
+   * or takes one back; when the element is hidden, or the member is a guest, the old and the
+   * new maker may each get a `view` reset on the feed.
+   */
+  async adopt(type: ElementType | string, id: string, member: string | 'owner'): Promise<OwElement> {
+    if (typeof member !== 'string' || member === '') throw new TypeError('adopt: member must be a membership id or "owner"');
+    return this.request('POST', `/${type}/${id}/adopt`, { write: true, body: { member } }) as Promise<OwElement>;
+  }
+
   // -- Bulk ----------------------------------------------------------------
 
   /**
@@ -772,8 +789,11 @@ export class OwV2Client {
    * whoever opens the link first reads as it, until removed. `preview` (person and player links,
    * keel #422) to false: true puts the world's id in the link's path, so a chat that unfurls it
    * shows the world's name and picture (the code stays after `#`); true on an agent link is
-   * 422, param `preview`. `maxUses` (player links only, keel #422 PR 2) to 1, a link for one:
-   * 2 to 50 makes a table, one link that seats that many players, each picking one of
+   * 422, param `preview`. `maxUses` (person and player links; an agent link takes none) to 1, a
+   * link for one. On a person link (keel #390, D140) 2 to 50 lets in that many accounts, each
+   * joining once with the link's role, until every use is taken, it expires or it is revoked;
+   * who already joined stays. On a player link (keel #422 PR 2) 2 to 50 makes a table, one
+   * link that seats that many players, each picking one of
    * `characters` (Character ids of the world, in the order a pick screen shows them; a hidden
    * one is 422, param `characters`). `characters` empty or left out: each player names a fresh
    * Character after themselves. A table takes no `character`, not even `new` (422, param
