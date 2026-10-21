@@ -5,6 +5,11 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.46.0] - 2026-10-22
+
+### Added
+- **Sign in with OnlyWorlds** (keel PR 154, live 2026-10-22 01:50; the handoff sheet §3): `signInWithOnlyWorlds({ clientId, redirectUri, resume, storage, navigate })` mints `state` and a PKCE S256 verifier, keeps them under the client id in `storage` (sessionStorage by default; required in Node), refuses a `redirectUri` that is not an `https:` string before sending, and sends the browser to `/signin/authorize`. `completeSignIn({ clientId, storage, url })` on the callback page checks `state` and the page, takes `code` and `state` out of the address bar, trades the code once at `POST /api/v2/auth/token` with no credential, and returns `OwSignInResult` (`token`, `account`, `resume`); the record is cleared either way and the SDK keeps no token. `OwSignInError` gains `invalid_grant` and `state_mismatch`. `pkceChallenge` and `base64url` exported.
+
 ## [4.45.0] - 2026-10-22
 
 ### Added

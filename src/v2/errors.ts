@@ -319,6 +319,8 @@ export class OwNetworkError extends Error {
  */
 export type OwSignInReason =
   | 'invalid_credentials'
+  | 'invalid_grant'
+  | 'state_mismatch'
   | 'email_unverified'
   | 'rate_limited'
   | 'offline'
