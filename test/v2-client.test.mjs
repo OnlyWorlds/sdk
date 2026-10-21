@@ -416,6 +416,25 @@ test('adopt posts {member} to /{type}/{id}/adopt and returns the element (keel #
   assert.equal(fetchImpl.calls.length, 2);
 });
 
+test('changes({ after }) sends the time as after beside since and limit; changesAll carries it on every page (keel #514)', async () => {
+  const pages = [
+    { status: 200, body: { cursor: '1:a', changes: [{ op: 'upsert', type: 'character', id: 'x', element: { id: 'x' } }], has_more: true, head: 2 } },
+    { status: 200, body: { cursor: '2:a', changes: [], has_more: false, head: 2 } },
+  ];
+  const { client, fetchImpl } = makeClient(() => pages.shift());
+  const rows = [];
+  for await (const op of client.changesAll(undefined, { after: '2026-10-21T09:00:00Z' })) rows.push(op);
+  assert.equal(rows.length, 1);
+  for (const call of fetchImpl.calls) {
+    const q = new URL(call.url).searchParams;
+    assert.equal(q.get('after'), '2026-10-21T09:00:00Z');
+  }
+  assert.equal(new URL(fetchImpl.calls[1].url).searchParams.get('since'), '1:a');
+  const { client: c2, fetchImpl: f2 } = makeClient({ status: 200, body: { cursor: '3', changes: [], has_more: false, head: 3 } });
+  await c2.changes({ since: '2', limit: 5 });
+  assert.equal(new URL(f2.calls[0].url).searchParams.has('after'), false);
+});
+
 test('editLinks with ifMatch sends If-Match too', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', change_seq: 45 } });
   await client.editLinks('character', 'x', 'species', { add: ['y'] }, { ifMatch: 7 });

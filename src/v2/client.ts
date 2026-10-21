@@ -288,9 +288,15 @@ export class OwV2Client {
    * Citizenship: heaviest route on the platform; default page size is polite.
    * keel sends the cursor of a page at the head as a number (an empty page, for a key
    * whose cursor carries no epoch); it is handed back as a string, like every cursor here.
+   * `after` (keel #514, D142): only the changes made at or after an ISO 8601 time (`updated_at` of an
+   * upsert, `deleted_at` of a delete; no offset means UTC). A filter, not a position: the order,
+   * `cursor`, `has_more` and `head` are as without it, so to read the whole window pass the cursor
+   * back as `since` with the same `after` until `has_more` is false (`changesAll` does). "Since
+   * yesterday" by the clock; a kept cursor is still the exact "since my last visit". Anything
+   * that is not a date and time is a 422 naming `after`.
    */
-  async changes(opts: { since?: string; limit?: number } = {}): Promise<OwChangesPage> {
-    const query = buildQuery({ since: opts.since, limit: opts.limit ?? this.changesPageSize });
+  async changes(opts: { since?: string; limit?: number; after?: string } = {}): Promise<OwChangesPage> {
+    const query = buildQuery({ since: opts.since, limit: opts.limit ?? this.changesPageSize, after: opts.after });
     const page = await this.request('GET', '/changes/', { query }) as Omit<OwChangesPage, 'cursor'> & { cursor: string | number };
     return { ...page, cursor: String(page.cursor) };
   }
@@ -322,11 +328,11 @@ export class OwV2Client {
    * return value; persist it for the next incremental pull (with the last page's
    * `head` and `epoch`: the view epoch the walk ran under, for a guest or a contributor).
    */
-  async *changesAll(since?: string): AsyncGenerator<OwChange, { cursor: string; head: number; epoch: number | null }> {
+  async *changesAll(since?: string, opts: { after?: string } = {}): AsyncGenerator<OwChange, { cursor: string; head: number; epoch: number | null }> {
     let cursor = since;
     let page: OwChangesPage;
     do {
-      page = await this.changes({ since: cursor });
+      page = await this.changes({ since: cursor, after: opts.after });
       for (const op of page.changes) yield op;
       cursor = page.cursor;
     } while (page.has_more);

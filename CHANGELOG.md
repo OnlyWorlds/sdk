@@ -5,6 +5,11 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.44.0] - 2026-10-22
+
+### Added
+- `changes({ after })` and `changesAll(since, { after })`: keel #514 (PR 152, D142, live 2026-10-22 00:55), `GET /changes?after=<ISO time>` returns only the changes made at or after that time, a filter and not a position: order, `cursor`, `has_more` and `head` are unchanged, and the window is read by passing the cursor back as `since` with the same `after`. A bad value is a 422 naming `after`.
+
 ## [4.43.0] - 2026-10-22
 
 ### Added
