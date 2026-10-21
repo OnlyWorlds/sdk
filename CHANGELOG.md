@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.45.0] - 2026-10-22
+
+### Added
+- `hide(type, id)` and `unhide(type, id)`: the hidden mark's writes, `PUT` and `DELETE /{type}/{id}/hidden` (keel #421), for the parlor (Temper, h66 #9720). 204; the element's body and `change_seq` do not move.
+- `listAccountWorlds()` (`GET /account/worlds`, `OwAccountWorld[]`: owned and shared worlds with their keys by name and last four) and `mintWorldKey(worldId, { scope, name })` (`POST /account/worlds/{id}/keys`, `OwMintedKey` with the full key once), the two account routes Atlas and the parlor hand-rolled. Account token only.
+
 ## [4.44.0] - 2026-10-22
 
 ### Added

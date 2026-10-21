@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
-  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason,
 } from './types';
@@ -926,6 +926,55 @@ export class OwV2Client {
       throw new TypeError('removeSeat needs an account token (ow_a_)');
     }
     await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/seats/${encodeURIComponent(seatId)}`);
+  }
+
+  // -- The hidden mark (keel #421) ------------------------------------------
+
+  /**
+   * PUT /{type}/{id}/hidden -- hide an element (keel #421). The owner's key or a co-builder's
+   * (a person's or a seat's) with its PIN; hiding a hidden element again changes nothing, and
+   * the element's body and `change_seq` do not move. Hidden, it is seen only by the owner, the
+   * co-builders and the member who created it; to every other key it is a 404, left out of
+   * lists, search, counts and the link arrays that name it. 204, no body. No Idempotency-Key.
+   */
+  async hide(type: ElementType | string, id: string): Promise<void> {
+    await this.request('PUT', `/${type}/${id}/hidden`, { write: true, body: {}, allowEmpty: true });
+  }
+
+  /** DELETE /{type}/{id}/hidden -- clear the mark; an element that is not hidden stays as it is. 204. */
+  async unhide(type: ElementType | string, id: string): Promise<void> {
+    await this.request('DELETE', `/${type}/${id}/hidden`, { write: true, allowEmpty: true });
+  }
+
+  // -- The account's worlds and keys (account token) -----------------------
+
+  /**
+   * GET /account/worlds -- every world the account owns or is a member of, with its keys by
+   * name and last four (a member sees only their own keys on a shared world). Account token only.
+   */
+  async listAccountWorlds(): Promise<OwAccountWorld[]> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('listAccountWorlds needs an account token (ow_a_)');
+    }
+    const page = await this.request('GET', '/account/worlds') as { data: OwAccountWorld[] };
+    return page.data;
+  }
+
+  /**
+   * POST /account/worlds/{id}/keys -- mint a world key, `scope` `'write'` (the default) or
+   * `'read'`, `name` as the key list shows it (at most 255 characters). The full key comes back
+   * once in `key`. The owner mints a world key; a member mints their own member key, 409
+   * `pin_required` (`err.isPinRequired`) for a write key while the account has no PIN. Account
+   * token only; no Idempotency-Key.
+   */
+  async mintWorldKey(worldId: string, opts: { scope?: 'read' | 'write'; name?: string } = {}): Promise<OwMintedKey> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('mintWorldKey needs an account token (ow_a_)');
+    }
+    const body: Record<string, unknown> = {};
+    if (opts.scope !== undefined) body.scope = opts.scope;
+    if (opts.name !== undefined) body.name = opts.name;
+    return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/keys`, { write: true, body }) as Promise<OwMintedKey>;
   }
 
   // -- Ask your world (keel #159) -------------------------------------------

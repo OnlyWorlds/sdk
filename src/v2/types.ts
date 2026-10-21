@@ -528,6 +528,36 @@ export interface OwSignedIn {
 }
 
 /** One live agent seat, as GET /account/worlds/{id}/seats lists it (keel #355, D106). No key or secret. */
+/**
+ * One world of the account, from GET /account/worlds: owned (`role: 'owner'`) or shared
+ * (`'collaborator'`, with `member_role` the membership's role). Keys by name and last four only,
+ * never the key; on a shared world only the member's own keys (keel H8).
+ */
+export interface OwAccountWorld {
+  id: string;
+  name: string;
+  role: 'owner' | 'collaborator';
+  member_role?: OwMemberRole;
+  public_read: boolean;
+  keys: Array<{ name: string; last4: string; scope: 'READ' | 'WRITE'; revoked: boolean }>;
+}
+
+/**
+ * A world key as minted by POST /account/worlds/{id}/keys: the row the account's key list shows,
+ * plus the full key once in `key` (never shown again). A member's key carries its `member` label
+ * (keel D72); an owner's row has no such field.
+ */
+export interface OwMintedKey {
+  id: string;
+  name: string;
+  last4: string;
+  scope: 'READ' | 'WRITE';
+  last_used_at: string | null;
+  revoked: boolean;
+  key: string;
+  member?: Record<string, unknown>;
+}
+
 export interface OwSeat {
   /** The seat's membership id: removeSeat takes it, and GET /members names the seat by it. */
   id: string;

@@ -435,6 +435,36 @@ test('changes({ after }) sends the time as after beside since and limit; changes
   assert.equal(new URL(f2.calls[0].url).searchParams.has('after'), false);
 });
 
+test('hide and unhide send PUT and DELETE /{type}/{id}/hidden and take a 204 (keel #421)', async () => {
+  const { client, fetchImpl } = makeClient({ status: 204, body: undefined });
+  await client.hide('character', 'x');
+  await client.unhide('character', 'x');
+  const [h, u] = fetchImpl.calls;
+  assert.equal(h.init.method, 'PUT');
+  assert.ok(h.url.endsWith('/character/x/hidden'), h.url);
+  assert.deepEqual(JSON.parse(h.init.body), {});
+  assert.equal(u.init.method, 'DELETE');
+  assert.ok(u.url.endsWith('/character/x/hidden'), u.url);
+});
+
+test('listAccountWorlds and mintWorldKey need an account token and send the documented shapes', async () => {
+  const { client: w } = makeClient({ status: 200, body: { data: [] } });
+  await assert.rejects(w.listAccountWorlds(), TypeError);
+  await assert.rejects(w.mintWorldKey('w1'), TypeError);
+  const row = { id: 'w1', name: 'W', role: 'owner', public_read: false, keys: [{ name: 'k', last4: 'abcd', scope: 'WRITE', revoked: false }] };
+  const { client: a, fetchImpl: af } = makeClient({ status: 200, body: { data: [row] } }, { apiKey: 'ow_a_tok' });
+  assert.deepEqual(await a.listAccountWorlds(), [row]);
+  assert.ok(af.calls[0].url.endsWith('/account/worlds'), af.calls[0].url);
+  const minted = { id: 'k2', name: 'parlor', last4: 'zzzz', scope: 'READ', last_used_at: null, revoked: false, key: 'ow_r_full' };
+  const { client: b, fetchImpl: bf } = makeClient({ status: 201, body: minted }, { apiKey: 'ow_a_tok' });
+  assert.deepEqual(await b.mintWorldKey('w1', { scope: 'read', name: 'parlor' }), minted);
+  assert.equal(bf.calls[0].init.method, 'POST');
+  assert.ok(bf.calls[0].url.endsWith('/account/worlds/w1/keys'), bf.calls[0].url);
+  assert.deepEqual(JSON.parse(bf.calls[0].init.body), { scope: 'read', name: 'parlor' });
+  await b.mintWorldKey('w1');
+  assert.deepEqual(JSON.parse(bf.calls[1].init.body), {});
+});
+
 test('editLinks with ifMatch sends If-Match too', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', change_seq: 45 } });
   await client.editLinks('character', 'x', 'species', { add: ['y'] }, { ifMatch: 7 });
