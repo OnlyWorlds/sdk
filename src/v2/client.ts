@@ -600,7 +600,7 @@ export class OwV2Client {
    * deleted since, or none sent, is 422 `invalid_request`, param `character`
    * (`err.isCharacterInvalid`; read the preview again). With no list
    * (`name_required`), send `name` and no `character`: the player's fresh Character takes the
-   * name (missing: 422, param `name`). A world with its 50 players is 422 `invalid_request`;
+   * name (missing: 422, param `name`). A world with its 50 players is 422 `world_full` (`err.isWorldFull`);
    * the last place taken by someone else first is the one 404. A refusal spends nothing. A link
    * for one ignores `character`.
    */

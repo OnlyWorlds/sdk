@@ -470,6 +470,20 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         expect(formatStep(cal(5), -1)).toBe('10 Thaw, 2 BG');
         expect(formatStep(cal(5), 5)).toBe('6 Frost, 1 AG');
     });
+    // 4.42.3: parseDate is formatStep's inverse on both sides of a mid-year pivot (Quillon h58 #8962).
+    it('a mid-year down pivot round-trips through parseDate', () => {
+        const months = { names: ['Frost', 'Thaw'], lengths: [10, 10] };
+        for (const pivot of [0, 5]) {
+            const cfg = { version: 1, grain: 'day', bundles: { months }, eras: [
+                { name: 'Before', abbrev: 'BG', start: pivot, direction: 'down' }, { name: 'After', abbrev: 'AG', start: pivot }] };
+            for (let step = -55; step <= 65; step++) {
+                const r = parseDate(cfg, formatStep(cfg, step));
+                expect(isParseError(r)).toBe(false);
+                if (!isParseError(r))
+                    expect(r.step).toBe(step);
+            }
+        }
+    });
     it('equal starts: up over down, then the later era in the list', () => {
         const base = { version: 1, grain: 'year' };
         const ups = (a, b) => ({ ...base, eras: [{ name: a, start: 0, end: 10 }, { name: b, start: 0, end: 10 }] });

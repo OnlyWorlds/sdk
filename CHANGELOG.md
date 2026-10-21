@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.42.3] - 2026-10-21
+
+### Fixed
+- **`parseDate` reads a down era's dates back to the step they were written from, with a mid-year pivot too.** 4.42.2 moved the display count to the year holding the step before the pivot, and the parse kept the old count, so with a mid-year pivot every date before it parsed back one year early ("6 Frost, 4 BG" read 20 steps early on a 20-step year). Year-boundary pivots were never affected. Found by Quillon porting 4.42.2 to the Unity SDK and confirmed on this kernel by Temper (OW Council h58 #8962, #9111); a round-trip test now holds every step on both sides of the pivot.
+- `redeemJoin`'s doc names a full world's refusal as 422 `world_full` (`isWorldFull`), as keel answers since the party link; it said `invalid_request` (Quillon, OW Keel h29 #9038).
+
 ## [4.42.2] - 2026-10-20
 
 Two calendar reading fixes, found writing the `atlas_calendar` profile's conformance fixture (OW Council h58 #8943, #8946).

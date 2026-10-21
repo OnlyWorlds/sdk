@@ -613,7 +613,9 @@ function findEra(cfg: CalendarConfig, word: string): EraMatch | null {
 export function absYearForEraYear(cfg: CalendarConfig, era: CalendarEra, Y: number): number {
   if (era.restart === false) return Y;
   const base = era.year_base ?? 1;
-  if ((era.direction ?? 'up') === 'down') return absoluteYear(cfg, era.start) - (Y - base + 1);
+  // Down: the mirror of displayYear's count from the year holding the step before the pivot
+  // (4.42.3; with a mid-year pivot the old absoluteYear(start) - (Y - base + 1) read one year early).
+  if ((era.direction ?? 'up') === 'down') return absoluteYear(cfg, era.start - 1) - (Y - base);
   return absoluteYear(cfg, era.start) + (Y - base);
 }
 
