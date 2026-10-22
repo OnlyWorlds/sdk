@@ -27,7 +27,7 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Never send a `"world"` field in payloads — world identity comes from the API key (422 otherwise).
 - v2 link fields use ONE name both directions (no `_ids` suffix — that is v1 dialect only).
 - PATCH is destructive on sent fields; use `editLinks` (atomic add/remove) for relationships.
-- Offline or stale edits: pass `{ ifMatch: el.change_seq }` to `patch`/`editLinks` (since 4.9.0).
+- Offline or stale edits: pass `{ ifMatch: el.change_seq }` to `patch`/`editLinks` (since 4.9.0) and `delete` (since 4.61.0, keel #563).
   If the element moved, nothing is written and `OwPreconditionFailedError` (412) carries
   `current`; the server never merges, the client decides.
 - Polling: `changesHead()` (since 4.15.0) gives `{head, cursor, epoch, unchanged}` without a

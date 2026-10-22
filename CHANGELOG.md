@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.61.0] - 2026-10-22
+
+### Added
+
+- **`delete(type, id, { ifMatch })`** (keel #563, PR 183, live 2026-10-22 21:3x): `DELETE` reads `If-Match` exactly as `PATCH` does. With the element's `change_seq` as you read it, a delete of an element someone changed since is refused, `OwPreconditionFailedError` (412) with `current`, nothing deleted; on an element already gone it is the idempotent 204. Under a world's proposals switch a delete is never a proposal. The options object refuses an unknown key like every other.
+- Tests: the header sent and left out, the unknown option, the 412; each watched failing with the header dropped. The wire gate now reads from keel's document which Character operations take `If-Match` (it held a hand list of two and missed this one) and fails on 4.60.0.
+
 ## [4.60.0] - 2026-10-22
 
 ### Added

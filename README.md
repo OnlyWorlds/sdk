@@ -186,7 +186,7 @@ Edits to the world itself (its name, calendar, `public_read`) don't appear in th
 
 ### Only if unchanged
 
-A client that edits offline, or from a copy it has held a while, can ask for an update to land only if nobody changed the element since it was read: pass the `change_seq` you read as `ifMatch`, on `patch` or `editLinks`.
+A client that edits offline, or from a copy it has held a while, can ask for an update to land only if nobody changed the element since it was read: pass the `change_seq` you read as `ifMatch`, on `patch`, `editLinks` or `delete` (since 4.61.0: a delete of an element someone changed since you read it is refused, nothing deleted).
 
 ```typescript
 try {

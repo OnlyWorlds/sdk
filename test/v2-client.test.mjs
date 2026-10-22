@@ -513,6 +513,24 @@ test('editLinks with ifMatch sends If-Match too', async () => {
   assert.equal(fetchImpl.calls.at(-1).init.headers['If-Match'], '"7"');
 });
 
+test('delete with ifMatch sends If-Match (keel #563); without it, no header; an unknown option is a TypeError', async () => {
+  const { client, fetchImpl } = makeClient({ status: 204 });
+  await client.delete('character', 'x', { ifMatch: 44 });
+  assert.equal(fetchImpl.calls.at(-1).init.method, 'DELETE');
+  assert.equal(fetchImpl.calls.at(-1).init.headers['If-Match'], '"44"');
+  await client.delete('character', 'x');
+  assert.equal('If-Match' in fetchImpl.calls.at(-1).init.headers, false);
+  const before = fetchImpl.calls.length;
+  await assert.rejects(client.delete('character', 'x', { if_match: 44 }), TypeError);
+  assert.equal(fetchImpl.calls.length, before);
+});
+
+test('a stale delete is an OwPreconditionFailedError carrying current (keel #563)', async () => {
+  const err = await thrown({ status: 412, body: FIX_412 }, (c) => c.delete('character', 'x', { ifMatch: 41 }));
+  assert.ok(err instanceof OwPreconditionFailedError);
+  assert.equal(err.current.change_seq, 44);
+});
+
 test('an ifMatch that is not a whole number throws before anything is sent', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: {} });
   for (const bad of [4.5, -1, NaN, '44']) {

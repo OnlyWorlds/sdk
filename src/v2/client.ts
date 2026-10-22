@@ -262,9 +262,15 @@ export class OwV2Client {
    * DELETE /{type}/{id}/ -- idempotent (204 on absent). Server writes a
    * tombstone AND scrubs the id from every other element's links in the same
    * transaction -- no client-side unlink pass needed, ever.
+   *
+   * `ifMatch` (keel #563, as on patch()): the element's `change_seq` as you read it. The delete
+   * lands only if nothing changed since; otherwise an OwPreconditionFailedError (412) whose
+   * `current` is the element as it is now, and nothing is deleted. On an element already gone it
+   * is the idempotent 204. Under a world's proposals switch a delete is never a proposal.
    */
-  async delete(type: ElementType | string, id: string): Promise<void> {
-    await this.request('DELETE', `/${type}/${id}/`, { write: true, elementWrite: true, allowEmpty: true });
+  async delete(type: ElementType | string, id: string, opts: { ifMatch?: number } = {}): Promise<void> {
+    only('delete', opts, ['ifMatch']);
+    await this.request('DELETE', `/${type}/${id}/`, { write: true, elementWrite: true, allowEmpty: true, ifMatch: opts.ifMatch });
   }
 
   /**
