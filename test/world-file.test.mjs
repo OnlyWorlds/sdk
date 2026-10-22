@@ -612,6 +612,10 @@ test('OW-8: only the boolean true marks a producer private, and only its own dir
     ['records/RECORDS.json', 'records/fold/spine.jsonl', 'records/folder/keep.txt', 'records/lab/rows.bin']);
   // No manifest: nothing is private.
   assert.deepEqual(recordPaths([wj, lab, fold]), ['records/fold/spine.jsonl', 'records/lab/rows.bin']);
+  // The name matches by OW-18's fold: on a disk that ignores case, `Fold` names `fold`, and
+  // an exact match would let the private directory travel. A decomposed é names the composed one.
+  const folded = manifestOf([entry('Fold', { private: true }), entry('café', { private: true })]);
+  assert.deepEqual(recordPaths([wj, folded, fold, rec('records/café/n.txt'), lab]), ['records/RECORDS.json', 'records/lab/rows.bin']);
 });
 
 test('OW-8: a manifest that cannot be read refuses by default, nothing left out by guess, and travels when asked', () => {

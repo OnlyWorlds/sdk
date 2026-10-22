@@ -636,7 +636,8 @@ function privateProducers(files: OwWorldFileEntry[]): string[] {
  *
  * `records/` travels byte-exact, except private records (OW-8, spec §4.5 rule
  * 11): every `records/<producer>/` whose entry in `records/RECORDS.json` says
- * `"private": true` (the boolean; `"true"` is not private) is left out whole,
+ * `"private": true` (the boolean; `"true"` is not private; the name matched by
+ * OW-18's fold, so `Fold` names `records/fold/`) is left out whole,
  * and `RECORDS.json` itself travels byte-exact, its private entries kept, so a
  * reader learns a producer was left out. Pass `{ includePrivateRecords: true }`
  * to carry them; then the manifest is not read and every record travels. No
@@ -659,8 +660,14 @@ export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: 
     if (seen.has(f.path)) throw new OwWorldFileError('unsafe_path', `The path ${f.path} is listed twice.`);
     seen.add(f.path);
   }
-  const left = includePrivate ? [] : privateProducers(files).map(p => `records/${p}/`);
-  const kept = files.filter(f => carried(f.path) && !left.some(dir => f.path.startsWith(dir)));
+  // Matched by OW-18's fold, not exactly: on a disk that ignores case, a manifest's `Fold`
+  // names the directory `fold`, and an exact match would let its private records travel.
+  const left = new Set(includePrivate ? [] : privateProducers(files).map(foldName));
+  const inPrivate = (path: string): boolean => {
+    const segs = path.split('/');
+    return segs.length > 2 && segs[0] === 'records' && left.has(foldName(segs[1]));
+  };
+  const kept = files.filter(f => carried(f.path) && !inPrivate(f.path));
   if (!kept.some(f => f.path === WORLD_FILE)) throw new OwWorldFileError('not_a_world');
   const keys = kept.map(f => `${topDir}/${f.path}`);
   for (const key of keys) {
