@@ -1078,3 +1078,18 @@ test('isKnownOf: true only for known_of: true (keel PR 113); absent, false or an
     assert.equal(isKnownOf(el), false, JSON.stringify(el));
   }
 });
+
+test('list and listAll refuse an unknown top-level key before sending: a wire filter outside `filter` is a TypeError, never a silent unfiltered list (W11, 2026-10-22)', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { data: [], has_more: false } });
+  await assert.rejects(
+    client.list('character', { name__icontains: 'Hidden mark probe' }),
+    (err) => err instanceof TypeError && /name__icontains/.test(err.message) && /filter/.test(err.message),
+  );
+  await assert.rejects(
+    (async () => { for await (const _ of client.listAll('character', { supertype: 'npc' })) { /* never */ } })(),
+    (err) => err instanceof TypeError && /supertype/.test(err.message),
+  );
+  assert.equal(fetchImpl.calls.length, 0, 'nothing was sent');
+  await client.list('character', { filter: { name__icontains: 'Hidden mark probe' }, limit: 5 });
+  assert.equal(new URL(fetchImpl.calls[0].url).searchParams.get('name__icontains'), 'Hidden mark probe');
+});

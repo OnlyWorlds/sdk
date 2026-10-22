@@ -122,6 +122,14 @@ export class OwV2Client {
 
   /** GET /{type}/ -- one cursor page. */
   async list(type: ElementType | string, params: ListParams = {}): Promise<OwPage> {
+    for (const k of Object.keys(params)) {
+      if (!LIST_PARAM_KEYS.has(k)) {
+        throw new TypeError(
+          `list: unknown parameter '${k}'. A wire filter (name, name__icontains, supertype, subtype, characters) goes under filter: { ${k}: ... }; ` +
+          `the other keys are ${[...LIST_PARAM_KEYS].join(', ')}. Nothing was sent: an unknown key was once dropped, and the list came back whole.`,
+        );
+      }
+    }
     const query = buildQuery({
       limit: params.limit ?? this.pageSize,
       cursor: params.cursor,
@@ -1402,6 +1410,9 @@ function objectKey(keyOrUrl: string): string {
   if (!/^https?:\/\//i.test(keyOrUrl)) return keyOrUrl;
   return decodeURIComponent(new URL(keyOrUrl).pathname.replace(/^\/+/, ''));
 }
+
+/** Every top-level key `list()` reads; a plain-JS caller's unknown key is refused by name, never dropped (W11, 2026-10-22). */
+const LIST_PARAM_KEYS: ReadonlySet<string> = new Set<keyof ListParams>(['limit', 'cursor', 'ids', 'createdBy', 'expand', 'fields', 'filter', 'viewAs']);
 
 function buildQuery(params: Record<string, string | number | boolean | undefined>): string {
   const q = new URLSearchParams();

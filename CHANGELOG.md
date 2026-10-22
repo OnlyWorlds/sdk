@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.51.0] - 2026-10-22
+
+### Changed
+
+- **`list()` and `listAll()` refuse an unknown top-level key** with a TypeError before anything is sent, naming the key and where a wire filter goes (`filter: { name__icontains: ... }`). Until now an unknown key was dropped without a word, so a plain-JavaScript caller who wrote `list('character', { name__icontains: 'probe' })` got every Character, unfiltered, and TypeScript's compile-time check was the only fence. A cleanup script written that way deleted 99 Characters on a test world on 2026-10-22; this is the SDK's half of the lesson. A caller who passed a stray key by accident now hears about it; the known keys are `limit`, `cursor`, `ids`, `createdBy`, `expand`, `fields`, `filter`, `viewAs`.
+
 ## [4.50.0] - 2026-10-22
 
 ### Added
