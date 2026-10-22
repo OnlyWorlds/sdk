@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -746,6 +747,92 @@ def public_for(presentation: dict | None, tslug: str, fields: list[dict]) -> lis
     return list(pub)
 
 
+ROOM_ROW = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*`([^`]+)`\s*\|")
+
+
+def load_room_pairs(schema_dir: Path) -> list[tuple[str, str]]:
+    """The room profile's pairs (schema-dist serial 44 on, `profiles/room.md`): the
+    type-and-supertype pairs a parlor puts in a world.
+
+    Emitted from the fixture's `pairs` array, the machine-readable copy, and checked
+    against the page's own table, which calls itself "the one list": the two must name
+    the same pairs in the same order, or this exits 1 rather than choose between them.
+    A convention profile, not the standard, so there is no fallback: a tree without the
+    profile exits 1 rather than emitting an empty list that reads as "no room"."""
+    profiles = schema_dir.parent / "profiles"
+    fixture_path, page_path = profiles / "room.fixture.json", profiles / "room.md"
+    if not fixture_path.is_file() or not page_path.is_file():
+        raise SystemExit(
+            f"ROOM_PAIRS comes only from the distribution's profiles/room.fixture.json and "
+            f"profiles/room.md (serial 44 on); this tree lacks {fixture_path if not fixture_path.is_file() else page_path}."
+        )
+    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+    raw = fixture.get("pairs")
+    if not isinstance(raw, list) or not raw or not all(
+        isinstance(p, dict) and set(p) == {"type", "supertype"}
+        and isinstance(p["type"], str) and isinstance(p["supertype"], str) for p in raw
+    ):
+        raise SystemExit(f"{fixture_path}: `pairs` is {raw!r}, expected a list of {{type, supertype}} strings.")
+    pairs = [(p["type"], p["supertype"]) for p in raw]
+    stray = [t for t, _ in pairs if t not in ELEMENT_TYPES]
+    if stray:
+        raise SystemExit(f"{fixture_path}: pairs name {stray}, which are not element types.")
+    if any(s != s.strip() or not s or "'" in s or "\\" in s for _, s in pairs):
+        raise SystemExit(f"{fixture_path}: a pair's supertype is empty, carries edge spaces, or a quote "
+                         f"or backslash this emitter does not escape: {pairs!r}.")
+    folded = [(t.lower(), s.lower()) for t, s in pairs]
+    if len(set(folded)) != len(folded):
+        raise SystemExit(f"{fixture_path}: pairs repeat one another without regard to case: {pairs!r}.")
+    page = page_path.read_text(encoding="utf-8")
+    table = [m.groups() for m in map(ROOM_ROW.match, page.splitlines()) if m]
+    if table != pairs:
+        raise SystemExit(
+            f"the room profile's two copies disagree: room.md's table {table} against "
+            f"room.fixture.json's pairs {pairs}. Route it to the schema-dist owner; never pick one."
+        )
+    return pairs
+
+
+def load_room_mark(schema_dir: Path) -> str:
+    """The room profile's mark (serial 45 on): the extension field the parlor writes on every room
+    element beside the pair. From the fixture's `mark.field`; it must sit under the profile's reserved
+    prefix `x_room_` and be named in room.md, or this exits 1."""
+    profiles = schema_dir.parent / "profiles"
+    fixture = json.loads((profiles / "room.fixture.json").read_text(encoding="utf-8"))
+    mark = (fixture.get("mark") or {}).get("field")
+    if not isinstance(mark, str) or not re.fullmatch(r"x_room_[a-z0-9_]+", mark):
+        raise SystemExit(f"room.fixture.json: `mark.field` is {mark!r}, expected an extension key under x_room_ "
+                         "(serial 45 on: a room element is the pair AND the mark).")
+    if f"`{mark}`" not in (profiles / "room.md").read_text(encoding="utf-8"):
+        raise SystemExit(f"room.md does not name the fixture's mark `{mark}`. Route it to the schema-dist owner.")
+    return mark
+
+
+def render_room_pairs(pairs: list[tuple[str, str]], mark: str) -> str:
+    lines = [
+        "/** The room profile's pairs (schema-dist `profiles/room.md`, a convention on the 22 types,",
+        " *  never a change to the standard): a parlor's line, board entry, work item, spec, heart,",
+        " *  vote, sitting or member card. An element is a room element when its type and supertype,",
+        " *  each trimmed and compared without regard to case, match one of these AND it carries the",
+        " *  mark (ROOM_MARK, a non-empty string); a pair without the mark is lore (a novel's letters",
+        " *  are Narratives with supertype Message). A lore view leaves room elements out unless the",
+        " *  person asks; the room's own views show them whole. Match with isRoomElement. Source:",
+        " *  `profiles/room.fixture.json`'s `pairs`, checked against the page's table at codegen. */",
+        "export const ROOM_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly supertype: string }> = [",
+    ]
+    lines += [f"  {{ type: '{t}', supertype: '{s}' }}," for t, s in pairs]
+    lines += [
+        "];",
+        "",
+        "/** The room profile's mark: the extension field the parlor writes on every room element, the id",
+        " *  of the world (a world's parlor) or of the sitting (a workshop) the room belongs to. Source:",
+        " *  `profiles/room.fixture.json`'s `mark.field`, checked against room.md at codegen. */",
+        f"export const ROOM_MARK = '{mark}' as const;",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--schema", default=str(DEFAULT_SCHEMA_DIR))
@@ -807,6 +894,7 @@ def main() -> None:
               .replace("__ELEMENT_BASE__", render_element_base(schema_dir)))
     parts = [header, ""]
     parts.append(render_maps(all_fields, families, icons, sections, public))
+    parts.append(render_room_pairs(load_room_pairs(schema_dir), load_room_mark(schema_dir)))
     parts.append(render_field_schema(all_fields, sections, required_sets))
     parts.append("\n\n".join(interfaces))
     parts.append("")

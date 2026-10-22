@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.43
-//         commit          1bd7e3571519f425856a3177c748c98806d2e961
-//         MANIFEST sha256 a9bbe8171e2e815cdec05a7ddd2a3d07beb4212fcbd6dc80e9cae81935e4cf7f
-//         canonical 00.33.00, dist serial 43, published 2026-10-22
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.45
+//         commit          f2a23f3a7d7b2fa04bb5d8197931020a74f5946e
+//         MANIFEST sha256 ed5fcab2d2e768d06282073993a4abac5c99f94753c8fd9c5f52596a636b4566
+//         canonical 00.33.00, dist serial 45, published 2026-10-22
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -314,6 +314,30 @@ export const MULTI_LINK_FIELDS: Record<ElementType, string[]> = {
   trait: ['empowered_abilities'],
   zone: ['phenomena', 'linked_zones', 'populations', 'titles', 'principles'],
 };
+
+/** The room profile's pairs (schema-dist `profiles/room.md`, a convention on the 22 types,
+ *  never a change to the standard): a parlor's line, board entry, work item, spec, heart,
+ *  vote, sitting or member card. An element is a room element when its type and supertype,
+ *  each trimmed and compared without regard to case, match one of these AND it carries the
+ *  mark (ROOM_MARK, a non-empty string); a pair without the mark is lore (a novel's letters
+ *  are Narratives with supertype Message). A lore view leaves room elements out unless the
+ *  person asks; the room's own views show them whole. Match with isRoomElement. Source:
+ *  `profiles/room.fixture.json`'s `pairs`, checked against the page's table at codegen. */
+export const ROOM_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly supertype: string }> = [
+  { type: 'narrative', supertype: 'Message' },
+  { type: 'narrative', supertype: 'Board' },
+  { type: 'relation', supertype: 'Work item' },
+  { type: 'construct', supertype: 'Spec' },
+  { type: 'relation', supertype: 'Heart' },
+  { type: 'relation', supertype: 'Vote' },
+  { type: 'event', supertype: 'Sitting' },
+  { type: 'character', supertype: 'Member' },
+];
+
+/** The room profile's mark: the extension field the parlor writes on every room element, the id
+ *  of the world (a world's parlor) or of the sitting (a workshop) the room belongs to. Source:
+ *  `profiles/room.fixture.json`'s `mark.field`, checked against room.md at codegen. */
+export const ROOM_MARK = 'x_room_of' as const;
 
 
 // ---------------------------------------------------------------------------

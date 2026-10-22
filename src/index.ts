@@ -27,6 +27,10 @@ export type {
   OwWriteDoor, OwChangeUpsert, OwChangeDelete, OwDeleteReason, OwHiddenRow, OwResyncReason,
 } from './v2';
 
+// The room profile (schema-dist profiles/room.md): the pairs a parlor puts in a world, and the
+// matcher a lore view uses to leave them out (ROOM_PAIRS generated from the vendored dist)
+export { ROOM_PAIRS, isRoomElement } from './room';
+
 // Canonical element colour palette (families generated from schema; hexes CVD-validated)
 export { ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf, elementColor } from './v2';
 export type { ElementFamily } from './v2';

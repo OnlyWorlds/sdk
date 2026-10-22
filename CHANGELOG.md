@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.55.0] - 2026-10-22
+
+### Added
+
+- **The room profile** (schema-dist `profiles/room.md`, serial 45; Skeld's rulings, OW Council #554 and OW Parlor h66 #10392): `ROOM_PAIRS`, the eight type-and-supertype pairs a parlor puts in a world (narrative/Message, narrative/Board, relation/Work item, construct/Spec, relation/Heart, relation/Vote, event/Sitting, character/Member), and `isRoomElement(el)`, true when an element's type and supertype, each trimmed and compared without regard to case, match one of them **and** it carries the mark `x_room_of` (the id of the world or sitting the room belongs to) as a non-empty string. A pair without the mark is lore (a novel's letters are Narratives with supertype Message); a mark without a pair is not a room element. The pair match is the whole word, a missing or empty supertype is never a room element, and a Law with supertype `Charter` stays lore. A lore view leaves room elements out unless the person asks; the room's own views show them whole. A convention on the 22 types: no type, field or wire change. `ROOM_PAIRS` is generated from the fixture's `pairs` and checked at codegen against the page's table (they must agree, or codegen exits 1); the mark's name is generated from the fixture's `mark.field` and checked against the page. Case is folded by Unicode simple case folding (`simpleCaseFold`), the same fold as the Python package's `is_room_element`. A new test replays the fixture's 23 cases from the vendored dist.
+
+### Changed
+
+- **Schema repinned to schema-dist v0.33.0-dist.45** (same canonical 00.33.00). The dist adds `profiles/room.md` and `profiles/room.fixture.json`; `VERSION`, `README.md` and `MANIFEST.json` carry the new serial; no schema file moved. Generated output moves its provenance lines and gains `ROOM_PAIRS` and the mark's name. Serial 44, the pairs without the mark, was superseded within the hour and is skipped.
+
 ## [4.54.0] - 2026-10-22
 
 ### Added
