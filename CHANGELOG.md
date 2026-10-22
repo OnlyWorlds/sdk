@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.53.2] - 2026-10-22
+
+### Fixed
+
+- **A `mimetype` marker with a byte order mark is refused** (`marker`, spec §4.7 OW-6). The reader compared the entry as decoded text, and `TextDecoder`'s default strips a leading BOM, so a marker of BOM plus the media type passed; the spec says bytes exactly. Found by the Python package's port of the reader (`onlyworlds` 0.17.0), which refused it. No fixture carries the case yet (proposed for the conformance set).
+
 ## [4.53.1] - 2026-10-22
 
 ### Changed

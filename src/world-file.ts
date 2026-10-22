@@ -489,7 +489,8 @@ export function readWorldFile(bytes: Uint8Array, opts: OwReadWorldFileOptions = 
 
   // OW-6: a marker is never required; one with other bytes refuses. Its shape is the writer's.
   const marker = files.find(e => e.name === MARKER_NAME);
-  if (marker && new TextDecoder().decode(inflateEntry(bytes, marker)) !== WORLD_FILE_MEDIA_TYPE) {
+  // Bytes, never decoded text: TextDecoder's default strips a byte order mark, and a BOM is other bytes (OW-6).
+  if (marker && new TextDecoder('utf-8', { ignoreBOM: true }).decode(inflateEntry(bytes, marker)) !== WORLD_FILE_MEDIA_TYPE) {
     refuse('marker', 'The mimetype entry holds other bytes than the OnlyWorlds media type.');
   }
 

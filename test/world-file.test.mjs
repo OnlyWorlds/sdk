@@ -324,6 +324,8 @@ test('OW-6: the mimetype marker is never required, refused with other bytes, and
   assert.deepEqual(readWorldFile(rootWorld).files.map(f => f.path), ['world.json']);
   refuses(buildZip([{ name: 'mimetype', data: strToU8('application/zip') }, wj]), 'marker');
   refuses(buildZip([{ name: 'mimetype', data: strToU8(WORLD_FILE_MEDIA_TYPE + '\n') }, wj]), 'marker');
+  // A byte order mark is other bytes too: the check compares bytes, never decoded text (TextDecoder's default strips a BOM; found by the Python port, 4.53.2).
+  refuses(buildZip([{ name: 'mimetype', data: concat([new Uint8Array([0xef, 0xbb, 0xbf]), strToU8(WORLD_FILE_MEDIA_TYPE)]) }, wj]), 'marker');
 });
 
 test('OW-14: an entry that inflates past the size it declares is refused, whatever the budget', () => {
