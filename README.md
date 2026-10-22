@@ -337,6 +337,20 @@ const lore = elements.filter(el => !isRoomElement(el)); // a lore view, unless t
 
 A lore view (a list, a count, search, a graph, a link picker, a story's context) leaves room elements out unless the person asks to see them; the room's own views show them whole, and a tool that writes the world writes them like any element. A Law with supertype `Charter` is lore on purpose. The profile: [`profiles/room.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/room.md) in the schema distribution.
 
+### A world's own words for the types
+
+A world may carry `x_names` on the World: its own word for a type (Character shown as *Employee* in a work world), and a finer word for a supertype inside one. `typeWord(world, type, { supertype, many })` returns that word, or `null` for the standard's name. `world` is a `getWorld()` body (keel serves `x_` keys on the World from Keel #571) or a folder's `world.json`. The API, the folder, the schema and every id keep the standard's names; the word is for display only.
+
+```typescript
+import { typeWord } from '@onlyworlds/sdk';
+
+const world = await client.getWorld();
+const heading = typeWord(world, 'character', { many: true }) ?? 'Characters';
+const label = typeWord(world, el.type, { supertype: el.supertype }) ?? el.type;
+```
+
+The word is printed as written, never re-cased; folder names are never translated. The profile: [`profiles/names.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/names.md) in the schema distribution, with its 23-case fixture, which is this function's test.
+
 ## Tokens
 
 The account's token rating, which some OnlyWorlds tools use. `getStatus()` and `getEncryptionInfo()` are what keel still serves under `/tokens/`; `consume()`, `getAccessKey()` and the two session revokes are deprecated (keel answers 404) and leave in 5.0. To read the token rating, prefer `account.allowance()` above.

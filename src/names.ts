@@ -46,14 +46,16 @@ function word(pair: unknown, many: boolean): string | null {
  * entry or an unknown slug is ignored. The word is printed as written, never re-cased.
  */
 export function typeWord(
-  world: { x_names?: unknown } | null | undefined,
+  world: object | null | undefined,
   type: string,
   opts: { supertype?: string | null; many?: boolean } = {},
 ): string | null {
   for (const key of Object.keys(opts ?? {})) {
     if (!OPTION_KEYS.has(key)) throw new TypeError(`typeWord: unknown option "${key}" (known: supertype, many)`);
   }
-  const map = world?.x_names;
+  // `object`, not `{ x_names?: unknown }`: OwWorldMeta does not declare x_names (keel serves x_ keys
+  // on the World from Keel #571), and an all-optional parameter type refuses it (TS2559).
+  const map = (world as { x_names?: unknown } | null | undefined)?.x_names;
   if (!isObject(map) || map.version !== 1) return null;
   const { types, supertypes } = map;
   if (types !== undefined && !isObject(types)) return null;

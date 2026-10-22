@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.62.0] - 2026-10-22
+
+### Added
+
+- **`typeWord(world, type, { supertype, many })`**, the names profile's reader (schema-dist `profiles/names.md`, OW Council #567): a world's own word for a type, from `x_names` on the World (a `getWorld()` body, keel serving `x_` keys on the World from Keel #571, or a folder's `world.json`). The supertype's entry first, matched trimmed and without regard to case (the room profile's one definition, shared with `isRoomElement`), then the type's entry, else `null`: print the standard's name. `many: true` gives the plural, `one` when the pair has none. A value that is not a names map is `null` everywhere; a bad entry or an unknown slug is ignored. The options object refuses an unknown key with a `TypeError`. Types `OwNamesMap` and `OwWordPair`. Display only: the API, the folder, the schema and every id keep the standard's names.
+- Tests: the profile's 23-case fixture, read from the vendored distribution, as its own test; no world, no map and an unknown option.
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.48`** (same canonical 00.33.00; no schema file moved, no generated type changed, `ONLYWORLDS_VERSION` still `'00.33.00'`). The distribution gains `profiles/names.md` and `profiles/names.fixture.json`, the names profile, and `profiles/checks.md` names the Charter by keel's D152: the newest Law with supertype `Charter` made by the owner or a co-builder, by `created_at` then id.
+
 ## [4.61.0] - 2026-10-22
 
 ### Added

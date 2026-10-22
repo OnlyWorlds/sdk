@@ -1,8 +1,7 @@
 /**
  * The names profile (schema-dist profiles/names.md): typeWord on every conformance case in
- * codegen/schema-dist/profiles/names.fixture.json, vendored with the distribution. Until the serial
- * carries it, the draft beside Skeld's profile (Orrery product/schema/names.fixture.json) is read and
- * the test says so; on the serial the vendored copy wins and the draft path goes.
+ * codegen/schema-dist/profiles/names.fixture.json, vendored with the distribution (serial 48 on) and
+ * hash-checked by schema:verify. The vendored copy is the only source: absent, the test fails.
  * Runs against the compiled public bundle (dist), same as the other tests.
  */
 import { test } from 'node:test';
@@ -12,20 +11,17 @@ import { fileURLToPath } from 'node:url';
 import { typeWord } from '../dist/index.js';
 
 const VENDORED = fileURLToPath(new URL('../codegen/schema-dist/profiles/names.fixture.json', import.meta.url));
-const DRAFT = 'C:/Users/Titus/Carrier/Orrery/product/schema/names.fixture.json';
 
 function loadFixture() {
-  const path = existsSync(VENDORED) ? VENDORED : DRAFT;
-  assert.ok(existsSync(path), `no names fixture at ${VENDORED} or ${DRAFT}`);
-  if (path === DRAFT) console.log(`# names fixture: the DRAFT at ${DRAFT}, not yet in the vendored dist`);
-  const doc = JSON.parse(readFileSync(path, 'utf8'));
+  assert.ok(existsSync(VENDORED), `no names fixture at ${VENDORED}: re-vendor the pinned schema-dist`);
+  const doc = JSON.parse(readFileSync(VENDORED, 'utf8'));
   assert.equal(doc.profile, 'x_names');
   return doc;
 }
 
 test('typeWord: every case of the names fixture', () => {
   const { cases } = loadFixture();
-  assert.ok(cases.length >= 22, `the fixture holds ${cases.length} cases`);
+  assert.ok(cases.length >= 23, `the fixture holds ${cases.length} cases`);
   for (const c of cases) {
     const got = typeWord({ x_names: c.map }, c.type, { supertype: c.supertype ?? null, many: c.many });
     assert.equal(got, c.word, `case ${c.name}`);
