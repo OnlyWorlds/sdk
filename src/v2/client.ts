@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
-  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtPolicy, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason,
 } from './types';
@@ -112,10 +112,36 @@ export class OwV2Client {
       cursor: params.cursor,
       expand: params.expand?.join(','),
       fields: params.fields?.join(','),
+      ids: params.ids?.join(','),
+      created_by: params.createdBy,
       ...params.filter,
       as: params.viewAs,
     });
     return this.request('GET', `/${type}/`, { query }) as Promise<OwPage>;
+  }
+
+  /**
+   * GET /character/{id}/context -- the draught (keel PR 155, D143): what one Character knows, as the
+   * recorded world holds it, in one read: her element, what she holds and sits in, her open work,
+   * how she works, the Events she was in, the Narratives she knows, everything else that names
+   * her, her sheet, what changed around her (`since`), and who plays whom; the world's name and
+   * calendar beside. Every body is the list route's for the same reader, with `via`, `her_links`
+   * and `grade`; nothing is inferred. The owner's keys, co-builders and contributors for any
+   * Character they can see; a player seat or a guest for its own Character only (another id is
+   * 404). `asOf` is a filter on the elements' own dates, not time travel. A `cut` that is not
+   * empty means the serving is partial. Served `Cache-Control: private, no-store`.
+   */
+  async draught(characterId: string, policy: OwDraughtPolicy = {}): Promise<OwDraught> {
+    const query = buildQuery({
+      components: policy.components?.join(','),
+      mode: policy.mode,
+      as_of: policy.asOf,
+      undated: policy.undated,
+      since: policy.since,
+      budget: policy.budget,
+      depth: policy.depth,
+    });
+    return this.request('GET', `/character/${characterId}/context`, { query }) as Promise<OwDraught>;
   }
 
   /** Cursor-walk every page of a type. Politeness: uses config pageSize. */

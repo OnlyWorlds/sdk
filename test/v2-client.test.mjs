@@ -465,6 +465,20 @@ test('listAccountWorlds and mintWorldKey need an account token and send the docu
   assert.deepEqual(JSON.parse(bf.calls[1].init.body), {});
 });
 
+test('draught sends the seven policy keys to /character/{id}/context; list sends ids and created_by (keel PR 155)', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { world: { id: 'w' }, character: null, cut: {} } });
+  await client.draught('c1', { components: ['self', 'events'], mode: 'act', asOf: 453, undated: 'exclude', since: 'cur', budget: 5, depth: 0 });
+  const u = new URL(fetchImpl.calls[0].url);
+  assert.ok(u.pathname.endsWith('/character/c1/context'), u.pathname);
+  assert.deepEqual(Object.fromEntries(u.searchParams), { components: 'self,events', mode: 'act', as_of: '453', undated: 'exclude', since: 'cur', budget: '5', depth: '0' });
+  await client.draught('c1');
+  assert.equal(new URL(fetchImpl.calls[1].url).search, '');
+  await client.list('character', { ids: ['a', 'b'], createdBy: 'owner' });
+  const q = new URL(fetchImpl.calls[2].url).searchParams;
+  assert.equal(q.get('ids'), 'a,b');
+  assert.equal(q.get('created_by'), 'owner');
+});
+
 test('editLinks with ifMatch sends If-Match too', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', change_seq: 45 } });
   await client.editLinks('character', 'x', 'species', { add: ['y'] }, { ifMatch: 7 });

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.47.0] - 2026-10-22
+
+### Added
+- `draught(characterId, policy)`: `GET /character/{id}/context` (keel PR 155, D143, live 2026-10-22 02:05), one Character's context in one read, typed as `OwDraught` with the policy's seven keys (`components`, `mode`, `asOf`, `undated`, `since`, `budget`, `depth`) as `OwDraughtPolicy`.
+- `list` takes `ids` (1 to 200, the list's own order; one the key cannot see is absent) and `createdBy` (a membership id, or `'owner'`), the two list filters of the same PR; both were already reachable through `filter`.
+
 ## [4.46.0] - 2026-10-22
 
 ### Added

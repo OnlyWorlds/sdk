@@ -533,6 +533,67 @@ export interface OwSignedIn {
  * (`'collaborator'`, with `member_role` the membership's role). Keys by name and last four only,
  * never the key; on a shared world only the member's own keys (keel H8).
  */
+/** The draught's policy (keel PR 155, D143): what GET /character/{id}/context serves and how. */
+export interface OwDraughtPolicy {
+  /** Sections to serve; default every one but `messages`. */
+  components?: OwDraughtComponent[];
+  /** `voice`: her slice, as she would read (default). `act`: through the caller's own view. */
+  mode?: 'voice' | 'act';
+  /** The horizon in the world's time unit; default the world's `time_range_current`. */
+  asOf?: number;
+  /** Undated Events: `include` (default, marked `dated: false`, after the dated) or `exclude`. */
+  undated?: 'include' | 'exclude';
+  /** For `recent`: a /changes cursor, or an ISO 8601 time (as /changes' `after`). Absent, `recent` is empty. */
+  since?: string;
+  /** Items per section, 1 to 1000, default 50; `cut` says what was dropped. */
+  budget?: number;
+  /** The sheet's reach: 1 (default) what her own element links to, 0 none. */
+  depth?: 0 | 1;
+}
+
+export type OwDraughtComponent =
+  | 'self' | 'role' | 'work' | 'style' | 'events' | 'knowledge' | 'names' | 'sheet' | 'recent' | 'messages' | 'roster';
+
+/** An element as the draught serves it: the list route's body plus how it got here. */
+export type OwDraughtItem = OwElement & {
+  /** The link fields that brought it (on the element, or on her own element in `sheet`). */
+  via: string[];
+  /** How many of the packet's elements link to it. */
+  her_links: number;
+  grade: 'whole' | 'known_of';
+  /** On an Event: false when it carries no date (ranked after the dated). */
+  dated?: boolean;
+};
+
+/** One Character's context in one read, GET /character/{id}/context (keel PR 155, D143; the draught). */
+export interface OwDraught {
+  world: { id: string; name: string; description: string };
+  /** The world's own time fields, as it carries them. */
+  calendar: Record<string, unknown>;
+  as_of: number | null;
+  now: number | null;
+  mode: 'voice' | 'act';
+  /** The policy served under, every key resolved. */
+  policy: Record<string, unknown>;
+  /** {section: items the budget dropped}; empty when whole. */
+  cut: Record<string, number>;
+  recent_cursor: string | null;
+  recent_more: boolean | null;
+  /** Her own element (`self: true`), or a stub when this reader knows her only as known of. */
+  character: (OwElement & { self: true; grade: 'whole' | 'known_of' }) | null;
+  role?: OwDraughtItem[];
+  work?: OwDraughtItem[];
+  style?: OwDraughtItem | null;
+  events?: OwDraughtItem[];
+  knowledge?: OwDraughtItem[];
+  /** Everything else that names her, by type. */
+  names?: Record<string, OwDraughtItem[]>;
+  sheet?: OwDraughtItem[];
+  messages?: OwDraughtItem[];
+  recent?: Array<{ op: 'upsert' | 'delete'; type: string; id: string; when: string | null; who: string | null; [k: string]: unknown }>;
+  roster?: Array<{ id: string | null; kind: string; role: string; character: string | null; status: string; name: string }>;
+}
+
 export interface OwAccountWorld {
   id: string;
   name: string;
@@ -740,6 +801,10 @@ export interface OwFileDownload {
 export interface ListParams {
   limit?: number;
   cursor?: string;
+  /** Only these ids (1 to 200), in the list's own order; one this key cannot see is simply absent (keel PR 155). */
+  ids?: string[];
+  /** A membership id, or `'owner'` for the owner's own writes: only what that member created (keel PR 155). */
+  createdBy?: string;
   /** One-level stub expansion, e.g. ['friends', 'location']. */
   expand?: string[];
   /** Sparse include-set of field names. */
