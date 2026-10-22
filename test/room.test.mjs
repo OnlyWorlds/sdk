@@ -53,3 +53,30 @@ test('isRoomElement folds case by Unicode simple case folding, as the Python pac
   assert.equal(isRoomElement({ type: 'NARRATIVE', supertype: `Me${LONG_S}${LONG_S}age`, x_room_of: WORLD }), true);
   assert.equal(isRoomElement({ type: 'Relation', supertype: '\tWORK ITEM\n', x_room_of: WORLD }), true);
 });
+
+test('isRoomElement trims Unicode White_Space at both ends and nothing else (room.md, dist.47; OW Parlor h66 #10415)', () => {
+  const IDEO = String.fromCodePoint(0x3000); // IDEOGRAPHIC SPACE, White_Space
+  const NBSP = String.fromCodePoint(0xa0); // NO-BREAK SPACE, White_Space
+  const PARA = String.fromCodePoint(0x2029); // PARAGRAPH SEPARATOR, White_Space
+  const BOM = String.fromCodePoint(0xfeff); // a byte order mark, not White_Space
+  const ZWSP = String.fromCodePoint(0x200b); // ZERO WIDTH SPACE, not White_Space
+  assert.equal(isRoomElement({ type: 'narrative', supertype: ` Message${IDEO}`, x_room_of: WORLD }), true);
+  assert.equal(isRoomElement({ type: `${NBSP}narrative${PARA}`, supertype: 'Message', x_room_of: WORLD }), true);
+  // A byte order mark stays, so the word is not the pair's (JavaScript's trim() strips it).
+  assert.equal(isRoomElement({ type: 'narrative', supertype: `${BOM}Message`, x_room_of: WORLD }), false);
+  assert.equal(isRoomElement({ type: `${BOM}narrative`, supertype: 'Message', x_room_of: WORLD }), false);
+  assert.equal(isRoomElement({ type: 'narrative', supertype: `${ZWSP}Message`, x_room_of: WORLD }), false);
+  // Nothing inside the value is touched.
+  assert.equal(isRoomElement({ type: 'relation', supertype: `Work${IDEO}item`, x_room_of: WORLD }), false);
+});
+
+test('isRoomElement trims exactly the code points of Unicode White_Space, swept over the whole BMP', () => {
+  const WS = /^\p{White_Space}$/u;
+  const wrong = [];
+  for (let cp = 0; cp <= 0xffff; cp++) {
+    const ch = String.fromCharCode(cp);
+    const got = isRoomElement({ type: 'narrative', supertype: `${ch}Message${ch}`, x_room_of: WORLD });
+    if (got !== WS.test(ch)) wrong.push(cp.toString(16));
+  }
+  assert.deepEqual(wrong, []);
+});

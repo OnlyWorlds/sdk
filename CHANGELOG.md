@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.57.2] - 2026-10-22
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.47`** (same canonical 00.33.00; no schema file moved, no generated type changed). The distribution gains `profiles/checks.md` and `profiles/checks.fixture.json`, the checks profile: a work world's Charter carries its house rules as `x_checks_rules`, beside the sentences a person reads (OW Council #559). `profiles/room.md` now defines "trimmed and without regard to case" once, for every profile that folds like the room's pairs: trimmed is leading and trailing whitespace removed, nothing inside touched; without regard to case is the trimmed value after simple case folding.
+
+### Fixed
+
+- **`isRoomElement` trims Unicode White_Space exactly**, the 25 code points of the property, at both ends of the type and the supertype. It used JavaScript's `trim()`, which also strips U+FEFF, a byte order mark. Skeld's ruling (OW Parlor h66 #10415) is that a byte order mark stays, so a supertype `"\uFEFFMessage"` is no longer a room element; `" Message\u3000"` still is, and a leading U+200B (zero width space, not White_Space) still is not. The room fixture's 23 cases answer as before.
+
 ## [4.57.1] - 2026-10-22
 
 ### Fixed
