@@ -200,6 +200,14 @@ export class OwApiError extends Error {
   }
 
   /**
+   * setMyCharacter, or the member PATCH's `character` (keel #421, PR 160): the picked Character is
+   * hidden (422 `character_hidden`, `param` character). Unhide it first, or pick another.
+   */
+  get isCharacterHidden(): boolean {
+    return this.status === 422 && this.code === 'character_hidden';
+  }
+
+  /**
    * The `character` sent was refused (422 `invalid_request`, `param` character). On redeemJoin
    * at a table (keel #422 PR 2): the pick is off the link's list, hidden or deleted since the
    * link was made, or missing, or sent to a table with no list (send `name` instead); one

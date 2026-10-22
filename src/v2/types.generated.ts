@@ -49,8 +49,10 @@ export interface OwElementBase {
   created_by?: string | null;
   /** The membership whose write last changed this element (server-managed, read-only); null for the world's owner and for anything last changed before writes recorded it. */
   changed_by?: string | null;
-  /** The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, or `server` (keel's own writes). The first three are agent-made. Null for anything last changed before writes recorded it. */
-  changed_via?: 'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | null;
+  /** The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, `server` (keel's own writes) or `site` (the owner signed in on onlyworlds.com; keel PR 160). The first three are agent-made. Null for anything last changed before writes recorded it. */
+  changed_via?: 'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | 'site' | null;
+  /** Present, and true, only when the world's owner or a co-builder hid this element and this reader still sees it (server-managed, read-only): the owner, a co-builder, a key the owner minted, or the member who made it; to every other reader the element does not exist. Absent otherwise, whatever `fields` asked; on the read, the list, the change feed's upserts and MCP, never in the download, world sync or v1. Sent in a write it is ignored. */
+  hidden?: true;
   /** Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq, and the fields its type lists in PUBLIC_FIELDS with their values; every other field reads unset ("", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf(). */
   known_of?: true;
   /** Namespaced extension fields (atlas_* / shadow_* / x_*), returned verbatim. */

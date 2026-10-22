@@ -83,6 +83,20 @@ export class OwV2Client {
    * creates; null for the owner) and the member's Character. A world key's call; an account
    * token is a TypeError before sending.
    */
+  /**
+   * PUT /me/character -- pick the roster Character that is you in this world, or none (keel PR 160,
+   * #533). A person member's write key with its PIN; answers GET /me's body. 422 for a hidden
+   * Character (`character_hidden`, `err.isCharacterHidden`), a guest's pick it did not make, or a
+   * taken Character (`character_taken`); 404 for one this key cannot see; 403 for an agent seat, a
+   * player, the owner (who sets it on the world page) or a read key. A guest's view resets once.
+   */
+  async setMyCharacter(character: string | null): Promise<OwMe> {
+    if (this.keyKind === 'account') {
+      throw new TypeError('setMyCharacter needs a world key: an account token is not a member of one world');
+    }
+    return this.request('PUT', '/me/character', { write: true, body: { character } }) as Promise<OwMe>;
+  }
+
   async me(): Promise<OwMe> {
     if (this.keyKind === 'account') {
       throw new TypeError('me needs a world key: an account token is not a member of one world');

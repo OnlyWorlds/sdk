@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.50.0] - 2026-10-22
+
+### Added
+
+- `setMyCharacter(characterId | null)`: `PUT /me/character`, a person member's pick of the roster Character that is them in this world (keel PR 160, #533); answers the `/me` body. `err.isCharacterHidden` for the 422 `character_hidden` it and the member PATCH answer.
+- `hidden?: true` on every element body (`OwElementBase`): present only when the owner or a co-builder hid the element and this reader still sees it (keel #537); never on other readers' bodies, ignored in a write.
+- `site` joins `OwWriteDoor`: a write or delete the owner made signed in on onlyworlds.com (keel #530).
+
 ## [4.49.0] - 2026-10-22
 
 ### Changed

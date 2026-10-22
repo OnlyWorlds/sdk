@@ -447,6 +447,23 @@ test('hide and unhide send PUT and DELETE /{type}/{id}/hidden and take a 204 (ke
   assert.ok(u.url.endsWith('/character/x/hidden'), u.url);
 });
 
+test('setMyCharacter sends PUT /me/character with the pick and returns the /me body (keel PR 160)', async () => {
+  const me = { world: 'w', kind: 'person', role: 'contributor', membership: 'm1', character: 'c1' };
+  const { client, fetchImpl } = makeClient({ status: 200, body: me });
+  assert.deepEqual(await client.setMyCharacter('c1'), me);
+  await client.setMyCharacter(null);
+  const [a, b] = fetchImpl.calls;
+  assert.equal(a.init.method, 'PUT');
+  assert.ok(a.url.endsWith('/me/character'), a.url);
+  assert.deepEqual(JSON.parse(a.init.body), { character: 'c1' });
+  assert.equal(a.init.headers['API-Pin'], '1234');
+  assert.deepEqual(JSON.parse(b.init.body), { character: null });
+  const acct = makeClient({ status: 200, body: me }, { apiKey: 'ow_a_test' });
+  await assert.rejects(acct.client.setMyCharacter('c1'), TypeError);
+  const hidden = makeClient({ status: 422, body: { error: { type: 'invalid_request', code: 'character_hidden', message: 'm', param: 'character', doc_url: null } } });
+  await assert.rejects(hidden.client.setMyCharacter('c9'), (e) => e.isCharacterHidden === true && e.isCharacterTaken === false);
+});
+
 test('listHidden sends GET /world/hidden and returns the rows (keel #421)', async () => {
   const row = { type: 'character', id: 'x', set_at: '2026-10-22T02:00:00Z', set_by: null };
   const { client, fetchImpl } = makeClient({ status: 200, body: { data: [row] } });
