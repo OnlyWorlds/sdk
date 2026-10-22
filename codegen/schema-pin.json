@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.32.2-dist.29",
-  "commit": "106b5791249c4f4a3e13ac1640b9f5f82d9356ae",
-  "manifest_sha256": "d8fc5d942ab2ab64f1a0a88970fa3d4ba920c7144ee929b8fbb48c8f61fa715d",
+  "tag": "v0.32.2-dist.37",
+  "commit": "ad6e7f7b5385dd52962973ba5cb77414f7917b75",
+  "manifest_sha256": "1467dc6a12d77f65e5ec255299912d16c3e824563a15d563010a006641119cc2",
   "canonical_version": "00.32.02",
-  "dist_serial": 29,
-  "published": "2026-10-20",
-  "pinned_at": "2026-10-20",
+  "dist_serial": 37,
+  "published": "2026-10-21",
+  "pinned_at": "2026-10-22",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.32.2-dist.29",
+      "manifest_sha256": "d8fc5d942ab2ab64f1a0a88970fa3d4ba920c7144ee929b8fbb48c8f61fa715d",
+      "note": "superseded by v0.32.2-dist.37 (same canonical 00.32.02; profiles/ added (identity, calendar with its fixture, packet, review), the folder lint reads known-of stubs and never records/, the export example carries source and exported_as; no schema file moved)"
+    },
     {
       "tag": "v0.32.1-dist.28",
       "manifest_sha256": "9ce11f0d15c9632c55aec0fb0cbfebf07600d282aec641de7ba8c160279b0515",

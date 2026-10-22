@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.48.1] - 2026-10-22
+
+### Changed
+
+- Schema repinned to schema-dist `v0.32.2-dist.37` (canonical 00.32.02 unchanged, so no type, field or constant moved): the dist added `profiles/` (identity, calendar with its fixture, packet, review), its folder lint reads known-of stubs and never `records/`, and its export example carries `source` and `exported_as`. The generated headers, `SCHEMA.md` and `AGENTS.md` name the new pin.
+
 ## [4.48.0] - 2026-10-22
 
 ### Added
