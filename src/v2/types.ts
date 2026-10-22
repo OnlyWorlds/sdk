@@ -810,6 +810,11 @@ export interface OwFileDownload {
   size: number;
 }
 
+/**
+ * The parameters of `list()` and `listAll()`. A wire filter goes under `filter`; any key not named
+ * here is a TypeError before anything is sent (since 4.51.0; before, an unknown key was dropped and the
+ * list came back whole).
+ */
 export interface ListParams {
   limit?: number;
   cursor?: string;
