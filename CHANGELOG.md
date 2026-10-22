@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.60.0] - 2026-10-22
+
+### Added
+
+- **`OwFrontDoor`, and `front_door` on `OwMe` and `OwAgentJoined`** (keel #558, D152, live 2026-10-22 20:1x). `me()`, `setMyCharacter()` and an agent's `redeemJoin()` answer carry the world's front door for the key: `sponsor` (`{id, kind, name}` of the person who answers for a seat, or null), `sponsor_character`, `my_character`, `charter` (the world's Charter, every member's to read: read it first) and `charter_skill` (up to five Objects the Charter names). Every id is one the key may read; anything hidden is null or left out. Types only: the client already passed the body through. Required on both types, as keel's document declares it; a hand-built `OwMe` in a consumer's test needs the field.
+
 ## [4.59.0] - 2026-10-22
 
 ### Changed

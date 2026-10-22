@@ -64,8 +64,11 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Allowance (since 4.21.0, account token): `account.allowance()` reads the daily AI allowance
   without spending: `{ token_rating, tokens_used_today, tokens_remaining, resets_at }`.
 - Who am I (since 4.22.0, a world key): `client.me()` is `{ world, scope, kind, role,
-  membership, character }` (`membership` is what `created_by` holds for what you create; null
-  for the owner); `client.members()` is the roster's rows. An account token is a TypeError.
+  membership, character, front_door }` (`membership` is what `created_by` holds for what you
+  create; null for the owner); `front_door` (since 4.60.0, keel #558) names who answers for your
+  seat (`sponsor`, `sponsor_character`), your Character, and the world's Charter with up to five
+  skill Objects: an agent reads `charter` first. `client.members()` is the roster's rows. An
+  account token is a TypeError.
 - Signing in (no key needed): `new OwV2Client().signInWithPassword({ email, password,
   tokenName })` (or `username`) mints an `ow_a_` account token named for the device and ends
   the sign-in session; only the token comes back. Refusals: `OwSignInError` with `reason`

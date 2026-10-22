@@ -165,7 +165,7 @@ await account.revokeWorldLink(worldId, made.id);
 Once in, a world key can ask who it is and who else is there (since 4.22.0):
 
 ```typescript
-const me = await client.me();           // { world, scope, kind, role, membership, character }
+const me = await client.me();           // { world, scope, kind, role, membership, character, front_door }: front_door.charter is the house rules, read first
 const roster = await client.members();  // [{ id, kind, role, character, status }], the owner's id is null
 ```
 

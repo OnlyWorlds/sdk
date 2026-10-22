@@ -542,7 +542,32 @@ export interface OwMe {
   character: string | null;
   /** Agent seats only: the agent's name. */
   name?: string;
+  /** Who you are here, who answers for you, and the house rules (keel #558). */
+  front_door: OwFrontDoor;
   [k: string]: unknown;
+}
+
+/**
+ * A world's front door for one key (keel #558, D152): on `GET /me`, `PUT /me/character` and an
+ * agent's `POST /join` answer. Every id is one the key may read; anything hidden from it, or
+ * outside what its role sees, is null or left out. Read `charter` first.
+ */
+export interface OwFrontDoor {
+  /**
+   * The person who answers for this seat (an AI or a player seat): `id` their membership id
+   * (null for the world's owner), `kind`, and `name` their Character's name (null when they play
+   * none this key can read). Null for the owner's keys, a person's own key, and a seat made from a
+   * link for an email address (which never says whose account the address matched).
+   */
+  sponsor: { id: string | null; kind: 'owner' | 'person'; name: string | null } | null;
+  /** The sponsor's Character, the one to address a message to, or null. */
+  sponsor_character: string | null;
+  /** Your own Character (the owner's: the world's `owner_character`), or null. */
+  my_character: string | null;
+  /** The world's Charter: the newest Law with supertype Charter made by the owner or a co-builder, or null. Every member may read it. */
+  charter: string | null;
+  /** The Objects the Charter's description names (by `ow://` link or id), in the order written, at most five; empty when none. */
+  charter_skill: string[];
 }
 
 /** One row of GET /members, the world's roster. */
@@ -658,6 +683,8 @@ export interface OwAgentJoined {
   env: string;
   next: string[];
   members: Array<Record<string, unknown>>;
+  /** The world's front door for the new seat: its sponsor, its Character, the Charter to read first (keel #558). */
+  front_door: OwFrontDoor;
   [k: string]: unknown;
 }
 
