@@ -1110,6 +1110,15 @@ test('every options object refuses an unknown key before sending (4.52.0): a typ
     ['mintWorldKey', () => acct.client.mintWorldKey('w', { scpe: 'read' })],
     ['ask', () => acct.client.ask({ worldId: 'w', question: 'q', context: [], model: 'x' })],
     ['sort', () => acct.client.sort({ worldId: 'w', notes: [], slice: [], order: 'x' })],
+    // 4.53.0: the seven with multi-line signatures
+    ['patch', () => client.patch('character', 'x', { name: 'A' }, { ifmatch: 3 })],
+    ['editLinks', () => client.editLinks('character', 'x', 'friends', { add: ['y'] }, { if_match: 3 })],
+    ['editLinks', () => client.editLinks('character', 'x', 'friends', { ad: ['y'] })],
+    ['uploadImage', () => client.uploadImage(new Uint8Array([1]), { kye: 'k' })],
+    ['createFileTicket', () => client.createFileTicket('location', 'x', { name: 'a.pdf', size: 1, lable: 'l' })],
+    ['uploadFile', () => client.uploadFile('location', 'x', new Uint8Array([1]), { name: 'a.pdf', onprogress: () => {} })],
+    ['createWorldLink', () => acct.client.createWorldLink('w', { reader: 'person', max_uses: 3 })],
+    ['createSeat', () => acct.client.createSeat('w', { name: 'bot', rol: 'guest' })],
   ];
   for (const [name, call] of calls) {
     await assert.rejects(call(), (err) => err instanceof TypeError && err.message.startsWith(`${name}: unknown parameter`), name);

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.53.0] - 2026-10-22
+
+### Changed
+
+- **The last seven options objects refuse an unknown key** too: `patch` and `editLinks` (`ifMatch`; the edit itself is `{add, remove}`), `uploadImage`, `createFileTicket`, `uploadFile`, `createWorldLink` and `createSeat`. With 4.51.0 and 4.52.0 every method of the client that takes an object now names a stray key before anything is sent; a client that drops a key it does not know has no place left.
+
 ## [4.52.0] - 2026-10-22
 
 ### Changed

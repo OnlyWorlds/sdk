@@ -231,6 +231,7 @@ export class OwV2Client {
     partial: Record<string, unknown>,
     opts: { ifMatch?: number } = {},
   ): Promise<OwElement> {
+    only('patch', opts, ['ifMatch']);
     refuseKnownOf(partial, 'patch');
     return this.request('PATCH', `/${type}/${id}/`, { write: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
@@ -258,6 +259,8 @@ export class OwV2Client {
     edit: OwLinkEdit,
     opts: { ifMatch?: number } = {},
   ): Promise<OwElement> {
+    only('editLinks', opts, ['ifMatch']);
+    only('editLinks', edit, ['add', 'remove'], 'The edit is { add?: string[], remove?: string[] }.');
     return this.request('POST', `/${type}/${id}/links/${field}`, { write: true, body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
@@ -423,6 +426,7 @@ export class OwV2Client {
     image: Blob | ArrayBuffer | ArrayBufferView,
     opts: { key?: string; ticket?: OwMediaTicket } = {},
   ): Promise<OwUploadedImage> {
+    only('uploadImage', opts, ['key', 'ticket']);
     const ticket = opts.ticket ?? await this.createMediaTicket();
     const size = typeof Blob !== 'undefined' && image instanceof Blob ? image.size : (image as ArrayBuffer).byteLength;
     if (size > ticket.max_bytes) {
@@ -531,6 +535,7 @@ export class OwV2Client {
     id: string,
     req: { name: string; kind?: OwFileKind; size: number; label?: string | null },
   ): Promise<OwFileTicket> {
+    only('createFileTicket', req, ['name', 'kind', 'size', 'label']);
     const { name, size } = req;
     if (typeof name !== 'string' || name.trim() === '') {
       throw new TypeError('createFileTicket needs the file\'s name, with its extension');
@@ -585,6 +590,7 @@ export class OwV2Client {
       onProgress?: (loaded: number, total: number) => void;
     } = {},
   ): Promise<OwUploadedFile> {
+    only('uploadFile', opts, ['name', 'kind', 'label', 'ticket', 'onProgress']);
     const size = typeof Blob !== 'undefined' && file instanceof Blob ? file.size : (file as ArrayBuffer).byteLength;
     let ticket = opts.ticket;
     if (!ticket) {
@@ -875,6 +881,7 @@ export class OwV2Client {
       characters?: string[];
     },
   ): Promise<OwCreatedWorldLink> {
+    only('createWorldLink', opts, ['reader', 'role', 'days', 'inviterName', 'withCharacter', 'character', 'preview', 'maxUses', 'characters']);
     if (this.keyKind !== 'account') {
       throw new TypeError('createWorldLink needs an account token (ow_a_): only the world\'s owner makes links');
     }
@@ -933,6 +940,7 @@ export class OwV2Client {
     worldId: string,
     opts: { name: string; role?: OwMemberRole; character?: 'new' | 'none' | 'mine' },
   ): Promise<OwSeatCreated> {
+    only('createSeat', opts, ['name', 'role', 'character']);
     if (this.keyKind !== 'account') {
       throw new TypeError('createSeat needs an account token (ow_a_): a seat is made by the person who answers for it');
     }
