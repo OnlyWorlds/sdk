@@ -180,7 +180,7 @@ for await (const change of client.changesAll(cursor)) {
 }
 ```
 
-To poll for news cheaply, `client.changesHead()` returns `{ head, cursor }` without reading any element: walk `changesAll` only when `head` moved past the head you last applied.
+To poll for news cheaply, `client.changesHead()` returns `{ head, cursor, epoch, unchanged }` without reading any element: walk `changesAll` only when `head` or `epoch` moved past what you last applied. Since 4.57.0 the client sends the last answer's ETag back, so when nothing moved keel answers 304 (refunded against your request budget) and `unchanged` is true. Sleep on it; the interval is yours.
 
 Edits to the world itself (its name, calendar, `public_read`) don't appear in the change feed. Read `client.getWorld()` and compare `updated_at`.
 

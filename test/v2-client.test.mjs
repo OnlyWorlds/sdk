@@ -978,26 +978,96 @@ test('changesHead: GET /changes?head=true alone (no since, no limit), head and c
   assert.ok(u.pathname.endsWith('/api/v2/changes/'));
   assert.deepEqual([...u.searchParams.entries()], [['head', 'true']]);
   // keel sends the owner's cursor as a number; every cursor the SDK hands out is a string
-  assert.deepEqual(tip, { head: 4021, cursor: '4021', epoch: null });
+  assert.deepEqual(tip, { head: 4021, cursor: '4021', epoch: null, unchanged: false });
 });
 
 test('changesHead: a guest\'s epoch-bearing cursor passes through verbatim', async () => {
   const c = '4021:ffffffff-ffff-ffff-ffff-ffffffffffff:3';
   const { client } = makeClient({ body: { cursor: c, changes: [], has_more: false, head: 4021, epoch: 3 } });
-  assert.deepEqual(await client.changesHead(), { head: 4021, cursor: c, epoch: 3 });
+  assert.deepEqual(await client.changesHead(), { head: 4021, cursor: c, epoch: 3, unchanged: false });
 });
 
 test('changesHead: a keel from before the epoch field still answers, epoch null', async () => {
   const { client } = makeClient({ body: { cursor: 7, changes: [], has_more: false, head: 7 } });
-  assert.deepEqual(await client.changesHead(), { head: 7, cursor: '7', epoch: null });
+  assert.deepEqual(await client.changesHead(), { head: 7, cursor: '7', epoch: null, unchanged: false });
 });
 
 test('changesHead: epoch_reason passes through when keel sends it (keel #421, hidden mark on)', async () => {
   const c = '4021:ffffffff-ffff-ffff-ffff-ffffffffffff:3';
   const { client } = makeClient({ body: { cursor: c, changes: [], has_more: false, head: 4021, epoch: 3, epoch_reason: 'role' } });
-  assert.deepEqual(await client.changesHead(), { head: 4021, cursor: c, epoch: 3, epoch_reason: 'role' });
+  assert.deepEqual(await client.changesHead(), { head: 4021, cursor: c, epoch: 3, unchanged: false, epoch_reason: 'role' });
   const owner = makeClient({ body: { cursor: 7, changes: [], has_more: false, head: 7, epoch: null, epoch_reason: null } });
-  assert.deepEqual(await owner.client.changesHead(), { head: 7, cursor: '7', epoch: null, epoch_reason: null });
+  assert.deepEqual(await owner.client.changesHead(), { head: 7, cursor: '7', epoch: null, unchanged: false, epoch_reason: null });
+});
+
+// -- The conditional head poll (keel #518: ETag "<head>:<epoch>", If-None-Match, 304) ----
+
+const headBody = (head, epoch = null) => ({ cursor: head, changes: [], has_more: false, head, epoch });
+const sentTag = (fetchImpl, i) => fetchImpl.calls[i].init.headers['If-None-Match'];
+
+test('changesHead: the first read sends no If-None-Match; the next sends the ETag back exactly as received (W/ and quotes)', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, headers: { etag: 'W/"821:-"' }, body: headBody(821) });
+  await client.changesHead();
+  assert.equal('If-None-Match' in fetchImpl.calls[0].init.headers, false);
+  await client.changesHead();
+  assert.equal(sentTag(fetchImpl, 1), 'W/"821:-"');
+});
+
+test('changesHead: a 304 answers the held head, cursor and epoch with unchanged: true, in one request', async () => {
+  const c = '4021:ffffffff-ffff-ffff-ffff-ffffffffffff:3';
+  const script = [
+    { status: 200, headers: { etag: 'W/"4021:3"' }, body: { cursor: c, changes: [], has_more: false, head: 4021, epoch: 3 } },
+    { status: 304, headers: { etag: '"4021:3"' } },
+  ];
+  const { client, fetchImpl } = makeClient(() => script.shift());
+  await client.changesHead();
+  const tip = await client.changesHead();
+  assert.deepEqual(tip, { head: 4021, cursor: c, epoch: 3, unchanged: true });
+  assert.equal(fetchImpl.calls.length, 2);
+  assert.equal(sentTag(fetchImpl, 1), 'W/"4021:3"');
+});
+
+test('changesHead: a 200 after a 304 stores the new tag; a 200 without an ETag leaves none held', async () => {
+  const script = [
+    { status: 200, headers: { etag: 'W/"821:-"' }, body: headBody(821) },
+    { status: 304, headers: { etag: '"821:-"' } },
+    { status: 200, headers: { etag: 'W/"822:-"' }, body: headBody(822) },
+    { status: 200, body: headBody(823) },
+    { status: 200, body: headBody(823) },
+  ];
+  const { client, fetchImpl } = makeClient(() => script.shift());
+  await client.changesHead();
+  await client.changesHead();
+  assert.deepEqual(await client.changesHead(), { head: 822, cursor: '822', epoch: null, unchanged: false });
+  await client.changesHead();
+  assert.equal(sentTag(fetchImpl, 3), 'W/"822:-"');
+  await client.changesHead();
+  assert.equal('If-None-Match' in fetchImpl.calls[4].init.headers, false);
+});
+
+test('changesHead: a 409 resync_required (from changes or from the head read) clears the tag, so the next head read sends none', async () => {
+  const resync = { status: 409, body: envelope('invalid_request', 'resync_required') };
+  const script = [
+    { status: 200, headers: { etag: 'W/"9:2"' }, body: headBody(9, 2) },
+    resync,
+    { status: 200, headers: { etag: 'W/"9:3"' }, body: { ...headBody(9, 3), epoch_reason: 'view' } },
+    resync,
+    { status: 200, body: headBody(9, 4) },
+  ];
+  const { client, fetchImpl } = makeClient(() => script.shift());
+  await client.changesHead();
+  await assert.rejects(client.changes({ since: '9:x:2' }), (e) => e.isResyncRequired);
+  assert.deepEqual(await client.changesHead(), { head: 9, cursor: '9', epoch: 3, unchanged: false, epoch_reason: 'view' });
+  assert.equal('If-None-Match' in fetchImpl.calls[2].init.headers, false);
+  await assert.rejects(client.changesHead(), (e) => e.isResyncRequired);
+  assert.equal(sentTag(fetchImpl, 3), 'W/"9:3"');
+  await client.changesHead();
+  assert.equal('If-None-Match' in fetchImpl.calls[4].init.headers, false);
+});
+
+test('changesHead: a 304 while nothing is held is an error naming it, never an invented head', async () => {
+  const { client } = makeClient({ status: 304, headers: { etag: '"821:-"' } });
+  await assert.rejects(client.changesHead(), (e) => e instanceof OwApiError && e.status === 304 && /nothing is held/.test(e.message));
 });
 
 test('changesAll: pages to the tail, yields in order, returns the last page cursor, head and epoch', async () => {

@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.57.0] - 2026-10-22
+
+### Added
+
+- **The conditional head poll** (keel #518, live 2026-10-22; Orrery's `revision-poll.md`, decision 3): `changesHead()` keeps the last head read's `ETag` per client and sends it back as `If-None-Match` on the next one, exactly as received (keel's 200 sends a weak `W/"821:-"`; nothing is quoted, parsed or compared). keel's tag is `"<head>:<epoch>"`, so a view change moves it as a new change does. When nothing moved, keel answers 304 Not Modified with no body, and `changesHead()` returns the `head`, `cursor` and `epoch` of the last 200 with `unchanged: true`; every 200 says `unchanged: false`. keel refunds a 304 against the request budget, so a poll that mostly finds nothing costs little. A 409 `resync_required` from `changesHead()`, `changes()` or `changesAll()` clears the held tag, so the next head read is a full 200 with `epoch_reason`. A 304 while no tag is held is an `OwApiError` with status 304, never a made-up head. The client still never polls or sleeps on its own: the interval is the caller's.
+- **`request()` gains two options**: `ifNoneMatch` (a tag sent as `If-None-Match` as given) and `onEtag(etag, status)` (called with each response's `ETag` and status before the body is read; with it given, a 304 returns null instead of throwing). Every other path is unchanged.
+
+### Changed
+
+- **`changesHead()`'s return type gains `unchanged: boolean`**, beside `head`, `cursor`, `epoch` and the optional `epoch_reason`.
+
 ## [4.56.0] - 2026-10-22
 
 ### Added

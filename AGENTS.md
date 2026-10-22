@@ -30,8 +30,10 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Offline or stale edits: pass `{ ifMatch: el.change_seq }` to `patch`/`editLinks` (since 4.9.0).
   If the element moved, nothing is written and `OwPreconditionFailedError` (412) carries
   `current`; the server never merges, the client decides.
-- Polling: `changesHead()` (since 4.15.0) gives `{head, cursor}` without a page; walk only
-  when `head` moved past the head you last applied.
+- Polling: `changesHead()` (since 4.15.0) gives `{head, cursor, epoch, unchanged}` without a
+  page; walk only when `head` or `epoch` moved past what you last applied. Since 4.57.0 it
+  sends the last ETag as `If-None-Match`: a 304 (refunded by keel) comes back as the held
+  values with `unchanged: true`. The client never sleeps or picks an interval.
 - World-meta changes do NOT appear in `/changes` — poll `GET /world` separately.
 - Extension fields: `x_<toolname>_*` is the sanctioned namespace for tool-specific state;
   unknown unprefixed fields 422. Extensions are capped at **64 KB per element** (422,

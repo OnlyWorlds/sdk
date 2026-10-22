@@ -41,6 +41,8 @@ export class OwV2Client {
   private readonly agent: boolean;
   /** The name sent as X-OW-Client on element writes (keel #520), checked at construction. */
   private readonly clientName: string;
+  /** The conditional head poll's state (keel #518), per instance. */
+  private readonly headPoll = new HeadPollState();
 
   constructor(config: OwClientConfig = {}) {
     // The constructor's options object refuses an unknown key like every other (4.52.0's rule):
@@ -356,7 +358,7 @@ export class OwV2Client {
   async changes(opts: { since?: string; limit?: number; after?: string } = {}): Promise<OwChangesPage> {
     only('changes', opts, ['since', 'limit', 'after']);
     const query = buildQuery({ since: opts.since, limit: opts.limit ?? this.changesPageSize, after: opts.after });
-    const page = await this.request('GET', '/changes/', { query }) as Omit<OwChangesPage, 'cursor'> & { cursor: string | number };
+    const page = await this.headPoll.feedRead(() => this.request('GET', '/changes/', { query })) as Omit<OwChangesPage, 'cursor'> & { cursor: string | number };
     return { ...page, cursor: String(page.cursor) };
   }
 
@@ -372,12 +374,40 @@ export class OwV2Client {
    * says why the epoch last moved, `role` or `view` (see OwChangesPage.epoch_reason).
    * keel returns the owner's cursor as a number; it is handed back as a
    * string, like every cursor here.
+   *
+   * Conditional (keel #518, 4.57.0): keel tags the answer with an ETag that covers the head and
+   * the epoch, so a view change moves it too. The client keeps the last tag and sends it as
+   * If-None-Match on its next head read. When nothing moved, keel answers 304 with no body, and
+   * this returns the `head`, `cursor` and `epoch` from the last 200 with `unchanged: true`
+   * (no `epoch_reason`); every 200 says `unchanged: false`. keel refunds a 304 against the
+   * request budget, so a poll that mostly sees nothing costs little. A poller: read the head,
+   * sleep when `unchanged`, walk changesAll when `head` or `epoch` moved past what you applied.
+   * The interval is yours; the client never sleeps or polls on its own. The tag is kept per
+   * client instance and sent back exactly as received (`W/` and quotes included), never
+   * compared; a 409 `resync_required` from this or from changes/changesAll clears it, so the
+   * next head read is a full 200 (with `epoch_reason`). A 304 while no tag is held is an
+   * OwApiError (status 304): the client never makes up a head.
    */
-  async changesHead(): Promise<{ head: number; cursor: string; epoch: number | null; epoch_reason?: OwResyncReason | null }> {
-    const page = await this.request('GET', '/changes/', { query: buildQuery({ head: 'true' }) }) as { head: number; cursor: string | number; epoch?: number | null; epoch_reason?: OwResyncReason | null };
-    const out: { head: number; cursor: string; epoch: number | null; epoch_reason?: OwResyncReason | null } =
-      { head: page.head, cursor: String(page.cursor), epoch: page.epoch ?? null };
-    if (page.epoch_reason !== undefined) out.epoch_reason = page.epoch_reason;
+  async changesHead(): Promise<{ head: number; cursor: string; epoch: number | null; unchanged: boolean; epoch_reason?: OwResyncReason | null }> {
+    const seen: { status: number; etag: string | null } = { status: 0, etag: null };
+    const poll = this.headPoll;
+    const page = await poll.feedRead(() => this.request('GET', '/changes/', {
+      query: buildQuery({ head: 'true' }),
+      ifNoneMatch: poll.tag,
+      onEtag: (etag, status) => { seen.etag = etag; seen.status = status; },
+    })) as { head: number; cursor: string | number; epoch?: number | null; epoch_reason?: OwResyncReason | null } | null;
+    if (seen.status === 304) {
+      if (!poll.held) {
+        throw new OwApiError(304, null, 'GET /changes?head=true answered 304 Not Modified while nothing is held: no head read has answered 200 on this client, so there is no head to return', null, null);
+      }
+      return { ...poll.held, unchanged: true };
+    }
+    const tip = { head: page!.head, cursor: String(page!.cursor), epoch: page!.epoch ?? null };
+    poll.tag = seen.etag || undefined;
+    poll.held = tip;
+    const out: { head: number; cursor: string; epoch: number | null; unchanged: boolean; epoch_reason?: OwResyncReason | null } =
+      { ...tip, unchanged: false };
+    if (page!.epoch_reason !== undefined) out.epoch_reason = page!.epoch_reason;
     return out;
   }
 
@@ -1166,6 +1196,13 @@ export class OwV2Client {
       /** One of the seven element writes keel reads X-OW-Client on (keel #520: create, put, patch, delete, links, bulk, adopt): where the client's name goes. */
       elementWrite?: boolean;
       ifMatch?: number;
+      /** A tag to send as `If-None-Match` exactly as given (keel #518, the head read): unlike ifMatch, nothing is quoted or checked. */
+      ifNoneMatch?: string;
+      /**
+       * Called with every response's `ETag` header (as received, null when absent) and status, before
+       * the body is read. With it given, a 304 Not Modified returns null instead of throwing.
+       */
+      onEtag?: (etag: string | null, status: number) => void;
     } = {},
   ): Promise<T> {
     if (opts.ifMatch !== undefined && !(Number.isInteger(opts.ifMatch) && opts.ifMatch >= 0)) {
@@ -1187,6 +1224,7 @@ export class OwV2Client {
     if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
     if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
     if (opts.ifMatch !== undefined) headers['If-Match'] = `"${opts.ifMatch}"`;
+    if (opts.ifNoneMatch !== undefined) headers['If-None-Match'] = opts.ifNoneMatch;
     // keel #299 (D104): presence is the declaration, the value is never stored. Opt-in only, and
     // on the element writes alone, the operations keel's document declares it on.
     if (this.agent && opts.write) headers['X-OW-Agent'] = '1';
@@ -1205,6 +1243,11 @@ export class OwV2Client {
       throw new OwNetworkError(`OnlyWorlds request failed: ${method} ${path}`, cause);
     }
 
+    if (opts.onEtag) {
+      opts.onEtag(res.headers?.get?.('ETag') ?? null, res.status);
+      // A 304 has no body: the caller that asked for the tag reads the status it was handed.
+      if (res.status === 304) return null as T;
+    }
     if (!res.ok) throw await errorFromResponse(res);
     if (res.status === 204 || opts.allowEmpty) {
       const text = await res.text();
@@ -1221,6 +1264,30 @@ export class OwV2Client {
 }
 
 // -- Helpers ---------------------------------------------------------------
+
+/**
+ * The conditional head poll's state (keel #518), one per client: the last head read's ETag,
+ * exactly as received, sent back as If-None-Match, and the head, cursor and epoch that 200
+ * answered, which a 304 hands back. Kept off the client's own methods, which the wire gate
+ * holds to routes.
+ */
+class HeadPollState {
+  tag: string | undefined;
+  held: { head: number; cursor: string; epoch: number | null } | undefined;
+
+  /** A read of /changes: a 409 `resync_required` drops the tag and the held head, then is thrown as is. */
+  async feedRead<T>(read: () => Promise<T>): Promise<T> {
+    try {
+      return await read();
+    } catch (err) {
+      if (err instanceof OwApiError && err.isResyncRequired) {
+        this.tag = undefined;
+        this.held = undefined;
+      }
+      throw err;
+    }
+  }
+}
 
 /**
  * Read-only fields the API must never receive on a write.
