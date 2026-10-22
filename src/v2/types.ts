@@ -100,6 +100,18 @@ export interface OwChangeDelete {
 /** Why a /changes delete row says the element left the reader's view (keel #421). */
 export type OwDeleteReason = 'deleted' | 'hidden' | 'out_of_view';
 
+/** One row of GET /world/hidden (keel #421): an element the owner or a co-builder hid. */
+export interface OwHiddenRow {
+  /** The element's type. */
+  type: ElementType | string;
+  /** The element's id. */
+  id: string;
+  /** When it was hidden (ISO 8601). */
+  set_at: string;
+  /** The membership (a person's or a seat's) that hid it, or null when the world's owner did (as an element's `created_by`). */
+  set_by: string | null;
+}
+
 /**
  * The door a write came through, as keel records it on every element (`changed_via`) and on a
  * delete (`deleted_via`) since keel #299: `seat` (an agent seat), `mcp` (the MCP server),

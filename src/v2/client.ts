@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
-  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtPolicy, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason,
 } from './types';
@@ -971,6 +971,16 @@ export class OwV2Client {
   /** DELETE /{type}/{id}/hidden -- clear the mark; an element that is not hidden stays as it is. 204. */
   async unhide(type: ElementType | string, id: string): Promise<void> {
     await this.request('DELETE', `/${type}/${id}/hidden`, { write: true, allowEmpty: true });
+  }
+
+  /**
+   * GET /world/hidden -- every hidden element of the world, newest first: `{type, id, set_at,
+   * set_by}` each (`set_by` null when the owner hid it). Any key of the owner's or a co-builder's;
+   * any other key is a 403. Served with `Cache-Control: no-store`: read it each time, keep no copy.
+   */
+  async listHidden(): Promise<OwHiddenRow[]> {
+    const page = await this.request('GET', '/world/hidden') as { data: OwHiddenRow[] };
+    return page.data;
   }
 
   // -- The account's worlds and keys (account token) -----------------------

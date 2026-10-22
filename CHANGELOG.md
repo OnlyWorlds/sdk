@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.48.0] - 2026-10-22
+
+### Added
+
+- `listHidden()`: `GET /world/hidden`, the world's hidden elements newest first as `OwHiddenRow[]` (`type`, `id`, `set_at`, `set_by`; keel #421). Any key of the owner's or a co-builder's; served with `Cache-Control: no-store`, so read it each time. For the parlor, whose host room marks what it hid (Temper, h66 #9778).
+
 ## [4.47.0] - 2026-10-22
 
 ### Added

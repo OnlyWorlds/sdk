@@ -447,6 +447,16 @@ test('hide and unhide send PUT and DELETE /{type}/{id}/hidden and take a 204 (ke
   assert.ok(u.url.endsWith('/character/x/hidden'), u.url);
 });
 
+test('listHidden sends GET /world/hidden and returns the rows (keel #421)', async () => {
+  const row = { type: 'character', id: 'x', set_at: '2026-10-22T02:00:00Z', set_by: null };
+  const { client, fetchImpl } = makeClient({ status: 200, body: { data: [row] } });
+  const rows = await client.listHidden();
+  assert.deepEqual(rows, [row]);
+  const [c] = fetchImpl.calls;
+  assert.equal(c.init.method, 'GET');
+  assert.ok(c.url.endsWith('/world/hidden'), c.url);
+});
+
 test('listAccountWorlds and mintWorldKey need an account token and send the documented shapes', async () => {
   const { client: w } = makeClient({ status: 200, body: { data: [] } });
   await assert.rejects(w.listAccountWorlds(), TypeError);
