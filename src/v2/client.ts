@@ -87,8 +87,9 @@ export class OwV2Client {
    * PUT /me/character -- pick the roster Character that is you in this world, or none (keel PR 160,
    * #533). A person member's write key with its PIN; answers GET /me's body. 422 for a hidden
    * Character (`character_hidden`, `err.isCharacterHidden`), a guest's pick it did not make, or a
-   * taken Character (`character_taken`); 404 for one this key cannot see; 403 for an agent seat, a
-   * player, the owner (who sets it on the world page) or a read key. A guest's view resets once.
+   * taken Character (`invalid_request`, `param` character); 404 for one this key cannot see; 403 for
+   * an agent seat, a player, the owner (whose own is the world's `owner_character`, set with
+   * patchWorld) or a read key. A guest's view resets once.
    */
   async setMyCharacter(character: string | null): Promise<OwMe> {
     if (this.keyKind === 'account') {
