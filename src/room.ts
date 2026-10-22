@@ -26,7 +26,8 @@ const WHITE_SPACE: ReadonlySet<number> = new Set([
  * order mark (U+FEFF) and a zero width space (U+200B) stay. JavaScript's trim() is not used:
  * it also strips U+FEFF. The Python package's is_room_element trims by the same 25.
  */
-function trimWhiteSpace(text: string): string {
+/** Leading and trailing White_Space removed, nothing inside touched (room.md's one definition); the names profile trims by it too. Module-internal: not in the package's exports. */
+export function trimWhiteSpace(text: string): string {
   let start = 0;
   let end = text.length;
   while (start < end && WHITE_SPACE.has(text.charCodeAt(start))) start++;
@@ -34,7 +35,8 @@ function trimWhiteSpace(text: string): string {
   return text.slice(start, end);
 }
 
-const fold = (text: string): string => simpleCaseFold(trimWhiteSpace(text));
+/** Trimmed, then simple-case-folded: "trimmed and without regard to case", defined once. Module-internal. */
+export const fold = (text: string): string => simpleCaseFold(trimWhiteSpace(text));
 
 /**
  * True when the element is a room element: its type and supertype, each trimmed and compared

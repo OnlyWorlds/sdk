@@ -31,6 +31,9 @@ export type {
 // The room profile (schema-dist profiles/room.md): the pairs a parlor puts in a world, and the
 // matcher a lore view uses to leave them out (ROOM_PAIRS generated from the vendored dist)
 export { ROOM_PAIRS, isRoomElement } from './room';
+// The names profile (schema-dist profiles/names.md): a world's own words for the types, x_names on the World.
+export { typeWord } from './names';
+export type { OwNamesMap, OwWordPair } from './names';
 
 // Canonical element colour palette (families generated from schema; hexes CVD-validated)
 export { ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf, elementColor } from './v2';
