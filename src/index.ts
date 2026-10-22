@@ -55,7 +55,7 @@ export {
   WORLD_FILE_MEDIA_TYPE, simpleCaseFold,
 } from './world-file';
 export type {
-  OwReadWorldFile, OwReadWorldFileOptions, OwWorldFileEntry, OwWorldFileReason,
+  OwReadWorldFile, OwReadWorldFileOptions, OwWorldFileEntry, OwWorldFileReason, OwWriteWorldFileOptions,
 } from './world-file';
 
 // World lookup: the elements a question is about, ranked, no model (the Lantern Ask trial, round 2)

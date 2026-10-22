@@ -12,6 +12,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { zipSync, deflateSync, strToU8 } from 'fflate';
 import {
@@ -546,7 +547,95 @@ test('the .owworld fixture set (§4.7): every verdict and every cause', (t) => {
     else if (got === 'refuse' && reason !== v.reason) reasonDiffs.push(`${v.file}: ${v.reason} -> ${reason}`);
   }
   t.diagnostic(`the .owworld set: ${run} fixtures run, ${verdictDiffs.length + reasonDiffs.length} disagreeing, from ${FIXTURES}`);
-  assert.ok(run >= 78, `the set holds ${run} fixtures`);
+  assert.ok(run >= 85, `the set holds ${run} fixtures`);
   assert.deepEqual(verdictDiffs, [], 'verdict disagreements');
   assert.deepEqual(reasonDiffs, [], 'right verdict for another reason');
+});
+
+// --- OW-8's private clause (§4.5 rule 11) ----------------------------------------
+
+const sha256 = (b) => createHash('sha256').update(b).digest('hex');
+const entriesOf = (bytes) => readWorldFile(bytes).files.map(f => ({ path: f.path, data: new Uint8Array(f.data) }));
+
+test('OW-8, private records: the set\'s two sides written from sources.private, entry for entry', () => {
+  const doc = JSON.parse(readFileSync(join(FIXTURES, 'verdicts.json'), 'utf8'));
+  const src = doc.sources.private;
+  const fixture = (file) => {
+    const v = doc.fixtures.find(f => f.file === file);
+    assert.ok(v && v.role === 'writer' && v.source === 'private', `${file} is a writer case on sources.private`);
+    return entriesOf(new Uint8Array(readFileSync(join(FIXTURES, file))));
+  };
+  // The asked side carries every source file: the source world, each file checked by its hash.
+  const source = fixture('pass-OW-8-private-asked.owworld');
+  assert.deepEqual(source.map(f => f.path), Object.keys(src.files).sort());
+  for (const f of source) assert.equal(sha256(f.data), src.files[f.path], f.path);
+  assert.deepEqual(src.private, ['fold']);
+  assert.ok(source.some(f => f.path.startsWith('records/fold/')), 'the source holds the private producer');
+
+  const byDefault = entriesOf(writeWorldFile(source, src.top));
+  const asked = entriesOf(writeWorldFile(source, src.top, { includePrivateRecords: true }));
+  assert.deepEqual(byDefault, fixture('pass-OW-8-private-left-out.owworld'), 'the default side');
+  assert.deepEqual(asked, fixture('pass-OW-8-private-asked.owworld'), 'the asked side');
+  for (const file of ['fail-OW-8-private-partial.owworld', 'fail-OW-8-private-manifest-rewritten.owworld']) {
+    const bad = fixture(file);
+    assert.notDeepEqual(byDefault, bad, `the default side is not ${file}`);
+    assert.notDeepEqual(asked, bad, `the asked side is not ${file}`);
+  }
+  const manifest = (files) => files.find(f => f.path === 'records/RECORDS.json').data;
+  assert.equal(sha256(manifest(byDefault)), src.files['records/RECORDS.json'], 'RECORDS.json byte-exact, its private entry kept');
+});
+
+const rec = (path, body = 'x') => ({ path, data: strToU8(body) });
+const manifestOf = (value) => ({ path: 'records/RECORDS.json', data: strToU8(typeof value === 'string' ? value : j(value)) });
+const recordPaths = (files, opts) => readWorldFile(writeWorldFile(files, 'w', opts)).files
+  .map(f => f.path).filter(p => p.startsWith('records/'));
+const unreadable = (files, why) => assert.throws(() => writeWorldFile(files, 'w'),
+  (e) => e instanceof TypeError && !(e instanceof OwWorldFileError)
+    && e.message.includes(`records/RECORDS.json ${why}`) && e.message.includes('includePrivateRecords'));
+
+test('OW-8: only the boolean true marks a producer private, and only its own directory is left out', () => {
+  const lab = rec('records/lab/rows.bin');
+  const fold = rec('records/fold/spine.jsonl');
+  const folder = rec('records/folder/keep.txt');
+  const entry = (producer, more = {}) => ({ producer, format: 'f', version: '1', deltas: false, ...more });
+  // A string "true" is not private; nor is 1.
+  for (const value of ['true', 1]) {
+    const m = manifestOf([entry('fold', { private: value })]);
+    assert.deepEqual(recordPaths([wj, m, fold], undefined), ['records/RECORDS.json', 'records/fold/spine.jsonl'], `private: ${JSON.stringify(value)}`);
+  }
+  // true leaves out records/fold/, never records/folder/; the manifest stays.
+  const m = manifestOf([entry('lab'), entry('fold', { private: true })]);
+  assert.deepEqual(recordPaths([wj, m, lab, fold, folder]), ['records/RECORDS.json', 'records/folder/keep.txt', 'records/lab/rows.bin']);
+  assert.deepEqual(recordPaths([wj, m, lab, fold, folder], { includePrivateRecords: false }),
+    ['records/RECORDS.json', 'records/folder/keep.txt', 'records/lab/rows.bin']);
+  assert.deepEqual(recordPaths([wj, m, lab, fold, folder], { includePrivateRecords: true }),
+    ['records/RECORDS.json', 'records/fold/spine.jsonl', 'records/folder/keep.txt', 'records/lab/rows.bin']);
+  // No manifest: nothing is private.
+  assert.deepEqual(recordPaths([wj, lab, fold]), ['records/fold/spine.jsonl', 'records/lab/rows.bin']);
+});
+
+test('OW-8: a manifest that cannot be read refuses by default, nothing left out by guess, and travels when asked', () => {
+  const fold = rec('records/fold/spine.jsonl');
+  const bad = [
+    [manifestOf({ fold: { private: true } }), 'is not a JSON array'],
+    [manifestOf('[{"producer": "fold", "private": true'), 'is not JSON'],
+    [manifestOf(['fold']), 'holds an entry that is not an object'],
+    [manifestOf([null]), 'holds an entry that is not an object'],
+    [manifestOf([{ format: 'f', private: true }]), 'marks an entry private without a producer name'],
+  ];
+  for (const [m, why] of bad) {
+    unreadable([wj, m, fold], why);
+    assert.deepEqual(recordPaths([wj, m, fold], { includePrivateRecords: true }), ['records/RECORDS.json', 'records/fold/spine.jsonl']);
+  }
+  // An entry with no producer that is not private is no reason to refuse.
+  assert.deepEqual(recordPaths([wj, manifestOf([{ format: 'f' }]), fold]), ['records/RECORDS.json', 'records/fold/spine.jsonl']);
+});
+
+test('writeWorldFile\'s options: an unknown key or a non-boolean is refused by name, before anything else', () => {
+  const typeErr = (re) => (e) => e instanceof TypeError && !(e instanceof OwWorldFileError) && re.test(e.message);
+  assert.throws(() => writeWorldFile([wj], 'w', { includePrivate: true }), typeErr(/unknown option 'includePrivate'.*includePrivateRecords/));
+  assert.throws(() => writeWorldFile([wj], 'w', { includePrivateRecords: 'yes' }), typeErr(/includePrivateRecords must be true or false/));
+  // Before the path checks: a bad option on an unsafe call is still the option's refusal.
+  assert.throws(() => writeWorldFile([wj], '../w', { includePrivateRecords: true, x: 1 }), typeErr(/unknown option 'x'/));
+  assert.ok(writeWorldFile([wj], 'w', {}) instanceof Uint8Array);
 });

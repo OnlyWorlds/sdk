@@ -1,6 +1,6 @@
 # For AI agents using @onlyworlds/sdk
 
-**Current as of**: SDK **4.x** · schema-dist **v0.33.0-dist.48** (canonical 00.33.00).
+**Current as of**: SDK **4.x** · schema-dist **v0.33.0-dist.49** (canonical 00.33.00).
 This line is asserted by `codegen:check` in CI — if the pin moves and this file is not
 re-read against it, the check fails rather than letting this document rot quietly.
 
@@ -88,6 +88,8 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   §4.7 (`.owworld`): the reader checks the central directory before inflating
   and ignores files beside the world's folder; the writer's output is byte-stable (marker
   first, UTF-8 name order, 1980 stamps) and holds only `world.json` and the folder's parts.
+  Producers marked `"private": true` in `records/RECORDS.json` are left out whole unless
+  `writeWorldFile(files, topDir, { includePrivateRecords: true })` (since 4.63.0; OW-8).
 - World calendars (since 4.20.0): `worldCalendars(elements)` finds the elements carrying
   `atlas_calendar` (Atlas owns the field: read it, never write it); `resolveCalendarLens` picks
   one; `formatStep(config, step)` names a point on the world's integer time line, `parseDate`

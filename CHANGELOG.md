@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.63.0] - 2026-10-23
+
+### Added
+
+- **`writeWorldFile(files, topDir, { includePrivateRecords })`**, OW-8's private clause (folder format spec v0.3.15, §4.5 rule 11 and §4.7). By default the writer now leaves out, whole, every `records/<producer>/` directory whose entry in `records/RECORDS.json` says `"private": true`, so a tool's own notes do not travel the first time a world is shared. `RECORDS.json` itself travels byte-exact, its private entries kept, so a reader can see a producer was left out. Only the boolean `true` marks a directory private (`"true"`, a string, does not). With `includePrivateRecords: true` every record travels as before and the manifest is not read. No manifest, nothing is private. Type `OwWriteWorldFileOptions`.
+- **A manifest the writer cannot read is refused, not guessed at**: a `RECORDS.json` that is not JSON, not an array, holds an entry that is not an object, or marks an entry private without a producer name throws a `TypeError` naming the file and the option, having written nothing, unless `includePrivateRecords: true` is passed. A world whose manifest is in an older shape now needs the option to be written. The options object refuses an unknown key, and an `includePrivateRecords` that is not a boolean, with a `TypeError`, before anything else.
+- Tests: the conformance set's four private cases, written from its `sources.private` world (each source file checked by its sha256): the default side equals `pass-OW-8-private-left-out` and the asked side `pass-OW-8-private-asked`, entry for entry, and neither is `fail-OW-8-private-partial` or `fail-OW-8-private-manifest-rewritten`. Also the string `"true"`, a producer whose name is a prefix of another's, no manifest, each unreadable manifest refused and carried when asked, and the options. Each behaviour watched failing on its own mutant.
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.49`** (same canonical 00.33.00; no schema file moved, no generated type changed, `ONLYWORLDS_VERSION` still `'00.33.00'`). The `.owworld` conformance set grows to 85 zips with the four OW-8 private-records writer cases on `sources.private`; none of the earlier 81 moved.
+
 ## [4.62.0] - 2026-10-22
 
 ### Added

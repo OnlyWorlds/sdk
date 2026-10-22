@@ -285,6 +285,8 @@ Files beside the world's folder and archive junk (`__MACOSX`, `.DS_Store`) are i
 
 The writer gives the same bytes for the same files: the `mimetype` marker first, then every entry in the UTF-8 order of its name, stamped 1980-01-01 00:00. It writes `world.json`, `elements/`, `spatial/`, `media/` and `records/`, and leaves any other file out. A tool's dot-folder you hand it travels too, which makes the file a private copy rather than a portable `.owworld`.
 
+`records/` travels byte for byte, except a producer's directory that `records/RECORDS.json` marks `"private": true`: that one is left out whole, and `RECORDS.json` itself travels unchanged, so the reader can see a producer was left out. Pass `writeWorldFile(files, topDir, { includePrivateRecords: true })` to carry private records too. A `RECORDS.json` that is not a JSON array of objects is refused with a `TypeError` unless you pass that option, since the writer cannot tell which records are private.
+
 ## World calendars
 
 A world's time is an integer line (`time_range_current` is a point on it, and so is an Event's `start_date`). A calendar names its points: months, days, eras. Atlas keeps a calendar on an element (a Construct by convention) in its `atlas_calendar` field, and the SDK reads it with Atlas's own calendar code (since 4.20.0). Atlas owns that field and is its only writer; read it, never write it.

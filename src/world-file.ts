@@ -33,7 +33,9 @@
  * THE WRITER emits a portable copy (OW-7, OW-12, OW-13): the `mimetype` marker
  * first and stored, then only the folder's parts, every entry stamped
  * 1980-01-01 00:00, in the UTF-8 byte order of its name, JSON deflated and
- * everything else stored.
+ * everything else stored. `records/` travels whole and byte-exact, except the
+ * producers `records/RECORDS.json` marks private, left out whole unless the
+ * caller asks (OW-8, §4.5 rule 11).
  *
  * A tool's own `.<tool>/` folder is the tool's (spec §4): the reader returns
  * it like any file (a caller leaves files out with `skip`), and the writer
@@ -563,6 +565,66 @@ function carried(path: string): boolean {
 /** 1980-01-01 00:00 in the DOS fields (fflate reads the local clock's parts): one input, one set of bytes (OW-12). */
 const STAMP = new Date(1980, 0, 1, 0, 0, 0);
 
+export interface OwWriteWorldFileOptions {
+  /**
+   * Carry the producers marked private in `records/RECORDS.json` (spec §4.5
+   * rule 11, OW-8). Left out or false, their directories are left out whole.
+   */
+  includePrivateRecords?: boolean;
+}
+
+/** Every key `writeWorldFile`'s options take; any other is refused by name, never dropped. A new option joins this list in the same commit. */
+const WRITE_OPTION_KEYS: readonly (keyof OwWriteWorldFileOptions)[] = ['includePrivateRecords'];
+
+const RECORDS_MANIFEST = 'records/RECORDS.json';
+
+/** Whether the caller asked for private records; refuses an unknown key or a value that is not a boolean, before anything else. */
+function asksPrivate(opts: unknown): boolean {
+  if (opts === undefined || opts === null) return false;
+  if (typeof opts !== 'object') throw new TypeError(`writeWorldFile: options must be an object, such as { includePrivateRecords: true }. Nothing was written.`);
+  for (const k of Object.keys(opts)) {
+    if (!(WRITE_OPTION_KEYS as readonly string[]).includes(k)) {
+      throw new TypeError(`writeWorldFile: unknown option '${k}'. The keys are ${WRITE_OPTION_KEYS.join(', ')}. Nothing was written.`);
+    }
+  }
+  const asked = (opts as OwWriteWorldFileOptions).includePrivateRecords;
+  if (asked !== undefined && typeof asked !== 'boolean') {
+    throw new TypeError(`writeWorldFile: includePrivateRecords must be true or false; got ${JSON.stringify(asked) ?? String(asked)}. Nothing was written.`);
+  }
+  return asked === true;
+}
+
+/**
+ * The producers `records/RECORDS.json` marks private (`"private": true`, the
+ * boolean only), or none when there is no manifest. A manifest that is not a
+ * JSON array of entries, or a private entry whose `producer` is not a name, is
+ * refused: which records are private cannot be read, and none is left out by
+ * guess (OW-8).
+ */
+function privateProducers(files: OwWorldFileEntry[]): string[] {
+  const manifest = files.find(f => f.path === RECORDS_MANIFEST);
+  if (!manifest) return [];
+  const unreadable = (why: string): never => {
+    throw new TypeError(`writeWorldFile: ${RECORDS_MANIFEST} ${why}, so which records are private cannot be read and none is left out by guess (spec §4.7, OW-8). Fix the manifest, or pass { includePrivateRecords: true } to carry every record. Nothing was written.`);
+  };
+  let doc: unknown;
+  try {
+    doc = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(manifest.data));
+  } catch {
+    unreadable('is not JSON');
+  }
+  if (!Array.isArray(doc)) unreadable('is not a JSON array of entries');
+  const out: string[] = [];
+  for (const entry of doc as unknown[]) {
+    if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) unreadable('holds an entry that is not an object');
+    const { producer, private: isPrivate } = entry as { producer?: unknown; private?: unknown };
+    if (isPrivate !== true) continue;
+    if (typeof producer !== 'string' || producer === '') unreadable('marks an entry private without a producer name');
+    out.push(producer as string);
+  }
+  return out;
+}
+
 /**
  * Write a world file under one top-level folder `topDir`: the `mimetype`
  * marker first and stored, then `world.json` (without `api`) and the folder's
@@ -570,12 +632,26 @@ const STAMP = new Date(1980, 0, 1, 0, 0, 0);
  * deflated and everything else stored (spec §4.7, OW-6, OW-7, OW-12, OW-13).
  * Any other file is left out. A tool's dot-folder in `files` travels, and
  * makes the result a private copy, not a portable `.owworld` (OW-7): leave it
- * out of `files` for a portable one. Refuses (`OwWorldFileError`) an unsafe
- * path or `topDir`, a duplicate path, a name some disk cannot hold, two names
- * that fold to one, and a world.json that is missing, will not parse (it may
- * hold a key, so it is never zipped raw) or has no `id`.
+ * out of `files` for a portable one.
+ *
+ * `records/` travels byte-exact, except private records (OW-8, spec §4.5 rule
+ * 11): every `records/<producer>/` whose entry in `records/RECORDS.json` says
+ * `"private": true` (the boolean; `"true"` is not private) is left out whole,
+ * and `RECORDS.json` itself travels byte-exact, its private entries kept, so a
+ * reader learns a producer was left out. Pass `{ includePrivateRecords: true }`
+ * to carry them; then the manifest is not read and every record travels. No
+ * manifest, nothing is private.
+ *
+ * Throws a `TypeError`, having written nothing, for an unknown option, an
+ * `includePrivateRecords` that is not a boolean, and (unless private records
+ * are asked for) a `RECORDS.json` that is not a JSON array of objects or that
+ * marks an entry private without a producer name. Refuses (`OwWorldFileError`)
+ * an unsafe path or `topDir`, a duplicate path, a name some disk cannot hold,
+ * two names that fold to one, and a world.json that is missing, will not parse
+ * (it may hold a key, so it is never zipped raw) or has no `id`.
  */
-export function writeWorldFile(files: OwWorldFileEntry[], topDir: string): Uint8Array {
+export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: OwWriteWorldFileOptions = {}): Uint8Array {
+  const includePrivate = asksPrivate(opts);
   if (pathFault(topDir) || topDir.includes('/')) throw new OwWorldFileError('unsafe_path');
   const seen = new Set<string>();
   for (const f of files) {
@@ -583,7 +659,8 @@ export function writeWorldFile(files: OwWorldFileEntry[], topDir: string): Uint8
     if (seen.has(f.path)) throw new OwWorldFileError('unsafe_path', `The path ${f.path} is listed twice.`);
     seen.add(f.path);
   }
-  const kept = files.filter(f => carried(f.path));
+  const left = includePrivate ? [] : privateProducers(files).map(p => `records/${p}/`);
+  const kept = files.filter(f => carried(f.path) && !left.some(dir => f.path.startsWith(dir)));
   if (!kept.some(f => f.path === WORLD_FILE)) throw new OwWorldFileError('not_a_world');
   const keys = kept.map(f => `${topDir}/${f.path}`);
   for (const key of keys) {
