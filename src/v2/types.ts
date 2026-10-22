@@ -54,10 +54,38 @@ export interface OwWorldMeta {
   agent_narrator_rule?: boolean;
   /** The owner's "this Character is me": a Character id in this world, or null (null too, to a reader it is hidden from: keel #421). */
   owner_character?: string | null;
+  /**
+   * The world's public page address, onlyworlds.com/w/<slug> (keel #471): null when the world has
+   * no page (a slug exists only while the page is on). Also a keyless `?world=` value. Set by the
+   * owner on the world page; read-only on the wire, and patchWorld strips it.
+   */
+  slug?: string | null;
+  /**
+   * The world's public page as its owner set it (keel #471): `on`, and the levers. Every key is
+   * present with the page off. Set by the owner on the world page; read-only on the wire, and
+   * patchWorld strips it.
+   */
+  public_page?: OwWorldPublicPage;
   created_at?: string | null;
   /** Moves when the world's own fields change, not on element writes. */
   updated_at?: string | null;
   [field: string]: unknown;
+}
+
+/** OwWorldMeta.public_page (keel #471), as keel's `World` component types it: all six keys, always. */
+export interface OwWorldPublicPage {
+  /** Whether the page is on. */
+  on: boolean;
+  /** The page's palette, or null for the house's. */
+  palette: 'midnight' | 'daylight' | 'parchment' | 'brass' | 'dusk' | null;
+  /** One plain line (at most 120 characters). */
+  hero: string;
+  /** The element types shown, in their order; empty for all, in the house order. */
+  sections: string[];
+  /** One element's id, or null. */
+  pin: string | null;
+  /** Always false for now: search engines stay off. */
+  index: boolean;
 }
 
 /** List envelope: cursor-paginated. */

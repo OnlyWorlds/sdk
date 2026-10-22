@@ -78,9 +78,14 @@ export class OwV2Client {
     return this.request('GET', '/world/') as Promise<OwWorldMeta>;
   }
 
-  /** PATCH /world -- partial world-meta update. */
+  /**
+   * PATCH /world -- partial world-meta update. The element write's server-managed keys are
+   * stripped, and so are `slug` and `public_page` (keel #471: set on the world page, not here).
+   */
   async patchWorld(partial: Record<string, unknown>): Promise<OwWorldMeta> {
-    return this.request('PATCH', '/world/', { body: sanitizePayload(partial) }) as Promise<OwWorldMeta>;
+    const body = sanitizePayload(partial);
+    for (const field of WORLD_READ_ONLY_FIELDS) delete body[field];
+    return this.request('PATCH', '/world/', { body }) as Promise<OwWorldMeta>;
   }
 
   // -- Who am I, and who is here ---------------------------------------------
@@ -1300,6 +1305,13 @@ class HeadPollState {
  * (2026-07-18, reaffirmed 2026-07-23).
  */
 const READ_ONLY_FIELDS = ['world', 'type', 'created_at', 'updated_at', 'change_seq', 'known_of'] as const;
+
+/**
+ * The world's own read-only keys, stripped by patchWorld on top of READ_ONLY_FIELDS (keel #471:
+ * the public page is set on the world page). Kept apart so an element write never loses a field
+ * of these names.
+ */
+const WORLD_READ_ONLY_FIELDS = ['slug', 'public_page'] as const;
 
 /**
  * Strip fields the API rejects on write. WIRE-CORRECTED (fixtures P3a/P3b/P6):

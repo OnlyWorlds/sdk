@@ -10,6 +10,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   OwV2Client, OwApiError, OwPreconditionFailedError, detectKeyKind, ELEMENT_TYPES,
@@ -917,6 +918,40 @@ test('patchWorld carries the three unit settings (canonical 00.31.00) and still 
   const w = await client.patchWorld({ length_unit: 'cm', mass_unit: 'kg', distance_unit: 'km', world: 'x', change_seq: 3 });
   assert.deepEqual(lastBody(fetchImpl), { length_unit: 'cm', mass_unit: 'kg', distance_unit: 'km' });
   assert.equal(w.length_unit, 'cm');
+});
+
+// -- The public page (keel #471): slug and public_page, read-only ---------------
+
+const PUBLIC_PAGE = { on: true, palette: 'parchment', hero: 'A city of bells.', sections: ['location', 'character'], pin: '11111111-2222-4333-8444-555555555555', index: false };
+
+test('getWorld: slug and public_page read through as keel sends them (on, and with the page off)', async () => {
+  const on = makeClient({ body: { id: 'w', name: 'W', slug: 'bells', public_page: PUBLIC_PAGE } });
+  const w = await on.client.getWorld();
+  assert.equal(w.slug, 'bells');
+  assert.deepEqual(w.public_page, PUBLIC_PAGE);
+  const offPage = { on: false, palette: null, hero: '', sections: [], pin: null, index: false };
+  const off = makeClient({ body: { id: 'w', name: 'W', slug: null, public_page: offPage } });
+  const o = await off.client.getWorld();
+  assert.equal(o.slug, null);
+  assert.deepEqual(o.public_page, offPage);
+});
+
+test('patchWorld strips slug and public_page (read-only: set on the world page), so a read body round-trips', async () => {
+  const { client, fetchImpl } = makeClient({ body: { id: 'w', name: 'V', slug: 'bells', public_page: PUBLIC_PAGE } });
+  await client.patchWorld({ name: 'V', slug: 'bells', public_page: PUBLIC_PAGE, updated_at: '2026-10-22T00:00:00Z' });
+  assert.deepEqual(lastBody(fetchImpl), { name: 'V' });
+});
+
+test('the published types declare slug and public_page on OwWorldMeta, and the page\'s six keys', () => {
+  const all = readFileSync(new URL('../dist/index.d.ts', import.meta.url), 'utf8');
+  const meta = all.slice(all.indexOf('interface OwWorldMeta {'), all.indexOf('\n}', all.indexOf('interface OwWorldMeta {')));
+  assert.match(meta, /\bslug\?: string \| null;/);
+  assert.match(meta, /\bpublic_page\?: OwWorldPublicPage;/);
+  const at = all.indexOf('interface OwWorldPublicPage {');
+  assert.ok(at > 0, 'OwWorldPublicPage is declared');
+  const page = all.slice(at, all.indexOf('\n}', at));
+  for (const line of [/\bon: boolean;/, /\bpalette: 'midnight' \| 'daylight' \| 'parchment' \| 'brass' \| 'dusk' \| null;/,
+    /\bhero: string;/, /\bsections: string\[\];/, /\bpin: string \| null;/, /\bindex: boolean;/]) assert.match(page, line);
 });
 
 // -- Joining by link (keel #212) ---------------------------------------------
