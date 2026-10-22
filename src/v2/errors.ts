@@ -9,7 +9,7 @@
  * surfaced on the thrown error.
  */
 
-import type { OwResyncReason } from './types';
+import type { OwProposal, OwProposalConflict, OwResyncReason } from './types';
 
 /**
  * Auth codes are distinguishable by design; client recovery UX differs per code.
@@ -274,6 +274,62 @@ export class OwApiError extends Error {
   get isAskFailed(): boolean {
     return this.status === 502 && this.code === 'ask_failed';
   }
+
+  /**
+   * patch, upsert or editLinks became a proposal (202, keel #519): the world takes an agent seat's
+   * writes as proposals (`agent_writes_proposed`), so the element did not change. The error is an
+   * OwProposedError; its `proposal` is the row a keeper accepts or declines. Not a failure to retry:
+   * the write is waiting for a person.
+   */
+  get isProposed(): boolean {
+    return this.status === 202 && this instanceof OwProposedError;
+  }
+
+  /**
+   * propose named a field the proposer's own view of the element does not hold (422
+   * `field_not_visible`, `param` names it, keel #519): the element reaches this key only as a
+   * stub (known_of), and a proposal changes only what its proposer can read.
+   */
+  get isFieldNotVisible(): boolean {
+    return this.status === 422 && this.code === 'field_not_visible';
+  }
+
+  /**
+   * propose: this proposer already has 5 open proposals on the element, or 50 in the world (422
+   * `too_many_open`, keel #519). Wait for a keeper to decide, or withdraw one; a lapsed proposal
+   * no longer counts.
+   */
+  get isTooManyOpen(): boolean {
+    return this.status === 422 && this.code === 'too_many_open';
+  }
+
+  /**
+   * acceptProposal found a proposed field moved since the proposal was made (409
+   * `stale_proposal`, keel #519). Nothing was written and the proposal stays open. The error is an
+   * OwStaleProposalError: `conflicts` lists each moved field with its `base` and `current` values,
+   * and `current` is the element as it is now. A change to a field the proposal does not name
+   * does not count. The proposer proposes again on the current text.
+   */
+  get isStaleProposal(): boolean {
+    return this.status === 409 && this.code === 'stale_proposal';
+  }
+
+  /**
+   * While the world takes agent seats' writes as proposals (keel #519), an agent seat's key tried
+   * what it may not: delete an element it did not create, or accept or decline a proposal (403
+   * `proposed_only`). Retrying will not help; a person decides.
+   */
+  get isProposedOnly(): boolean {
+    return this.status === 403 && this.code === 'proposed_only';
+  }
+
+  /**
+   * acceptProposal or declineProposal on the key's own proposal (403 `own_proposal`, keel #519):
+   * another keeper (the owner or a co-builder) decides it. Retrying will not help.
+   */
+  get isOwnProposal(): boolean {
+    return this.status === 403 && this.code === 'own_proposal';
+  }
 }
 
 /**
@@ -301,6 +357,66 @@ export class OwPreconditionFailedError extends OwApiError {
     this.name = 'OwPreconditionFailedError';
     const cur = detail && typeof detail === 'object' ? (detail as { current?: unknown }).current : undefined;
     this.current = cur && typeof cur === 'object' ? (cur as Record<string, unknown>) : null;
+  }
+}
+
+/**
+ * 409 `stale_proposal` (keel #519): acceptProposal found a proposed field moved since the
+ * proposal was made. keel sends `conflicts` (one `{field, base, current}` per moved field) and
+ * `current` (the element as it is now) beside the error envelope; `conflicts` is empty and
+ * `current` null if a response ever lacks them. Nothing was written and the proposal stays open.
+ */
+export class OwStaleProposalError extends OwApiError {
+  readonly conflicts: OwProposalConflict[];
+  readonly current: Record<string, unknown> | null;
+
+  constructor(
+    status: number,
+    code: string | null,
+    message: string,
+    docUrl: string | null,
+    detail: unknown,
+    type: string | null = null,
+    param: string | null = null,
+    retryAfter: number | null = null,
+  ) {
+    super(status, code, message, docUrl, detail, type, param, retryAfter);
+    this.name = 'OwStaleProposalError';
+    const body = detail && typeof detail === 'object' ? (detail as { conflicts?: unknown; current?: unknown }) : {};
+    this.conflicts = Array.isArray(body.conflicts)
+      ? body.conflicts.filter((c): c is OwProposalConflict => !!c && typeof c === 'object' && typeof (c as { field?: unknown }).field === 'string')
+      : [];
+    this.current = body.current && typeof body.current === 'object' ? (body.current as Record<string, unknown>) : null;
+  }
+}
+
+/**
+ * 202 on patch, upsert or editLinks (keel #519): the world takes an agent seat's writes as
+ * proposals (`agent_writes_proposed`, set by its owner), so the write became a proposal and the
+ * element did not change. The answer is `{proposal}`, never an element, so this client throws
+ * rather than hand it back as one. `proposal` is the row; a keeper (the owner or a co-builder)
+ * accepts or declines it, and the proposer may withdraw it. `status` is 202 and `code` null: it
+ * is not keel's error envelope. A /bulk item never throws for it: its slot says `status: 202`
+ * and carries `proposal`. The arguments are OwPreconditionFailedError's; `proposal` is read from
+ * `detail` (the 202's body), and the client builds one only from a body that holds a proposal.
+ */
+export class OwProposedError extends OwApiError {
+  readonly proposal: OwProposal;
+
+  constructor(
+    status: number,
+    code: string | null,
+    message: string,
+    docUrl: string | null,
+    detail: unknown,
+    type: string | null = null,
+    param: string | null = null,
+    retryAfter: number | null = null,
+  ) {
+    super(status, code, message, docUrl, detail, type, param, retryAfter);
+    this.name = 'OwProposedError';
+    const p = detail && typeof detail === 'object' ? (detail as { proposal?: unknown }).proposal : undefined;
+    this.proposal = p as OwProposal;
   }
 }
 
@@ -397,7 +513,9 @@ export function parseErrorEnvelope(status: number, body: unknown, retryAfter: nu
     env.message ?? nested?.message ??
     (typeof env.detail === 'string' ? env.detail : undefined) ??
     `OnlyWorlds API error ${status}${code ? ` (${code})` : ''}`;
-  const Cls = status === 412 && code === 'precondition_failed' ? OwPreconditionFailedError : OwApiError;
+  const Cls = status === 412 && code === 'precondition_failed' ? OwPreconditionFailedError
+    : status === 409 && code === 'stale_proposal' ? OwStaleProposalError
+    : OwApiError;
   return new Cls(status, code, message, docUrl, body, type, param, retryAfter);
 }
 

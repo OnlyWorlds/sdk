@@ -9,7 +9,7 @@
 export { OwV2Client, parseErrorEnvelope, FILE_EXTENSIONS, fileKindOf } from './client';
 export { pkceChallenge, base64url } from './oauth';
 export type { OwSignInStorage, OwSignInBegin, OwSignInBegun, OwSignInComplete, OwSignInResult } from './oauth';
-export { OwApiError, OwPreconditionFailedError, OwNetworkError, OwSignInError, errorFromResponse } from './errors';
+export { OwApiError, OwPreconditionFailedError, OwProposedError, OwStaleProposalError, OwNetworkError, OwSignInError, errorFromResponse } from './errors';
 export type { OwAuthErrorCode, OwSignInReason } from './errors';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './keys';
 export type { OwKeyKind } from './keys';
@@ -27,6 +27,7 @@ export type {
   OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtPolicy, OwDraughtComponent, OwDraughtItem, OwJoined, OwAgentJoined, OwPlayerJoined, OwSignedIn,
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
   OwWriteDoor, OwChangeUpsert, OwChangeDelete, OwDeleteReason, OwHiddenRow, OwResyncReason,
+  OwProposal, OwProposalState, OwProposalList, OwProposed, OwProposalAccepted, OwProposalConflict, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
 } from './types';
 export {
   ELEMENT_LABELS, ELEMENT_SECTIONS, ELEMENT_ICONS, FIELD_SCHEMA, PUBLIC_FIELDS,

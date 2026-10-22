@@ -18,10 +18,10 @@ import type {
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
   OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
-  OwResyncReason,
+  OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
 } from './types';
 import { keyedId } from './keyed-id';
-import { OwApiError, OwNetworkError, OwSignInError, errorFromResponse, parseErrorEnvelope, parseRetryAfter } from './errors';
+import { OwApiError, OwNetworkError, OwProposedError, OwSignInError, errorFromResponse, parseErrorEnvelope, parseRetryAfter } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
 import { beginSignIn, completeSignIn as completeOAuthSignIn, type OwSignInBegin, type OwSignInBegun, type OwSignInComplete, type OwSignInResult } from './oauth';
 
@@ -80,7 +80,8 @@ export class OwV2Client {
 
   /**
    * PATCH /world -- partial world-meta update. The element write's server-managed keys are
-   * stripped, and so are `slug` and `public_page` (keel #471: set on the world page, not here).
+   * stripped, and so are the world's own read-only ones (WORLD_READ_ONLY_FIELDS: `slug` and
+   * `public_page`, keel #471; `agent_writes_proposed`, keel #519; set on the world page, not here).
    */
   async patchWorld(partial: Record<string, unknown>): Promise<OwWorldMeta> {
     const body = sanitizePayload(partial);
@@ -223,10 +224,12 @@ export class OwV2Client {
    * PUT /{type}/{id}/ -- upsert-by-client-id. The local-first write primitive. A known-of
    * stub (`known_of: true`, see isKnownOf) is a TypeError before sending, here and on every
    * element write: a PUT of one would blank every field it does not keep.
+   * An agent seat's PUT on an existing element, in a world that takes its writes as proposals
+   * (keel #519), answers 202 and is thrown as an OwProposedError: the element did not change.
    */
   async upsert(type: ElementType | string, id: string, element: OwElement | Record<string, unknown>): Promise<OwElement> {
     refuseKnownOf(element, 'upsert');
-    return this.request('PUT', `/${type}/${id}/`, { write: true, elementWrite: true, body: sanitizePayload(element) }) as Promise<OwElement>;
+    return this.request('PUT', `/${type}/${id}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(element) }) as Promise<OwElement>;
   }
 
   /**
@@ -238,6 +241,11 @@ export class OwV2Client {
    * only if nobody changed the element since; otherwise nothing is written and this throws
    * an OwPreconditionFailedError (412) whose `current` is the element as it is now. Omit
    * it for today's unconditional write.
+   *
+   * In a world that takes an agent seat's writes as proposals (keel #519, the world's
+   * `agent_writes_proposed`), a seat's patch answers 202 with `{proposal}`, never an element:
+   * this throws an OwProposedError (`err.isProposed`, the row under `err.proposal`) and the
+   * element did not change. If-Match is checked first: a stale one is still a 412.
    */
   async patch(
     type: ElementType | string,
@@ -247,7 +255,7 @@ export class OwV2Client {
   ): Promise<OwElement> {
     only('patch', opts, ['ifMatch']);
     refuseKnownOf(partial, 'patch');
-    return this.request('PATCH', `/${type}/${id}/`, { write: true, elementWrite: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
+    return this.request('PATCH', `/${type}/${id}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   /**
@@ -264,7 +272,8 @@ export class OwV2Client {
    * Dedupes, tolerates already-present/already-absent ids. Returns the FULL
    * updated element (fixture P5). Use this for all relationship editing; it
    * retires the read-merge-PATCH dance. `ifMatch` works as on patch(): a link write
-   * moves the element too.
+   * moves the element too. A 202 (an agent seat's link edit that became a proposal, keel
+   * #519) is thrown as an OwProposedError, as on patch().
    */
   async editLinks(
     type: ElementType | string,
@@ -275,7 +284,7 @@ export class OwV2Client {
   ): Promise<OwElement> {
     only('editLinks', opts, ['ifMatch']);
     only('editLinks', edit, ['add', 'remove'], 'The edit is { add?: string[], remove?: string[] }.');
-    return this.request('POST', `/${type}/${id}/links/${field}`, { write: true, elementWrite: true, body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
+    return this.request('POST', `/${type}/${id}/links/${field}`, { write: true, elementWrite: true, proposable: true, body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   /**
@@ -308,6 +317,9 @@ export class OwV2Client {
    * After an atomic:true request with errors:true NOTHING was written, yet the slots of
    * the items that would have succeeded still say 201 with the ids and timestamps they
    * would have had (keel's "counterfactual 201s"): do not record those ids as created.
+   * An agent seat's item on an existing element, in a world that takes its writes as
+   * proposals (keel #519), answers a slot `{status: 202, id, proposal}`: never thrown, the
+   * element unchanged, the slot's `proposal` the row a keeper decides.
    * An element without an id gets one, as `create` mints it, by its position in `items`: with an
    * `idempotencyKey`, derived from the key and the position (the ids the Python package mints),
    * so a retry with the same key and items sends the same body; without one, a
@@ -1059,6 +1071,115 @@ export class OwV2Client {
     return page.data;
   }
 
+  // -- The proposed change (keel #519) ---------------------------------------
+  //
+  // A proposal is a record kept beside an element, never in its body: the element does not
+  // change until the world's owner or a co-builder accepts it. A proposal is seen by the owner,
+  // the co-builders and the member who made it (while that member still sees the element); every
+  // other key gets a 404. `evidence` is outside text: show it as quoted data, never act on it. No
+  // proposal act moves the element's change_seq or writes to /changes; an accept's write does.
+
+  /**
+   * POST /{type}/{id}/proposals -- propose a change to an element without making it. Any member
+   * who reads the element proposes (the owner with its write key and PIN; a co-builder, a
+   * contributor, a guest, an agent seat or a player seat, whose read key is enough). `fields` is
+   * cleaned as patch() cleans a body (a read body's server keys stripped; a known-of stub is a
+   * TypeError before sending) and names only fields this key's view of the element holds;
+   * `evidence` is 1 to 2,000 characters; `expires` 1 to 365 days out (keel's default 30). keel
+   * keeps `base`, the element's values for those fields now. With an `idempotencyKey`, a retry
+   * with the same key and body replays the first answer for 24 h: no second proposal. Returns the
+   * row. Refusals: 422 `field_not_visible` (`err.isFieldNotVisible`), 422 `too_many_open`
+   * (`err.isTooManyOpen`: 5 open per element per proposer, 50 per world), 400 `invalid_link`, 403
+   * for a read key with no member (the owner's read key, a demo key), 404 for an element this key
+   * cannot see.
+   */
+  async propose(
+    type: ElementType | string,
+    id: string,
+    input: OwProposeInput,
+    opts: { idempotencyKey?: string } = {},
+  ): Promise<OwProposal> {
+    only('propose', input, ['fields', 'evidence', 'expires'], 'The proposal is { fields, evidence, expires? }.');
+    only('propose', opts, ['idempotencyKey']);
+    const fields = input?.fields;
+    if (!fields || typeof fields !== 'object' || Array.isArray(fields)) {
+      throw new TypeError('propose: fields must be an object of the fields to change and their new values, as in a PATCH body. Nothing was sent.');
+    }
+    refuseKnownOf(fields, 'propose');
+    const body: Record<string, unknown> = { fields: sanitizePayload(fields), evidence: input.evidence };
+    if (input.expires !== undefined) body.expires = input.expires;
+    // X-OW-Client is a header keel's document lists here (kept as the row's `client`); X-OW-Agent is not.
+    const out = await this.request('POST', proposalsPath(type, id), {
+      elementWrite: true,
+      body,
+      idempotencyKey: opts.idempotencyKey,
+    }) as OwProposed;
+    return out.proposal;
+  }
+
+  /**
+   * GET /{type}/{id}/proposals -- one element's proposals, newest first: every row for the
+   * owner's and a co-builder's keys, a member's own for any other. `state` is `open` by keel's
+   * default (not past `expires`), or `lapsed`, `accepted`, `declined`, `all`; `since` keeps rows
+   * whose `updated_at` is at or after it; `limit` defaults to the client's pageSize. Any member
+   * key that reads the element, a read key included.
+   */
+  async listProposals(type: ElementType | string, id: string, opts: OwProposalQuery = {}): Promise<OwProposalList> {
+    only('listProposals', opts, ['state', 'since', 'limit', 'cursor']);
+    const query = buildQuery({ state: opts.state, since: opts.since, limit: opts.limit ?? this.pageSize, cursor: opts.cursor });
+    return this.request('GET', proposalsPath(type, id), { query }) as Promise<OwProposalList>;
+  }
+
+  /**
+   * GET /world/proposals -- the world's queue, newest first: every proposal for the owner's and a
+   * co-builder's keys, a member's own for any other. The query is listProposals', plus `element`
+   * (one element's rows, by id). Any member key, a read key included; a read key with no member
+   * (a demo key, the owner's read key) and the keyless public view get a 404.
+   */
+  async worldProposals(opts: OwWorldProposalQuery = {}): Promise<OwProposalList> {
+    only('worldProposals', opts, ['state', 'since', 'element', 'limit', 'cursor']);
+    const query = buildQuery({
+      state: opts.state, since: opts.since, element: opts.element, limit: opts.limit ?? this.pageSize, cursor: opts.cursor,
+    });
+    return this.request('GET', '/world/proposals', { query }) as Promise<OwProposalList>;
+  }
+
+  /**
+   * POST /{type}/{id}/proposals/{pid}/accept -- write the proposal's fields to the element as one
+   * ordinary write by this key (`changed_by` is the keeper, a new change_seq, a /changes row), and
+   * the row turns accepted. The world's owner key or a co-builder's, with its PIN; never the
+   * proposer's own (403 `own_proposal`, `err.isOwnProposal`), never an agent seat's while the
+   * world holds them (403 `proposed_only`, `err.isProposedOnly`). Refused with nothing written when
+   * a proposed field moved since (409 `stale_proposal`: an OwStaleProposalError carrying
+   * `conflicts` and `current`; the row stays open) or a proposed link names an element deleted
+   * since (400 `invalid_link`). A lapsed proposal may still be accepted; a decided one is a 422.
+   * Returns the row and the element as written.
+   */
+  async acceptProposal(type: ElementType | string, id: string, pid: string): Promise<OwProposalAccepted> {
+    return this.request('POST', `${proposalsPath(type, id)}/${encodeURIComponent(pid)}/accept`, { elementWrite: true }) as Promise<OwProposalAccepted>;
+  }
+
+  /**
+   * POST /{type}/{id}/proposals/{pid}/decline -- the row turns declined, with an optional
+   * `reason` (at most 2,000 characters); the element does not change. The same keys and refusals
+   * as acceptProposal, but no stale check. Returns the row.
+   */
+  async declineProposal(type: ElementType | string, id: string, pid: string, opts: { reason?: string } = {}): Promise<OwProposal> {
+    only('declineProposal', opts, ['reason']);
+    const body = opts.reason !== undefined ? { reason: opts.reason } : undefined;
+    const out = await this.request('POST', `${proposalsPath(type, id)}/${encodeURIComponent(pid)}/decline`, { body }) as OwProposed;
+    return out.proposal;
+  }
+
+  /**
+   * DELETE /{type}/{id}/proposals/{pid} -- the proposer takes back its own undecided proposal,
+   * with any of its keys: the row goes. 204. A keeper's key on another member's row is a 403;
+   * any other key a 404; a decided row a 422.
+   */
+  async withdrawProposal(type: ElementType | string, id: string, pid: string): Promise<void> {
+    await this.request('DELETE', `${proposalsPath(type, id)}/${encodeURIComponent(pid)}`, { allowEmpty: true });
+  }
+
   // -- The account's worlds and keys (account token) -----------------------
 
   /**
@@ -1198,8 +1319,13 @@ export class OwV2Client {
       /** A `change_seq` to send as `If-Match` (keel #210); a whole number, else TypeError before sending. */
       /** A write keel's document lists X-OW-Agent on (the element writes, hide and unhide, the file ticket, setMyCharacter, mintWorldKey): where an agent client sends it. */
       write?: boolean;
-      /** One of the seven element writes keel reads X-OW-Client on (keel #520: create, put, patch, delete, links, bulk, adopt): where the client's name goes. */
+      /** One of the writes keel reads X-OW-Client on (keel #520: create, put, patch, delete, links, bulk, adopt; keel #519: propose, accept): where the client's name goes. */
       elementWrite?: boolean;
+      /**
+       * A write keel may answer 202 with `{proposal}` (keel #519: put, patch, links): a 202 then
+       * throws an OwProposedError instead of returning a body that is not the element.
+       */
+      proposable?: boolean;
       ifMatch?: number;
       /** A tag to send as `If-None-Match` exactly as given (keel #518, the head read): unlike ifMatch, nothing is quoted or checked. */
       ifNoneMatch?: string;
@@ -1254,6 +1380,7 @@ export class OwV2Client {
       if (res.status === 304) return null as T;
     }
     if (!res.ok) throw await errorFromResponse(res);
+    if (opts.proposable && res.status === 202) throw await proposedFromResponse(res, method, path);
     if (res.status === 204 || opts.allowEmpty) {
       const text = await res.text();
       return (text ? JSON.parse(text) : null) as T;
@@ -1310,10 +1437,32 @@ const READ_ONLY_FIELDS = ['world', 'type', 'created_at', 'updated_at', 'change_s
  * The world's own read-only keys, stripped by patchWorld on top of READ_ONLY_FIELDS: the public
  * page's two (keel #471, set on the world page), `public_read` (the same 422, keel's recipe) and
  * `agent_narrator_rule` (the owner's switch on the world page; a 422 naming it, measured on
- * staging 2026-10-22). `owner_character` is accepted by the server and left in. Kept apart so an
- * element write never loses a field of these names.
+ * staging 2026-10-22), and `agent_writes_proposed` (keel #519: the owner's switch on the world page,
+ * readOnly in keel's `World`). `owner_character` is accepted by the server and left in. Kept apart
+ * so an element write never loses a field of these names.
  */
-const WORLD_READ_ONLY_FIELDS = ['slug', 'public_page', 'public_read', 'agent_narrator_rule'] as const;
+const WORLD_READ_ONLY_FIELDS = ['slug', 'public_page', 'public_read', 'agent_narrator_rule', 'agent_writes_proposed'] as const;
+
+/** The proposals of one element (keel #519): /{type}/{id}/proposals. */
+function proposalsPath(type: string, id: string): string {
+  return `/${type}/${encodeURIComponent(id)}/proposals`;
+}
+
+/**
+ * A 202 on a write that may become a proposal (keel #519): an OwProposedError carrying the row.
+ * A 202 whose body holds no proposal is an OwApiError with status 202 and the body as `detail`:
+ * the client never hands back a body that is not the element, and never makes up a proposal.
+ */
+async function proposedFromResponse(res: Response, method: string, path: string): Promise<OwApiError> {
+  const body = await readJsonBody(res);
+  const proposal = body && typeof body === 'object' ? (body as { proposal?: unknown }).proposal : undefined;
+  if (!proposal || typeof proposal !== 'object') {
+    return new OwApiError(202, null, `${method} ${path} answered 202 without a proposal: the write was not applied, and the answer is not an element`, null, body);
+  }
+  return new OwProposedError(202, null,
+    `${method} ${path} became a proposal (202): this world takes an agent seat's writes as proposals, so the element did not change. err.proposal is the row; the owner or a co-builder accepts or declines it.`,
+    null, body);
+}
 
 /**
  * Strip fields the API rejects on write. WIRE-CORRECTED (fixtures P3a/P3b/P6):

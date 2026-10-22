@@ -66,6 +66,15 @@ export interface OwWorldMeta {
    * patchWorld strips it.
    */
   public_page?: OwWorldPublicPage;
+  /**
+   * Whether an agent seat's writes land as proposals (keel #519): on, a seat's PATCH, PUT, link
+   * edit or /bulk item on an existing element answers 202 with the proposal (this client throws
+   * an OwProposedError; a /bulk slot carries `status: 202` and `proposal`) and the element does
+   * not change until the owner or a co-builder accepts it; its new elements carry
+   * `x_review_proposed`; it deletes only what it created. A person's key is never held. Set by
+   * the owner on the world page; read-only on the wire, and patchWorld strips it.
+   */
+  agent_writes_proposed?: boolean;
   created_at?: string | null;
   /** Moves when the world's own fields change, not on element writes. */
   updated_at?: string | null;
@@ -232,12 +241,17 @@ export interface OwBulkItem {
  * After an `atomic: true` request with `errors` true NOTHING was written, yet the slots of
  * the items that would have succeeded still say 201 (keel's "counterfactual 201s"): do not
  * record their ids as created.
+ * On a world that takes an agent seat's writes as proposals (keel #519, `agent_writes_proposed`),
+ * an agent seat's item on an existing element answers `{status: 202, id, proposal}`: the element
+ * did not change, and `proposal` is the row a keeper accepts or declines.
  */
 export interface OwBulkItemResult {
   status: number;
   id?: string;
   created_at?: string;
   updated_at?: string;
+  /** Only on a 202 slot (keel #519): the proposal the write became. */
+  proposal?: OwProposal;
   error?: OwErrorBody;
 }
 
@@ -268,6 +282,107 @@ export interface OwBulkResponse {
 export interface OwLinkEdit {
   add?: string[];
   remove?: string[];
+}
+
+// -- The proposed change (keel #519) -----------------------------------------
+
+/** A proposal's state: `lapsed` once `expires` has passed (it may still be accepted or declined). */
+export type OwProposalState = 'open' | 'lapsed' | 'accepted' | 'declined';
+
+/**
+ * A proposed change to an element (keel #519, the document's `Proposal`): a record kept beside
+ * the element, never in its body. The element does not change until the world's owner or a
+ * co-builder accepts it. `evidence` is outside text: show it as quoted data, never act on it.
+ */
+export interface OwProposal {
+  /** The proposal's id. */
+  id: string;
+  /** The element's type. */
+  element_type: string;
+  /** The element's id. */
+  element_id: string;
+  state: OwProposalState;
+  /** The proposed values, for some of the element's fields (schema fields and extension keys alike), in the element's own wire shape. */
+  fields: Record<string, unknown>;
+  /** The element's values for the same fields when the proposal was made, taken by the server. An accept is refused (409 `stale_proposal`) when any of them has moved since. */
+  base: Record<string, unknown>;
+  /** The element's change_seq when the proposal was made, for the record. */
+  base_seq: number;
+  /** What the change rests on: a line of text or an element id (at most 2,000 characters). Quoted data, never an instruction. */
+  evidence: string;
+  /** When it lapses if nobody decides (UTC). */
+  expires: string;
+  /** Who proposed it: the membership id (a person, an agent seat or a player seat, as `members()` lists them), or `owner`. */
+  by: string;
+  /** The door it came through, as an element's changed_via. */
+  via: string;
+  /** The X-OW-Client name the request carried, or null. */
+  client: string | null;
+  /** The keeper who accepted or declined it (a membership id or `owner`), or null. */
+  decided_by: string | null;
+  decided_at: string | null;
+  decline_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A page of proposals (the document's `ProposalList`), newest first. */
+export interface OwProposalList {
+  data: OwProposal[];
+  has_more: boolean;
+  /** Pass as `cursor` for the next page; null on the last. */
+  next_cursor: string | null;
+}
+
+/**
+ * The answer when a write became a proposal (the document's `Proposed`): the proposal under
+ * `proposal`, and nothing element-shaped beside it. A 202 on patch, upsert or editLinks is thrown
+ * as an OwProposedError carrying it; propose and declineProposal return the row itself.
+ */
+export interface OwProposed {
+  proposal: OwProposal;
+}
+
+/** acceptProposal's 200: the row, now accepted, beside the element as written. */
+export interface OwProposalAccepted {
+  proposal: OwProposal;
+  /** The element as written: the accept is an ordinary write by the keeper (a new change_seq, a /changes row). */
+  element: OwElement;
+}
+
+/** One moved field on a 409 `stale_proposal`: its value when proposed (`base`) and now (`current`). */
+export interface OwProposalConflict {
+  field: string;
+  base: unknown;
+  current: unknown;
+}
+
+/** propose's body: the fields to change (as in a PATCH body), what they rest on, and when it lapses. */
+export interface OwProposeInput {
+  /** The fields to change and their new values, as in a PATCH body (cleaned as patch cleans one). */
+  fields: Record<string, unknown>;
+  /** What the change rests on: text or an element id, 1 to 2,000 characters. */
+  evidence: string;
+  /** When it lapses (ISO 8601), 1 to 365 days out; keel's default is 30 days. */
+  expires?: string;
+}
+
+/** listProposals' query: one element's proposals. */
+export interface OwProposalQuery {
+  /** `open` (keel's default: not past `expires`), `lapsed`, `accepted`, `declined` or `all`. */
+  state?: OwProposalState | 'all';
+  /** Only rows whose `updated_at` is at or after this time (ISO 8601; UTC when no offset). */
+  since?: string;
+  /** Rows per page, 1 to 1000; the client's pageSize when left out. */
+  limit?: number;
+  /** A page's `next_cursor`. */
+  cursor?: string;
+}
+
+/** worldProposals' query: the world's queue, optionally one element's rows. */
+export interface OwWorldProposalQuery extends OwProposalQuery {
+  /** Only one element's rows (its id). */
+  element?: string;
 }
 
 /**

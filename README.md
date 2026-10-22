@@ -200,6 +200,22 @@ try {
 
 The check is per element and the server never merges. Compare the copy you edited from with `err.current`: when the fields you changed are not the ones that moved, send again with `ifMatch: err.current.change_seq`; when the same field moved on both sides, ask the user which to keep. Without `ifMatch` a write is unconditional, as before.
 
+## Proposals
+
+A member can propose a change instead of making it. The element stays as it is until the world's owner or a co-builder accepts.
+
+```typescript
+const p = await member.propose('location', id, { fields: { description: 'A harbour town.' }, evidence: 'Chapter 3' });
+const queue = await owner.worldProposals();               // { data, has_more, next_cursor }, newest first
+const { element } = await owner.acceptProposal('location', id, p.id);   // the write is the owner's
+await owner.declineProposal('location', id, p.id, { reason: 'Not canon.' });
+await member.withdrawProposal('location', id, p.id);
+```
+
+An accept is refused with nothing written when a proposed field moved since the proposal was made: `OwStaleProposalError` (409, `err.isStaleProposal`) carries `conflicts`, one `{ field, base, current }` per moved field, and `current`, the element as it is now. `listProposals(type, id)` lists one element's rows.
+
+A world's owner can have agent seats propose instead of write (`agent_writes_proposed` on `getWorld()`, set on the world page). An agent seat's `patch`, `upsert` or `editLinks` on an existing element then throws `OwProposedError` (status 202, `err.isProposed`), with the row under `err.proposal`. A `bulk` slot says `status: 202` and carries `proposal` instead. A person's key is never held.
+
 ## Finding things in a world
 
 When you hold a world's elements in memory (from a sync, or a world file), `lookupWorld` finds the ones a plain question is about, with no model and no network:
@@ -289,7 +305,7 @@ No calendar, or a broken one, gives null: show the bare number. `breakdownStep` 
 
 ## Errors
 
-Every non-2xx response throws `OwApiError` with the API's envelope: `.status`, `.type`, `.code`, `.param` (the field that failed) and `.docUrl`, which is worth showing to your users. A transport failure throws `OwNetworkError`. `err.isValidationError` covers the common case. A write sent with `ifMatch` that found the element moved throws `OwPreconditionFailedError` (412, `err.isPreconditionFailed`), an `OwApiError` that also carries `current`.
+Every non-2xx response throws `OwApiError` with the API's envelope: `.status`, `.type`, `.code`, `.param` (the field that failed) and `.docUrl`, which is worth showing to your users. A transport failure throws `OwNetworkError`. `err.isValidationError` covers the common case. A write sent with `ifMatch` that found the element moved throws `OwPreconditionFailedError` (412, `err.isPreconditionFailed`), an `OwApiError` that also carries `current`. Proposals add `OwStaleProposalError` (409) and `OwProposedError` (202), and the predicates `isFieldNotVisible`, `isTooManyOpen`, `isStaleProposal`, `isProposedOnly` and `isOwnProposal`.
 
 ## Schema constants
 

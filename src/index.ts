@@ -11,7 +11,7 @@
 export { OwV2Client, parseErrorEnvelope, FILE_EXTENSIONS, fileKindOf } from './v2';
 export { pkceChallenge, base64url } from './v2';
 export type { OwSignInStorage, OwSignInBegin, OwSignInBegun, OwSignInComplete, OwSignInResult } from './v2';
-export { OwApiError, OwPreconditionFailedError, OwNetworkError, OwSignInError, errorFromResponse } from './v2';
+export { OwApiError, OwPreconditionFailedError, OwProposedError, OwStaleProposalError, OwNetworkError, OwSignInError, errorFromResponse } from './v2';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './v2';
 export type { OwKeyKind, OwAuthErrorCode, OwSignInReason } from './v2';
 
@@ -25,6 +25,7 @@ export type {
   OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtPolicy, OwDraughtComponent, OwDraughtItem, OwJoined, OwAgentJoined, OwPlayerJoined, OwSignedIn,
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
   OwWriteDoor, OwChangeUpsert, OwChangeDelete, OwDeleteReason, OwHiddenRow, OwResyncReason,
+  OwProposal, OwProposalState, OwProposalList, OwProposed, OwProposalAccepted, OwProposalConflict, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
 } from './v2';
 
 // The room profile (schema-dist profiles/room.md): the pairs a parlor puts in a world, and the
