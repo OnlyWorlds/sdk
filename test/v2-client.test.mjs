@@ -1169,6 +1169,16 @@ test('list and listAll refuse an unknown top-level key before sending: a wire fi
   assert.equal(new URL(fetchImpl.calls[0].url).searchParams.get('name__icontains'), 'Hidden mark probe');
 });
 
+test('the constructor refuses an unknown key by name (4.56.0): a typo in `client` cannot fall back to the default without a sound', () => {
+  assert.throws(
+    () => new OwV2Client({ apiKey: 'ow_w_test', clinet: 'atlas' }),
+    (err) => err instanceof TypeError && /clinet/.test(err.message) && /client/.test(err.message),
+  );
+  assert.throws(() => new OwV2Client({ apiKey: 'ow_w_test', agnet: true }), (err) => err instanceof TypeError && /agnet/.test(err.message));
+  assert.doesNotThrow(() => new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', agent: true, client: 'atlas', pageSize: 10 }));
+  assert.doesNotThrow(() => new OwV2Client());
+});
+
 test('every options object refuses an unknown key before sending (4.52.0): a typo cannot turn atomic off, drop an idempotency key or widen a draught', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { data: [], has_more: false, changes: [], head: 0, epoch: null, cursor: '0' } });
   const acct = makeClient({ status: 200, body: {} }, { apiKey: 'ow_a_test', apiPin: undefined });

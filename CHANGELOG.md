@@ -14,6 +14,7 @@ earlier history lives in git log only.
 
 ### Changed
 
+- **The constructor refuses an unknown key by name**, as every options object has since 4.52.0: `new OwV2Client({ clinet: 'atlas' })` is a `TypeError` naming the key and the eight the constructor knows, where it fell back to the defaults silently before. Every known caller (Atlas, Lantern, the toolkit) passes known keys only.
 - **Schema repinned to schema-dist v0.33.0-dist.46** (same canonical 00.33.00). The dist's example export (`example/world-export.json`) gains `changed_client: null` on its bodies, `walk/lint_folder.py`'s server-key set names `changed_client`, and the README's sentence on server keys names it; `VERSION` and `MANIFEST.json` carry the new serial; no schema file moved. Generated output moves its provenance lines and gains `changed_client`.
 
 ## [4.55.0] - 2026-10-22

@@ -43,6 +43,9 @@ export class OwV2Client {
   private readonly clientName: string;
 
   constructor(config: OwClientConfig = {}) {
+    // The constructor's options object refuses an unknown key like every other (4.52.0's rule):
+    // a typo here would otherwise fall back to a default without a sound (`clinet` → 'sdk').
+    only('new OwV2Client', config, CLIENT_CONFIG_KEYS);
     this.clientName = clientNameOf(config.client);
     this.apiKey = config.apiKey ?? '';
     this.apiPin = config.apiPin || undefined;
@@ -1453,6 +1456,9 @@ function only(method: string, obj: object | undefined, keys: readonly string[], 
     }
   }
 }
+
+/** Every key `OwClientConfig` declares; the constructor refuses any other by name. A new option joins this list in the same commit. */
+const CLIENT_CONFIG_KEYS = ['apiKey', 'apiPin', 'baseUrl', 'pageSize', 'changesPageSize', 'fetch', 'agent', 'client'] as const;
 
 /** keel #520's rule for X-OW-Client, exact here: keel trims and stores null for anything else, this package refuses it. */
 const CLIENT_NAME_RULE = /^[a-z0-9-]{1,32}$/;
