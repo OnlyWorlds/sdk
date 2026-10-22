@@ -767,7 +767,7 @@ test('detectKeyKind classifies all four kinds', () => {
   assert.equal(detectKeyKind('garbage'), 'unknown');
 });
 
-test('account key uses Bearer auth, world key uses API-Key/API-Pin', async () => {
+test('account key uses Bearer auth, world key uses API-Key, and API-Pin on a write', async () => {
   const { client: acct, fetchImpl: af } = makeClient({ status: 200, body: {} }, { apiKey: 'ow_a_tok' });
   await acct.getWorld();
   assert.equal(af.calls.at(-1).init.headers['Authorization'], 'Bearer ow_a_tok');
@@ -775,6 +775,8 @@ test('account key uses Bearer auth, world key uses API-Key/API-Pin', async () =>
   const { client: w, fetchImpl: wf } = makeClient({ status: 200, body: {} });
   await w.getWorld();
   assert.equal(wf.calls.at(-1).init.headers['API-Key'], 'ow_w_test');
+  assert.equal(wf.calls.at(-1).init.headers['API-Pin'], undefined); // a read (h29 #10663)
+  await w.patchWorld({ name: 'W' });
   assert.equal(wf.calls.at(-1).init.headers['API-Pin'], '1234');
 });
 

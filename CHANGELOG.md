@@ -5,6 +5,11 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+
+- **`API-Pin` is sent only where keel checks it** (Skeld's ruling, OW Keel h29 #10663). keel verifies a PIN wherever one is sent (argon2, 64 MiB each), and on 2026-10-22 scripts reading with the PIN OOM-killed staging on a cold cache after a restart. The client used to send a configured `apiPin` on every request. It now sends it on every request whose method is not GET (every write: elements, links, bulk, adopt, hide and unhide, media and file tickets, seats, world links, proposals, `setMyCharacter`, `mintWorldKey`, `patchWorld`, and any route added later), on `GET /me` (`me()`, the connection test: keel checks a PIN there when sent, keel #314, D93), and on every request of a 10-digit legacy key (v1 parity, keel #421: such a key needs the PIN on reads of a world with a PIN). Any other read from an `ow_w_`, `ow_r_` or member key goes without it; an account token never sent it and still does not. The rule is derived in `request()` from the method and path, so a raw `request()` call follows it too. No API changed.
+- Tests: `test/api-pin.test.mjs`, five, on a recorded fetch: eight reads, `me()` and ten writes across POST, PATCH, PUT and DELETE, for an `ow_w_` key with a PIN, a legacy key with a PIN, an `ow_r_` key with none and an account token with one configured; and raw `request()` GETs to other paths, `/me` and other methods. Two existing tests that expected the PIN on a GET now expect none. Mutants: the PIN on every request again fails four tests; without the `/me` clause, three; without the legacy clause, one.
+
 ## [4.58.0] - 2026-10-22
 
 ### Added

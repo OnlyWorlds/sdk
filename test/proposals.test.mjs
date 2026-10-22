@@ -123,7 +123,7 @@ test('listProposals: GET /{type}/{id}/proposals with state, since, limit and cur
   assert.equal(calls[0].init.method, 'GET');
   assert.deepEqual(Object.fromEntries(u.searchParams), { state: 'all', since: '2026-10-22T00:00:00Z', limit: '5', cursor: 'c1' });
   assert.equal(calls[0].init.body, undefined);
-  assert.deepEqual(headerNames(calls[0]), ['API-Key', 'API-Pin']);
+  assert.deepEqual(headerNames(calls[0]), ['API-Key']); // a read: no PIN (h29 #10663)
 });
 
 test('listProposals: with no options, only the client\'s page size is sent', async () => {

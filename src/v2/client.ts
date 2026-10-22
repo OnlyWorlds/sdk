@@ -1349,7 +1349,14 @@ export class OwV2Client {
         headers['Authorization'] = `Bearer ${this.apiKey}`;
       } else {
         headers['API-Key'] = this.apiKey;
-        if (this.apiPin) headers['API-Pin'] = this.apiPin;
+        // The PIN only where keel checks it (Skeld's ruling, OW Keel h29 #10663): keel verifies a PIN
+        // wherever it is sent (argon2, 64 MiB each), and scripts reading with it OOM-killed staging on
+        // a cold cache (2026-10-22). Sent on every write (any method but GET), on GET /me, the
+        // test-connection read (keel #314, D93), and on every request of a 10-digit legacy key, which
+        // needs it on reads of a world with a PIN (v1 parity, keel #421). Never on any other read.
+        const read = method.toUpperCase() === 'GET';
+        const me = path === '/me/' || path === '/me';
+        if (this.apiPin && (!read || me || this.keyKind === 'legacy')) headers['API-Pin'] = this.apiPin;
       }
     }
     if (opts.body !== undefined) headers['Content-Type'] = 'application/json';

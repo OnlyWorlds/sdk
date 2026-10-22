@@ -148,4 +148,5 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 
 **Auth**: prefixed keys — `ow_w_` (read+write), `ow_r_` (read-only, no PIN — the share
 primitive), `ow_a_` (account Bearer). Demo keys `0000000000`–`0000000009` are read-only
-test credentials against real data.
+test credentials against real data. A configured `apiPin` is sent only where keel checks it:
+on writes, on `me()`, and on every request of a 10-digit legacy key; other reads go without it.

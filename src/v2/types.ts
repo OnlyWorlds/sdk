@@ -1004,8 +1004,11 @@ export interface OwClientConfig {
    */
   apiKey?: string;
   /**
-   * The PIN, needed for writes when the world has one, and for legacy-key reads of private worlds.
-   * Prefixed keys read without a PIN. A string, not a number: '0123' !== 123.
+   * The PIN (or an agent seat's `ow_s_` secret), needed for writes when the world has one, and for
+   * legacy-key reads of a world with a PIN. Sent as `API-Pin` only where keel checks it: on every
+   * write (any method but GET), on GET /me (me(), the connection test), and on every request of a
+   * 10-digit legacy key. A prefixed key's other reads go without it, and an account token never
+   * sends it. A string, not a number: '0123' !== 123.
    */
   apiPin?: string;
   /** The API's base URL, default https://www.onlyworlds.com/api/v2. */
