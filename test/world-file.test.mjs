@@ -4,13 +4,15 @@
  * (Temper's) onto the tool-neutral reader, the cases the move added (`skip`,
  * reason codes, a path that is both a file and a folder, the writer's
  * refusals), and §4.7's checks OW-1 to OW-22, each on bytes built here. The
- * last test runs the whole fixture set when it is on this machine.
+ * last test runs the whole fixture set, vendored with the schema distribution
+ * (codegen/schema-dist/fixtures/owworld/).
  * Runs against the compiled public bundle (dist), same as the other tests.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { zipSync, deflateSync, strToU8 } from 'fflate';
 import {
   readWorldFile, writeWorldFile, OwWorldFileError, WORLD_FILE_MAX_BYTES, WORLD_FILE_MAX_ENTRIES, WORLD_FILE_MEDIA_TYPE,
@@ -365,9 +367,10 @@ test('OW-18: two names that are one after NFC and simple case folding are refuse
 });
 
 test('OW-18: the fold is CaseFolding.txt 15.1, C and S rows, for every code point and nothing more', () => {
-  // The vendored table (unicode.org/Public/15.1.0/ucd/CaseFolding.txt), Skeld's ruling, OW Council #9830.
+  // Unicode's file as published (unicode.org/Public/15.1.0/ucd/CaseFolding.txt), the copy the schema dist carries
+  // beside the fixture set; Skeld's ruling, OW Council #9830.
   const table = new Map();
-  for (const line of readFileSync(new URL('./fixtures/CaseFolding-15.1.0.txt', import.meta.url), 'utf8').split(/\r?\n/)) {
+  for (const line of readFileSync(new URL('../codegen/schema-dist/fixtures/owworld/CaseFolding-15.1.0.txt', import.meta.url), 'utf8').split(/\r?\n/)) {
     const m = /^([0-9A-F]+); ([CS]); ([0-9A-F]+);/.exec(line);
     if (m) table.set(parseInt(m[1], 16), parseInt(m[3], 16));
   }
@@ -498,13 +501,19 @@ test('the writer refuses a name some disk cannot hold, and two names that fold t
 
 // --- the fixture set ------------------------------------------------------------
 
-const FIXTURES = process.env.OW_OWWORLD_FIXTURES || 'C:/Users/Titus/Carrier/Armature/tools/owworld-fixtures/fixtures';
-const haveSet = existsSync(join(FIXTURES, 'verdicts.json'));
+// The set as the schema dist vendors it: flat, the zips beside verdicts.json. OW_OWWORLD_FIXTURES overrides it with
+// another copy, either that folder or one holding it as `fixtures/` (the generator's working layout).
+const SET_ROOT = process.env.OW_OWWORLD_FIXTURES
+  || fileURLToPath(new URL('../codegen/schema-dist/fixtures/owworld/', import.meta.url));
+const FIXTURES = existsSync(join(SET_ROOT, 'verdicts.json')) ? SET_ROOT : join(SET_ROOT, 'fixtures');
 
-test('the .owworld fixture set (§4.7): every verdict and every cause', {
-  skip: haveSet ? false : `no fixture set at ${FIXTURES} (set OW_OWWORLD_FIXTURES to one)`,
-}, () => {
+test('the .owworld fixture set (§4.7): every verdict and every cause', (t) => {
+  assert.ok(existsSync(join(FIXTURES, 'verdicts.json')), `no verdicts.json at ${SET_ROOT} or under its fixtures/`);
   const doc = JSON.parse(readFileSync(join(FIXTURES, 'verdicts.json'), 'utf8'));
+  // Every zip on disk has a verdict and every verdict's zip is on disk: a case can't drop out unseen.
+  const onDisk = readdirSync(FIXTURES).filter(f => /\.(owworld|zip)$/.test(f)).sort();
+  const listed = doc.fixtures.filter(v => v.status !== 'not_generated').map(v => v.file).sort();
+  assert.deepEqual(onDisk, listed, 'the zips on disk and the verdicts listed');
   const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
   const verdictDiffs = [];
   const reasonDiffs = [];
@@ -534,7 +543,8 @@ test('the .owworld fixture set (§4.7): every verdict and every cause', {
     if (got !== v.reader) verdictDiffs.push(`${v.file}: expected ${v.reader}, got ${got} ${reason}`);
     else if (got === 'refuse' && reason !== v.reason) reasonDiffs.push(`${v.file}: ${v.reason} -> ${reason}`);
   }
-  assert.ok(run >= 74, `the set holds ${run} fixtures`);
+  t.diagnostic(`the .owworld set: ${run} fixtures run, ${verdictDiffs.length + reasonDiffs.length} disagreeing, from ${FIXTURES}`);
+  assert.ok(run >= 78, `the set holds ${run} fixtures`);
   assert.deepEqual(verdictDiffs, [], 'verdict disagreements');
   assert.deepEqual(reasonDiffs, [], 'right verdict for another reason');
 });

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.53.1] - 2026-10-22
+
+### Changed
+
+- **Schema repinned to schema-dist v0.32.2-dist.39** (same canonical 00.32.02; the dist now carries the `.owworld` conformance set at `fixtures/owworld/`, 78 cases, with `verdicts.json` and `CaseFolding-15.1.0.txt`, and its folder lint names a `world.json` with an `api` block that git tracks; no schema file moved). The world-file conformance test reads the set from the vendored dist, so it runs in CI too, where it used to skip; it also checks that every zip on disk has a verdict. The fold table's test and generator read the dist's `CaseFolding-15.1.0.txt`, the same file the SDK held, and the table is unchanged. Folder spec §4.7 is RULED (v0.3.13). Nothing in the published package changes but its version and these documents: `codegen/` does not ship.
+
 ## [4.53.0] - 2026-10-22
 
 ### Changed

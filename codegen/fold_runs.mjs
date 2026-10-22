@@ -1,14 +1,14 @@
 // The OW-18 fold table (Folder Format §4.7; Skeld's ruling, OW Council #9830): the C and S rows of Unicode's
 // CaseFolding.txt at the pinned version, as runs, for `FOLD_RUNS` in src/world-file.ts.
 //
-//   node codegen/fold_runs.mjs [test/fixtures/CaseFolding-15.1.0.txt]
+//   node codegen/fold_runs.mjs [codegen/schema-dist/fixtures/owworld/CaseFolding-15.1.0.txt]
 //
 // Prints the string. A run is `start.count.stride.delta` in base 36: `count` code points from `start`, `stride` apart,
 // each folding to itself plus `delta`; an empty `count` or `stride` is 1. The test in test/world-file.test.mjs walks
 // every row of the same file against the built fold, so a hand edit or a stale string fails there.
 import { readFileSync } from 'node:fs';
 
-const file = process.argv[2] || new URL('../test/fixtures/CaseFolding-15.1.0.txt', import.meta.url);
+const file = process.argv[2] || new URL('./schema-dist/fixtures/owworld/CaseFolding-15.1.0.txt', import.meta.url);
 const map = new Map();
 for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
   const m = /^([0-9A-F]+); ([CS]); ([0-9A-F]+);/.exec(line);

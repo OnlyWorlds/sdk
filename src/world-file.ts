@@ -154,7 +154,8 @@ function isJunk(path: string): boolean {
  * #9830), never a runtime's casing, so a fold a newer Unicode adds stays out
  * until the pin moves. Runs of `start.count.stride.delta` in base 36 (an empty
  * count or stride is 1), made by `codegen/fold_runs.mjs` from
- * `test/fixtures/CaseFolding-15.1.0.txt`; the test walks every row of that file.
+ * the schema dist's `fixtures/owworld/CaseFolding-15.1.0.txt` (vendored under
+ * `codegen/schema-dist/`); the test walks every row of that file.
  */
 const FOLD_RUNS =
   '1t.q..w,51...lj,5c.n..w,60.7..w,74.o.2.1,8i.3.2.1,8p.8.2.1,96.n.2.1,ag...-3d,ah.3.2.1,an...-7g,ap...5u,' +
