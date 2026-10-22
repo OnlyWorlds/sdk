@@ -8,9 +8,9 @@ client uses for link-aware helpers.
 Field-kind parsing mirrors keel/codegen/generate_models.py -- the proven consumer
 of these YAMLs. TypeScript shapes are pinned to the v2 wire, not to Django columns:
 single-links serialize as `string | null`, multi-links as `string[]`, ints as
-`number | null`, link fields use BARE schema names (no `_ids` suffix), and the seven
+`number | null`, link fields use BARE schema names (no `_ids` suffix), and the eight
 server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
-changed_via), the stub marker `known_of` (present only on a stub), plus an extension
+changed_via, changed_client), the stub marker `known_of` (present only on a stub), plus an extension
 index signature ride the shared base.
 
 Run:  python codegen/generate_types.py [--schema ../keel/schema]
@@ -103,9 +103,9 @@ __PROVENANCE__
 //
 // One interface per element type, extending OwElementBase. Field shapes are the v2
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
-// `number | null`. Link fields use bare schema names (no `_ids` suffix). The seven
+// `number | null`. Link fields use bare schema names (no `_ids` suffix). The eight
 // server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
-// changed_via), the stub marker `known_of` (present only on a stub) and the
+// changed_via, changed_client), the stub marker `known_of` (present only on a stub) and the
 // extension index signature live on OwElementBase.
 
 __ELEMENT_BASE__
@@ -128,9 +128,9 @@ __ELEMENT_BASE__
 #     truth -- every element row has a world -- while the v2 API REJECTS `world` in a
 #     request body, because the API key determines the world. (rulings.yaml:
 #     required-world-wire-caveat. Canonical truing rides a later YAML bump.)
-#   - Seven server-managed fields are ADDED. They exist on every wire body and in no
+#   - Eight server-managed fields are ADDED. They exist on every wire body and in no
 #     element YAML: type, created_at, updated_at, change_seq, created_by, changed_by,
-#     changed_via.
+#     changed_via, changed_client.
 #   - One server-managed marker is ADDED that rides only some bodies: `known_of`
 #     (keel PR 113, B16), present and true only on a stub, never on a whole element.
 #   - Only Id and Name stay non-optional. Everything else is optional per
@@ -148,6 +148,8 @@ WIRE_ONLY_BASE_FIELDS = [
     # keel #299, D104: the last write's author and the door it came through.
     ("changed_by", "The membership whose write last changed this element (server-managed, read-only); null for the world's owner and for anything last changed before writes recorded it.", "string | null", False),
     ("changed_via", "The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, `server` (keel's own writes) or `site` (the owner signed in on onlyworlds.com; keel PR 160). The first three are agent-made. Null for anything last changed before writes recorded it.", "'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | 'site' | null", False),
+    # keel #520: the client's own name for itself, from X-OW-Client.
+    ("changed_client", "The name the client gave in the X-OW-Client header on the last write (server-managed, read-only): lower case letters, digits and hyphens, 1 to 32 characters, such as `sdk` or `atlas`. It is the client's claim about itself, never proof, and says nothing about whether an agent drove the write (that is `changed_via`). Null when the last write sent no name or one outside the rule, for keel's own writes, and for anything last changed before names were recorded. Sent in a write it is ignored. This SDK sends its `client` option, `sdk` by default.", "string | null", False),
     # keel PR 113 (B16, keel #421 §7g): the sheet grant's stub marker.
     # keel PR 160 (#537): the hidden mark, shown to the readers who still see the element.
     ("hidden", "Present, and true, only when the world's owner or a co-builder hid this element and this reader still sees it (server-managed, read-only): the owner, a co-builder, a key the owner minted, or the member who made it; to every other reader the element does not exist. Absent otherwise, whatever `fields` asked; on the read, the list, the change feed's upserts and MCP, never in the download, world sync or v1. Sent in a write it is ignored.", "true", False),
@@ -185,7 +187,7 @@ def render_element_base(schema_dir: Path) -> str:
         "/** Every element carries these. The extension index signature admits namespaced",
         " *  pass-through fields (atlas_* / shadow_* / x_*) returned verbatim by the server.",
         " *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in",
-        " *  bodies -- the key determines the world) and the seven server-managed fields are",
+        " *  bodies -- the key determines the world) and the eight server-managed fields are",
         " *  added, since they ride every wire body and appear in no element YAML; `known_of`",
         " *  rides only a stub. */",
         "export interface OwElementBase {",

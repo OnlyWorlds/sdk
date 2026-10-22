@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.45
-//         commit          f2a23f3a7d7b2fa04bb5d8197931020a74f5946e
-//         MANIFEST sha256 ed5fcab2d2e768d06282073993a4abac5c99f94753c8fd9c5f52596a636b4566
-//         canonical 00.33.00, dist serial 45, published 2026-10-22
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.46
+//         commit          de56aea3863822b0048c9e09e9a1c154be95a942
+//         MANIFEST sha256 da7e9cee801a529f509f8a2084ed352e433886e0ca76e272fc5c87ce9595530e
+//         canonical 00.33.00, dist serial 46, published 2026-10-22
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -13,15 +13,15 @@
 //
 // One interface per element type, extending OwElementBase. Field shapes are the v2
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
-// `number | null`. Link fields use bare schema names (no `_ids` suffix). The seven
+// `number | null`. Link fields use bare schema names (no `_ids` suffix). The eight
 // server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
-// changed_via), the stub marker `known_of` (present only on a stub) and the
+// changed_via, changed_client), the stub marker `known_of` (present only on a stub) and the
 // extension index signature live on OwElementBase.
 
 /** Every element carries these. The extension index signature admits namespaced
  *  pass-through fields (atlas_* / shadow_* / x_*) returned verbatim by the server.
  *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in
- *  bodies -- the key determines the world) and the seven server-managed fields are
+ *  bodies -- the key determines the world) and the eight server-managed fields are
  *  added, since they ride every wire body and appear in no element YAML; `known_of`
  *  rides only a stub. */
 export interface OwElementBase {
@@ -51,6 +51,8 @@ export interface OwElementBase {
   changed_by?: string | null;
   /** The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, `server` (keel's own writes) or `site` (the owner signed in on onlyworlds.com; keel PR 160). The first three are agent-made. Null for anything last changed before writes recorded it. */
   changed_via?: 'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | 'site' | null;
+  /** The name the client gave in the X-OW-Client header on the last write (server-managed, read-only): lower case letters, digits and hyphens, 1 to 32 characters, such as `sdk` or `atlas`. It is the client's claim about itself, never proof, and says nothing about whether an agent drove the write (that is `changed_via`). Null when the last write sent no name or one outside the rule, for keel's own writes, and for anything last changed before names were recorded. Sent in a write it is ignored. This SDK sends its `client` option, `sdk` by default. */
+  changed_client?: string | null;
   /** Present, and true, only when the world's owner or a co-builder hid this element and this reader still sees it (server-managed, read-only): the owner, a co-builder, a key the owner minted, or the member who made it; to every other reader the element does not exist. Absent otherwise, whatever `fields` asked; on the read, the list, the change feed's upserts and MCP, never in the download, world sync or v1. Sent in a write it is ignored. */
   hidden?: true;
   /** Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq, and the fields its type lists in PUBLIC_FIELDS with their values; every other field reads unset ("", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf(). */

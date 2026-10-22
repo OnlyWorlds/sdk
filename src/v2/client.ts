@@ -39,8 +39,11 @@ export class OwV2Client {
   private readonly apiPin: string | undefined;
   private readonly fetchImpl: typeof globalThis.fetch;
   private readonly agent: boolean;
+  /** The name sent as X-OW-Client on element writes (keel #520), checked at construction. */
+  private readonly clientName: string;
 
   constructor(config: OwClientConfig = {}) {
+    this.clientName = clientNameOf(config.client);
     this.apiKey = config.apiKey ?? '';
     this.apiPin = config.apiPin || undefined;
     this.keyKind = config.apiKey ? detectKeyKind(config.apiKey) : 'none';
@@ -200,6 +203,7 @@ export class OwV2Client {
     }
     return this.request('POST', `/${type}/`, {
       write: true,
+      elementWrite: true,
       body,
       idempotencyKey: opts.idempotencyKey,
     }) as Promise<OwElement>;
@@ -212,7 +216,7 @@ export class OwV2Client {
    */
   async upsert(type: ElementType | string, id: string, element: OwElement | Record<string, unknown>): Promise<OwElement> {
     refuseKnownOf(element, 'upsert');
-    return this.request('PUT', `/${type}/${id}/`, { write: true, body: sanitizePayload(element) }) as Promise<OwElement>;
+    return this.request('PUT', `/${type}/${id}/`, { write: true, elementWrite: true, body: sanitizePayload(element) }) as Promise<OwElement>;
   }
 
   /**
@@ -233,7 +237,7 @@ export class OwV2Client {
   ): Promise<OwElement> {
     only('patch', opts, ['ifMatch']);
     refuseKnownOf(partial, 'patch');
-    return this.request('PATCH', `/${type}/${id}/`, { write: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
+    return this.request('PATCH', `/${type}/${id}/`, { write: true, elementWrite: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   /**
@@ -242,7 +246,7 @@ export class OwV2Client {
    * transaction -- no client-side unlink pass needed, ever.
    */
   async delete(type: ElementType | string, id: string): Promise<void> {
-    await this.request('DELETE', `/${type}/${id}/`, { write: true, allowEmpty: true });
+    await this.request('DELETE', `/${type}/${id}/`, { write: true, elementWrite: true, allowEmpty: true });
   }
 
   /**
@@ -261,7 +265,7 @@ export class OwV2Client {
   ): Promise<OwElement> {
     only('editLinks', opts, ['ifMatch']);
     only('editLinks', edit, ['add', 'remove'], 'The edit is { add?: string[], remove?: string[] }.');
-    return this.request('POST', `/${type}/${id}/links/${field}`, { write: true, body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
+    return this.request('POST', `/${type}/${id}/links/${field}`, { write: true, elementWrite: true, body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   /**
@@ -278,7 +282,7 @@ export class OwV2Client {
    */
   async adopt(type: ElementType | string, id: string, member: string | 'owner'): Promise<OwElement> {
     if (typeof member !== 'string' || member === '') throw new TypeError('adopt: member must be a membership id or "owner"');
-    return this.request('POST', `/${type}/${id}/adopt`, { write: true, body: { member } }) as Promise<OwElement>;
+    return this.request('POST', `/${type}/${id}/adopt`, { write: true, elementWrite: true, body: { member } }) as Promise<OwElement>;
   }
 
   // -- Bulk ----------------------------------------------------------------
@@ -316,6 +320,7 @@ export class OwV2Client {
     };
     return this.request('POST', '/bulk/', {
       write: true,
+      elementWrite: true,
       body,
       idempotencyKey: opts.idempotencyKey,
       replayAware: true,
@@ -1153,8 +1158,10 @@ export class OwV2Client {
       allowEmpty?: boolean;
       replayAware?: boolean;
       /** A `change_seq` to send as `If-Match` (keel #210); a whole number, else TypeError before sending. */
-      /** An element write (create, put, patch, delete, links, bulk): where an agent client sends X-OW-Agent. */
+      /** A write keel's document lists X-OW-Agent on (the element writes, hide and unhide, the file ticket, setMyCharacter, mintWorldKey): where an agent client sends it. */
       write?: boolean;
+      /** One of the seven element writes keel reads X-OW-Client on (keel #520: create, put, patch, delete, links, bulk, adopt): where the client's name goes. */
+      elementWrite?: boolean;
       ifMatch?: number;
     } = {},
   ): Promise<T> {
@@ -1180,6 +1187,9 @@ export class OwV2Client {
     // keel #299 (D104): presence is the declaration, the value is never stored. Opt-in only, and
     // on the element writes alone, the operations keel's document declares it on.
     if (this.agent && opts.write) headers['X-OW-Agent'] = '1';
+    // keel #520: the client's own name, on the seven element writes keel reads it on, never on a
+    // read, nor on the other writes (hide, the file ticket, setMyCharacter, a key), where keel ignores it.
+    if (opts.elementWrite) headers['X-OW-Client'] = this.clientName;
 
     let res: Response;
     try {
@@ -1442,6 +1452,18 @@ function only(method: string, obj: object | undefined, keys: readonly string[], 
       throw new TypeError(`${method}: unknown parameter '${k}'. ${hint ? hint + ' ' : ''}The keys are ${keys.join(', ')}. Nothing was sent.`);
     }
   }
+}
+
+/** keel #520's rule for X-OW-Client, exact here: keel trims and stores null for anything else, this package refuses it. */
+const CLIENT_NAME_RULE = /^[a-z0-9-]{1,32}$/;
+const DEFAULT_CLIENT_NAME = 'sdk';
+
+function clientNameOf(value: unknown): string {
+  if (value === undefined) return DEFAULT_CLIENT_NAME;
+  if (typeof value !== 'string' || !CLIENT_NAME_RULE.test(value)) {
+    throw new TypeError(`OwV2Client: client must be lower case letters, digits and hyphens, 1 to 32 characters ([a-z0-9-]{1,32}), such as 'atlas'; got ${JSON.stringify(value) ?? String(value)}. It is sent as X-OW-Client on writes; leave it out for '${DEFAULT_CLIENT_NAME}'.`);
+  }
+  return value;
 }
 
 function buildQuery(params: Record<string, string | number | boolean | undefined>): string {

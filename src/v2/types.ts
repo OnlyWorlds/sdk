@@ -88,6 +88,12 @@ export interface OwChangeDelete {
   /** The door the delete came through (see {@link OwWriteDoor}); null for deletes before writes recorded it. */
   deleted_via?: OwWriteDoor | null;
   /**
+   * The name the deleting client gave in its `X-OW-Client` header (keel #520), as an element's
+   * `changed_client`: the client's claim, never proof. Null when none was recorded, and on a
+   * `hidden` row (a hide carries no client).
+   */
+  deleted_client?: string | null;
+  /**
    * Why the element left this reader's view (keel #421): `deleted` (it is gone; a GET answers 410),
    * `hidden` (the world's owner or a co-builder hid it from this reader; it still exists, a GET answers
    * 404, and an unhide brings it back by a 409 `resync_required`), or `out_of_view` (declared, sent by
@@ -882,4 +888,16 @@ export interface OwClientConfig {
    * as an agent without it.
    */
   agent?: boolean;
+  /**
+   * This client's own name, sent as `X-OW-Client` on every element write (create, upsert, patch,
+   * delete, editLinks, bulk, adopt) and on no read (keel #520). keel stores it on the element as
+   * `changed_client`, and on a /changes delete as `deleted_client`, so a reader can tell which tool
+   * made a change: `'atlas'`, `'lantern'`, your app's name. Default `'sdk'`.
+   *
+   * The rule: lower case letters, digits and hyphens, 1 to 32 characters (`[a-z0-9-]{1,32}`), no
+   * version (`'atlas'`, not `'atlas-1.76'`). Anything else is a TypeError when the client is
+   * constructed, and nothing is trimmed. It is the client's claim about itself, not proof, and it
+   * changes no permission and no door: whether an agent made a write is `agent`'s business.
+   */
+  client?: string;
 }

@@ -1,6 +1,6 @@
 # For AI agents using @onlyworlds/sdk
 
-**Current as of**: SDK **4.x** · schema-dist **v0.33.0-dist.45** (canonical 00.33.00).
+**Current as of**: SDK **4.x** · schema-dist **v0.33.0-dist.46** (canonical 00.33.00).
 This line is asserted by `codegen:check` in CI — if the pin moves and this file is not
 re-read against it, the check fails rather than letting this document rot quietly.
 
@@ -109,6 +109,11 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   `mcp`, `declared`, `api`, `v1`, `sync`, `server`), and a `/changes` delete carries
   `deleted_by` and `deleted_via`; `isAgentDoor(door)` is true for the first three. An agent
   seat's key is recorded as an agent without the option. Never set it in a tool people use.
+- **Name your tool** (since 4.56.0): `new OwV2Client({ ..., client: 'atlas' })` sends
+  `X-OW-Client: atlas` on every element write (never on a read); left out, it sends `sdk`. The name
+  is lower case letters, digits and hyphens, 1 to 32 characters, else a TypeError at construction.
+  keel stores it as `changed_client` on the element and `deleted_client` on a `/changes` delete:
+  the client's claim, never proof, and null when none was sent.
 - A guest or player reads what its own Character's sheet links to as a **stub**, marked
   `known_of: true` (`isKnownOf(el)`): only `id`, `type`, `name`, `description`, `supertype`,
   `subtype`, `image_url`, the timestamps and the fields its type lists in `PUBLIC_FIELDS` are

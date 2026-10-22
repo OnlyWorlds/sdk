@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.56.0] - 2026-10-22
+
+### Added
+
+- **The client's name** (keel #520, live 2026-10-22; Orrery's `client-name.md`, decision 2): a constructor option `client`, default `'sdk'`, sent as `X-OW-Client` on every element write (`create`, `upsert`, `patch`, `delete`, `editLinks`, `bulk`, `adopt`) and on no read. keel stores it on the element as `changed_client`, so a reader can tell which tool made the last change (`new OwV2Client({ ..., client: 'atlas' })`). The rule is keel's, exact here: lower case letters, digits and hyphens, 1 to 32 characters (`[a-z0-9-]{1,32}`). Anything else, a capital, a space, an empty string, 33 characters or a value that is not a string, is a TypeError at construction naming the option and the rule, and nothing is trimmed; keel's own fence for a stranger's header is to store null, never a 422. The name is the client's claim about itself, never proof; it changes no door and no permission, and `agent` still decides `X-OW-Agent`.
+- **`changed_client`** on `OwElementBase` (`string | null`, server-managed, read-only, beside `changed_by` and `changed_via`): the name the last write gave, null when it gave none or one outside the rule, for keel's own writes, and for changes from before names were recorded. Sent back in a write it is ignored. **`deleted_client`** on a `/changes` delete (`OwChangeDelete`, beside `deleted_by` and `deleted_via`), the same for the delete; null on a `hidden` row.
+
+### Changed
+
+- **Schema repinned to schema-dist v0.33.0-dist.46** (same canonical 00.33.00). The dist's example export (`example/world-export.json`) gains `changed_client: null` on its bodies, `walk/lint_folder.py`'s server-key set names `changed_client`, and the README's sentence on server keys names it; `VERSION` and `MANIFEST.json` carry the new serial; no schema file moved. Generated output moves its provenance lines and gains `changed_client`.
+
 ## [4.55.0] - 2026-10-22
 
 ### Added

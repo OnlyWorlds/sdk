@@ -1064,6 +1064,81 @@ test('agent: true sends no X-OW-Agent on reads, world meta, account routes or th
   assert.deepEqual(img.calls[1].init.headers, { Authorization: 'Bearer tkt.sig', 'X-Key': 'u/w1/x.png' });
 });
 
+// -- keel #520: the client's name (X-OW-Client) --------------------------------
+
+/** The seven element writes keel reads X-OW-Client on, through one client; the methods and headers sent. */
+async function clientNameOnWrites(cfg = {}) {
+  const body = { id: 'x', type: 'character', name: 'A', results: [] };
+  const { client, fetchImpl } = makeClient({ status: 200, body }, cfg);
+  await client.create('character', { name: 'B' });
+  await client.upsert('character', 'x', { name: 'B' });
+  await client.patch('character', 'x', { name: 'C' });
+  await client.editLinks('character', 'x', 'species', { add: ['y'] });
+  await client.bulk([{ type: 'character', element: { name: 'D' } }]);
+  await client.adopt('character', 'x', 'm1');
+  const del = makeClient({ status: 204 }, cfg);
+  await del.client.delete('character', 'x');
+  return [...fetchImpl.calls, ...del.fetchImpl.calls].map((c) => [c.init.method, c.url.replace(/^.*\/api\/v2/, ''), c.init.headers['X-OW-Client']]);
+}
+
+test('client: X-OW-Client is sdk by default on create, upsert, patch, links, bulk, adopt and delete', async () => {
+  assert.deepEqual(await clientNameOnWrites(), [
+    ['POST', '/character/', 'sdk'], ['PUT', '/character/x/', 'sdk'], ['PATCH', '/character/x/', 'sdk'],
+    ['POST', '/character/x/links/species', 'sdk'], ['POST', '/bulk/', 'sdk'], ['POST', '/character/x/adopt', 'sdk'],
+    ['DELETE', '/character/x/', 'sdk'],
+  ]);
+});
+
+test('client: a name the caller gives rides every element write instead', async () => {
+  const sent = await clientNameOnWrites({ client: 'atlas' });
+  assert.equal(sent.length, 7);
+  for (const [method, path, name] of sent) assert.equal(name, 'atlas', `${method} ${path}`);
+  const edge = await clientNameOnWrites({ client: 'a-1' });
+  assert.ok(edge.every(([, , name]) => name === 'a-1'));
+  const long = 'z'.repeat(32);
+  assert.ok((await clientNameOnWrites({ client: long })).every(([, , name]) => name === long), 'thirty-two characters is inside the rule');
+});
+
+test('client: no X-OW-Client on a read (get, list, changes, world meta, me)', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', type: 'character', name: 'A', data: [], changes: [], cursor: '1:x', has_more: false, head: 1 } }, { client: 'atlas' });
+  await client.get('character', 'x');
+  await client.list('character');
+  await client.changes();
+  await client.getWorld();
+  await client.me();
+  assert.equal(fetchImpl.calls.length, 5);
+  for (const c of fetchImpl.calls) assert.equal('X-OW-Client' in c.init.headers, false, `${c.init.method} ${c.url}`);
+});
+
+test('client: no X-OW-Client on the writes keel does not read it on (hide, unhide, the file ticket, setMyCharacter, mintWorldKey)', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', upload_url: 'https://u', token: 't' } }, { client: 'atlas', agent: true });
+  await client.hide('character', 'x');
+  await client.unhide('character', 'x');
+  await client.createFileTicket('character', 'x', { name: 'a.pdf', size: 3 });
+  await client.setMyCharacter('x');
+  const acct = makeClient({ status: 201, body: { key: 'ow_w_x' } }, { apiKey: 'ow_a_test', client: 'atlas', agent: true });
+  await acct.client.mintWorldKey('w1', { scope: 'write', name: 'k' });
+  const calls = [...fetchImpl.calls, ...acct.fetchImpl.calls];
+  assert.equal(calls.length, 5);
+  for (const c of calls) {
+    assert.equal('X-OW-Client' in c.init.headers, false, `${c.init.method} ${c.url}`);
+    assert.equal(c.init.headers['X-OW-Agent'], '1', `${c.init.method} ${c.url}: these still carry the agent's declaration`);
+  }
+});
+
+test('client: a name outside [a-z0-9-]{1,32} is a TypeError at construction, naming the option and the rule', () => {
+  const fetch = fakeFetch({ status: 200, body: {} });
+  for (const bad of ['Atlas', '', 'z'.repeat(33), 'a b', ' atlas', 'atlas\n', 'atlas_1', 'ätlas', 7, null, true, ['atlas']]) {
+    assert.throws(
+      () => new OwV2Client({ apiKey: 'ow_w_test', fetch, client: bad }),
+      (err) => err instanceof TypeError && /client/.test(err.message) && err.message.includes('[a-z0-9-]') && err.message.includes('32'),
+      JSON.stringify(bad),
+    );
+  }
+  assert.equal(fetch.calls.length, 0);
+  assert.doesNotThrow(() => new OwV2Client({ apiKey: 'ow_w_test', fetch, client: undefined }));
+});
+
 test('isAgentDoor: seat, mcp and declared are agent-made; the surfaces and null are not', async () => {
   const { isAgentDoor, AGENT_DOORS } = await import('../dist/index.js');
   assert.deepEqual([...AGENT_DOORS], ['seat', 'mcp', 'declared']);
