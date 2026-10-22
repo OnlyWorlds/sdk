@@ -44,6 +44,7 @@ export type { FieldType, FieldInfo, SectionInfo } from './v2';
 // The world file: one .zip holding one world as a portable copy (Folder Format §4.1), read and written
 export {
   readWorldFile, writeWorldFile, OwWorldFileError, WORLD_FILE_MAX_BYTES, WORLD_FILE_MAX_ENTRIES,
+  WORLD_FILE_MEDIA_TYPE,
 } from './world-file';
 export type {
   OwReadWorldFile, OwReadWorldFileOptions, OwWorldFileEntry, OwWorldFileReason,

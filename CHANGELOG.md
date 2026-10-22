@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+
+- **The world file follows Folder Format §4.7, the `.owworld` archive** (OW Council #522), and gives the spec's verdict and cause on every one of the 74 fixtures in its conformance set (Quillon's, `owworld-fixtures`), plus its three on-demand floor cases.
+  - The reader parses the central directory itself (zip64 included) and runs every check on names, kinds, methods and sizes before it inflates anything.
+  - Six new refusal causes join `OwWorldFileReason`: `duplicate` (OW-17), `collision` (OW-18: NFC, then simple case folding), `link` (OW-20), `method` (OW-21), `name` (OW-22) and `marker` (OW-6). A `Record<OwWorldFileReason, …>` in a caller needs the six new keys.
+  - Files beside the world's folder are ignored, no longer `more_than_one` (OW-4). A `world.json` under `records/` is a producer's data, not a second world (OW-5). A spanned archive is `not_openable`. An entry that inflates past the size it declares is `too_big` at any budget (OW-14).
+  - The default budget is the spec's floor: `WORLD_FILE_MAX_BYTES` 2 GiB (was 1 GiB), `WORLD_FILE_MAX_ENTRIES` 500,000 (was 200,000) (OW-15).
+  - A `mimetype` marker is never required. One with other bytes than `WORLD_FILE_MEDIA_TYPE` (`application/vnd.onlyworlds.world+zip`, newly exported) is refused, and the marker is never returned as a file.
+  - `files` come back in code point order (the UTF-8 bytes of the name), not UTF-16 order.
+  - The writer gives one set of bytes for one input (OW-12, OW-13). It places the `mimetype` marker first and stored, orders entries by the UTF-8 bytes of their names, and stamps every entry 1980-01-01 00:00 (was the clock).
+  - The writer writes only `world.json`, `elements/`, `spatial/`, `media/`, `records/` and a tool's dot-folder it is handed (OW-7). It leaves out any other file, and a dot-name or `.meta` inside a content folder. It refuses a `name` or a `collision` as the reader would.
+
 ## [4.48.1] - 2026-10-22
 
 ### Changed

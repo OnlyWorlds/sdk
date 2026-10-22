@@ -240,19 +240,34 @@ const { token_rating, tokens_remaining, resets_at } = await account.allowance();
 
 ## World files
 
-A world file is one `.zip` holding a whole world folder (`world.json` and `elements/<type>/*.json`, as Atlas keeps a world on disk), the way Atlas downloads and opens one. It needs no account and works in the browser and in Node.
+A world file (`.owworld`, a `.zip` by another name) is one archive holding a whole world folder (`world.json` and `elements/<type>/*.json`, as Atlas keeps a world on disk), the way Atlas downloads and opens one. It needs no account and works in the browser and in Node. Both functions follow the Folder Format spec's §4.7 and pass its fixture set.
 
 ```typescript
 import { readWorldFile, writeWorldFile, OwWorldFileError } from '@onlyworlds/sdk';
 
 const world = readWorldFile(bytes);   // a Uint8Array
 world.worldId; world.name; world.world; // world.json, parsed
-world.files;                            // [{ path, data }], relative to the world's folder, sorted
+world.files;                            // [{ path, data }], relative to the world's folder, in code point order
 
 const zip = writeWorldFile(world.files, 'hollow-reach-0192a000'); // one top-level folder
 ```
 
-The reader refuses a file before returning anything: a path that could land outside the folder, more than 1 GiB or 200,000 files uncompressed (`maxBytes`, `maxEntries` to change them), no `world.json` with an `id`, or more than one world. Check `err.reason` on the `OwWorldFileError` it throws. The world's OnlyWorlds link and key (`world.json`'s `api`) never travel: both functions remove them. A tool's own folder (`.atlas/` and the like) comes back like any other file; pass `skip: path => …` to leave files out.
+The reader checks every entry before it inflates anything, and refuses the file before returning anything. Check `err.reason` on the `OwWorldFileError` it throws:
+
+| `reason` | what the file holds |
+|---|---|
+| `not_openable` | not a zip, a spanned one, or a broken entry |
+| `unsafe_path` | a path that could land outside the folder, or a path that is both a file and a folder |
+| `name` | a name some disk cannot hold: `CON` and the other device names, a trailing dot or space, `<>:"\|?*`, a control character, a non-ASCII name without the UTF-8 flag |
+| `duplicate`, `collision` | two entries with one name, or two names that differ only in case or in how an accent is written |
+| `link`, `method` | a link or special file, an encrypted entry, or a method other than stored or deflate |
+| `too_big`, `too_many` | more than 2 GiB or 500,000 files uncompressed (`maxBytes`, `maxEntries` to change them), or an entry bigger than it says |
+| `marker` | a `mimetype` entry with other bytes than `WORLD_FILE_MEDIA_TYPE` (a marker is never required) |
+| `not_a_world`, `more_than_one` | no `world.json` with an `id`, two worlds, or a second `world.json` inside the world (one under `records/` is data) |
+
+Files beside the world's folder and archive junk (`__MACOSX`, `.DS_Store`) are ignored. The world's OnlyWorlds link and key (`world.json`'s `api`) never travel: both functions remove them. A tool's own folder (`.atlas/` and the like) comes back like any other file; pass `skip: path => …` to leave files out.
+
+The writer gives the same bytes for the same files: the `mimetype` marker first, then every entry in the UTF-8 order of its name, stamped 1980-01-01 00:00. It writes `world.json`, `elements/`, `spatial/`, `media/` and `records/`, and leaves any other file out. A tool's dot-folder you hand it travels too, which makes the file a private copy rather than a portable `.owworld`.
 
 ## World calendars
 

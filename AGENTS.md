@@ -79,7 +79,10 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - World files (no account needed; since 4.10.0): `readWorldFile(bytes)` opens a `.zip` holding one
   world folder and returns `{ worldId, name, world, files: [{ path, data }] }`;
   `writeWorldFile(files, topDir)` makes one. Refusals throw `OwWorldFileError` with a `reason`.
-  `world.json`'s `api` block (link and key) is removed both ways.
+  `world.json`'s `api` block (link and key) is removed both ways. Both follow Folder Format
+  §4.7 (`.owworld`): the reader checks the central directory before inflating
+  and ignores files beside the world's folder; the writer's output is byte-stable (marker
+  first, UTF-8 name order, 1980 stamps) and holds only `world.json` and the folder's parts.
 - World calendars (since 4.20.0): `worldCalendars(elements)` finds the elements carrying
   `atlas_calendar` (Atlas owns the field: read it, never write it); `resolveCalendarLens` picks
   one; `formatStep(config, step)` names a point on the world's integer time line, `parseDate`
