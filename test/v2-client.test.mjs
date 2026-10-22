@@ -1093,3 +1093,26 @@ test('list and listAll refuse an unknown top-level key before sending: a wire fi
   await client.list('character', { filter: { name__icontains: 'Hidden mark probe' }, limit: 5 });
   assert.equal(new URL(fetchImpl.calls[0].url).searchParams.get('name__icontains'), 'Hidden mark probe');
 });
+
+test('every options object refuses an unknown key before sending (4.52.0): a typo cannot turn atomic off, drop an idempotency key or widen a draught', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { data: [], has_more: false, changes: [], head: 0, epoch: null, cursor: '0' } });
+  const acct = makeClient({ status: 200, body: {} }, { apiKey: 'ow_a_test', apiPin: undefined });
+  const calls = [
+    ['draught', () => client.draught('x', { asof: '1200' })],
+    ['get', () => client.get('character', 'x', { expnd: ['friends'] })],
+    ['create', () => client.create('character', { name: 'A' }, { idempotency_key: 'k' })],
+    ['bulk', () => client.bulk([{ type: 'character', name: 'A' }], { atomc: true })],
+    ['changes', () => client.changes({ afetr: '2026-10-22T00:00:00Z' })],
+    ['changesAll', () => (async () => { for await (const _ of client.changesAll(undefined, { afterr: 'x' })) { /* never */ } })()],
+    ['removeImage', () => client.removeImage('k', { tickt: {} })],
+    ['redeemJoin', () => client.redeemJoin('code', { nmae: 'A' })],
+    ['signInWithPassword', () => client.signInWithPassword({ email: 'a@b.c', password: 'p', tokenName: 't', rememberMe: true })],
+    ['mintWorldKey', () => acct.client.mintWorldKey('w', { scpe: 'read' })],
+    ['ask', () => acct.client.ask({ worldId: 'w', question: 'q', context: [], model: 'x' })],
+    ['sort', () => acct.client.sort({ worldId: 'w', notes: [], slice: [], order: 'x' })],
+  ];
+  for (const [name, call] of calls) {
+    await assert.rejects(call(), (err) => err instanceof TypeError && err.message.startsWith(`${name}: unknown parameter`), name);
+  }
+  assert.equal(fetchImpl.calls.length + acct.fetchImpl.calls.length, 0, 'nothing was sent');
+});

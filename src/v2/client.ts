@@ -122,14 +122,7 @@ export class OwV2Client {
 
   /** GET /{type}/ -- one cursor page. */
   async list(type: ElementType | string, params: ListParams = {}): Promise<OwPage> {
-    for (const k of Object.keys(params)) {
-      if (!LIST_PARAM_KEYS.has(k)) {
-        throw new TypeError(
-          `list: unknown parameter '${k}'. A wire filter (name, name__icontains, supertype, subtype, characters) goes under filter: { ${k}: ... }; ` +
-          `the other keys are ${[...LIST_PARAM_KEYS].join(', ')}. Nothing was sent: an unknown key was once dropped, and the list came back whole.`,
-        );
-      }
-    }
+    only('list', params, LIST_PARAM_KEYS, 'A wire filter (name, name__icontains, supertype, subtype, characters) goes under filter: { ... }.');
     const query = buildQuery({
       limit: params.limit ?? this.pageSize,
       cursor: params.cursor,
@@ -155,6 +148,7 @@ export class OwV2Client {
    * empty means the serving is partial. Served `Cache-Control: private, no-store`.
    */
   async draught(characterId: string, policy: OwDraughtPolicy = {}): Promise<OwDraught> {
+    only('draught', policy, ['components', 'mode', 'asOf', 'undated', 'since', 'budget', 'depth']);
     const query = buildQuery({
       components: policy.components?.join(','),
       mode: policy.mode,
@@ -182,6 +176,7 @@ export class OwV2Client {
    * #421: the owner reads as another reader; see ListParams.viewAs).
    */
   async get(type: ElementType | string, id: string, opts: Pick<ListParams, 'expand' | 'fields' | 'viewAs'> = {}): Promise<OwElement> {
+    only('get', opts, ['expand', 'fields', 'viewAs']);
     const query = buildQuery({ expand: opts.expand?.join(','), fields: opts.fields?.join(','), as: opts.viewAs });
     return this.request('GET', `/${type}/${id}/`, { query }) as Promise<OwElement>;
   }
@@ -197,6 +192,7 @@ export class OwV2Client {
    * `null` are accepted and stored as `''` (nameless Markers exist).
    */
   async create(type: ElementType | string, element: OwElement | Record<string, unknown>, opts: { idempotencyKey?: string } = {}): Promise<OwElement> {
+    only('create', opts, ['idempotencyKey']);
     refuseKnownOf(element, 'create');
     const body = sanitizePayload(element);
     if (body.id === undefined || body.id === null || body.id === '') {
@@ -301,6 +297,7 @@ export class OwV2Client {
    * fresh UUIDv7. Ids you supply are kept.
    */
   async bulk(items: OwBulkItem[], opts: { atomic?: boolean; idempotencyKey?: string } = {}): Promise<OwBulkResponse> {
+    only('bulk', opts, ['atomic', 'idempotencyKey']);
     // A stub anywhere refuses the whole call before sending (never a skipped slot:
     // the response's slots line up with `items`).
     items.forEach((it, index) => refuseKnownOf(it.element, `bulk: items[${index}]`));
@@ -346,6 +343,7 @@ export class OwV2Client {
    * that is not a date and time is a 422 naming `after`.
    */
   async changes(opts: { since?: string; limit?: number; after?: string } = {}): Promise<OwChangesPage> {
+    only('changes', opts, ['since', 'limit', 'after']);
     const query = buildQuery({ since: opts.since, limit: opts.limit ?? this.changesPageSize, after: opts.after });
     const page = await this.request('GET', '/changes/', { query }) as Omit<OwChangesPage, 'cursor'> & { cursor: string | number };
     return { ...page, cursor: String(page.cursor) };
@@ -379,6 +377,7 @@ export class OwV2Client {
    * `head` and `epoch`: the view epoch the walk ran under, for a guest or a contributor).
    */
   async *changesAll(since?: string, opts: { after?: string } = {}): AsyncGenerator<OwChange, { cursor: string; head: number; epoch: number | null }> {
+    only('changesAll', opts, ['after']);
     let cursor = since;
     let page: OwChangesPage;
     do {
@@ -471,6 +470,7 @@ export class OwV2Client {
    * ticket is still unspent).
    */
   async removeImage(keyOrUrl: string, opts: { ticket?: OwRemovalTicket } = {}): Promise<OwRemovedImage> {
+    only('removeImage', opts, ['ticket']);
     const ticket = opts.ticket ?? await this.createRemovalTicket(keyOrUrl);
     let res: Response;
     try {
@@ -678,6 +678,7 @@ export class OwV2Client {
    * for one ignores `character`.
    */
   async redeemJoin(code: string, opts: { name?: string; agentName?: string; character?: string } = {}): Promise<OwJoined> {
+    only('redeemJoin', opts, ['name', 'agentName', 'character']);
     const body: Record<string, unknown> = { code };
     if (opts.name !== undefined) body.name = opts.name;
     if (opts.agentName !== undefined) body.agent_name = opts.agentName;
@@ -713,6 +714,7 @@ export class OwV2Client {
     password: string;
     tokenName: string;
   }): Promise<OwSignedIn> {
+    only('signInWithPassword', opts, ['email', 'username', 'password', 'tokenName']);
     const { email, username, password, tokenName } = opts ?? ({} as typeof opts);
     const login = typeof email === 'string' ? email.trim() : '';
     const user = typeof username === 'string' ? username.trim() : '';
@@ -1028,6 +1030,7 @@ export class OwV2Client {
    * token only; no Idempotency-Key.
    */
   async mintWorldKey(worldId: string, opts: { scope?: 'read' | 'write'; name?: string } = {}): Promise<OwMintedKey> {
+    only('mintWorldKey', opts, ['scope', 'name']);
     if (this.keyKind !== 'account') {
       throw new TypeError('mintWorldKey needs an account token (ow_a_)');
     }
@@ -1049,6 +1052,7 @@ export class OwV2Client {
    * is sent; any client, keyless included. The handoff sheet: Orrery `keel/signin-handoff.md` §3.
    */
   async signInWithOnlyWorlds(opts: OwSignInBegin): Promise<OwSignInBegun> {
+    only('signInWithOnlyWorlds', opts, ['clientId', 'redirectUri', 'resume', 'storage', 'navigate']);
     return beginSignIn(this.baseUrl, opts);
   }
 
@@ -1062,6 +1066,7 @@ export class OwV2Client {
    * 400: used, expired, or another client's code), `rate_limited`, `offline`, `failed`.
    */
   async completeSignIn(opts: OwSignInComplete): Promise<OwSignInResult> {
+    only('completeSignIn', opts, ['clientId', 'storage', 'url']);
     return completeOAuthSignIn(this.baseUrl, this.fetchImpl, opts);
   }
 
@@ -1078,6 +1083,7 @@ export class OwV2Client {
    * them counts. 422 for a question over 500 characters or context past its limits.
    */
   async ask(req: { worldId: string; question: string; context: string[] }): Promise<OwAskAnswer> {
+    only('ask', req, ['worldId', 'question', 'context']);
     if (this.keyKind !== 'account') {
       throw new TypeError('ask needs an account token (ow_a_): the proxy meters per account');
     }
@@ -1098,6 +1104,7 @@ export class OwV2Client {
    * to 200 characters, anchors up to 120.
    */
   async sort(req: { worldId: string; notes: OwSortNote[]; slice: OwSortRef[] }): Promise<OwSortAnswer> {
+    only('sort', req, ['worldId', 'notes', 'slice']);
     if (this.keyKind !== 'account') {
       throw new TypeError('sort needs an account token (ow_a_): the proxy meters per account');
     }
@@ -1412,7 +1419,22 @@ function objectKey(keyOrUrl: string): string {
 }
 
 /** Every top-level key `list()` reads; a plain-JS caller's unknown key is refused by name, never dropped (W11, 2026-10-22). */
-const LIST_PARAM_KEYS: ReadonlySet<string> = new Set<keyof ListParams>(['limit', 'cursor', 'ids', 'createdBy', 'expand', 'fields', 'filter', 'viewAs']);
+const LIST_PARAM_KEYS: readonly (keyof ListParams)[] = ['limit', 'cursor', 'ids', 'createdBy', 'expand', 'fields', 'filter', 'viewAs'];
+
+/**
+ * Refuse an options object's unknown key before anything is sent. TypeScript refuses it at compile
+ * time; a plain-JavaScript caller had nothing until 4.51.0, and a dropped key turned a filter into the
+ * whole list (99 Characters deleted on a test world, 2026-10-22), would turn `atomic` off, drop an
+ * `idempotencyKey`, or widen a draught's `mode`. Only own enumerable keys are read.
+ */
+function only(method: string, obj: object | undefined, keys: readonly string[], hint = ''): void {
+  if (!obj || typeof obj !== 'object') return;
+  for (const k of Object.keys(obj)) {
+    if (!(keys as readonly string[]).includes(k)) {
+      throw new TypeError(`${method}: unknown parameter '${k}'. ${hint ? hint + ' ' : ''}The keys are ${keys.join(', ')}. Nothing was sent.`);
+    }
+  }
+}
 
 function buildQuery(params: Record<string, string | number | boolean | undefined>): string {
   const q = new URLSearchParams();

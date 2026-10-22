@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.52.0] - 2026-10-22
+
+### Changed
+
+- **Every options object refuses an unknown key** the way `list()` did in 4.51.0: `draught`, `get`, `create`, `bulk`, `changes`, `changesAll`, `removeImage`, `redeemJoin`, `signInWithPassword`, `mintWorldKey`, `signInWithOnlyWorlds`, `completeSignIn`, `ask` and `sort` throw a TypeError naming the key and the known keys before anything is sent. A dropped key was never harmless: `atomc: true` ran a batch non-atomically, `idempotency_key` let a retry create twice, `afetr` read the whole feed, `mode` misspelt widened a draught to the caller's view. TypeScript callers were already refused at compile time; this is for plain JavaScript.
+
 ## [4.51.0] - 2026-10-22
 
 ### Changed
