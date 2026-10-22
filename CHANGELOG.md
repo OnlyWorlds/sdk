@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.57.1] - 2026-10-22
+
+### Fixed
+
+- **`patchWorld` strips `public_read` and `agent_narrator_rule`** beside `slug` and `public_page`: keel answers both as unknown fields (a 422 naming the key; `agent_narrator_rule` measured on staging, `public_read` by keel's own rule), so a world body read with `getWorld` and sent back now round-trips. `owner_character` is accepted by the server and is still sent.
+
 ## [4.57.0] - 2026-10-22
 
 ### Added

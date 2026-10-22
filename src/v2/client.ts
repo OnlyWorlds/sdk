@@ -1307,11 +1307,13 @@ class HeadPollState {
 const READ_ONLY_FIELDS = ['world', 'type', 'created_at', 'updated_at', 'change_seq', 'known_of'] as const;
 
 /**
- * The world's own read-only keys, stripped by patchWorld on top of READ_ONLY_FIELDS (keel #471:
- * the public page is set on the world page). Kept apart so an element write never loses a field
- * of these names.
+ * The world's own read-only keys, stripped by patchWorld on top of READ_ONLY_FIELDS: the public
+ * page's two (keel #471, set on the world page), `public_read` (the same 422, keel's recipe) and
+ * `agent_narrator_rule` (the owner's switch on the world page; a 422 naming it, measured on
+ * staging 2026-10-22). `owner_character` is accepted by the server and left in. Kept apart so an
+ * element write never loses a field of these names.
  */
-const WORLD_READ_ONLY_FIELDS = ['slug', 'public_page'] as const;
+const WORLD_READ_ONLY_FIELDS = ['slug', 'public_page', 'public_read', 'agent_narrator_rule'] as const;
 
 /**
  * Strip fields the API rejects on write. WIRE-CORRECTED (fixtures P3a/P3b/P6):

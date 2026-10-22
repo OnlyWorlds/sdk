@@ -938,8 +938,8 @@ test('getWorld: slug and public_page read through as keel sends them (on, and wi
 
 test('patchWorld strips slug and public_page (read-only: set on the world page), so a read body round-trips', async () => {
   const { client, fetchImpl } = makeClient({ body: { id: 'w', name: 'V', slug: 'bells', public_page: PUBLIC_PAGE } });
-  await client.patchWorld({ name: 'V', slug: 'bells', public_page: PUBLIC_PAGE, updated_at: '2026-10-22T00:00:00Z' });
-  assert.deepEqual(lastBody(fetchImpl), { name: 'V' });
+  await client.patchWorld({ name: 'V', slug: 'bells', public_page: PUBLIC_PAGE, public_read: true, agent_narrator_rule: false, owner_character: null, updated_at: '2026-10-22T00:00:00Z' });
+  assert.deepEqual(lastBody(fetchImpl), { name: 'V', owner_character: null });
 });
 
 test('the published types declare slug and public_page on OwWorldMeta, and the page\'s six keys', () => {
