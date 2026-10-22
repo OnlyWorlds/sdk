@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.49.0] - 2026-10-22
+
 ### Changed
 
 - **The world file follows Folder Format §4.7, the `.owworld` archive** (OW Council #522), and gives the spec's verdict and cause on every one of the 74 fixtures in its conformance set (Quillon's, `owworld-fixtures`), plus its three on-demand floor cases.
