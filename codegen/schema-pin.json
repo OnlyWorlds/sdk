@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.32.2-dist.40",
-  "commit": "26ffb69c6aa3cde8fbe37eb75bd2ed827efeb746",
-  "manifest_sha256": "b73fe08d76c57f3dcef2013919cd21723ff0f90dcfc03200455de5e379dc1a44",
+  "tag": "v0.32.2-dist.41",
+  "commit": "460e5fce3812c3b9c226ac55f1d028af3b1ab9b2",
+  "manifest_sha256": "911e928fa77fbd58d85bdd026efd2c2b30dfb07e1646a0a51caef5d43abb84f8",
   "canonical_version": "00.32.02",
-  "dist_serial": 40,
+  "dist_serial": 41,
   "published": "2026-10-22",
   "pinned_at": "2026-10-22",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.32.2-dist.40",
+      "manifest_sha256": "b73fe08d76c57f3dcef2013919cd21723ff0f90dcfc03200455de5e379dc1a44",
+      "note": "superseded by v0.32.2-dist.41 (same canonical; fixtures/owworld gains fail-OW-14-stored-short, a stored entry shorter than declared; nothing else)"
+    },
     {
       "tag": "v0.32.2-dist.39",
       "manifest_sha256": "efc94e3318d5b4bff11ef535f932be6a49db6c9b774dfdcbabddaebb4a9a4426",
