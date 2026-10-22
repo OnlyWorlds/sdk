@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { zipSync, deflateSync, strToU8 } from 'fflate';
 import {
   readWorldFile, writeWorldFile, OwWorldFileError, WORLD_FILE_MAX_BYTES, WORLD_FILE_MAX_ENTRIES, WORLD_FILE_MEDIA_TYPE,
+  simpleCaseFold,
 } from '../dist/index.js';
 
 const j = (v) => JSON.stringify(v, null, 2) + '\n';
@@ -361,6 +362,31 @@ test('OW-18: two names that are one after NFC and simple case folding are refuse
   // Simple folding keeps sharp s apart from ss, and dotless i apart from i and I.
   readWorldFile(pair(`stra${cp(0xdf)}e.png`, 'strasse.png'));
   readWorldFile(pair(`${cp(0x131)}.png`, 'I.png'));
+});
+
+test('OW-18: the fold is CaseFolding.txt 15.1, C and S rows, for every code point and nothing more', () => {
+  // The vendored table (unicode.org/Public/15.1.0/ucd/CaseFolding.txt), Skeld's ruling, OW Council #9830.
+  const table = new Map();
+  for (const line of readFileSync(new URL('./fixtures/CaseFolding-15.1.0.txt', import.meta.url), 'utf8').split(/\r?\n/)) {
+    const m = /^([0-9A-F]+); ([CS]); ([0-9A-F]+);/.exec(line);
+    if (m) table.set(parseInt(m[1], 16), parseInt(m[3], 16));
+  }
+  assert.equal(table.size, 1457, 'the C and S rows of 15.1');
+  const wrong = [];
+  for (let c = 0; c < 0x110000; c++) {
+    if (c >= 0xd800 && c <= 0xdfff) continue;
+    const want = table.get(c) ?? c;
+    const got = simpleCaseFold(cp(c)).codePointAt(0);
+    if (got !== want) wrong.push(`U+${c.toString(16).toUpperCase()} -> U+${got.toString(16).toUpperCase()}`);
+  }
+  assert.deepEqual(wrong.slice(0, 20), [], `${wrong.length} code points fold otherwise than the table says`);
+  // The three S rows a runtime's casing misses collide in a world file; a fold Unicode 16 added does not, nor dotless i.
+  const pair = (a, b) => W([{ name: `w/media/${a}.png`, data: PNG }, { name: `w/media/${b}.png`, data: PNG }]);
+  refuses(pair(cp(0x1fd3), cp(0x390)), 'collision');
+  refuses(pair(cp(0x1fe3), cp(0x3b0)), 'collision');
+  refuses(pair(cp(0xfb05), cp(0xfb06)), 'collision');
+  readWorldFile(pair(cp(0xa7cb), cp(0x264)));
+  readWorldFile(pair(cp(0x131), 'i'));
 });
 
 test('OW-20: a link or a special file is refused; regular files and folders made on Unix are read', () => {
