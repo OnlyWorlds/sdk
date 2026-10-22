@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.58.0] - 2026-10-22
+
+### Added
+
+- **The proposed change** (keel #519, PR 180, live 2026-10-22 16:25). Six calls: `propose(type, id, { fields, evidence, expires? })` (any member key that reads the element; `fields` cleaned as a PATCH body is; `Idempotency-Key` only when given), `listProposals(type, id, { limit?, cursor? })`, `worldProposals({ state?, since?, element?, limit?, cursor? })` (the queue, newest first; keepers see every row, others their own), `acceptProposal(type, id, pid)` (`{ proposal, element }`: the keeper's own write, one feed row), `declineProposal(type, id, pid, { reason? })` and `withdrawProposal(type, id, pid)` (204). Types `OwProposal`, `OwProposalList`, `OwProposed`, `OwProposalState`, `OwProposalQuery`, `OwWorldProposalQuery`, `OwProposalAccepted`. Every options object refuses an unknown key with a `TypeError` before anything is sent. `X-OW-Client` goes on `propose` and accept, where the document lists it; `X-OW-Agent` on none of them.
+- **A write held as a proposal is an error, never a body.** Under the world's **AI seats propose, a person accepts** switch an agent seat's `patch`, `upsert` or `editLinks` answers `202`: the client throws `OwProposedError` (`status` 202, `proposal`, `isProposed`) rather than returning something that is not the element; a `202` with no proposal in its body is a plain `OwApiError` 202. A `/bulk` slot with `status: 202` is left in the result as the document shapes it, typed. `create`, `adopt` and `delete` are not read for a 202: the document gives them none.
+- **Five codes**: `isStaleProposal` (`OwStaleProposalError` with `conflicts: [{ field, base, current }]` and `current`, parsed like the 412), `isOwnProposal`, `isProposedOnly`, `isTooManyOpen`, `isFieldNotVisible`.
+- **`OwWorldMeta.agent_writes_proposed?: boolean`**, read-only; `patchWorld` strips it with `slug`, `public_page`, `public_read` and `agent_narrator_rule`.
+- Tests: 20 on a recorded fetch, 18 red first; two mutants caught. Live on production with the demo key, reads only: `getWorld()` carries `agent_writes_proposed: false`; the queue answers `404` to a read key with no member, as the document says. Not exercised live yet: `propose`, accept, decline, withdraw and the `409` (staging has no #519 at release time; a round-trip script waits for it). Not wired yet: the queue's `ETag`/`If-None-Match` (a conditional `worldProposals`, on the `changesHead` pattern, when a poller asks).
+
 ## [4.57.2] - 2026-10-22
 
 ### Changed
