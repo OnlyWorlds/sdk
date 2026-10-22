@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.53.3] - 2026-10-22
+
+### Changed
+
+- **Schema repinned to schema-dist v0.32.2-dist.42** (same canonical 00.32.02; fixtures/owworld gains `fail-OW-6-marker-bom`, a `mimetype` marker that starts with a byte order mark, 81 cases; nothing else; no schema file moved). It is the case 4.53.2's fix refuses: the reader rejects it as `marker`, and the set runs 81 of 81. Generated output moves its provenance lines only.
+
 ## [4.53.2] - 2026-10-22
 
 ### Fixed
