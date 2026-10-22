@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.32.2-dist.42** — canonical schema **00.32.02**, published 2026-10-22.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.33.0-dist.43** — canonical schema **00.33.00**, published 2026-10-22.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -619,6 +619,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 ### Scope
 
 - `role` (text) — The operational function or intent of the zone
+- `shape` (text) — How the zone's markers are joined: polygon (a closed area: the last marker joins the first) or line (an open path, drawn in marker order). Lowercase. Empty, absent, or any other value means the shape is not stated, and a reader draws a polygon
 - `start_date` (integer) — Date when the zone becomes extant or relevant, defined in world TIME units
 - `end_date` (integer) — Date when the zone ceases to be meaningful or enforced, defined in world TIME units
 - `phenomena` (multi link → phenomenon) — Phenomena that affect, define, or occur within the zone

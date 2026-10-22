@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.32.2-dist.42
-//         commit          4218925f75028a1dd4d2b732e81ad076d29a89c6
-//         MANIFEST sha256 a0fff6799f44d04dbece127229576ac6e4e137b488727ebecc0a5f87f83481e0
-//         canonical 00.32.02, dist serial 42, published 2026-10-22
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.43
+//         commit          1bd7e3571519f425856a3177c748c98806d2e961
+//         MANIFEST sha256 a9bbe8171e2e815cdec05a7ddd2a3d07beb4212fcbd6dc80e9cae81935e4cf7f
+//         canonical 00.33.00, dist serial 43, published 2026-10-22
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -66,7 +66,7 @@ export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective
 
 /** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned
  *  distribution's VERSION file (see the provenance block at the top of this file). */
-export const ONLYWORLDS_VERSION = '00.32.02' as const;
+export const ONLYWORLDS_VERSION = '00.33.00' as const;
 
 /** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */
 export type ElementFamily = 'agents' | 'world' | 'abstract' | 'temporal';
@@ -258,7 +258,7 @@ export const ELEMENT_SECTIONS: Record<ElementType, SectionInfo[]> = {
     { name: 'World', order: 3, fields: ['significance', 'anti_trait', 'empowered_abilities'] },
   ],
   zone: [
-    { name: 'Scope', order: 1, fields: ['role', 'start_date', 'end_date', 'phenomena', 'linked_zones'] },
+    { name: 'Scope', order: 1, fields: ['role', 'shape', 'start_date', 'end_date', 'phenomena', 'linked_zones'] },
     { name: 'World', order: 2, fields: ['context', 'populations', 'titles', 'principles'] },
   ],
 };
@@ -958,6 +958,7 @@ export const FIELD_SCHEMA = {
     image_url: { type: 'text', required: false },
     // Scope
     role: { type: 'text' },
+    shape: { type: 'text' },
     start_date: { type: 'integer' },
     end_date: { type: 'integer' },
     phenomena: { type: 'multi_link', target: 'phenomenon' },
@@ -1751,6 +1752,8 @@ export interface ZoneV2 extends OwElementBase {
   type: "zone";
   /** The operational function or intent of the zone */
   role?: string;
+  /** How the zone's markers are joined: polygon (a closed area: the last marker joins the first) or line (an open path, drawn in marker order). Lowercase. Empty, absent, or any other value means the shape is not stated, and a reader draws a polygon */
+  shape?: string;
   /** Date when the zone becomes extant or relevant, defined in world TIME units */
   start_date: number | null;
   /** Date when the zone ceases to be meaningful or enforced, defined in world TIME units */

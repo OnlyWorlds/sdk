@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.54.0] - 2026-10-22
+
+### Added
+
+- **`Zone.shape`** (canonical 00.33.00, a minor step of the standard): a string in Zone's Scope section beside `role`, saying how the zone's markers are joined. `"polygon"` is a closed area (the last marker joins the first), `"line"` an open path drawn in marker order; lowercase. Empty, absent or any other value means not stated, and a reader draws a polygon. Generated as `shape?: string` on `ZoneV2`, `FIELD_SCHEMA.zone.shape` (`{ type: 'text' }`), and in Zone's `Scope` entry of `ELEMENT_SECTIONS`. `ONLYWORLDS_VERSION` is `'00.33.00'`.
+
+### Changed
+
+- **Schema repinned to schema-dist v0.33.0-dist.43** (canonical 00.33.00). Only `schema/zone.yaml` and `schema.json` moved, by the one field; `VERSION`, `README.md`, `example/world-export.json` and `MANIFEST.json` carry the new version; nothing else.
+
 ## [4.53.3] - 2026-10-22
 
 ### Changed

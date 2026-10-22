@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.32.2-dist.42",
-  "commit": "4218925f75028a1dd4d2b732e81ad076d29a89c6",
-  "manifest_sha256": "a0fff6799f44d04dbece127229576ac6e4e137b488727ebecc0a5f87f83481e0",
-  "canonical_version": "00.32.02",
-  "dist_serial": 42,
+  "tag": "v0.33.0-dist.43",
+  "commit": "1bd7e3571519f425856a3177c748c98806d2e961",
+  "manifest_sha256": "a9bbe8171e2e815cdec05a7ddd2a3d07beb4212fcbd6dc80e9cae81935e4cf7f",
+  "canonical_version": "00.33.00",
+  "dist_serial": 43,
   "published": "2026-10-22",
   "pinned_at": "2026-10-22",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.32.2-dist.42",
+      "manifest_sha256": "a0fff6799f44d04dbece127229576ac6e4e137b488727ebecc0a5f87f83481e0",
+      "note": "superseded by v0.33.0-dist.43 (canonical 00.33.00, a minor step: Zone gains shape, a string in its Scope section, polygon or line; nothing else)"
+    },
     {
       "tag": "v0.32.2-dist.41",
       "manifest_sha256": "911e928fa77fbd58d85bdd026efd2c2b30dfb07e1646a0a51caef5d43abb84f8",
