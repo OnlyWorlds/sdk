@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.69.0] - 2026-10-23
+
 ### Added
 
 - **`draught(id, { compact: true })`** (keel #585, PR 198): the draught without its empty sections. Every empty array or object section and an empty `cut` are left out. The frame (`world`, `calendar`, `as_of`, `now`, `mode`, `policy`) and every null stay, so a null is still an answer: `character` null means she is hidden from this reader, `style` null that she has no style element, `recent_cursor` null that the read had no `since`. An absent section means nothing in it, never that it was not read (`policy.components` says what was). The answer is typed `OwDraughtCompact` (`cut` optional); without `compact`, or with `compact: false`, it is `OwDraught` as before, the fixed shape. A `compact` that is not a boolean is a TypeError before anything is sent. MCP's `get_draught` defaults to compact; this route defaults to the fixed shape.
