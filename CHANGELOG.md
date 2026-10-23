@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.68.0] - 2026-10-23
+
+### Fixed
+
+- **`patchWorld` strips `counts`**, which a keyless `GET /world` carries (keel #421 PR 4, the public reader on since 2026-10-23) and `PATCH` answers as an unknown key, so the body of a keyless read goes back too. Quillon's port found it (h29 #11241); the Python package's live wire test went red on the same key the same hour.
+- **`reviewNewElement` refuses a reason with an accept** before sending (keel takes `{ decision: 'accept' }` alone; a reason was its 422), and **checks its answer**: an accept that answers no `element`, or a decline no `deleted`, is a `TypeError` naming the route. Both as the Python package does (Quillon, h29 #11241).
+
 ## [4.67.0] - 2026-10-23
 
 ### Added
