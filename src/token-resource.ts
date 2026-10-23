@@ -30,6 +30,7 @@ import type {
   RevokeSessionResponse,
   RevokeAllSessionsResponse,
 } from './token-types';
+import { refuseUnknownOptions } from './options';
 
 /**
  * Token Management Resource
@@ -128,6 +129,7 @@ export class TokenResource {
    * ```
    */
   async consume(params: TokenConsumeParams): Promise<TokenConsumeResponse> {
+    refuseUnknownOptions('consume', params, ['amount', 'service', 'sessionId', 'metadata'], 'Nothing was sent.');
     return this.req<TokenConsumeResponse>('POST', '/tokens/consume/', {
       body: {
         amount: params.amount,

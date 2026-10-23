@@ -10,6 +10,7 @@
  */
 
 import type { OwProposal, OwProposalConflict, OwResyncReason } from './types';
+import { refuseUnknownOptions } from '../options';
 
 /**
  * Auth codes are distinguishable by design; client recovery UX differs per code.
@@ -470,6 +471,7 @@ export class OwSignInError extends Error {
     message: string,
     opts: { status?: number; code?: string; retryAfter?: number } = {},
   ) {
+    refuseUnknownOptions('OwSignInError', opts, ['status', 'code', 'retryAfter']);
     super(message);
     this.name = 'OwSignInError';
     this.reason = reason;

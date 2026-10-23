@@ -21,6 +21,7 @@ import type {
   OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
 } from './types';
 import { keyedId } from './keyed-id';
+import { unknownKey } from '../options';
 import { OwApiError, OwNetworkError, OwProposedError, OwSignInError, errorFromResponse, parseErrorEnvelope, parseRetryAfter } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
 import { beginSignIn, completeSignIn as completeOAuthSignIn, type OwSignInBegin, type OwSignInBegun, type OwSignInComplete, type OwSignInResult } from './oauth';
@@ -136,7 +137,7 @@ export class OwV2Client {
 
   /** GET /{type}/ -- one cursor page. */
   async list(type: ElementType | string, params: ListParams = {}): Promise<OwPage> {
-    only('list', params, LIST_PARAM_KEYS, 'A wire filter (name, name__icontains, supertype, subtype, characters) goes under filter: { ... }.');
+    only('list', params, LIST_PARAM_KEYS, LIST_FILTER_HINT);
     const query = buildQuery({
       limit: params.limit ?? this.pageSize,
       cursor: params.cursor,
@@ -177,6 +178,8 @@ export class OwV2Client {
 
   /** Cursor-walk every page of a type. Politeness: uses config pageSize. */
   async *listAll(type: ElementType | string, params: Omit<ListParams, 'cursor'> = {}): AsyncGenerator<OwElement> {
+    // Its own list, not list()'s: listAll walks from the first page, so a `cursor` it was handed would be overwritten unread.
+    only('listAll', params, LIST_ALL_PARAM_KEYS, LIST_FILTER_HINT);
     let cursor: string | undefined;
     do {
       const page = await this.list(type, { ...params, cursor });
@@ -1342,6 +1345,7 @@ export class OwV2Client {
       onEtag?: (etag: string | null, status: number) => void;
     } = {},
   ): Promise<T> {
+    only('request', opts, REQUEST_OPTION_KEYS);
     if (opts.ifMatch !== undefined && !(Number.isInteger(opts.ifMatch) && opts.ifMatch >= 0)) {
       throw new TypeError(`ifMatch must be a whole number (an element's change_seq), got ${String(opts.ifMatch)}`);
     }
@@ -1684,6 +1688,15 @@ function objectKey(keyOrUrl: string): string {
 
 /** Every top-level key `list()` reads; a plain-JS caller's unknown key is refused by name, never dropped (W11, 2026-10-22). */
 const LIST_PARAM_KEYS: readonly (keyof ListParams)[] = ['limit', 'cursor', 'ids', 'createdBy', 'expand', 'fields', 'filter', 'viewAs'];
+/** listAll's: list()'s without `cursor`, which the walk sets itself. */
+const LIST_ALL_PARAM_KEYS: readonly (keyof ListParams)[] = LIST_PARAM_KEYS.filter(k => k !== 'cursor');
+const LIST_FILTER_HINT = 'A wire filter (name, name__icontains, supertype, subtype, characters) goes under filter: { ... }.';
+
+/** Every key `request()` reads; the escape hatch refuses any other like the typed methods (4.64.0). */
+const REQUEST_OPTION_KEYS = [
+  'query', 'body', 'idempotencyKey', 'auth', 'allowEmpty', 'replayAware', 'write', 'elementWrite',
+  'proposable', 'ifMatch', 'ifNoneMatch', 'onEtag',
+] as const;
 
 /**
  * Refuse an options object's unknown key before anything is sent. TypeScript refuses it at compile
@@ -1692,11 +1705,9 @@ const LIST_PARAM_KEYS: readonly (keyof ListParams)[] = ['limit', 'cursor', 'ids'
  * `idempotencyKey`, or widen a draught's `mode`. Only own enumerable keys are read.
  */
 function only(method: string, obj: object | undefined, keys: readonly string[], hint = ''): void {
-  if (!obj || typeof obj !== 'object') return;
-  for (const k of Object.keys(obj)) {
-    if (!(keys as readonly string[]).includes(k)) {
-      throw new TypeError(`${method}: unknown parameter '${k}'. ${hint ? hint + ' ' : ''}The keys are ${keys.join(', ')}. Nothing was sent.`);
-    }
+  const k = unknownKey(obj, keys);
+  if (k !== undefined) {
+    throw new TypeError(`${method}: unknown parameter '${k}'. ${hint ? hint + ' ' : ''}The keys are ${keys.join(', ')}. Nothing was sent.`);
   }
 }
 

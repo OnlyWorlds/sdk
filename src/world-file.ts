@@ -43,6 +43,7 @@
  */
 
 import { Inflate, inflateSync, zipSync, type Zippable } from 'fflate';
+import { refuseUnknownOptions } from './options';
 
 const WORLD_FILE = 'world.json';
 const MARKER_NAME = 'mimetype';
@@ -115,6 +116,9 @@ export interface OwReadWorldFileOptions {
   /** Leave a file out of `files` (a path relative to the world's folder). It is still checked and counted. */
   skip?: (path: string) => boolean;
 }
+
+/** Every key `readWorldFile`'s options take; any other is refused by name, never dropped (`maxbytes` would read with the 2 GiB budget). */
+const READ_OPTION_KEYS: readonly (keyof OwReadWorldFileOptions)[] = ['maxBytes', 'maxEntries', 'skip'];
 
 const refuse = (reason: OwWorldFileReason, message?: string): never => {
   throw new OwWorldFileError(reason, message);
@@ -451,9 +455,11 @@ function checkFileAndFolder(files: Set<string>): void {
 
 /**
  * Read a world file. Throws `OwWorldFileError` saying why, having returned
- * nothing; the caller writes only what this returns.
+ * nothing; the caller writes only what this returns. An unknown option is a
+ * `TypeError` before the bytes are looked at.
  */
 export function readWorldFile(bytes: Uint8Array, opts: OwReadWorldFileOptions = {}): OwReadWorldFile {
+  refuseUnknownOptions('readWorldFile', opts, READ_OPTION_KEYS, 'Nothing was read.');
   const maxBytes = opts.maxBytes ?? WORLD_FILE_MAX_BYTES;
   const maxEntries = opts.maxEntries ?? WORLD_FILE_MAX_ENTRIES;
   const entries = centralDirectory(bytes);
@@ -582,11 +588,7 @@ const RECORDS_MANIFEST = 'records/RECORDS.json';
 function asksPrivate(opts: unknown): boolean {
   if (opts === undefined || opts === null) return false;
   if (typeof opts !== 'object') throw new TypeError(`writeWorldFile: options must be an object, such as { includePrivateRecords: true }. Nothing was written.`);
-  for (const k of Object.keys(opts)) {
-    if (!(WRITE_OPTION_KEYS as readonly string[]).includes(k)) {
-      throw new TypeError(`writeWorldFile: unknown option '${k}'. The keys are ${WRITE_OPTION_KEYS.join(', ')}. Nothing was written.`);
-    }
-  }
+  refuseUnknownOptions('writeWorldFile', opts, WRITE_OPTION_KEYS, 'Nothing was written.');
   const asked = (opts as OwWriteWorldFileOptions).includePrivateRecords;
   if (asked !== undefined && typeof asked !== 'boolean') {
     throw new TypeError(`writeWorldFile: includePrivateRecords must be true or false; got ${JSON.stringify(asked) ?? String(asked)}. Nothing was written.`);

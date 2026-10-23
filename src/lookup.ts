@@ -49,6 +49,7 @@
  */
 
 import { FIELD_SCHEMA } from './v2/constants';
+import { refuseUnknownOptions } from './options';
 
 /** What the lookup reads from an element: `id`, `type`, `name`, and any other fields. `OwElement` fits. */
 export interface OwLookupElement {
@@ -111,6 +112,10 @@ export interface OwRenderOptions {
   /** Incoming names listed per type and field (default 10). */
   incomingMax?: number;
 }
+
+/** The keys lookupWorld's and renderElement's options take; any other is refused by name, never dropped. */
+const LOOKUP_OPTION_KEYS: readonly (keyof OwLookupOptions)[] = ['limit'];
+const RENDER_OPTION_KEYS: readonly (keyof OwRenderOptions)[] = ['descMax', 'linkMax', 'incomingMax'];
 
 // an array literal, not a split string: the bundler can only drop a set it can prove pure
 // (a .split() call kept these 451 bytes in every app importing the SDK; Temper, h17 #4247)
@@ -295,8 +300,10 @@ interface Candidate { score: number; direct: number; reasons: OwLookupReason[]; 
  * returns no hits.
  */
 export function lookupWorld<T extends OwLookupElement>(
-  index: OwWorldIndex<T>, question: string, { limit = 8 }: OwLookupOptions = {},
+  index: OwWorldIndex<T>, question: string, opts: OwLookupOptions = {},
 ): OwLookupHit<T>[] {
+  refuseUnknownOptions('lookupWorld', opts, LOOKUP_OPTION_KEYS);
+  const { limit = 8 } = opts;
   const seeds = 12;
   const q = words(normalize(question));
   const qSet = new Set(q);
@@ -421,8 +428,10 @@ export function lookupWorld<T extends OwLookupElement>(
  * the data), and what links to it.
  */
 export function renderElement<T extends OwLookupElement>(
-  element: T, index: OwWorldIndex<T>, { descMax = 500, linkMax = 12, incomingMax = 10 }: OwRenderOptions = {},
+  element: T, index: OwWorldIndex<T>, opts: OwRenderOptions = {},
 ): string {
+  refuseUnknownOptions('renderElement', opts, RENDER_OPTION_KEYS);
+  const { descMax = 500, linkMax = 12, incomingMax = 10 } = opts;
   const el = element;
   const name = (id: string): string => index.byId.get(id)?.name ?? '?';
   const kind = [el.supertype, el.subtype].filter((x) => x && x !== 'undefined').join(' / ');

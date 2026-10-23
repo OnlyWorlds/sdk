@@ -20,6 +20,8 @@
  * consumed by the charts room, popovers, and (via freeze) the publish path.
  */
 
+import { refuseUnknownOptions } from '../options';
+
 // ---- Config shape (persisted in the `atlas_calendar` element field) ----
 
 export interface CalendarEra {
@@ -598,6 +600,9 @@ export interface ParseOptions {
   now?: number | null;
 }
 
+/** Every key `ParseOptions` declares; parseDate refuses any other by name (`{ Now: 12 }` would parse as if no now were set). */
+const PARSE_OPTION_KEYS: readonly (keyof ParseOptions)[] = ['now'];
+
 interface EraMatch { era: CalendarEra; }
 
 function findEra(cfg: CalendarConfig, word: string): EraMatch | null {
@@ -645,6 +650,8 @@ function defaultEra(cfg: CalendarConfig, now: number | null | undefined): Calend
  * error (never guess). p(f(n)) == n is NOT promised; f(p(f(n))) == f(n) is.
  */
 export function parseDate(cfg: CalendarConfig, input: string, opts: ParseOptions = {}): ParseResult | ParseError {
+  // A TypeError, not a ParseError: a misspelt `now` is the caller's bug, not the input's.
+  refuseUnknownOptions('parseDate', opts, PARSE_OPTION_KEYS);
   const raw = input.trim();
   if (raw === '') return { error: 'empty date' };
 

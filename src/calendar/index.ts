@@ -17,6 +17,7 @@
  */
 
 import { readCalendarConfig, type CalendarConfig } from './calendar';
+import { refuseUnknownOptions } from '../options';
 
 export * from './calendar';
 
@@ -75,13 +76,15 @@ export function worldCalendars(elements: Iterable<OwCalendarElement>): WorldCale
  *
  * `fallbackToOnly`: when no calendar was ever chosen (`activeId` is `undefined`, not
  * `null`) and the world holds exactly one, use it. `null` is an explicit "no calendar" and
- * stays null. With several calendars and no choice, nothing is guessed.
+ * stays null. With several calendars and no choice, nothing is guessed. An unknown option is a
+ * TypeError (the caller's bug, not the world's data).
  */
 export function resolveCalendarLens(
   elements: Iterable<OwCalendarElement>,
   activeId: string | null | undefined,
   opts?: { fallbackToOnly?: boolean },
 ): WorldCalendar | null {
+  refuseUnknownOptions('resolveCalendarLens', opts, ['fallbackToOnly']);
   if (activeId === undefined && opts?.fallbackToOnly) {
     const all = worldCalendars(elements);
     return all.length === 1 ? all[0] : null;

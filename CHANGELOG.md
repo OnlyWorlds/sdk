@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.64.0] - 2026-10-23
+
+### Changed
+
+- **Every options object in the package now refuses an unknown key**, not only the client's typed methods (4.51.0 to 4.53.0): `readWorldFile`, `parseDate`, `resolveCalendarLens`, `lookupWorld`, `renderElement`, `planPhoto`, `preparePhoto`, the client's `request()` escape hatch, `listAll` (with its own keys: a `cursor` it was handed was overwritten unread), the deprecated `tokens.consume` and `new OwSignInError`'s third argument throw a `TypeError` naming the function, the key and the keys it takes, before anything is read, decoded, parsed or sent. A dropped key was never harmless: `readWorldFile(bytes, { maxbytes: 1e6 })` read with the 2 GiB budget, `parseDate(cfg, input, { Now: 12 })` parsed as if the world had no now, and W11's `list('character', { name__icontains })` read every Character and a cleanup script deleted 99 of them (2026-10-22). A plain-JavaScript caller passing a misspelt key will now see a `TypeError` where the call used to run with the default; TypeScript callers were already refused at compile time. `writeWorldFile` and `typeWord` keep their refusals on the same shared check; `typeWord`'s message now reads like the others (`typeWord: unknown option 'plural'. The keys are supertype, many.`).
+- Tests: one test calls every options parameter of the exported surface with `{ __unknown__: 1 }` and asserts a `TypeError` naming the key, nothing sent; a second reads `src/index.ts` with the TypeScript checker and fails on any exported object parameter that is neither in that list nor named as data (a calendar config, a world index, an element), so a new options object cannot ship unfenced. Watched failing on mutants of the `readWorldFile`, `parseDate`, `preparePhoto` and `request()` fences, and on an exported options function added without one.
+
 ## [4.63.0] - 2026-10-23
 
 ### Added

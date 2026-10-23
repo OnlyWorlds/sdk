@@ -16,6 +16,8 @@
  * `preparePhoto` needs a browser (`createImageBitmap` and a canvas).
  */
 
+import { refuseUnknownOptions } from './options';
+
 /** The picture types keel's image upload accepts. */
 export const PHOTO_TYPES = ['image/webp', 'image/png', 'image/jpeg', 'image/avif'] as const;
 /** keel's limit for one picture. */
@@ -29,6 +31,9 @@ export interface OwPhotoOptions {
   /** Refuse a result over this many bytes. Default 15 MB, keel's limit. */
   maxBytes?: number;
 }
+
+/** Every key `OwPhotoOptions` declares; planPhoto and preparePhoto refuse any other by name, never dropped. */
+const PHOTO_OPTION_KEYS: readonly (keyof OwPhotoOptions)[] = ['maxSide', 'quality', 'maxBytes'];
 
 export interface OwPhotoPlan {
   width: number;
@@ -52,6 +57,7 @@ export interface OwPreparedPhoto {
 
 /** Sizes and types for one picture: pure, no browser needed. */
 export function planPhoto(source: { width: number; height: number; type: string }, opts: OwPhotoOptions = {}): OwPhotoPlan {
+  refuseUnknownOptions('planPhoto', opts, PHOTO_OPTION_KEYS);
   const maxSide = opts.maxSide ?? 2048;
   if (!(maxSide > 0)) throw new TypeError('preparePhoto: maxSide must be a positive number');
   if (!(source.width > 0 && source.height > 0)) throw new TypeError('preparePhoto: the picture has no size');
@@ -83,11 +89,12 @@ function makeCanvas(width: number, height: number): { canvas: Canvas; encode: (t
 }
 
 /**
- * Shrink and convert a picture for upload. Throws `TypeError` outside a
- * browser, for a file the browser cannot decode, or when the result is still
- * over `maxBytes`.
+ * Shrink and convert a picture for upload. Throws `TypeError` for an unknown
+ * option (before anything is decoded), outside a browser, for a file the
+ * browser cannot decode, or when the result is still over `maxBytes`.
  */
 export async function preparePhoto(input: Blob, opts: OwPhotoOptions = {}): Promise<OwPreparedPhoto> {
+  refuseUnknownOptions('preparePhoto', opts, PHOTO_OPTION_KEYS);
   const quality = opts.quality ?? 0.82;
   const maxBytes = opts.maxBytes ?? PHOTO_MAX_BYTES;
   const decode = (globalThis as unknown as { createImageBitmap?: (b: Blob, o?: object) => Promise<{ width: number; height: number; close?(): void }> }).createImageBitmap;

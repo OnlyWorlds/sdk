@@ -4,6 +4,7 @@
 
 import { ELEMENT_TYPES } from './v2/types.generated';
 import { fold, trimWhiteSpace } from './room';
+import { refuseUnknownOptions } from './options';
 
 /** One word pair of a names map: `one` for a single thing, `many` for a plural (absent: `one`). */
 export interface OwWordPair {
@@ -22,7 +23,7 @@ export interface OwNamesMap {
 }
 
 const SLUGS: ReadonlySet<string> = new Set(ELEMENT_TYPES);
-const OPTION_KEYS: ReadonlySet<string> = new Set(['supertype', 'many']);
+const OPTION_KEYS: readonly string[] = ['supertype', 'many'];
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -50,9 +51,7 @@ export function typeWord(
   type: string,
   opts: { supertype?: string | null; many?: boolean } = {},
 ): string | null {
-  for (const key of Object.keys(opts ?? {})) {
-    if (!OPTION_KEYS.has(key)) throw new TypeError(`typeWord: unknown option "${key}" (known: supertype, many)`);
-  }
+  refuseUnknownOptions('typeWord', opts, OPTION_KEYS);
   // `object`, not `{ x_names?: unknown }`: OwWorldMeta does not declare x_names (keel serves x_ keys
   // on the World from Keel #571), and an all-optional parameter type refuses it (TS2559).
   const map = (world as { x_names?: unknown } | null | undefined)?.x_names;
