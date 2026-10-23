@@ -845,6 +845,15 @@ export interface OwDraughtPolicy {
   budget?: number;
   /** The sheet's reach: 1 (default) what her own element links to, 0 none. */
   depth?: 0 | 1;
+  /**
+   * `true` (keel #585) leaves out every empty section (an empty array or object) and an empty `cut`;
+   * the frame (`world`, `calendar`, `as_of`, `now`, `mode`, `policy`) and every null stay, so a null
+   * is still an answer (`character`: she is hidden from this reader; `style`: she has no style
+   * element; `recent_cursor`: this read had no `since`). An absent section means nothing in it, never
+   * that it was not read (`policy.components` says what was read). Default `false`, the fixed shape;
+   * with `compact` the answer is typed `OwDraughtCompact`.
+   */
+  compact?: boolean;
 }
 
 /**
@@ -872,6 +881,9 @@ export interface OwDraughtItem {
 }
 
 /** One Character's context in one read, GET /character/{id}/context (keel PR 155, D143; the draught). */
+/** The draught under `compact` (keel #585): every section may be absent, and so may `cut` (nothing was cut). */
+export type OwDraughtCompact = Omit<OwDraught, 'cut'> & { cut?: Record<string, number> };
+
 export interface OwDraught {
   world: { id: string; name: string; description: string };
   /** The world's own time fields, as it carries them. */

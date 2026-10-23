@@ -507,6 +507,18 @@ test('draught sends the seven policy keys to /character/{id}/context; list sends
   assert.equal(q.get('created_by'), 'owner');
 });
 
+test('draught: compact (keel #585) is sent as true or false and nothing else; absent, nothing is sent', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { world: { id: 'w' }, character: null } });
+  await client.draught('c1', { compact: true });
+  assert.equal(new URL(fetchImpl.calls[0].url).searchParams.get('compact'), 'true');
+  await client.draught('c1', { compact: false });
+  assert.equal(new URL(fetchImpl.calls[1].url).searchParams.get('compact'), 'false');
+  await client.draught('c1', {});
+  assert.equal(new URL(fetchImpl.calls[2].url).searchParams.has('compact'), false);
+  await assert.rejects(client.draught('c1', { compact: 'yes' }), /compact is true or false/);
+  assert.equal(fetchImpl.calls.length, 3, 'a refused compact sends nothing');
+});
+
 test('draught: room (keel #556) and proposed (keel #580) are sent when named; the published types carry keel\'s thirteen components and rows with the element nested', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { world: { id: 'w' }, cut: { proposed: 2 }, room: [], proposed: [] } });
   await client.draught('c1', { components: ['room', 'proposed'] });

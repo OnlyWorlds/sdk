@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
-  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
   OwWorldProposalList, OwReviewInput, OwReviewed, OwCreateAccountWorldInput, OwCreatedAccountWorld,
@@ -169,8 +169,13 @@ export class OwV2Client {
    * empty means the serving is partial (`cut.proposed` also counts proposed elements left out because
    * the component was not named). Served `Cache-Control: private, no-store`.
    */
-  async draught(characterId: string, policy: OwDraughtPolicy = {}): Promise<OwDraught> {
-    only('draught', policy, ['components', 'mode', 'asOf', 'undated', 'since', 'budget', 'depth']);
+  draught(characterId: string, policy?: OwDraughtPolicy & { compact?: false }): Promise<OwDraught>;
+  draught(characterId: string, policy: OwDraughtPolicy): Promise<OwDraughtCompact>;
+  async draught(characterId: string, policy: OwDraughtPolicy = {}): Promise<OwDraught | OwDraughtCompact> {
+    only('draught', policy, ['components', 'mode', 'asOf', 'undated', 'since', 'budget', 'depth', 'compact']);
+    if (policy.compact !== undefined && typeof policy.compact !== 'boolean') {
+      throw new TypeError('draught: compact is true or false. Nothing was sent.');
+    }
     const query = buildQuery({
       components: policy.components?.join(','),
       mode: policy.mode,
@@ -179,8 +184,9 @@ export class OwV2Client {
       since: policy.since,
       budget: policy.budget,
       depth: policy.depth,
+      compact: policy.compact,
     });
-    return this.request('GET', `/character/${characterId}/context`, { query }) as Promise<OwDraught>;
+    return this.request('GET', `/character/${characterId}/context`, { query }) as Promise<OwDraught | OwDraughtCompact>;
   }
 
   /** Cursor-walk every page of a type. Politeness: uses config pageSize. */
