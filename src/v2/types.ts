@@ -931,8 +931,8 @@ export interface OwCreateAccountWorldInput {
 
 /**
  * createAccountWorld's 201: the world's row as listAccountWorlds lists it, plus the full write key
- * once in `key` (never shown again). keel's document gives this answer no schema; the keys are
- * keel's handler's (`accounts/api.py`, `create_world`: the list row plus `key`).
+ * once in `key` (never shown again). keel's document names it `AccountWorldCreated` (keel #579), and
+ * Assembly's verify-sdk-wire holds this type to it key for key.
  */
 export interface OwCreatedAccountWorld {
   id: string;
