@@ -3,9 +3,11 @@
 `generate_types.py` reads the OnlyWorlds schema YAML (the 22 element types)
 and emits `src/v2/types.generated.ts` and `SCHEMA.md`: the `ElementType` union, one `<Type>V2`
 interface per element type extending a shared `OwElementBase`, and the `ELEMENT_TYPES` /
-`ELEMENT_FAMILIES` / `ELEMENT_ICONS` / `PUBLIC_FIELDS` / `ELEMENT_SECTIONS` constants. Field shapes are pinned to
+`ELEMENT_FAMILIES` / `ELEMENT_ICONS` / `PUBLIC_FIELDS` / `ELEMENT_SECTIONS` / `FIELD_SCHEMA` /
+`SINGLE_LINK_FIELDS` / `MULTI_LINK_FIELDS` / `ROOM_PAIRS` / `ROOM_MARK` / `ONLYWORLDS_VERSION`
+constants. Field shapes are pinned to
 the v2 wire, not to Django columns -- single-links are `string | null`, multi-links `string[]`,
-integers `number | null`, link fields use bare schema names (no `_ids` suffix), and the four
+integers `number | null`, link fields use bare schema names (no `_ids` suffix), and the ten
 server-managed fields plus a namespaced-extension index signature (`atlas_*` / `shadow_*` / `x_*`)
 ride the base.
 
@@ -13,9 +15,11 @@ ride the base.
 declared in `render_element_base()`. It has to be a mapping rather than a copy: the wire base
 is not the schema base. TitleCase keys become snake_case; **`World` is dropped**, because the
 schema's `required: [Id, Name, World]` speaks storage truth while the v2 API rejects `world` in
-a request body (rulings.yaml: `required-world-wire-caveat`); four server-managed fields
-(`type`, `created_at`, `updated_at`, `change_seq`) are added, since they ride every wire body
-and appear in no element YAML; and only `id`/`name` stay non-optional.
+a request body (rulings.yaml: `required-world-wire-caveat`); ten server-managed fields
+(`WIRE_ONLY_BASE_FIELDS`: `type`, `created_at`, `updated_at`, `change_seq`, `created_by`,
+`changed_by`, `changed_via`, `changed_client`, `hidden`, `known_of`) are added, since they ride
+wire bodies and appear in no element YAML; and `type`, `id` and `name` are non-optional (`id`
+and `name` from `BASE_NON_OPTIONAL`, `type` from its own mapping row).
 
 Two guards, both watched firing: a new field in `base_properties.yaml` with no mapping **exits
 1** rather than silently omitting part of the standard from all 22 interfaces, and a mapped
