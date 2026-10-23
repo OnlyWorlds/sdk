@@ -507,6 +507,59 @@ test('draught sends the seven policy keys to /character/{id}/context; list sends
   assert.equal(q.get('created_by'), 'owner');
 });
 
+test('draught: room (keel #556) and proposed (keel #580) are sent when named; the published types carry keel\'s thirteen components and rows with the element nested', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { world: { id: 'w' }, cut: { proposed: 2 }, room: [], proposed: [] } });
+  await client.draught('c1', { components: ['room', 'proposed'] });
+  assert.deepEqual(Object.fromEntries(new URL(fetchImpl.calls[0].url).searchParams), { components: 'room,proposed' });
+
+  // keel elements/draught.py COMPONENTS, in its order (origin/main 3d2b7e7, keel PR 194).
+  const KEEL = ['self', 'role', 'work', 'style', 'events', 'knowledge', 'names', 'sheet', 'recent', 'messages', 'room', 'proposed', 'roster'];
+  const all = readFileSync(new URL('../dist/index.d.ts', import.meta.url), 'utf8');
+  const m = all.match(/type OwDraughtComponent = ([^;]+);/);
+  assert.ok(m, 'OwDraughtComponent is declared');
+  assert.deepEqual([...m[1].matchAll(/'([a-z]+)'/g)].map((x) => x[1]), KEEL);
+
+  // The shape keel serializes (_Item.row(): via, circles?, her_links, grade, element; dated on events
+  // and knowledge; work's packet; messages' author), compiled against the built types.
+  const ts = (await import('typescript')).default;
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const dir = mkdtempSync(join(tmpdir(), 'ow-draught-'));
+  try {
+    const dist = fileURLToPath(new URL('../dist/index.js', import.meta.url)).replace(/\\/g, '/');
+    const file = join(dir, 'use.ts');
+    writeFileSync(file, [
+      `import { OwV2Client, type OwDraught, type OwDraughtItem } from '${dist}';`,
+      'declare const c: OwV2Client;',
+      'export async function use(): Promise<void> {',
+      "  const d: OwDraught = await c.draught('id', { components: ['self', 'room', 'proposed', 'messages', 'work'] });",
+      '  const room: OwDraughtItem[] | undefined = d.room;',
+      '  const proposed: string | undefined = d.proposed?.[0]?.element.name;',
+      '  const left: number | undefined = d.cut.proposed;',
+      '  const me: string | undefined = d.character?.element.id;',
+      '  const packet: unknown[] | undefined = d.work?.[0]?.packet;',
+      '  const kind: string | null | undefined = d.messages?.[0]?.author.kind;',
+      '  const circles: string[] | undefined = d.room?.[0]?.circles;',
+      '  // @ts-expect-error a row nests its element; the body is not spread onto the row',
+      '  const flat = d.proposed?.[0]?.name;',
+      "  // @ts-expect-error keel answers an unknown component with a 422",
+      "  await c.draught('id', { components: ['rooms'] });",
+      '  void room; void proposed; void left; void me; void packet; void kind; void circles; void flat;',
+      '}',
+    ].join('\n'));
+    const program = ts.createProgram([file], {
+      target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Node10,
+      lib: ['lib.es2020.d.ts', 'lib.dom.d.ts'], strict: true, skipLibCheck: true, noEmit: true,
+    });
+    const errors = ts.getPreEmitDiagnostics(program).map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'));
+    assert.deepEqual(errors, []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('editLinks with ifMatch sends If-Match too', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', change_seq: 45 } });
   await client.editLinks('character', 'x', 'species', { add: ['y'] }, { ifMatch: 7 });

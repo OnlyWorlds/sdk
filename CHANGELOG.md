@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.67.0] - 2026-10-23
+
+### Added
+
+- **The draught's `room` and `proposed` components**: `OwDraughtComponent` is now keel's thirteen, in its order. `room` (keel #556) is the room profile's other elements that reach her (a board entry, a spec, a heart, a vote, a sitting, a member card, a work item that is not open or taken), each there or nowhere; the type missed it since keel shipped it. `proposed` (keel #580, live 2026-10-23) is every element carrying `x_review_proposed` that reaches her, there or nowhere, whatever section would have held it; `cut.proposed` counts the ones left out, the component unnamed or its budget spent, so a tool handing a draught on can say so. Both are off unless named, as `messages` is: `draught(id, { components: [..., 'room', 'proposed'] })`. `OwDraught.room` and `OwDraught.proposed` are typed.
+
+### Fixed
+
+- **`OwDraughtItem` nests the element**: keel has served each draught row as `{ via, circles?, her_links, grade, dated?, element }` since the route shipped (keel PR 155), and the type spread the element's fields onto the row instead. Read `row.element.name`, not `row.name` (which was `undefined` at runtime all along); TypeScript code that read the spread form now fails to compile where it was already wrong. In the same way `OwDraught.character` is `{ self, grade, element }`, and optional (absent unless `self` is served), `work` rows carry `packet` (the work item's `x_packet_elements`), `messages` rows carry `author` (`membership`, `kind`, `role`), and rows may carry `circles`. Read from keel's `elements/draught.py` and its OpenAPI `Draught` schema; nothing at runtime changed.
+- Tests: `components: ['room', 'proposed']` is sent as `components=room,proposed`; the published `OwDraughtComponent` lists keel's COMPONENTS in order; the nested rows, `cut.proposed`, `character.element`, `packet`, `author` and `circles` compile against the built `.d.ts`, and a spread read and an unknown component do not. Watched failing with `'proposed'` cut from the type.
+
 ## [4.66.0] - 2026-10-23
 
 ### Added

@@ -160,11 +160,14 @@ export class OwV2Client {
    * recorded world holds it, in one read: her element, what she holds and sits in, her open work,
    * how she works, the Events she was in, the Narratives she knows, everything else that names
    * her, her sheet, what changed around her (`since`), and who plays whom; the world's name and
-   * calendar beside. Every body is the list route's for the same reader, with `via`, `her_links`
+   * calendar beside; the room's messages (`messages`), its other elements (`room`, keel #556) and
+   * elements written as proposed (`proposed`, keel #580) only when `components` names them. Each
+   * row carries the list route's body for the same reader as `element`, beside `via`, `her_links`
    * and `grade`; nothing is inferred. The owner's keys, co-builders and contributors for any
    * Character they can see; a player seat or a guest for its own Character only (another id is
    * 404). `asOf` is a filter on the elements' own dates, not time travel. A `cut` that is not
-   * empty means the serving is partial. Served `Cache-Control: private, no-store`.
+   * empty means the serving is partial (`cut.proposed` also counts proposed elements left out because
+   * the component was not named). Served `Cache-Control: private, no-store`.
    */
   async draught(characterId: string, policy: OwDraughtPolicy = {}): Promise<OwDraught> {
     only('draught', policy, ['components', 'mode', 'asOf', 'undated', 'since', 'budget', 'depth']);

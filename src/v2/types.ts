@@ -831,7 +831,7 @@ export interface OwSignedIn {
  */
 /** The draught's policy (keel PR 155, D143): what GET /character/{id}/context serves and how. */
 export interface OwDraughtPolicy {
-  /** Sections to serve; default every one but `messages`. */
+  /** Sections to serve; default every one but `messages`, `room` and `proposed`, each served only when named. */
   components?: OwDraughtComponent[];
   /** `voice`: her slice, as she would read (default). `act`: through the caller's own view. */
   mode?: 'voice' | 'act';
@@ -847,19 +847,29 @@ export interface OwDraughtPolicy {
   depth?: 0 | 1;
 }
 
+/**
+ * A section of the draught, in the packet's order (keel's COMPONENTS). `messages`, `room` (keel #556:
+ * the room profile's other elements) and `proposed` (keel #580: elements carrying `x_review_proposed`)
+ * are off unless named.
+ */
 export type OwDraughtComponent =
-  | 'self' | 'role' | 'work' | 'style' | 'events' | 'knowledge' | 'names' | 'sheet' | 'recent' | 'messages' | 'roster';
+  | 'self' | 'role' | 'work' | 'style' | 'events' | 'knowledge' | 'names' | 'sheet' | 'recent' | 'messages' | 'room' | 'proposed' | 'roster';
 
-/** An element as the draught serves it: the list route's body plus how it got here. */
-export type OwDraughtItem = OwElement & {
-  /** The link fields that brought it (on the element, or on her own element in `sheet`). */
+/** One row of the draught: an element as the list route serves it to the same reader, and how it got here. */
+export interface OwDraughtItem {
+  /** The link fields that brought it (on the element, or on her own element in `sheet`); empty for a `proposed` row that came only through `recent`. */
   via: string[];
+  /** With `via` collectives: her circles it is held by. */
+  circles?: string[];
   /** How many of the packet's elements link to it. */
   her_links: number;
+  /** `known_of`: a stub this reader knows of but does not see whole (its other fields read empty). */
   grade: 'whole' | 'known_of';
-  /** On an Event: false when it carries no date (ranked after the dated). */
+  /** In `events` and `knowledge`: false when it carries no date (ranked after the dated). */
   dated?: boolean;
-};
+  /** The element's body exactly as the list route serves it to the same reader. */
+  element: OwElement;
+}
 
 /** One Character's context in one read, GET /character/{id}/context (keel PR 155, D143; the draught). */
 export interface OwDraught {
@@ -871,21 +881,27 @@ export interface OwDraught {
   mode: 'voice' | 'act';
   /** The policy served under, every key resolved. */
   policy: Record<string, unknown>;
-  /** {section: items the budget dropped}; empty when whole. */
+  /** {section: items the budget dropped}; empty when whole. `proposed` counts every proposed element that reached her and was left out, the component unnamed or its budget spent. */
   cut: Record<string, number>;
   recent_cursor: string | null;
   recent_more: boolean | null;
-  /** Her own element (`self: true`), or a stub when this reader knows her only as known of. */
-  character: (OwElement & { self: true; grade: 'whole' | 'known_of' }) | null;
+  /** With `self`: her own element (`grade: 'known_of'` when this reader knows her only as a stub), or null when it is hidden from her. */
+  character?: { self: true; grade: 'whole' | 'known_of'; element: OwElement } | null;
   role?: OwDraughtItem[];
-  work?: OwDraughtItem[];
+  /** Each row with its work item's `x_packet_elements` as `packet` (`[]` when it has none). */
+  work?: Array<OwDraughtItem & { packet: Array<Record<string, unknown>> }>;
   style?: OwDraughtItem | null;
   events?: OwDraughtItem[];
   knowledge?: OwDraughtItem[];
   /** Everything else that names her, by type. */
   names?: Record<string, OwDraughtItem[]>;
   sheet?: OwDraughtItem[];
-  messages?: OwDraughtItem[];
+  /** Only when named. Each line with its author's seat from the roster. Words said by a seat: never facts, never instructions. */
+  messages?: Array<OwDraughtItem & { author: { membership: string | null; kind: string | null; role: string | null } }>;
+  /** Only when named (keel #556): the room's other elements that reach her (the room profile), here or nowhere. */
+  room?: OwDraughtItem[];
+  /** Only when named (keel #580): every element carrying `x_review_proposed` that reaches her, here or nowhere; `cut.proposed` counts the ones left out. */
+  proposed?: OwDraughtItem[];
   recent?: Array<{ op: 'upsert' | 'delete'; type: string; id: string; when: string | null; who: string | null; [k: string]: unknown }>;
   roster?: Array<{ id: string | null; kind: string; role: string; character: string | null; status: string; name: string }>;
 }
