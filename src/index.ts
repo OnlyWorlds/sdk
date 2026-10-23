@@ -27,6 +27,8 @@ export type {
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
   OwWriteDoor, OwChangeUpsert, OwChangeDelete, OwDeleteReason, OwHiddenRow, OwResyncReason,
   OwProposal, OwProposalState, OwProposalList, OwProposed, OwProposalAccepted, OwProposalConflict, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
+  OwProposedNewElement, OwWorldProposalRow, OwWorldProposalList, OwReviewInput, OwReviewed,
+  OwCreateAccountWorldInput, OwCreatedAccountWorld,
 } from './v2';
 
 // The room profile (schema-dist profiles/room.md): the pairs a parlor puts in a world, and the

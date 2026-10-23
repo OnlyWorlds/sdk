@@ -60,6 +60,8 @@ const CALLS = [
   { name: 'propose', verb: 'POST', pin: true, who: 'any', run: (c) => c.propose('location', EL, { fields: { description: 'x' }, evidence: 'seen' }) },
   { name: 'patchWorld', verb: 'PATCH', pin: true, who: 'any', run: (c) => c.patchWorld({ name: 'W' }) },
   { name: 'createSeat', verb: 'POST', pin: true, who: 'account', run: (c) => c.createSeat('w1', { name: 'bot' }) },
+  { name: 'createAccountWorld', verb: 'POST', pin: true, who: 'account', run: (c) => c.createAccountWorld({ name: 'W' }) },
+  { name: 'reviewNewElement', verb: 'POST', pin: true, who: 'any', run: (c) => c.reviewNewElement('location', EL, { decision: 'accept' }) },
 ];
 
 /** Run every call the client may make; return [{name, verb, method, url, pin}] per request sent. */
@@ -108,6 +110,7 @@ test('API-Pin, ow_r_ key with no PIN: never', async () => {
 test('API-Pin, ow_a_ account token: never, even with a PIN configured; Bearer, no API-Key', async () => {
   const sent = await sweep({ apiKey: 'ow_a_acct', apiPin: '1234' }, 'account');
   assert.ok(sent.some((s) => s.call.name === 'createSeat'));
+  assert.ok(sent.some((s) => s.call.name === 'createAccountWorld'));
   for (const { call, headers } of sent) {
     assert.equal(headers['Authorization'], 'Bearer ow_a_acct', call.name);
     assert.ok(!('API-Pin' in headers), call.name);

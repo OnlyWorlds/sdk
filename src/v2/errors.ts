@@ -318,7 +318,8 @@ export class OwApiError extends Error {
   /**
    * While the world takes agent seats' writes as proposals (keel #519), an agent seat's key tried
    * what it may not: delete an element it did not create, or accept or decline a proposal (403
-   * `proposed_only`). Retrying will not help; a person decides.
+   * `proposed_only`). On any world, reviewNewElement by the member the mark names is the same 403
+   * (keel #565). Retrying will not help; a person decides.
    */
   get isProposedOnly(): boolean {
     return this.status === 403 && this.code === 'proposed_only';
@@ -330,6 +331,14 @@ export class OwApiError extends Error {
    */
   get isOwnProposal(): boolean {
     return this.status === 403 && this.code === 'own_proposal';
+  }
+
+  /**
+   * reviewNewElement on an element that carries no `x_review_proposed` mark (422 `not_proposed`,
+   * keel #565): nothing to settle. Someone settled it already, or it was never written as proposed.
+   */
+  get isNotProposed(): boolean {
+    return this.status === 422 && this.code === 'not_proposed';
   }
 }
 

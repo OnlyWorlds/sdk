@@ -140,6 +140,14 @@ const account = new OwV2Client({ apiKey: token }); // keep the token; the passwo
 
 The SDK signs in, mints the token, and ends the sign-in session. A refusal is an `OwSignInError` whose `reason` is `invalid_credentials`, `email_unverified`, `rate_limited` (see `retryAfter`), `offline`, `mint_failed` or `failed`.
 
+The account token lists the account's worlds (`listAccountWorlds()`), mints a key for one (`mintWorldKey(worldId, { scope, name })`), and makes a new one with its write key (since 4.66.0):
+
+```typescript
+const world = await account.createAccountWorld({ name: 'Ostvik', keyName: 'My app' }); // world.key: shown once
+```
+
+An account's first world sends `pin` too, which becomes the account PIN; an account that has one leaves it out. Either way the wrong choice is a 422 with `err.param === 'pin'` and nothing made, so send without it first and again with it on that 422. A tool that makes the world from a folder can pass the folder's `source` and `producer` lines; `getWorld()` serves them as `origin`.
+
 ## Invite links
 
 A world's owner can invite a person with a link (`https://www.onlyworlds.com/join#ow_j_…`). The code is the part after `#`:
@@ -213,6 +221,8 @@ const { element } = await owner.acceptProposal('location', id, p.id);   // the w
 await owner.declineProposal('location', id, p.id, { reason: 'Not canon.' });
 await member.withdrawProposal('location', id, p.id);
 ```
+
+The world's queue also lists each new element written as proposed, as a row with `kind: 'new_element'` beside the `kind: 'proposal'` rows (since 4.66.0). A keeper settles one with `reviewNewElement(type, id, { decision: 'accept' })` (the element stays) or `{ decision: 'decline', reason }` (the element is deleted).
 
 An accept is refused with nothing written when a proposed field moved since the proposal was made: `OwStaleProposalError` (409, `err.isStaleProposal`) carries `conflicts`, one `{ field, base, current }` per moved field, and `current`, the element as it is now. `listProposals(type, id)` lists one element's rows.
 

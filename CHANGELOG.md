@@ -5,6 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.66.0] - 2026-10-23
+
+### Added
+
+- **`createAccountWorld({ name, pin?, keyName?, source?, producer? })`** (account token): `POST /account/worlds` makes a world on the account with its one write key. Sent in keel's spelling, only the keys given (`keyName` as `key_name`, keel #363: 1 to 80 characters, trimmed, `null` for none; `source` and `producer`, keel #571: the folder format's provenance lines, each an object or `null`, kept on the World and served by `getWorld()` as `origin`). `pin` only while the account has no PIN (it becomes the account PIN); an account with one must leave it out. Either mistake is a 422 with `err.param === 'pin'` and nothing made, so a tool that cannot tell which account it holds sends without `pin` first and again with it on that 422, as Atlas's Make online does. Returns `OwCreatedAccountWorld`: the world's row as `listAccountWorlds` lists it, plus the full write key once in `key`. No Idempotency-Key (the document declares none), and neither `X-OW-Agent` nor `X-OW-Client` (it declares neither here). keel's document gives the 201 no schema, so the type is read from keel's handler. A world key is a `TypeError`, as is an unknown option or a missing `name`, before anything is sent. Atlas can retire its own `AccountClient.createWorld` for it.
+- **The world's queue lists new elements written as proposed** (keel #565, live 2026-10-23): `worldProposals()` now returns `OwWorldProposalList`, whose rows are `OwWorldProposalRow`, told apart by `kind`: `OwProposal` (`kind: 'proposal'`) or `OwProposedNewElement` (`kind: 'new_element'`: an element carrying `x_review_proposed`, its `by`, `evidence` and `expires` the mark's words, `state` `open` or `lapsed`). One order, newest first by `created_at`; the cursor is opaque and goes back as it came (an old bare proposal id still reads). `listProposals` keeps `OwProposalList`: one element's proposals only.
+- **`reviewNewElement(type, id, { decision, reason? })`**: `POST /{type}/{id}/review`, a keeper (the owner or a co-builder, with the PIN) settles a new element written as proposed. `accept` clears the mark and returns `{ element }`; `decline` deletes the element and returns `{ deleted }` (its id); the reason is answered back and kept nowhere. Sends `X-OW-Client`, as the document lists, and no `X-OW-Agent`. A `decision` other than `accept` or `decline`, or an unknown key, is a `TypeError` before sending. Type `OwReviewed`, options `OwReviewInput`.
+- **`err.isNotProposed`**: 422 `not_proposed`, the element carries no mark to settle. `isProposedOnly` (403) also answers the seat the mark names.
+- **`OwProposal.kind`** (`'proposal'`) and **`OwProposal.omitted`** (keel #565): a row's `fields` now holds only what differs from the element when proposed, and `omitted` names the fields an upsert left out that were not empty (each in `fields` at its empty value, so an accept empties it; `[]` for a patch, a link edit or `propose`). A propose with nothing new is a 422 with `param: 'fields'`; a seat's write that changes nothing under the world's switch answers 200 with the element and makes no row.
+
+### Changed
+
+- `worldProposals()`'s answer type is `OwWorldProposalList` instead of `OwProposalList`: TypeScript code that reads a proposal's own keys (`fields`, `base`) off a queue row now narrows on `row.kind === 'proposal'` first. The wire changed under it on keel's side: the 4.65.0 type described rows keel no longer sends alone.
+- Tests: the body sent for each `createAccountWorld` option alone and together, `null` included, an `undefined` option left out; the PIN dance's 422 surfacing with `err.param` `'pin'`, then the retry with it; the headers on the create (no agent, client or idempotency header); the queue's two kinds and its cursor; both review decisions, their headers and their refusals; the published types. Watched failing on 30 mutants, each restored byte for byte.
+
 ## [4.65.0] - 2026-10-23
 
 ### Fixed

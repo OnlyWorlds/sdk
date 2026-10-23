@@ -1420,6 +1420,9 @@ test('every options object refuses an unknown key before sending (4.52.0): a typ
     ['uploadFile', () => client.uploadFile('location', 'x', new Uint8Array([1]), { name: 'a.pdf', onprogress: () => {} })],
     ['createWorldLink', () => acct.client.createWorldLink('w', { reader: 'person', max_uses: 3 })],
     ['createSeat', () => acct.client.createSeat('w', { name: 'bot', rol: 'guest' })],
+    // 4.66.0
+    ['createAccountWorld', () => acct.client.createAccountWorld({ name: 'W', keyname: 'k' })],
+    ['reviewNewElement', () => client.reviewNewElement('character', 'x', { decision: 'decline', reaosn: 'r' })],
   ];
   for (const [name, call] of calls) {
     await assert.rejects(call(), (err) => err instanceof TypeError && err.message.startsWith(`${name}: unknown parameter`), name);

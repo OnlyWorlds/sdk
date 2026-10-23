@@ -73,6 +73,10 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   tokenName })` (or `username`) mints an `ow_a_` account token named for the device and ends
   the sign-in session; only the token comes back. Refusals: `OwSignInError` with `reason`
   (`invalid_credentials`, `email_unverified`, `rate_limited`, `offline`, `mint_failed`, `failed`).
+- A new world (since 4.66.0, account token): `account.createAccountWorld({ name, pin?, keyName?,
+  source?, producer? })` makes it with one write key, returned once in `key`. `pin` only while
+  the account has none (it becomes the account PIN); either mistake is a 422 with
+  `err.param === 'pin'`, so send without it first and again with it on that 422.
 - Invite links (since 4.12.0): `previewJoin(code)` (no credential sent) shows who invites, to
   which world, in what role; `acceptJoin(code)` with an `ow_a_` account token joins. Bad code:
   `err.isNotFound`; `err.isAlreadyMember`, `err.isPinRequired` for the two 409s.
@@ -126,7 +130,11 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   co-builder decides: `acceptProposal(type, id, pid)` (the write is theirs; 409 `stale_proposal`,
   an `OwStaleProposalError` with `conflicts` and `current`, when a proposed field moved since),
   `declineProposal(type, id, pid, { reason? })`; the proposer may `withdrawProposal`. Lists:
-  `listProposals(type, id)`, `worldProposals({ state?, element? })`. When the world's
+  `listProposals(type, id)`, `worldProposals({ state?, element? })`; the world's queue (since
+  4.66.0, keel #565) also lists each new element written as proposed (`kind: 'new_element'`
+  beside `kind: 'proposal'`), which a keeper settles with `reviewNewElement(type, id, { decision:
+  'accept' | 'decline', reason? })` (decline deletes it; 422 `err.isNotProposed` when unmarked).
+  A row's `fields` holds only what differs; `omitted` names what an upsert left empty. When the world's
   `agent_writes_proposed` is on, an agent seat's `patch`, `upsert` or `editLinks` on an existing
   element throws `OwProposedError` (status 202, `err.isProposed`, the row under `err.proposal`):
   the element did not change, so do not report it as changed. A `bulk` slot says `status: 202`

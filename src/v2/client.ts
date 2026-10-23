@@ -19,6 +19,7 @@ import type {
   OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
+  OwWorldProposalList, OwReviewInput, OwReviewed, OwCreateAccountWorldInput, OwCreatedAccountWorld,
 } from './types';
 import { keyedId } from './keyed-id';
 import { unknownKey } from '../options';
@@ -1143,17 +1144,22 @@ export class OwV2Client {
   }
 
   /**
-   * GET /world/proposals -- the world's queue, newest first: every proposal for the owner's and a
-   * co-builder's keys, a member's own for any other. The query is listProposals', plus `element`
-   * (one element's rows, by id). Any member key, a read key included; a read key with no member
+   * GET /world/proposals -- the world's queue, newest first by created_at, two kinds of row told
+   * apart by `kind` (keel #565): `proposal`, a proposed change to an element (OwProposal), and
+   * `new_element`, an element written as proposed, carrying `x_review_proposed`
+   * (OwProposedNewElement: settle it with reviewNewElement). A marked element is listed under
+   * `open`, `lapsed` and `all`, never `accepted` or `declined`; keel reads at most the 500 newest.
+   * Every row for the owner's and a co-builder's keys, a member's own for any other. The query is
+   * listProposals', plus `element` (one element's rows, by id). The cursor is opaque: pass
+   * `next_cursor` back as it came. Any member key, a read key included; a read key with no member
    * (a demo key, the owner's read key) and the keyless public view get a 404.
    */
-  async worldProposals(opts: OwWorldProposalQuery = {}): Promise<OwProposalList> {
+  async worldProposals(opts: OwWorldProposalQuery = {}): Promise<OwWorldProposalList> {
     only('worldProposals', opts, ['state', 'since', 'element', 'limit', 'cursor']);
     const query = buildQuery({
       state: opts.state, since: opts.since, element: opts.element, limit: opts.limit ?? this.pageSize, cursor: opts.cursor,
     });
-    return this.request('GET', '/world/proposals', { query }) as Promise<OwProposalList>;
+    return this.request('GET', '/world/proposals', { query }) as Promise<OwWorldProposalList>;
   }
 
   /**
@@ -1192,6 +1198,29 @@ export class OwV2Client {
     await this.request('DELETE', `${proposalsPath(type, id)}/${encodeURIComponent(pid)}`, { allowEmpty: true });
   }
 
+  /**
+   * POST /{type}/{id}/review -- settle a new element written as proposed, one carrying
+   * `x_review_proposed` (the queue's `new_element` row, keel #565). The owner's key or a
+   * co-builder's, with its PIN. `{ decision: 'accept' }` clears the mark (a write by you: a new
+   * change_seq, one /changes row) and answers `{ element }`; `{ decision: 'decline', reason? }`
+   * deletes the element (a tombstone, the links to it scrubbed, its open proposals dropped) and
+   * answers `{ deleted }`, its id; the reason is answered back and kept nowhere. Refusals: 422
+   * `not_proposed` (`err.isNotProposed`: the element carries no mark), 403 `proposed_only`
+   * (`err.isProposedOnly`: the seat the mark names, or an agent seat under the world's switch), 403
+   * for any key but a keeper's. A proposed change to an existing element is decided with
+   * acceptProposal or declineProposal instead.
+   */
+  async reviewNewElement(type: ElementType | string, id: string, opts: OwReviewInput): Promise<OwReviewed> {
+    only('reviewNewElement', opts, ['decision', 'reason'], 'The review is { decision, reason? }.');
+    if (opts?.decision !== 'accept' && opts?.decision !== 'decline') {
+      throw new TypeError(`reviewNewElement: decision must be 'accept' or 'decline', got ${JSON.stringify(opts?.decision) ?? String(opts?.decision)}. Nothing was sent.`);
+    }
+    const body: Record<string, unknown> = { decision: opts.decision };
+    if (opts.reason !== undefined) body.reason = opts.reason;
+    // X-OW-Client is a header keel's document lists here; X-OW-Agent is not.
+    return this.request('POST', `/${type}/${encodeURIComponent(id)}/review`, { elementWrite: true, body }) as Promise<OwReviewed>;
+  }
+
   // -- The account's worlds and keys (account token) -----------------------
 
   /**
@@ -1204,6 +1233,37 @@ export class OwV2Client {
     }
     const page = await this.request('GET', '/account/worlds') as { data: OwAccountWorld[] };
     return page.data;
+  }
+
+  /**
+   * POST /account/worlds -- make a world on the account, with its one write key. `name` is required
+   * (1 to 255 characters, not blank; keel trims it). `pin` only while the account has no PIN (4
+   * digits, 1000-9999): it becomes the account PIN and the write wall on every world of the
+   * account. An account with a PIN must leave it out. Either mistake is a 422 with `param: 'pin'`
+   * (`err.param`) and nothing made, so a tool that cannot tell which account it holds sends without
+   * `pin` first and, on that 422, again with it. `keyName` names the write key as the website's key
+   * list shows it (1 to 80 characters, trimmed; null or left out: no name). `source` and `producer`
+   * are the folder format's provenance lines (spec 4.2), each an object or null, from a tool that
+   * makes the world from a folder: kept on the World as given, served by getWorld() as `origin`.
+   * Only the keys given are sent, `keyName` as `key_name`. 201: the world's row, as
+   * listAccountWorlds lists it, with the full write key once in `key`. Account token only; no
+   * Idempotency-Key (keel's document declares none): if the answer is lost, the world is in
+   * listAccountWorlds, and mintWorldKey gives it a key.
+   */
+  async createAccountWorld(opts: OwCreateAccountWorldInput): Promise<OwCreatedAccountWorld> {
+    only('createAccountWorld', opts, ['name', 'pin', 'keyName', 'source', 'producer']);
+    if (this.keyKind !== 'account') {
+      throw new TypeError('createAccountWorld needs an account token (ow_a_)');
+    }
+    if (typeof opts?.name !== 'string') {
+      throw new TypeError('createAccountWorld: name is required, the world\'s name as a string. Nothing was sent.');
+    }
+    const body: Record<string, unknown> = { name: opts.name };
+    if (opts.pin !== undefined) body.pin = opts.pin;
+    if (opts.keyName !== undefined) body.key_name = opts.keyName;
+    if (opts.source !== undefined) body.source = opts.source;
+    if (opts.producer !== undefined) body.producer = opts.producer;
+    return this.request('POST', '/account/worlds', { body }) as Promise<OwCreatedAccountWorld>;
   }
 
   /**

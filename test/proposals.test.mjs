@@ -19,16 +19,25 @@ const API = 'https://www.onlyworlds.com/api/v2';
 const EL = '018f0000-0000-7000-8000-0000000000e1';
 const PID = '018f0000-0000-7000-8000-0000000000a1';
 
-/** One row as the document's Proposal component gives it: all seventeen keys. */
+/** One row as the document's Proposal component gives it: all nineteen keys (kind and omitted, keel #565). */
 const PROPOSAL = {
-  id: PID, element_type: 'location', element_id: EL, state: 'open',
-  fields: { description: 'A harbour town.' }, base: { description: '' }, base_seq: 41,
+  kind: 'proposal', id: PID, element_type: 'location', element_id: EL, state: 'open',
+  fields: { description: 'A harbour town.' }, omitted: [], base: { description: '' }, base_seq: 41,
   evidence: 'Chapter 3 names the harbour.', expires: '2026-11-21T16:00:00Z',
   by: '018f0000-0000-7000-8000-0000000000b1', via: 'api', client: 'sdk',
   decided_by: null, decided_at: null, decline_reason: null,
   created_at: '2026-10-22T16:00:00Z', updated_at: '2026-10-22T16:00:00Z',
 };
 const LIST = { data: [PROPOSAL], has_more: true, next_cursor: 'c2' };
+/** A queue row for a new element written as proposed (keel #565, the document's ProposedNewElement): all ten keys. */
+const NEW_EL = '018f0000-0000-7000-8000-0000000000e2';
+const NEW_ELEMENT_ROW = {
+  kind: 'new_element', id: NEW_EL, element_type: 'character', element_id: NEW_EL, state: 'open',
+  by: '018f0000-0000-7000-8000-0000000000b1', evidence: 'Met her in chapter 4.', expires: '2026-11-22',
+  created_at: '2026-10-23T07:00:00Z', updated_at: '2026-10-23T07:00:00Z',
+};
+/** The world's queue as keel #565 serves it: both kinds in one order, an opaque cursor (`<microseconds>.<id>`). */
+const QUEUE = { data: [NEW_ELEMENT_ROW, PROPOSAL], has_more: true, next_cursor: `1761202800000000.${NEW_EL}` };
 const ELEMENT = { id: EL, name: 'Harbour', type: 'location', description: 'A harbour town.', change_seq: 42 };
 
 /** A scripted fetch: `answer(url, init)` gives {status, body, headers}; every call is kept. */
@@ -143,6 +152,75 @@ test('worldProposals: GET /world/proposals with state, since, element, limit and
   const bare = client({ body: LIST });
   await bare.c.worldProposals();
   assert.equal(bare.calls[0].url, `${API}/world/proposals?limit=100`);
+});
+
+test('worldProposals: both kinds of row come back as keel sends them, in its order; the cursor goes back exactly as it came (keel #565)', async () => {
+  const { c, calls } = client({ body: QUEUE });
+  const page = await c.worldProposals({ state: 'all' });
+  assert.deepEqual(page, QUEUE);
+  assert.deepEqual(page.data.map((r) => r.kind), ['new_element', 'proposal']);
+  await c.worldProposals({ cursor: page.next_cursor });
+  assert.equal(new URL(calls[1].url).searchParams.get('cursor'), QUEUE.next_cursor);
+  // an old bare proposal id still reads as a cursor: sent as given
+  await c.worldProposals({ cursor: PID });
+  assert.equal(new URL(calls[2].url).searchParams.get('cursor'), PID);
+});
+
+// -- a new element written as proposed (keel #565) -----------------------------
+
+test('reviewNewElement: accept is POST /{type}/{id}/review { decision }, with the PIN and X-OW-Client; returns { element }', async () => {
+  const settled = { ...ELEMENT, id: NEW_EL, type: 'character', x_review_proposed: null };
+  const { c, calls } = client({ body: { element: settled } });
+  assert.deepEqual(await c.reviewNewElement('character', NEW_EL, { decision: 'accept' }), { element: settled });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, `${API}/character/${NEW_EL}/review`);
+  assert.equal(calls[0].init.method, 'POST');
+  assert.deepEqual(bodyOf(calls[0]), { decision: 'accept' });
+  assert.deepEqual(headerNames(calls[0]), ['API-Key', 'API-Pin', 'Content-Type', 'X-OW-Client']);
+});
+
+test('reviewNewElement: decline sends the reason when given, none without; returns { deleted }', async () => {
+  const { c, calls } = client({ body: { deleted: NEW_EL } });
+  assert.deepEqual(await c.reviewNewElement('character', NEW_EL, { decision: 'decline', reason: 'Not canon.' }), { deleted: NEW_EL });
+  assert.deepEqual(bodyOf(calls[0]), { decision: 'decline', reason: 'Not canon.' });
+  await c.reviewNewElement('character', NEW_EL, { decision: 'decline' });
+  assert.equal(calls[1].init.body, JSON.stringify({ decision: 'decline' }));
+});
+
+test('reviewNewElement: an agent client sends no X-OW-Agent (the document lists none on the review route)', async () => {
+  const { c, calls } = client({ body: { deleted: NEW_EL } }, { agent: true, client: 'atlas' });
+  await c.reviewNewElement('character', NEW_EL, { decision: 'decline' });
+  assert.equal('X-OW-Agent' in calls[0].init.headers, false);
+  assert.equal(calls[0].init.headers['X-OW-Client'], 'atlas');
+});
+
+test('reviewNewElement: a decision other than accept or decline, or none, is a TypeError before sending', async () => {
+  const { c, calls } = client({ body: { deleted: NEW_EL } });
+  for (const bad of [{ decision: 'Accept' }, { decision: 'delete' }, {}, undefined]) {
+    await assert.rejects(c.reviewNewElement('character', NEW_EL, bad),
+      (e) => e instanceof TypeError && /decision must be 'accept' or 'decline'/.test(e.message), JSON.stringify(bad));
+  }
+  assert.equal(calls.length, 0);
+});
+
+test('reviewNewElement: 422 not_proposed is err.isNotProposed; the seat the mark names gets 403 proposed_only (err.isProposedOnly)', async () => {
+  const np = await thrown({ status: 422, body: envelope('invalid_request_error', 'not_proposed') },
+    (c) => c.reviewNewElement('character', NEW_EL, { decision: 'accept' }));
+  assert.ok(np instanceof OwApiError);
+  assert.equal(np.isNotProposed, true);
+  assert.equal(np.isProposedOnly, false);
+  const po = await thrown({ status: 403, body: envelope('permission_error', 'proposed_only') },
+    (c) => c.reviewNewElement('character', NEW_EL, { decision: 'accept' }));
+  assert.equal(po.isProposedOnly, true);
+  assert.equal(po.isNotProposed, false);
+  // the status matters: not_proposed at another status is not the predicate
+  const off = await thrown({ status: 400, body: envelope('invalid_request_error', 'not_proposed') },
+    (c) => c.reviewNewElement('character', NEW_EL, { decision: 'accept' }));
+  assert.equal(off.isNotProposed, false);
+  // and another 422 is not it
+  const other = await thrown({ status: 422, body: envelope('invalid_request_error', 'invalid_request') },
+    (c) => c.reviewNewElement('character', NEW_EL, { decision: 'accept' }));
+  assert.equal(other.isNotProposed, false);
 });
 
 // -- deciding ----------------------------------------------------------------
@@ -296,6 +374,8 @@ test('every proposal options object refuses an unknown key before sending', asyn
     ['listProposals', () => c.listProposals('location', EL, { element: EL })],
     ['worldProposals', () => c.worldProposals({ elemnt: EL })],
     ['declineProposal', () => c.declineProposal('location', EL, PID, { reasn: 'x' })],
+    ['reviewNewElement', () => c.reviewNewElement('character', NEW_EL, { decision: 'decline', reasn: 'x' })],
+    ['reviewNewElement', () => c.reviewNewElement('character', NEW_EL, { decison: 'accept' })],
   ];
   for (const [name, call] of bad) {
     await assert.rejects(call(), (err) => err instanceof TypeError && err.message.startsWith(`${name}: unknown parameter`), name);
@@ -305,7 +385,7 @@ test('every proposal options object refuses an unknown key before sending', asyn
 
 // -- the published types -----------------------------------------------------
 
-test('the published types: OwProposal has the document\'s seventeen keys, the list and the 202 body theirs, the world its switch', () => {
+test('the published types: OwProposal has the document\'s nineteen keys, the list and the 202 body theirs, the world its switch', () => {
   const all = readFileSync(new URL('../dist/index.d.ts', import.meta.url), 'utf8');
   const block = (name) => {
     const at = all.indexOf(`interface ${name} {`);
@@ -313,9 +393,20 @@ test('the published types: OwProposal has the document\'s seventeen keys, the li
     return all.slice(at, all.indexOf('\n}', at));
   };
   const keys = (src) => [...src.matchAll(/^\s{4}(\w+)\??:/gm)].map((m) => m[1]);
-  assert.deepEqual(keys(block('OwProposal')), ['id', 'element_type', 'element_id', 'state', 'fields', 'base', 'base_seq', 'evidence',
+  assert.deepEqual(keys(block('OwProposal')), ['kind', 'id', 'element_type', 'element_id', 'state', 'fields', 'omitted', 'base', 'base_seq', 'evidence',
     'expires', 'by', 'via', 'client', 'decided_by', 'decided_at', 'decline_reason', 'created_at', 'updated_at']);
+  assert.match(block('OwProposal'), /\bkind: 'proposal';/);
+  assert.match(block('OwProposal'), /\bomitted: string\[\];/);
   assert.match(block('OwProposal'), /\bstate: OwProposalState;/);
+  // keel #565: the queue's new-element row, its ten keys, and the queue a union told apart by kind
+  assert.deepEqual(keys(block('OwProposedNewElement')), ['kind', 'id', 'element_type', 'element_id', 'state', 'by', 'evidence',
+    'expires', 'created_at', 'updated_at']);
+  assert.match(block('OwProposedNewElement'), /\bkind: 'new_element';/);
+  assert.match(block('OwProposedNewElement'), /\bstate: 'open' \| 'lapsed';/);
+  assert.match(all, /type OwWorldProposalRow = OwProposal \| OwProposedNewElement;/);
+  assert.match(block('OwWorldProposalList'), /\bdata: OwWorldProposalRow\[\];/);
+  assert.match(all, /worldProposals\(opts\?: OwWorldProposalQuery\): Promise<OwWorldProposalList>;/);
+  assert.match(all, /reviewNewElement\(type: ElementType \| string, id: string, opts: OwReviewInput\): Promise<OwReviewed>;/);
   assert.match(block('OwProposal'), /\bclient: string \| null;/);
   assert.deepEqual(keys(block('OwProposalList')), ['data', 'has_more', 'next_cursor']);
   assert.deepEqual(keys(block('OwProposed')), ['proposal']);
