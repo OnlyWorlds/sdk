@@ -184,6 +184,8 @@ To poll for news cheaply, `client.changesHead()` returns `{ head, cursor, epoch,
 
 Edits to the world itself (its name, calendar, `public_read`) don't appear in the change feed. Read `client.getWorld()` and compare `updated_at`.
 
+`client.patchWorld(partial)` writes the world's own settings, and takes a `getWorld()` body back: the keys keel does not take (`id`, `origin`, `slug`, `public_page` and the owner's switches) are left out. The world's `origin` is written as the plain keys `source` and `producer` (each an object or `null`), and extension keys (`x_*`, `atlas_*`, `shadow_*`) are sent as given; `null` removes one.
+
 ### Only if unchanged
 
 A client that edits offline, or from a copy it has held a while, can ask for an update to land only if nobody changed the element since it was read: pass the `change_seq` you read as `ifMatch`, on `patch`, `editLinks` or `delete` (since 4.61.0: a delete of an element someone changed since you read it is refused, nothing deleted).

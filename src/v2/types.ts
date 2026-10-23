@@ -75,9 +75,50 @@ export interface OwWorldMeta {
    * the owner on the world page; read-only on the wire, and patchWorld strips it.
    */
   agent_writes_proposed?: boolean;
+  /**
+   * Where the world first came from (keel #571, #477): the folder format's provenance lines (spec
+   * 4.2) as the tool that made the world from a folder gave them, both keys always present, each
+   * null when not known. Read-only on the wire, and patchWorld strips it: write it as the plain
+   * keys `source` and `producer` (`patchWorld({ source, producer })`, each an object or null).
+   */
+  origin?: OwWorldOrigin;
   created_at?: string | null;
   /** Moves when the world's own fields change, not on element writes. */
   updated_at?: string | null;
+  /**
+   * Extension keys (keel #571): a tool's own setting on the world, any JSON value, served at the
+   * top level as an element's are (the first is `x_names`, the names profile: see `typeWord`).
+   * patchWorld sends them as given; `null` removes one; 64 KB in all, else a 422 `param: extensions`.
+   */
+  [extension: `x_${string}`]: unknown;
+  [extension: `atlas_${string}`]: unknown;
+  [extension: `shadow_${string}`]: unknown;
+  [field: string]: unknown;
+}
+
+/**
+ * OwWorldMeta.origin (keel #571, #477), as keel's `World` component types it: both keys always
+ * present, each an object or null. Kept as the writer gave it; keel checks only that `source.world`
+ * and `producer.tool` are strings when present.
+ */
+export interface OwWorldOrigin {
+  source: OwWorldSource | null;
+  producer: OwWorldProducer | null;
+}
+
+/** The folder format's `source` line (spec 4.2): the server and world a folder was exported from, and when. Kept as given. */
+export interface OwWorldSource {
+  server?: string;
+  world?: string;
+  at?: string;
+  [field: string]: unknown;
+}
+
+/** The folder format's `producer` line (spec 4.2): the tool that made a folder, its version, and what it made it from. Kept as given. */
+export interface OwWorldProducer {
+  tool?: string;
+  version?: string;
+  input?: string;
   [field: string]: unknown;
 }
 

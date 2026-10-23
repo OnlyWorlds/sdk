@@ -82,7 +82,10 @@ export class OwV2Client {
   /**
    * PATCH /world -- partial world-meta update. The element write's server-managed keys are
    * stripped, and so are the world's own read-only ones (WORLD_READ_ONLY_FIELDS: `slug` and
-   * `public_page`, keel #471; `agent_writes_proposed`, keel #519; set on the world page, not here).
+   * `public_page`, keel #471; `agent_writes_proposed`, keel #519; set on the world page, not here;
+   * `origin`, keel #571; `id`), so a `getWorld()` body can be sent back. The world's origin is
+   * written as `source` and `producer` (keel #571, each an object or null, served under `origin`);
+   * extension keys (`x_*`, `atlas_*`, `shadow_*`) are sent as given, and `null` removes one.
    */
   async patchWorld(partial: Record<string, unknown>): Promise<OwWorldMeta> {
     const body = sanitizePayload(partial);
@@ -1455,10 +1458,13 @@ const READ_ONLY_FIELDS = ['world', 'type', 'created_at', 'updated_at', 'change_s
  * page's two (keel #471, set on the world page), `public_read` (the same 422, keel's recipe) and
  * `agent_narrator_rule` (the owner's switch on the world page; a 422 naming it, measured on
  * staging 2026-10-22), and `agent_writes_proposed` (keel #519: the owner's switch on the world page,
- * readOnly in keel's `World`). `owner_character` is accepted by the server and left in. Kept apart
- * so an element write never loses a field of these names.
+ * readOnly in keel's `World`), `origin` (keel #571: served on GET, an unknown key on PATCH, a 422;
+ * it is written as the plain keys `source` and `producer`, which pass) and `id` (readOnly in keel's
+ * `World`, and not a key PATCH takes: the same 422). `owner_character` is accepted by the server and
+ * left in. The extension keys (`x_*`, `atlas_*`, `shadow_*`) pass, as on an element write. Kept
+ * apart so an element write never loses a field of these names.
  */
-const WORLD_READ_ONLY_FIELDS = ['slug', 'public_page', 'public_read', 'agent_narrator_rule', 'agent_writes_proposed'] as const;
+const WORLD_READ_ONLY_FIELDS = ['id', 'slug', 'public_page', 'public_read', 'agent_narrator_rule', 'agent_writes_proposed', 'origin'] as const;
 
 /** The proposals of one element (keel #519): /{type}/{id}/proposals. */
 function proposalsPath(type: string, id: string): string {

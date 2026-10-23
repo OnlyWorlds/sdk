@@ -974,6 +974,97 @@ test('the published types declare slug and public_page on OwWorldMeta, and the p
     /\bhero: string;/, /\bsections: string\[\];/, /\bpin: string \| null;/, /\bindex: boolean;/]) assert.match(page, line);
 });
 
+// -- The world's origin and extension keys (keel #571, #477) -------------------------------------
+
+const ORIGIN = {
+  source: { server: 'https://www.onlyworlds.com', world: '0f1e2d3c-4b5a-4968-8776-655443322110', at: '2026-10-23T05:00:00Z' },
+  producer: { tool: 'atlas', version: '1.82.0', input: 'folder' },
+};
+const X_NAMES = { version: 1, types: { character: { one: 'Soul', many: 'Souls' } } };
+// A GET /world body as keel serves it since keel #571: every World key, the origin and an extension key.
+const WORLD_BODY = {
+  id: 'w', name: 'V', description: '', image_url: '', time_format_names: [], time_format_equivalents: [],
+  time_basic_unit: 'Year', time_range_min: null, time_range_max: null, time_range_current: null,
+  length_unit: '', mass_unit: '', distance_unit: '', public_read: false, agent_narrator_rule: false,
+  agent_writes_proposed: false, owner_character: null, slug: null,
+  public_page: { on: false, palette: null, hero: '', sections: [], pin: null, index: false },
+  origin: ORIGIN, x_names: X_NAMES, created_at: '2026-10-01T00:00:00Z', updated_at: '2026-10-23T05:20:00Z',
+};
+
+test('getWorld: origin and the extension keys read through as keel sends them', async () => {
+  const { client } = makeClient({ body: WORLD_BODY });
+  const w = await client.getWorld();
+  assert.deepEqual(w.origin, ORIGIN);
+  assert.deepEqual(w.x_names, X_NAMES);
+});
+
+test('patchWorld: a getWorld() body sent back sends no origin and no id (keel 422s both), and keeps x_names', async () => {
+  const { client, fetchImpl } = makeClient({ body: WORLD_BODY });
+  await client.patchWorld(WORLD_BODY);
+  const sent = lastBody(fetchImpl);
+  assert.equal('origin' in sent, false, 'origin is read-only: keel answers it as an unknown key');
+  assert.equal('id' in sent, false, 'id is read-only: keel answers it as an unknown key');
+  assert.deepEqual(sent.x_names, X_NAMES);
+  assert.deepEqual(Object.keys(sent).sort(), ['description', 'distance_unit', 'image_url', 'length_unit', 'mass_unit', 'name',
+    'owner_character', 'time_basic_unit', 'time_format_equivalents', 'time_format_names', 'time_range_current',
+    'time_range_max', 'time_range_min', 'x_names']);
+});
+
+test('patchWorld sends source, producer and every extension prefix as given, null included (null clears or removes)', async () => {
+  const { client, fetchImpl } = makeClient({ body: WORLD_BODY });
+  const patch = { source: ORIGIN.source, producer: null, x_names: null, atlas_view: { zoom: 2 }, shadow_note: 'kept', x_tool_setting: [1, 'a'] };
+  await client.patchWorld(patch);
+  assert.deepEqual(lastBody(fetchImpl), patch);
+});
+
+test('the published types: OwWorldMeta.origin, the origin\'s two keys, and a getWorld() body that compiles back into patchWorld and typeWord', async () => {
+  const all = readFileSync(new URL('../dist/index.d.ts', import.meta.url), 'utf8');
+  const meta = all.slice(all.indexOf('interface OwWorldMeta {'), all.indexOf('\n}', all.indexOf('interface OwWorldMeta {')));
+  assert.match(meta, /\borigin\?: OwWorldOrigin;/);
+  for (const p of ['x_', 'atlas_', 'shadow_']) assert.ok(meta.includes(`[extension: \`${p}\${string}\`]: unknown;`), `OwWorldMeta types ${p} keys`);
+  const at = all.indexOf('interface OwWorldOrigin {');
+  assert.ok(at > 0, 'OwWorldOrigin is declared');
+  const origin = all.slice(at, all.indexOf('\n}', at));
+  assert.match(origin, /\bsource: OwWorldSource \| null;/);
+  assert.match(origin, /\bproducer: OwWorldProducer \| null;/);
+
+  // The documented calls, compiled against the built types (4.62.0's lesson: TS2559 on typeWord).
+  const ts = (await import('typescript')).default;
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const dir = mkdtempSync(join(tmpdir(), 'ow-origin-'));
+  try {
+    const dist = fileURLToPath(new URL('../dist/index.js', import.meta.url)).replace(/\\/g, '/');
+    const file = join(dir, 'use.ts');
+    writeFileSync(file, [
+      `import { OwV2Client, typeWord, type OwWorldMeta, type OwWorldOrigin } from '${dist}';`,
+      'declare const c: OwV2Client;',
+      'export async function use(): Promise<void> {',
+      '  const w: OwWorldMeta = await c.getWorld();',
+      '  await c.patchWorld(w);',
+      "  await c.patchWorld({ source: { server: 'https://x', world: 'w', at: 't' }, producer: null, x_names: null });",
+      '  const o: OwWorldOrigin | undefined = w.origin;',
+      '  const world: string | undefined = o?.source?.world;',
+      '  const names: unknown = w.x_names;',
+      "  typeWord(w, 'character');",
+      '  // @ts-expect-error the origin carries both keys, always',
+      "  const half: OwWorldMeta = { id: 'a', name: 'b', origin: { source: null } };",
+      '  void world; void names; void half;',
+      '}',
+    ].join('\n'));
+    const program = ts.createProgram([file], {
+      target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Node10,
+      lib: ['lib.es2020.d.ts', 'lib.dom.d.ts'], strict: true, skipLibCheck: true, noEmit: true,
+    });
+    const errors = ts.getPreEmitDiagnostics(program).map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'));
+    assert.deepEqual(errors, []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 // -- Joining by link (keel #212) ---------------------------------------------
 
 const PREVIEW = { reader: 'person', world: { name: 'W', description: '' }, invited_by: 'Ana', owner_character: null, role: 'guest', with_character: false, expires_at: '2026-10-19T00:00:00+00:00' };

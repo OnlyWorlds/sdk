@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.65.0] - 2026-10-23
+
+### Fixed
+
+- **`patchWorld` takes a `getWorld()` body back again** (keel #571, live 2026-10-23). keel's `GET /world` now serves `origin`, and a PATCH naming it is a 422 (an unknown key), so a world body read and sent back failed. `patchWorld` now leaves out `origin`, and `id` too: keel answers `id` with the same 422 (it is not a key PATCH takes), so the round trip 4.57.1's entry promised never held for a whole body. `owner_character` is still sent.
+
+### Added
+
+- **`OwWorldMeta.origin?: OwWorldOrigin`**, read-only: where the world first came from, `{ source, producer }`, both keys always present, each the folder format's provenance line (spec 4.2) as the tool that made the world from a folder gave it, or `null`. Types `OwWorldOrigin`, `OwWorldSource` (`server`, `world`, `at`) and `OwWorldProducer` (`tool`, `version`, `input`), each open to keys keel keeps as given. The origin is written as the plain keys `source` and `producer`: `patchWorld({ source, producer })` sends them as given (an object, or `null` to clear).
+- **The World's extension keys on `OwWorldMeta`**: `x_*`, `atlas_*` and `shadow_*`, typed `unknown` by template-literal index signatures (the first is `x_names`, the names profile `typeWord` reads). `patchWorld` sends every one as given, `null` included (keel removes the key); over keel's 64 KB cap on the whole store the answer is a 422 with `param: extensions`.
+- Tests: a full `GET /world` body sent back sends neither `origin` nor `id` and keeps `x_names`; `source`, `producer` and a key of each extension prefix pass untouched, `null` included; the published types declare `origin` and its two keys, and the documented calls (`patchWorld(await getWorld())`, `patchWorld({ source, producer, x_names })`, `typeWord(world, …)`) compile against the built `.d.ts`. Watched failing on mutants: `origin` and `id` each out of the strip list, `origin` out of `OwWorldMeta`, and a narrowed `patchWorld` parameter.
+
 ## [4.64.0] - 2026-10-23
 
 ### Changed
