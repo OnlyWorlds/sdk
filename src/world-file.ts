@@ -35,7 +35,8 @@
  * 1980-01-01 00:00, in the UTF-8 byte order of its name, JSON deflated and
  * everything else stored. `records/` travels whole and byte-exact, except the
  * producers `records/RECORDS.json` marks private, left out whole unless the
- * caller asks (OW-8, §4.5 rule 11).
+ * caller asks (OW-8, §4.5 rule 11). Element files marked hidden travel too,
+ * unless the caller says the file is a share (`includeHidden: false`, §4.8).
  *
  * A tool's own `.<tool>/` folder is the tool's (spec §4): the reader returns
  * it like any file (a caller leaves files out with `skip`), and the writer
@@ -577,23 +578,74 @@ export interface OwWriteWorldFileOptions {
    * rule 11, OW-8). Left out or false, their directories are left out whole.
    */
   includePrivateRecords?: boolean;
+  /**
+   * Carry element files marked hidden (spec §4.8). Left out or true, they
+   * travel byte for byte: a world file is a copy. Pass false when the file is
+   * a share, made to hand to someone else: then every element file whose JSON
+   * carries the hidden mark is left out whole, and `report` counts them. The
+   * default is the opposite of `includePrivateRecords`'s on purpose.
+   */
+  includeHidden?: boolean;
+  /** Called once with what the write left out, after the archive is made and before it is returned; never on a refusal. */
+  report?: (report: OwWriteWorldFileReport) => void;
+}
+
+/** What `writeWorldFile` left out, handed to its `report` option. */
+export interface OwWriteWorldFileReport {
+  /** Element files left out for the hidden mark (`includeHidden: false`); 0 otherwise. */
+  hiddenLeftOut: number;
 }
 
 /** Every key `writeWorldFile`'s options take; any other is refused by name, never dropped. A new option joins this list in the same commit. */
-const WRITE_OPTION_KEYS: readonly (keyof OwWriteWorldFileOptions)[] = ['includePrivateRecords'];
+const WRITE_OPTION_KEYS: readonly (keyof OwWriteWorldFileOptions)[] = ['includePrivateRecords', 'includeHidden', 'report'];
 
 const RECORDS_MANIFEST = 'records/RECORDS.json';
 
-/** Whether the caller asked for private records; refuses an unknown key or a value that is not a boolean, before anything else. */
-function asksPrivate(opts: unknown): boolean {
-  if (opts === undefined || opts === null) return false;
+interface WriteOptions {
+  includePrivate: boolean;
+  includeHidden: boolean;
+  report?: (report: OwWriteWorldFileReport) => void;
+}
+
+/** The caller's options, read; refuses an unknown key, a flag that is not a boolean or a `report` that is not a function, before anything else. */
+function writeOptions(opts: unknown): WriteOptions {
+  if (opts === undefined || opts === null) return { includePrivate: false, includeHidden: true };
   if (typeof opts !== 'object') throw new TypeError(`writeWorldFile: options must be an object, such as { includePrivateRecords: true }. Nothing was written.`);
   refuseUnknownOptions('writeWorldFile', opts, WRITE_OPTION_KEYS, 'Nothing was written.');
-  const asked = (opts as OwWriteWorldFileOptions).includePrivateRecords;
-  if (asked !== undefined && typeof asked !== 'boolean') {
-    throw new TypeError(`writeWorldFile: includePrivateRecords must be true or false; got ${JSON.stringify(asked) ?? String(asked)}. Nothing was written.`);
+  const o = opts as OwWriteWorldFileOptions;
+  for (const key of ['includePrivateRecords', 'includeHidden'] as const) {
+    const asked = o[key];
+    if (asked !== undefined && typeof asked !== 'boolean') {
+      throw new TypeError(`writeWorldFile: ${key} must be true or false; got ${JSON.stringify(asked) ?? String(asked)}. Nothing was written.`);
+    }
   }
-  return asked === true;
+  if (o.report !== undefined && typeof o.report !== 'function') {
+    throw new TypeError(`writeWorldFile: report must be a function; got ${JSON.stringify(o.report) ?? String(o.report)}. Nothing was written.`);
+  }
+  return { includePrivate: o.includePrivateRecords === true, includeHidden: o.includeHidden !== false, report: o.report };
+}
+
+/**
+ * Whether a file is an element file carrying the hidden mark (spec §4.8): a
+ * `.json` file directly in a type folder of `elements/` or the legacy
+ * `spatial/`, whose JSON is an object with a top-level `hidden` that is
+ * present and neither `null` nor `false` (a doubtful value, `"true"` or 1,
+ * counts as marked: a share leaves a doubt out rather than handing it on, as
+ * the Python package's `is_hidden` does). A file that is not UTF-8 JSON, or
+ * not an object, is no element and is kept.
+ */
+function isHiddenElement(f: OwWorldFileEntry): boolean {
+  const segs = f.path.split('/');
+  if (segs.length !== 3 || (segs[0] !== 'elements' && segs[0] !== 'spatial') || !/\.json$/i.test(segs[2])) return false;
+  let doc: unknown;
+  try {
+    doc = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(f.data));
+  } catch {
+    return false;
+  }
+  if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) return false;
+  const mark = (doc as { hidden?: unknown }).hidden;
+  return mark !== undefined && mark !== null && mark !== false;
 }
 
 /**
@@ -645,8 +697,19 @@ function privateProducers(files: OwWorldFileEntry[]): string[] {
  * to carry them; then the manifest is not read and every record travels. No
  * manifest, nothing is private.
  *
+ * Element files marked hidden (spec §4.8) travel byte for byte by default: a
+ * world file is a copy, also of a person's own world. A share is the offering
+ * tool's question: pass `{ includeHidden: false }` for a file made to hand to
+ * someone else, and every element file under `elements/<type>/` or
+ * `spatial/<type>/` whose JSON carries a top-level `hidden` (anything but
+ * absent, `null` or `false`) is left out whole. A file there that is not
+ * JSON is kept. Nothing else is rewritten: a visible element's link to a
+ * hidden one keeps its id, which then names no file. Pass
+ * `report: r => …` to learn `r.hiddenLeftOut`, the count left out.
+ *
  * Throws a `TypeError`, having written nothing, for an unknown option, an
- * `includePrivateRecords` that is not a boolean, and (unless private records
+ * `includePrivateRecords` or `includeHidden` that is not a boolean, a
+ * `report` that is not a function, and (unless private records
  * are asked for) a `RECORDS.json` that is not a JSON array of objects or that
  * marks an entry private without a producer name. Refuses (`OwWorldFileError`)
  * an unsafe path or `topDir`, a duplicate path, a name some disk cannot hold,
@@ -654,7 +717,7 @@ function privateProducers(files: OwWorldFileEntry[]): string[] {
  * (it may hold a key, so it is never zipped raw) or has no `id`.
  */
 export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: OwWriteWorldFileOptions = {}): Uint8Array {
-  const includePrivate = asksPrivate(opts);
+  const { includePrivate, includeHidden, report } = writeOptions(opts);
   if (pathFault(topDir) || topDir.includes('/')) throw new OwWorldFileError('unsafe_path');
   const seen = new Set<string>();
   for (const f of files) {
@@ -669,7 +732,12 @@ export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: 
     const segs = path.split('/');
     return segs.length > 2 && segs[0] === 'records' && left.has(foldName(segs[1]));
   };
-  const kept = files.filter(f => carried(f.path) && !inPrivate(f.path));
+  let hiddenLeftOut = 0;
+  const kept = files.filter(f => {
+    if (!carried(f.path) || inPrivate(f.path)) return false;
+    if (!includeHidden && isHiddenElement(f)) { hiddenLeftOut++; return false; }
+    return true;
+  });
   if (!kept.some(f => f.path === WORLD_FILE)) throw new OwWorldFileError('not_a_world');
   const keys = kept.map(f => `${topDir}/${f.path}`);
   for (const key of keys) {
@@ -687,5 +755,7 @@ export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: 
     if (f.path === WORLD_FILE) data = withoutLink(data, parseWorld(data)).data;
     input[`${topDir}/${f.path}`] = [data, { level: /\.json$/i.test(f.path) ? 6 : 0, mtime: STAMP }];
   }
-  return zipSync(input);
+  const zip = zipSync(input);
+  report?.({ hiddenLeftOut });
+  return zip;
 }

@@ -299,6 +299,15 @@ The writer gives the same bytes for the same files: the `mimetype` marker first,
 
 `records/` travels byte for byte, except a producer's directory that `records/RECORDS.json` marks `"private": true`: that one is left out whole, and `RECORDS.json` itself travels unchanged, so the reader can see a producer was left out. Pass `writeWorldFile(files, topDir, { includePrivateRecords: true })` to carry private records too. A `RECORDS.json` that is not a JSON array of objects is refused with a `TypeError` unless you pass that option, since the writer cannot tell which records are private.
 
+An element file marked hidden (`"hidden": true` at the top of its JSON, spec §4.8) travels byte for byte by default: a world file is a copy, also of your own world. When the file is a share, made to hand to someone else, pass `includeHidden: false`: every hidden file under `elements/<type>/` (or the old `spatial/<type>/`) is left out whole, and `report` tells you how many. Nothing else changes: a visible element's link to a hidden one keeps its id. A file there that is not JSON is kept.
+
+```typescript
+let left = 0;
+const share = writeWorldFile(files, topDir, { includeHidden: false, report: r => { left = r.hiddenLeftOut; } });
+```
+
+The two defaults differ on purpose: private records stay out unless you ask, hidden elements stay in unless the write is a share.
+
 ## World calendars
 
 A world's time is an integer line (`time_range_current` is a point on it, and so is an Event's `start_date`). A calendar names its points: months, days, eras. Atlas keeps a calendar on an element (a Construct by convention) in its `atlas_calendar` field, and the SDK reads it with Atlas's own calendar code (since 4.20.0). Atlas owns that field and is its only writer; read it, never write it.

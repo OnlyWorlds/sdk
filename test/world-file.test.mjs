@@ -642,4 +642,81 @@ test('writeWorldFile\'s options: an unknown key or a non-boolean is refused by n
   // Before the path checks: a bad option on an unsafe call is still the option's refusal.
   assert.throws(() => writeWorldFile([wj], '../w', { includePrivateRecords: true, x: 1 }), typeErr(/unknown option 'x'/));
   assert.ok(writeWorldFile([wj], 'w', {}) instanceof Uint8Array);
+  for (const value of ['false', 0, null]) {
+    assert.throws(() => writeWorldFile([wj], 'w', { includeHidden: value }), typeErr(/includeHidden must be true or false/), `includeHidden: ${JSON.stringify(value)}`);
+  }
+  assert.throws(() => writeWorldFile([wj], 'w', { includeHidden: false, report: {} }), typeErr(/report must be a function/));
+  assert.throws(() => writeWorldFile([wj], 'w', { includeHidden: false, hidden: false }), typeErr(/unknown option 'hidden'.*includeHidden/));
+});
+
+// --- the hidden mark (§4.8): a copy keeps it, a share leaves it out ----------------
+
+const el = (path, body) => ({ path, data: strToU8(typeof body === 'string' ? body : j(body)) });
+const hiddenFiles = () => [
+  wj,
+  el('elements/character/ada-0001.json', { id: 'c1', name: 'Ada', hidden: true }),
+  el('elements/character/bo-0002.json', { id: 'c2', name: 'Bo', friends: ['c1'] }),
+  el('elements/location/keep-0003.json', { id: 'l1', name: 'Keep', hidden: false }),
+];
+
+test('§4.8: by default a hidden element file travels byte for byte, and the report says 0', () => {
+  const files = hiddenFiles();
+  const reports = [];
+  for (const opts of [undefined, {}, { includeHidden: true }, { includeHidden: true, report: r => reports.push(r) }]) {
+    const back = entriesOf(writeWorldFile(files, 'w', opts));
+    assert.deepEqual(back.map(f => f.path), files.map(f => f.path).sort(), JSON.stringify(opts));
+    const ada = back.find(f => f.path === 'elements/character/ada-0001.json');
+    assert.deepEqual(ada.data, files[1].data, 'the hidden file is byte-identical');
+  }
+  assert.deepEqual(reports, [{ hiddenLeftOut: 0 }]);
+  // Determinism: the same input, the same bytes, by default and as a share.
+  assert.deepEqual(writeWorldFile(files, 'w'), writeWorldFile([...files].reverse(), 'w'));
+  assert.deepEqual(writeWorldFile(files, 'w', { includeHidden: false }), writeWorldFile([...files].reverse(), 'w', { includeHidden: false }));
+  assert.notDeepEqual(writeWorldFile(files, 'w'), writeWorldFile(files, 'w', { includeHidden: false }));
+});
+
+test('§4.8: includeHidden: false leaves a hidden element file out whole, counts it, and rewrites nothing else', () => {
+  const files = hiddenFiles();
+  const reports = [];
+  const back = entriesOf(writeWorldFile(files, 'w', { includeHidden: false, report: r => reports.push(r) }));
+  assert.deepEqual(reports, [{ hiddenLeftOut: 1 }]);
+  assert.deepEqual(back.map(f => f.path), ['elements/character/bo-0002.json', 'elements/location/keep-0003.json', 'world.json']);
+  // Bo's link to Ada keeps its id, now naming no file; hidden: false is no mark.
+  for (const f of back) assert.deepEqual(f.data, files.find(g => g.path === f.path).data, f.path);
+});
+
+test('§4.8: what counts as a hidden element file, and what is kept', () => {
+  const kept = (files) => {
+    const reports = [];
+    const paths = readWorldFile(writeWorldFile([wj, ...files], 'w', { includeHidden: false, report: r => reports.push(r) })).files
+      .map(f => f.path).filter(p => p !== 'world.json');
+    return { paths, left: reports[0].hiddenLeftOut };
+  };
+  // The legacy spatial/ layout, an upper-case .JSON, and a doubtful mark ("true", 1) are left out.
+  assert.deepEqual(kept([
+    el('spatial/pin/p.json', { id: 'p', hidden: true }),
+    el('elements/map/M.JSON', { id: 'm', hidden: true }),
+    el('elements/event/e.json', { id: 'e', hidden: 'true' }),
+    el('elements/event/f.json', { id: 'f', hidden: 1 }),
+  ]), { paths: [], left: 4 });
+  // Kept: not JSON, not UTF-8, not an object, a null mark, a nested mark, a file deeper than a
+  // type folder, one that is not .json, and hidden: true outside the element folders.
+  const keep = [
+    el('elements/character/broken.json', '{"id": "x", "hidden": true'),
+    { path: 'elements/character/latin.json', data: new Uint8Array([0x7b, 0x22, 0xe9, 0x22, 0x3a, 0x31, 0x7d]) },
+    el('elements/character/list.json', [{ hidden: true }]),
+    el('elements/character/n.json', { id: 'n', hidden: null }),
+    el('elements/character/deep.json', { id: 'd', x_meta: { hidden: true } }),
+    el('elements/character/sub/s.json', { id: 's', hidden: true }),
+    el('elements/character/notes.txt', '{"hidden": true}'),
+    el('media/m.json', { hidden: true }),
+    el('records/lab/r.json', { hidden: true }),
+  ];
+  assert.deepEqual(kept(keep), { paths: keep.map(f => f.path).sort(), left: 0 });
+});
+
+test('§4.8: the report is not called on a refusal', () => {
+  const reports = [];
+  assert.throws(() => writeWorldFile([el('elements/character/a.json', { hidden: true })], 'w', { includeHidden: false, report: r => reports.push(r) }), (e) => e instanceof OwWorldFileError && e.reason === 'not_a_world');
+  assert.deepEqual(reports, []);
 });

@@ -167,7 +167,9 @@ export class OwV2Client {
    * Character they can see; a player seat or a guest for its own Character only (another id is
    * 404). `asOf` is a filter on the elements' own dates, not time travel. A `cut` that is not
    * empty means the serving is partial (`cut.proposed` also counts proposed elements left out because
-   * the component was not named). Served `Cache-Control: private, no-store`.
+   * the component was not named). `compact: true` leaves out every empty section and an empty `cut`,
+   * the frame and every null kept, answered as `OwDraughtCompact` (keel #585). Served
+   * `Cache-Control: private, no-store`.
    */
   draught(characterId: string, policy?: OwDraughtPolicy & { compact?: false }): Promise<OwDraught>;
   draught(characterId: string, policy: OwDraughtPolicy): Promise<OwDraughtCompact>;

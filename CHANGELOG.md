@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.70.0] - 2026-10-23
+
+### Added
+
+- **`writeWorldFile(files, topDir, { includeHidden: false })`** (folder spec §4.8, Skeld, OW Atlas h20 #11469): a world file is a copy, so an element file carrying the hidden mark travels byte for byte by default, as before. A tool making a file to hand to someone else passes `includeHidden: false`, and every `.json` file directly in a type folder of `elements/` or the legacy `spatial/` whose JSON has a top-level `hidden` (anything but absent, `null` or `false`, so `"true"` and `1` count, as the Python package's `is_hidden`) is left out whole. A file there that is not UTF-8 JSON, or not an object, is kept. Nothing else is rewritten: a visible element's link to a hidden one keeps its id. The two defaults differ on purpose: private records out unless asked, hidden kept unless the write is a share.
+- **`report: (r: OwWriteWorldFileReport) => void`**, a `writeWorldFile` option: called once with `{ hiddenLeftOut }` after the archive is made and before it is returned, never on a refusal. The return stays the bytes. An `includeHidden` that is not a boolean, or a `report` that is not a function, is a `TypeError` before anything is written; both keys join the options fence.
+
+### Fixed
+
+- **`draught`'s doc comment names `compact`** (4.69.0, keel #585), so the docs' generated reference row carries it.
+- Tests: a hidden element file byte-identical by default and with `includeHidden: true`, the report 0; left out as a share, the report 1, every other file byte-identical; the legacy layout, `.JSON`, and a doubtful mark left out; not JSON, not UTF-8, not an object, a null or nested mark, a deeper file, a non-JSON file and the other parts kept; the same bytes for the same files either way; the report not called on a refusal; the fence. Watched failing with the leave-out turned into a keep (3 tests red), restored. The 85-case `.owworld` set unchanged.
+
 ## [4.69.0] - 2026-10-23
 
 ### Added

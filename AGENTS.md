@@ -94,6 +94,9 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   first, UTF-8 name order, 1980 stamps) and holds only `world.json` and the folder's parts.
   Producers marked `"private": true` in `records/RECORDS.json` are left out whole unless
   `writeWorldFile(files, topDir, { includePrivateRecords: true })` (since 4.63.0; OW-8).
+  Element files marked `hidden: true` travel by default (a copy); a share passes
+  `{ includeHidden: false, report: r => r.hiddenLeftOut }` to leave them out whole and count
+  them (since 4.70.0; §4.8).
 - World calendars (since 4.20.0): `worldCalendars(elements)` finds the elements carrying
   `atlas_calendar` (Atlas owns the field: read it, never write it); `resolveCalendarLens` picks
   one; `formatStep(config, step)` names a point on the world's integer time line, `parseDate`
