@@ -187,6 +187,19 @@ test('reviewNewElement: decline sends the reason when given, none without; retur
   assert.equal(calls[1].init.body, JSON.stringify({ decision: 'decline' }));
 });
 
+test('reviewNewElement: a reason with an accept is a TypeError before sending (keel takes { decision: accept } alone)', async () => {
+  const { c, calls } = client({ body: { element: ELEMENT } });
+  await assert.rejects(c.reviewNewElement('character', NEW_EL, { decision: 'accept', reason: 'Fine.' }), TypeError);
+  assert.equal(calls.length, 0);
+});
+
+test('reviewNewElement: an answer without the key its decision settles is a TypeError (element for accept, deleted for decline)', async () => {
+  const a = client({ body: { deleted: NEW_EL } });
+  await assert.rejects(a.c.reviewNewElement('character', NEW_EL, { decision: 'accept' }), /answered no element/);
+  const d = client({ body: { element: ELEMENT } });
+  await assert.rejects(d.c.reviewNewElement('character', NEW_EL, { decision: 'decline' }), /answered no deleted/);
+});
+
 test('reviewNewElement: an agent client sends no X-OW-Agent (the document lists none on the review route)', async () => {
   const { c, calls } = client({ body: { deleted: NEW_EL } }, { agent: true, client: 'atlas' });
   await c.reviewNewElement('character', NEW_EL, { decision: 'decline' });

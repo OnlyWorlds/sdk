@@ -1063,6 +1063,12 @@ test('patchWorld: a getWorld() body sent back sends no origin and no id (keel 42
     'time_range_max', 'time_range_min', 'x_names']);
 });
 
+test('patchWorld: the counts a keyless read carries is not sent back (keel #421 PR 4: PATCH answers it as an unknown key)', async () => {
+  const { client, fetchImpl } = makeClient({ body: WORLD_BODY });
+  await client.patchWorld({ ...WORLD_BODY, counts: { total: 1, types: { character: 1 } } });
+  assert.equal('counts' in lastBody(fetchImpl), false);
+});
+
 test('patchWorld sends source, producer and every extension prefix as given, null included (null clears or removes)', async () => {
   const { client, fetchImpl } = makeClient({ body: WORLD_BODY });
   const patch = { source: ORIGIN.source, producer: null, x_names: null, atlas_view: { zoom: 2 }, shadow_note: 'kept', x_tool_setting: [1, 'a'] };

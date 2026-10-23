@@ -18,6 +18,7 @@ const BODY = {
   data: [], has_more: false, next_cursor: null,
   cursor: '0', changes: [], head: 0, epoch: null,
   proposal: { id: PID },
+  element: ELEMENT, // a review's accept answers { element } (4.68.0 checks it)
 };
 
 function recorder() {

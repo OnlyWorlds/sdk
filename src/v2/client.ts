@@ -1218,10 +1218,21 @@ export class OwV2Client {
     if (opts?.decision !== 'accept' && opts?.decision !== 'decline') {
       throw new TypeError(`reviewNewElement: decision must be 'accept' or 'decline', got ${JSON.stringify(opts?.decision) ?? String(opts?.decision)}. Nothing was sent.`);
     }
+    // keel takes `{decision: accept}` or `{decision: decline, reason?}`: a reason with an accept is its 422
+    if (opts.reason !== undefined && opts.decision !== 'decline') {
+      throw new TypeError('reviewNewElement: a reason goes with a decline only. Nothing was sent.');
+    }
     const body: Record<string, unknown> = { decision: opts.decision };
     if (opts.reason !== undefined) body.reason = opts.reason;
     // X-OW-Client is a header keel's document lists here; X-OW-Agent is not.
-    return this.request('POST', `/${type}/${encodeURIComponent(id)}/review`, { elementWrite: true, body }) as Promise<OwReviewed>;
+    const path = `/${type}/${encodeURIComponent(id)}/review`;
+    const answer = await this.request('POST', path, { elementWrite: true, body });
+    // the key the decision settles: an accept answers { element }, a decline { deleted }
+    const settled = opts.decision === 'accept' ? 'element' : 'deleted';
+    if (answer === null || typeof answer !== 'object' || !(settled in answer)) {
+      throw new TypeError(`reviewNewElement: POST ${path} answered no ${settled}: ${JSON.stringify(answer)?.slice(0, 200)}`);
+    }
+    return answer as OwReviewed;
   }
 
   // -- The account's worlds and keys (account token) -----------------------
@@ -1527,7 +1538,8 @@ const READ_ONLY_FIELDS = ['world', 'type', 'created_at', 'updated_at', 'change_s
  * left in. The extension keys (`x_*`, `atlas_*`, `shadow_*`) pass, as on an element write. Kept
  * apart so an element write never loses a field of these names.
  */
-const WORLD_READ_ONLY_FIELDS = ['id', 'slug', 'public_page', 'public_read', 'agent_narrator_rule', 'agent_writes_proposed', 'origin'] as const;
+// `counts` rides only a keyless GET /world (keel #421 PR 4) and is an unknown key to PATCH.
+const WORLD_READ_ONLY_FIELDS = ['id', 'slug', 'public_page', 'public_read', 'agent_narrator_rule', 'agent_writes_proposed', 'origin', 'counts'] as const;
 
 /** The proposals of one element (keel #519): /{type}/{id}/proposals. */
 function proposalsPath(type: string, id: string): string {
