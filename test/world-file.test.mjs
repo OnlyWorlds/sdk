@@ -52,7 +52,8 @@ function concat(parts) {
 
 /**
  * Entries `{ name (string or bytes), data, method (0 stored, 8 deflate, any other: data as is), flags, utf8, mode,
- * declared, crc, zip64 }` in the order given. `utf8` defaults to "the name is not ASCII". `mode` is a Unix mode in
+ * declared, crc, zip64, payload }` in the order given. `payload` replaces the stored bytes (`data` still gives the CRC
+ * and the declared size). `utf8` defaults to "the name is not ASCII". `mode` is a Unix mode in
  * the external attributes. `zip64` writes the entry's sizes and offset in a zip64 extra field. Options: `zip64` adds
  * the zip64 end record and locator; `disk` says this file is that disk of a spanned set.
  */
@@ -64,7 +65,7 @@ function buildZip(entries, { zip64 = false, disk = 0 } = {}) {
     const name = typeof e.name === 'string' ? strToU8(e.name) : e.name;
     const data = e.data ?? new Uint8Array(0);
     const method = e.method ?? 0;
-    const payload = method === 8 ? deflateSync(data) : data;
+    const payload = e.payload ?? (method === 8 ? deflateSync(data) : data);
     let flags = e.flags ?? 0;
     if (e.utf8 ?? name.some(b => b > 0x7f)) flags |= 0x0800;
     const crc = e.crc ?? crc32(data);
@@ -345,6 +346,22 @@ test('OW-14: a long deflate stream is inflated in chunks and stopped at its decl
   const ok = readWorldFile(W([{ name: 'w/media/noise.bin', data: big, method: 8 }]));
   assert.deepEqual(ok.files.find(f => f.path === 'media/noise.bin').data, big);
   refuses(W([{ name: 'w/media/noise.bin', data: big, method: 8, declared: 150_000 }]), 'too_big');
+});
+
+test('OW-14: a deflate stream that ends before its declared compressed size is refused, short or chunked', () => {
+  // Skeld h58 #11968: the size bullet speaks of every size an entry declares, so bytes after the stream's end are a
+  // lie about the compressed size; sizes and CRC stay honest. The noise is the chunked case (over 64 KiB).
+  const small = strToU8(j({ id: WID, name: 'Early' }));
+  const big = new Uint8Array(200_000);
+  for (let i = 0, x = 7; i < big.length; i++) { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; big[i] = x & 0xff; }
+  const junk = (data, n) => concat([deflateSync(data), new Uint8Array(n).fill(0xff)]);
+  for (const data of [small, big]) {
+    refuses(W([{ name: 'w/media/a.bin', data, method: 8, payload: junk(data, 4) }]), 'not_openable');
+    refuses(W([{ name: 'w/media/a.bin', data, method: 8, payload: junk(data, 1) }]), 'not_openable');
+    // The stream to its last byte, and nothing after: read.
+    const ok = readWorldFile(W([{ name: 'w/media/a.bin', data, method: 8 }]));
+    assert.deepEqual(ok.files.find(f => f.path === 'media/a.bin').data, data);
+  }
 });
 
 test('OW-15: a zip64 end record and zip64 sizes in an entry\'s extra field are read', () => {
@@ -631,6 +648,26 @@ test('the .owworld fixture set (§4.7): every verdict and every cause', (t) => {
   assert.ok(run >= 93, `the set holds ${run} fixtures`); // serial 57's count
   assert.deepEqual(verdictDiffs, [], 'verdict disagreements');
   assert.deepEqual(reasonDiffs, [], 'right verdict for another reason');
+});
+
+// Three zips the next schema-dist serial brings (Quillon's set, verdicts.json of 2026-10-24; Skeld's ruling h58
+// #11968), copied here until it does: when the serial is vendored, delete test/fixtures/owworld-next/ and this test,
+// and the set above carries them.
+const NEXT = fileURLToPath(new URL('./fixtures/owworld-next/', import.meta.url));
+const NEXT_CASES = [
+  ['fail-OW-14-deflate-early-end.owworld', 'b176e92b6bfe0c8bcb7fe143adcf2b7e967e2a21d14549b4ac0ffac17afe013c', 'not_openable'],
+  ['fail-OW-14-deflate-no-end.owworld', '7dec0fffdc42643b24b527a80b54116f504e4a5933d09c675d3bfd31cbeb5ef4', 'not_openable'],
+  ['pass-OW-18-nfc-unassigned.owworld', 'b02a7871c3a9932a0646944c2e76850b3df63dca1fc3881fc89df4ae0b3544d4', null],
+];
+
+test('the next serial\'s three .owworld cases: the deflate stream read to its declared end, the NFC pair', () => {
+  assert.deepEqual(readdirSync(NEXT).sort(), NEXT_CASES.map(([f]) => f).sort());
+  for (const [file, hash, reason] of NEXT_CASES) {
+    const bytes = new Uint8Array(readFileSync(join(NEXT, file)));
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), hash, `${file} is Quillon's`);
+    if (reason) refuses(bytes, reason);
+    else assert.ok(readWorldFile(bytes).files.length > 0, `${file} is read`);
+  }
 });
 
 // --- OW-8's private clause (§4.5 rule 11) ----------------------------------------

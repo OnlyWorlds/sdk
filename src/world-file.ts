@@ -360,6 +360,31 @@ function crc32(data: Uint8Array): number {
 /** A deflate input this long or shorter inflates whole (deflate stops near 1032:1); longer streams in chunks. */
 const CHUNK = 64 * 1024;
 
+/**
+ * Whether a deflate stream ends before the payload its entry declares does (OW-14: the size bullet speaks of the
+ * compressed size too, Skeld h58 #11968). fflate stops at the stream's end and never says where that was, so the
+ * payload is inflated again short of its last byte: a stream that ends at its declared size needs that byte and runs
+ * out, which fflate refuses; one that ends sooner still inflates. Called once the whole payload inflated to its
+ * declared size, so the shortened stream gives at most that many bytes; a long one goes in chunks, its output dropped.
+ */
+function endsEarly(payload: Uint8Array): boolean {
+  const short = payload.subarray(0, payload.length - 1);
+  try {
+    if (short.length <= CHUNK) {
+      inflateSync(short);
+    } else {
+      const inf = new Inflate(() => {});
+      for (let i = 0; i < short.length; i += CHUNK) {
+        const stop = Math.min(i + CHUNK, short.length);
+        inf.push(short.subarray(i, stop), stop === short.length);
+      }
+    }
+  } catch {
+    return false;
+  }
+  return true;
+}
+
 /** An entry's bytes, never inflated much past the size it declares (OW-14's lying size). */
 function inflateEntry(bytes: Uint8Array, e: CdEntry): Uint8Array {
   const off = e.offset;
@@ -392,6 +417,9 @@ function inflateEntry(bytes: Uint8Array, e: CdEntry): Uint8Array {
   }
   if (data.length > e.usize) refuse('too_big', `${e.name} holds more than the ${e.usize} bytes it declares.`);
   if (data.length !== e.usize) refuse('not_openable', `${e.name} holds ${data.length} bytes and declares ${e.usize}.`);
+  if (e.method !== 0 && payload.length > 0 && endsEarly(payload)) {
+    refuse('not_openable', `${e.name}: its deflate stream ends before its declared compressed size.`);
+  }
   if (crc32(data) !== e.crc) refuse('not_openable', `${e.name} fails its CRC.`);
   // A stored entry is a view of the archive: hand back its own bytes, never the caller's buffer.
   return e.method === 0 ? data.slice() : data;
