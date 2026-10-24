@@ -53,7 +53,7 @@ export function typeWord(
 ): string | null {
   refuseUnknownOptions('typeWord', opts, OPTION_KEYS);
   // `object`, not `{ x_names?: unknown }`: OwWorldMeta does not declare x_names (keel serves x_ keys
-  // on the World from Keel #571), and an all-optional parameter type refuses it (TS2559).
+  // on the World), and an all-optional parameter type refuses it (TS2559).
   const map = (world as { x_names?: unknown } | null | undefined)?.x_names;
   if (!isObject(map) || map.version !== 1) return null;
   const { types, supertypes } = map;

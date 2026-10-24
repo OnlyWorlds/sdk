@@ -203,7 +203,7 @@ export function readCalendarConfig(value: unknown): CalendarConfig | null {
     || months.names.length !== months.lengths.length || months.names.length === 0
     || !months.names.every(isString))) return null;
   // A present eras or intercalary that is not a list refuses, a falsy one too: `eras: false`
-  // threw a TypeError below before 4.42.1 (Quillon h58 #8917). A step is an integer, so an
+  // threw a TypeError below before 4.42.1. A step is an integer, so an
   // era's start and end are whole, and year_base is 0 or 1 (the profile, calendar.md).
   if (cfg.eras != null && !Array.isArray(cfg.eras)) return null;
   if (cfg.eras?.some((e) => typeof e?.name !== 'string' || !Number.isSafeInteger(e?.start)
@@ -764,7 +764,7 @@ export function parseDate(cfg: CalendarConfig, input: string, opts: ParseOptions
   // A typed era names the date's era: an absolute reading that lands in an era
   // is a date the input never named ("10 Thaw, 1 BG" read as "10 Thaw, 2 AG"
   // when year 1 BG holds only 1 to 5 Frost). Refused; the fallback stays for a
-  // step in no era, where format prints the absolute year (4.42.4; Temper h58 #9304).
+  // step in no era, where format prints the absolute year (4.42.4).
   if (era && !isParseError(viaAbs) && eraForStep(cfg, viaAbs.step) !== null) {
     return { error: `not a date in ${era.name}` };
   }

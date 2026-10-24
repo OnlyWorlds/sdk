@@ -43,7 +43,7 @@ export function kindCanWrite(kind: OwKeyKind): boolean {
  * Should a credential UI ask for a PIN with this key?
  * Prefixed keys read PIN-less; writes on pinned worlds always need it. 'optional' means: show
  * the field, don't require it. A legacy key that can write sends its PIN on every read of a
- * world that has one, whether or not the world is open to read (keel #421 PR 105, 2026-10-20):
+ * world that has one, whether or not the world is open to read (2026-10-20):
  * the literal `'required-for-private-reads'` predates that rule and keeps its name until 5.0.
  * A demo-range key (`isDemoKey`) is also kind `legacy` and never needs a PIN.
  */

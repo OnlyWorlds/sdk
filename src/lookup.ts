@@ -118,7 +118,7 @@ const LOOKUP_OPTION_KEYS: readonly (keyof OwLookupOptions)[] = ['limit'];
 const RENDER_OPTION_KEYS: readonly (keyof OwRenderOptions)[] = ['descMax', 'linkMax', 'incomingMax'];
 
 // an array literal, not a split string: the bundler can only drop a set it can prove pure
-// (a .split() call kept these 451 bytes in every app importing the SDK; Temper, h17 #4247)
+// (a .split() call kept these 451 bytes in every app importing the SDK)
 const STOP = new Set(['a', 'an', 'the', 'of', 'in', 'on', 'at', 'to', 'for', 'from', 'by', 'with',
   'and', 'or', 'is', 'are', 'was', 'were', 'be', 'been', 'who', 'whom', 'whose', 'what', 'which',
   'where', 'when', 'why', 'how', 'does', 'do', 'did', 'doesn', 'has', 'have', 'had', 'it', 'its',

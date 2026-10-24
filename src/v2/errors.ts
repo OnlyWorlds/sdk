@@ -26,7 +26,7 @@ export class OwApiError extends Error {
   readonly code: string | null;
   /** Error family from the envelope, e.g. 'invalid_request', 'not_found'. */
   readonly type: string | null;
-  /** Offending field/param named by the envelope (a 422/400's field; `API-Pin` on a 401 PIN refusal, keel #357), else null. */
+  /** Offending field/param named by the envelope (a 422/400's field; `API-Pin` on a 401 PIN refusal), else null. */
   readonly param: string | null;
   /** Documentation link from the envelope -- show it to users/logs verbatim. */
   readonly docUrl: string | null;
@@ -82,8 +82,8 @@ export class OwApiError extends Error {
   }
 
   /**
-   * A request with this Idempotency-Key is still running (409 `idempotency_in_flight`, keel
-   * #307, D105): two sends of one create or bulk overlapped. Nothing was written by this one.
+   * A request with this Idempotency-Key is still running (409 `idempotency_in_flight`):
+   * two sends of one create or bulk overlapped. Nothing was written by this one.
    * Wait `retryAfter` seconds (keel sends 1) and send again with the SAME key and body: once
    * the first has answered, that retry replays its answer. Not a key conflict (see above).
    */
@@ -104,7 +104,7 @@ export class OwApiError extends Error {
   /**
    * `/changes` refused the cursor (409 `resync_required`): what this key may see changed
    * (a guest's slice moved; an element hidden from a contributor was unhidden; the key's role
-   * moved to or from guest or contributor, whose cursors have other shapes; keel #421). Drop
+   * moved to or from guest or contributor, whose cursors have other shapes). Drop
    * the stored cursor and walk again from the start. What to do with what the local copy holds
    * that the new walk does not name is `resyncReason`'s: `role`, keep it; `view`, drop it.
    * Without a reason (keel's hidden mark off), keep it: a reset never empties a copy (keel PR
@@ -116,7 +116,7 @@ export class OwApiError extends Error {
 
   /**
    * Why `/changes` refused the cursor, from the 409 `resync_required` envelope's `reason`
-   * (keel #421, only while keel's hidden mark is on): `role` (this key's own role or
+   * (only while keel's hidden mark is on): `role` (this key's own role or
    * membership moved: keep what the local copy holds that the new walk does not name; it is
    * out of view now, not gone) or `view` (something left this key's view: a delete, a hide, an
    * unhide, a Character change; drop what the new walk does not name). When both happened
@@ -157,7 +157,7 @@ export class OwApiError extends Error {
   }
 
   /**
-   * A member key sent `viewAs` (403 `view_as_owner_only`, keel #421): reading as another
+   * A member key sent `viewAs` (403 `view_as_owner_only`): reading as another
    * reader is the owner's, from a key with no member. Retrying will not help. Only while
    * keel's hidden mark is on; until then `viewAs` is an unknown parameter (422).
    */
@@ -178,7 +178,7 @@ export class OwApiError extends Error {
 
   /**
    * A `patch` or `editLinks` sent with `ifMatch` found the element moved past that
-   * `change_seq` (412 `precondition_failed`, keel #210): nothing was written and nothing
+   * `change_seq` (412 `precondition_failed`): nothing was written and nothing
    * merged. The error is an OwPreconditionFailedError; its `current` is the element as it
    * is now, so no second read is needed.
    */
@@ -192,7 +192,7 @@ export class OwApiError extends Error {
   }
 
   /**
-   * redeemJoin on a table (keel #422 PR 2): the picked Character is one a live seat in the
+   * redeemJoin on a table: the picked Character is one a live seat in the
    * world already plays (422 `character_taken`, `param` character). Pick another from a fresh
    * previewJoin, whose `characters` mark each `taken`. The code is not spent.
    */
@@ -201,7 +201,7 @@ export class OwApiError extends Error {
   }
 
   /**
-   * setMyCharacter, or the member PATCH's `character` (keel #421, PR 160): the picked Character is
+   * setMyCharacter, or the member PATCH's `character`: the picked Character is
    * hidden (422 `character_hidden`, `param` character). Unhide it first, or pick another.
    */
   get isCharacterHidden(): boolean {
@@ -210,7 +210,7 @@ export class OwApiError extends Error {
 
   /**
    * The `character` sent was refused (422 `invalid_request`, `param` character). On redeemJoin
-   * at a table (keel #422 PR 2): the pick is off the link's list, hidden or deleted since the
+   * at a table: the pick is off the link's list, hidden or deleted since the
    * link was made, or missing, or sent to a table with no list (send `name` instead); one
    * answer for all, so read previewJoin again and pick from its `characters`. The code is not
    * spent. On createWorldLink: a `character` keel refused (not a Character of the world, a
@@ -222,7 +222,7 @@ export class OwApiError extends Error {
   }
 
   /**
-   * redeemJoin (keel #422 PR 2): the world already has its 50 live players (422 `world_full`),
+   * redeemJoin: the world already has its 50 live players (422 `world_full`),
    * at any player link, a table's or a link for one's. Nothing is spent; a place frees when the
    * owner removes a player.
    */
@@ -242,7 +242,7 @@ export class OwApiError extends Error {
 
   /**
    * A daily allowance is used up (429 `quota_exceeded`): the world's image tickets, its file
-   * tickets (200 a day, keel #393), or the account's asks. See retryAfter.
+   * tickets (200 a day), or the account's asks. See retryAfter.
    */
   get isQuotaExceeded(): boolean {
     return this.status === 429 && this.code === 'quota_exceeded';
@@ -250,7 +250,7 @@ export class OwApiError extends Error {
 
   /**
    * createFileTicket / uploadFile: the file is over the 25 MB a file may be (413
-   * `file_too_large`, `param` size, keel #393); the message gives both sizes. Nothing was
+   * `file_too_large`, `param` size); the message gives both sizes. Nothing was
    * issued. Not the upload host's 413 `too_large` (bytes past a ticket's `max_bytes`).
    */
   get isFileTooLarge(): boolean {
@@ -259,7 +259,7 @@ export class OwApiError extends Error {
 
   /**
    * createFileTicket / uploadFile: the world's files have no room for this one (403
-   * `files_full`, keel #393: 250 MB a world); the message gives the world's use, its cap and
+   * `files_full`: 250 MB a world); the message gives the world's use, its cap and
    * the file's size. Remove a file, or ask the owner. Nothing was issued.
    */
   get isFilesFull(): boolean {
@@ -277,7 +277,7 @@ export class OwApiError extends Error {
   }
 
   /**
-   * patch, upsert or editLinks became a proposal (202, keel #519): the world takes an agent seat's
+   * patch, upsert or editLinks became a proposal (202): the world takes an agent seat's
    * writes as proposals (`agent_writes_proposed`), so the element did not change. The error is an
    * OwProposedError; its `proposal` is the row a keeper accepts or declines. Not a failure to retry:
    * the write is waiting for a person.
@@ -288,7 +288,7 @@ export class OwApiError extends Error {
 
   /**
    * propose named a field the proposer's own view of the element does not hold (422
-   * `field_not_visible`, `param` names it, keel #519): the element reaches this key only as a
+   * `field_not_visible`, `param` names it): the element reaches this key only as a
    * stub (known_of), and a proposal changes only what its proposer can read.
    */
   get isFieldNotVisible(): boolean {
@@ -297,7 +297,7 @@ export class OwApiError extends Error {
 
   /**
    * propose: this proposer already has 5 open proposals on the element, or 50 in the world (422
-   * `too_many_open`, keel #519). Wait for a keeper to decide, or withdraw one; a lapsed proposal
+   * `too_many_open`). Wait for a keeper to decide, or withdraw one; a lapsed proposal
    * no longer counts.
    */
   get isTooManyOpen(): boolean {
@@ -306,7 +306,7 @@ export class OwApiError extends Error {
 
   /**
    * acceptProposal found a proposed field moved since the proposal was made (409
-   * `stale_proposal`, keel #519). Nothing was written and the proposal stays open. The error is an
+   * `stale_proposal`). Nothing was written and the proposal stays open. The error is an
    * OwStaleProposalError: `conflicts` lists each moved field with its `base` and `current` values,
    * and `current` is the element as it is now. A change to a field the proposal does not name
    * does not count. The proposer proposes again on the current text.
@@ -316,17 +316,17 @@ export class OwApiError extends Error {
   }
 
   /**
-   * While the world takes agent seats' writes as proposals (keel #519), an agent seat's key tried
+   * While the world takes agent seats' writes as proposals, an agent seat's key tried
    * what it may not: delete an element it did not create, or accept or decline a proposal (403
-   * `proposed_only`). On any world, reviewNewElement by the member the mark names is the same 403
-   * (keel #565). Retrying will not help; a person decides.
+   * `proposed_only`). On any world, reviewNewElement by the member the mark names is the same 403.
+   * Retrying will not help; a person decides.
    */
   get isProposedOnly(): boolean {
     return this.status === 403 && this.code === 'proposed_only';
   }
 
   /**
-   * acceptProposal or declineProposal on the key's own proposal (403 `own_proposal`, keel #519):
+   * acceptProposal or declineProposal on the key's own proposal (403 `own_proposal`):
    * another keeper (the owner or a co-builder) decides it. Retrying will not help.
    */
   get isOwnProposal(): boolean {
@@ -334,8 +334,8 @@ export class OwApiError extends Error {
   }
 
   /**
-   * reviewNewElement on an element that carries no `x_review_proposed` mark (422 `not_proposed`,
-   * keel #565): nothing to settle. Someone settled it already, or it was never written as proposed.
+   * reviewNewElement on an element that carries no `x_review_proposed` mark (422 `not_proposed`):
+   * nothing to settle. Someone settled it already, or it was never written as proposed.
    */
   get isNotProposed(): boolean {
     return this.status === 422 && this.code === 'not_proposed';
@@ -343,7 +343,7 @@ export class OwApiError extends Error {
 }
 
 /**
- * 412 `precondition_failed` (keel #210): the element changed since the `change_seq` sent as
+ * 412 `precondition_failed`: the element changed since the `change_seq` sent as
  * `ifMatch`. `current` is the element as it is now, as this key sees it (keel sends it beside
  * the error envelope; null if a response ever lacks it). The check is per element and the
  * server never merges: compare the copy you edited from with `current`; when the fields you
@@ -371,7 +371,7 @@ export class OwPreconditionFailedError extends OwApiError {
 }
 
 /**
- * 409 `stale_proposal` (keel #519): acceptProposal found a proposed field moved since the
+ * 409 `stale_proposal`: acceptProposal found a proposed field moved since the
  * proposal was made. keel sends `conflicts` (one `{field, base, current}` per moved field) and
  * `current` (the element as it is now) beside the error envelope; `conflicts` is empty and
  * `current` null if a response ever lacks them. Nothing was written and the proposal stays open.
@@ -401,7 +401,7 @@ export class OwStaleProposalError extends OwApiError {
 }
 
 /**
- * 202 on patch, upsert or editLinks (keel #519): the world takes an agent seat's writes as
+ * 202 on patch, upsert or editLinks: the world takes an agent seat's writes as
  * proposals (`agent_writes_proposed`, set by its owner), so the write became a proposal and the
  * element did not change. The answer is `{proposal}`, never an element, so this client throws
  * rather than hand it back as one. `proposal` is the row; a keeper (the owner or a co-builder)

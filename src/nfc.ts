@@ -1,5 +1,5 @@
 /**
- * OW-18's NFC (Folder Format §4.7, serial 57; OW Council #656): Unicode
+ * OW-18's NFC (Folder Format §4.7, serial 57): Unicode
  * Normalization Form C at Unicode 15.1, built from that version's own
  * UnicodeData and CompositionExclusions (vendored under
  * `codegen/schema-dist/fixtures/owworld/`), never a runtime's

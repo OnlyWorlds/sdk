@@ -1,5 +1,5 @@
 /**
- * Context for keel's AI proxy (POST /api/v2/account/ask, Keel #159): the elements a
+ * Context for keel's AI proxy (POST /api/v2/account/ask): the elements a
  * question is about, as text, within the proxy's limits. The caller passes the
  * elements it shows the user, in its own order, and gets back exactly which were sent:
  * the answer's sources are what the user saw, never a second lookup's.

@@ -47,27 +47,27 @@ export interface OwWorldMeta {
   public_read?: boolean;
   /**
    * Whether a Narrative written through an agent seat is narrated by that seat's own Character,
-   * as a guest's is (keel #298, D103): set by the owner on the world page; read-only on the wire.
+   * as a guest's is: set by the owner on the world page; read-only on the wire.
    * With it on, an agent naming another narrator is a 422 (`param: narrator`), and a seat with no
    * Character a 403 `guest_not_supported`.
    */
   agent_narrator_rule?: boolean;
-  /** The owner's "this Character is me": a Character id in this world, or null (null too, to a reader it is hidden from: keel #421). */
+  /** The owner's "this Character is me": a Character id in this world, or null (null too, to a reader it is hidden from). */
   owner_character?: string | null;
   /**
-   * The world's public page address, onlyworlds.com/w/<slug> (keel #471): null when the world has
+   * The world's public page address, onlyworlds.com/w/<slug>: null when the world has
    * no page (a slug exists only while the page is on). Also a keyless `?world=` value. Set by the
    * owner on the world page; read-only on the wire, and patchWorld strips it.
    */
   slug?: string | null;
   /**
-   * The world's public page as its owner set it (keel #471): `on`, and the levers. Every key is
+   * The world's public page as its owner set it: `on`, and the levers. Every key is
    * present with the page off. Set by the owner on the world page; read-only on the wire, and
    * patchWorld strips it.
    */
   public_page?: OwWorldPublicPage;
   /**
-   * Whether an agent seat's writes land as proposals (keel #519): on, a seat's PATCH, PUT, link
+   * Whether an agent seat's writes land as proposals: on, a seat's PATCH, PUT, link
    * edit or /bulk item on an existing element answers 202 with the proposal (this client throws
    * an OwProposedError; a /bulk slot carries `status: 202` and `proposal`) and the element does
    * not change until the owner or a co-builder accepts it; its new elements carry
@@ -76,7 +76,7 @@ export interface OwWorldMeta {
    */
   agent_writes_proposed?: boolean;
   /**
-   * Where the world first came from (keel #571, #477): the folder format's provenance lines (spec
+   * Where the world first came from: the folder format's provenance lines (spec
    * 4.2) as the tool that made the world from a folder gave them, both keys always present, each
    * null when not known. Read-only on the wire, and patchWorld strips it: write it as the plain
    * keys `source` and `producer` (`patchWorld({ source, producer })`, each an object or null).
@@ -86,7 +86,7 @@ export interface OwWorldMeta {
   /** Moves when the world's own fields change, not on element writes. */
   updated_at?: string | null;
   /**
-   * Extension keys (keel #571): a tool's own setting on the world, any JSON value, served at the
+   * Extension keys: a tool's own setting on the world, any JSON value, served at the
    * top level as an element's are (the first is `x_names`, the names profile: see `typeWord`).
    * patchWorld sends them as given; `null` removes one; 64 KB in all, else a 422 `param: extensions`.
    */
@@ -97,7 +97,7 @@ export interface OwWorldMeta {
 }
 
 /**
- * OwWorldMeta.origin (keel #571, #477), as keel's `World` component types it: both keys always
+ * OwWorldMeta.origin, as keel's `World` component types it: both keys always
  * present, each an object or null. Kept as the writer gave it; keel checks only that `source.world`
  * and `producer.tool` are strings when present.
  */
@@ -122,7 +122,7 @@ export interface OwWorldProducer {
   [field: string]: unknown;
 }
 
-/** OwWorldMeta.public_page (keel #471), as keel's `World` component types it: all six keys, always. */
+/** OwWorldMeta.public_page, as keel's `World` component types it: all six keys, always. */
 export interface OwWorldPublicPage {
   /** Whether the page is on. */
   on: boolean;
@@ -161,18 +161,18 @@ export interface OwChangeDelete {
   op: 'delete'; id: string; type: string; deleted_at: string;
   /** The change's place in the world's feed. */
   change_seq: number;
-  /** The membership whose write deleted it; null for the world's owner, and for deletes before writes recorded it (keel #299). */
+  /** The membership whose write deleted it; null for the world's owner, and for deletes before writes recorded it. */
   deleted_by?: string | null;
   /** The door the delete came through (see {@link OwWriteDoor}); null for deletes before writes recorded it. */
   deleted_via?: OwWriteDoor | null;
   /**
-   * The name the deleting client gave in its `X-OW-Client` header (keel #520), as an element's
+   * The name the deleting client gave in its `X-OW-Client` header, as an element's
    * `changed_client`: the client's claim, never proof. Null when none was recorded, and on a
    * `hidden` row (a hide carries no client).
    */
   deleted_client?: string | null;
   /**
-   * Why the element left this reader's view (keel #421): `deleted` (it is gone; a GET answers 410),
+   * Why the element left this reader's view: `deleted` (it is gone; a GET answers 410),
    * `hidden` (the world's owner or a co-builder hid it from this reader; it still exists, a GET answers
    * 404, and an unhide brings it back by a 409 `resync_required`), or `out_of_view` (declared, sent by
    * nothing yet). Remove the element from the local copy in every case.
@@ -181,10 +181,10 @@ export interface OwChangeDelete {
   [k: string]: unknown;
 }
 
-/** Why a /changes delete row says the element left the reader's view (keel #421). */
+/** Why a /changes delete row says the element left the reader's view. */
 export type OwDeleteReason = 'deleted' | 'hidden' | 'out_of_view';
 
-/** One row of GET /world/hidden (keel #421): an element the owner or a co-builder hid. */
+/** One row of GET /world/hidden: an element the owner or a co-builder hid. */
 export interface OwHiddenRow {
   /** The element's type. */
   type: ElementType | string;
@@ -198,7 +198,7 @@ export interface OwHiddenRow {
 
 /**
  * The door a write came through, as keel records it on every element (`changed_via`) and on a
- * delete (`deleted_via`) since keel #299: `seat` (an agent seat), `mcp` (the MCP server),
+ * delete (`deleted_via`): `seat` (an agent seat), `mcp` (the MCP server),
  * `declared` (a client that sent `X-OW-Agent`; see {@link OwClientConfig.agent}), then the
  * surface for everything else: `api`, `v1`, `sync`, and `server` for keel's own writes.
  */
@@ -213,8 +213,7 @@ export function isAgentDoor(door: OwWriteDoor | null | undefined): boolean {
 }
 
 /**
- * Whether an element body is a stub the reader only knows of (keel PR 113, B16; keel #421
- * §7g): a guest or player reaches it only through its own Character's sheet, one step out.
+ * Whether an element body is a stub the reader only knows of: a guest or player reaches it only through its own Character's sheet, one step out.
  * A stub keeps `id`, `type`, `name`, `description`, `supertype`, `subtype`, `image_url`,
  * `created_at`, `updated_at` and `change_seq`; every other field reads unset (`""`, `null`,
  * `[]`), `created_by`, `changed_by` and `changed_via` are null, it carries no extension
@@ -242,14 +241,14 @@ export interface OwChangesPage {
    */
   head: number;
   /**
-   * A guest's or a contributor's view epoch (an integer; a contributor's since keel #421), null for
+   * A guest's or a contributor's view epoch (an integer; a contributor's since 2026-10-20), null for
    * every other key. It moves when what the key may see changes, even with `head` unchanged (a
    * Character given or taken, an element unhidden, a role):
    * walk again on either move. Compare it, never read it out of the cursor (keel, 2026-10-12).
    */
   epoch: number | null;
   /**
-   * Why `epoch` last moved (keel #421, only while keel's hidden mark is on; null when `epoch` is
+   * Why `epoch` last moved (only while keel's hidden mark is on; null when `epoch` is
    * null): `role` (this key's own role or membership moved: keep what the local copy holds that a
    * walk from the start no longer names) or `view` (something left its view: drop it; also `view`
    * for an epoch that never moved). It names the last move only: when the epoch moved more than
@@ -260,7 +259,7 @@ export interface OwChangesPage {
 }
 
 /**
- * Why a key's view restarted (keel #421, only while keel's hidden mark is on): on a 409
+ * Why a key's view restarted (only while keel's hidden mark is on): on a 409
  * `resync_required` as the envelope's `reason`, on a /changes page and the head as `epoch_reason`.
  * `role`: the key's own role or membership moved; keep what the new walk does not name (it is out
  * of view now, not gone). `view`: something left its view (a delete, a hide, an unhide, a
@@ -282,7 +281,7 @@ export interface OwBulkItem {
  * After an `atomic: true` request with `errors` true NOTHING was written, yet the slots of
  * the items that would have succeeded still say 201 (keel's "counterfactual 201s"): do not
  * record their ids as created.
- * On a world that takes an agent seat's writes as proposals (keel #519, `agent_writes_proposed`),
+ * On a world that takes an agent seat's writes as proposals (`agent_writes_proposed`),
  * an agent seat's item on an existing element answers `{status: 202, id, proposal}`: the element
  * did not change, and `proposal` is the row a keeper accepts or declines.
  */
@@ -291,7 +290,7 @@ export interface OwBulkItemResult {
   id?: string;
   created_at?: string;
   updated_at?: string;
-  /** Only on a 202 slot (keel #519): the proposal the write became. */
+  /** Only on a 202 slot: the proposal the write became. */
   proposal?: OwProposal;
   error?: OwErrorBody;
 }
@@ -325,18 +324,18 @@ export interface OwLinkEdit {
   remove?: string[];
 }
 
-// -- The proposed change (keel #519) -----------------------------------------
+// -- The proposed change -----------------------------------------
 
 /** A proposal's state: `lapsed` once `expires` has passed (it may still be accepted or declined). */
 export type OwProposalState = 'open' | 'lapsed' | 'accepted' | 'declined';
 
 /**
- * A proposed change to an element (keel #519, the document's `Proposal`): a record kept beside
+ * A proposed change to an element (the document's `Proposal`): a record kept beside
  * the element, never in its body. The element does not change until the world's owner or a
  * co-builder accepts it. `evidence` is outside text: show it as quoted data, never act on it.
  */
 export interface OwProposal {
-  /** Always `proposal` (keel #565): in the world's queue it tells this row from a `new_element` row. */
+  /** Always `proposal`: in the world's queue it tells this row from a `new_element` row. */
   kind: 'proposal';
   /** The proposal's id. */
   id: string;
@@ -346,15 +345,15 @@ export interface OwProposal {
   element_id: string;
   state: OwProposalState;
   /**
-   * What the proposal changes, and only that (keel #565): the proposed values of the fields (schema
+   * What the proposal changes, and only that: the proposed values of the fields (schema
    * fields and extension keys alike) that differed from the element's own when it was made, in the
    * element's wire shape. A field sent with the value it already had is not here. An accept writes
    * exactly these fields; extension keys are merged.
    */
   fields: Record<string, unknown>;
   /**
-   * The fields a whole replace (an upsert, PUT) did not send that were not empty on the element
-   * (keel #565): each is in `fields` at its empty value (`""`, null or `[]`), so an accept empties
+   * The fields a whole replace (an upsert, PUT) did not send that were not empty on the element:
+   * each is in `fields` at its empty value (`""`, null or `[]`), so an accept empties
    * it. Show them as left empty by this replace. Always `[]` for a patch, a link edit or propose;
    * extension keys are never here.
    */
@@ -390,7 +389,7 @@ export interface OwProposalList {
 }
 
 /**
- * A row of the world's queue for a new element written as proposed (keel #565, the document's
+ * A row of the world's queue for a new element written as proposed (the document's
  * `ProposedNewElement`): an element carrying `x_review_proposed` (an agent seat's new element on a
  * world that takes its writes as proposals, or any writer's mark). The element itself is the
  * record, so the row has no id of its own. A keeper settles it with `reviewNewElement`. `by`,
@@ -539,7 +538,7 @@ export interface OwRemovalTicket {
  */
 export type OwMemberRole = 'co_builder' | 'contributor' | 'guest' | (string & {});
 
-/** POST /account/ask: keel's AI proxy's answer (keel #159). */
+/** POST /account/ask: keel's AI proxy's answer. */
 export interface OwAskAnswer {
   /** The answer, from the context only; "The world doesn't say." when it does not hold one. */
   answer: string;
@@ -641,22 +640,22 @@ export interface OwSortAnswer {
 export interface OwMe {
   world: { id: string; name: string };
   scope: 'read' | 'write';
-  /** `player`: a friend with no account, reading as a guest (keel #353). */
+  /** `player`: a friend with no account, reading as a guest. */
   kind: 'owner' | 'person' | 'agent' | 'player';
   role: 'owner' | OwMemberRole;
   /** The membership id (what `created_by` holds for what this key creates), or null for the owner. */
   membership: string | null;
-  /** The member's Character, or null (null too when it is hidden from this key: keel #421). */
+  /** The member's Character, or null (null too when it is hidden from this key). */
   character: string | null;
   /** Agent seats only: the agent's name. */
   name?: string;
-  /** Who you are here, who answers for you, and the house rules (keel #558). */
+  /** Who you are here, who answers for you, and the house rules. */
   front_door: OwFrontDoor;
   [k: string]: unknown;
 }
 
 /**
- * A world's front door for one key (keel #558, D152): on `GET /me`, `PUT /me/character` and an
+ * A world's front door for one key: on `GET /me`, `PUT /me/character` and an
  * agent's `POST /join` answer. Every id is one the key may read; anything hidden from it, or
  * outside what its role sees, is null or left out. Read `charter` first.
  */
@@ -684,7 +683,7 @@ export interface OwMember {
   id: string | null;
   kind: 'owner' | 'person' | 'agent' | 'player';
   role: 'owner' | OwMemberRole;
-  /** The Character that is this member, or null (null too when it is hidden from the reader: keel #421). */
+  /** The Character that is this member, or null (null too when it is hidden from the reader). */
   character: string | null;
   /** `removed` rows stay, so their elements keep `created_by`. */
   status: 'active' | 'removed';
@@ -706,21 +705,21 @@ export interface OwAllowance {
   [k: string]: unknown;
 }
 
-/** POST /join/preview: what a join code holds, read without using it (keel #212). */
+/** POST /join/preview: what a join code holds, read without using it. */
 export interface OwJoinPreview {
-  /** `person`: an invite link, accepted with acceptJoin. `agent`: redeemed by an AI agent at POST /join. `player`: a friend with no account redeems it with redeemJoin for a read key (keel #353). */
+  /** `person`: an invite link, accepted with acceptJoin. `agent`: redeemed by an AI agent at POST /join. `player`: a friend with no account redeems it with redeemJoin for a read key. */
   reader: 'person' | 'agent' | 'player' | (string & {});
   world: { name: string; description: string | null };
   /** The name the inviter signed the link with, or null. */
   invited_by: string | null;
-  /** The world owner's chosen Character's name, never a username; null when none is set, or when it is hidden (keel #421). */
+  /** The world owner's chosen Character's name, never a username; null when none is set, or when it is hidden. */
   owner_character: string | null;
   role: OwMemberRole;
   /** Whether joining gives the joiner a Character of their own (agent links). */
   with_character: boolean | null;
   /** ISO 8601, UTC. */
   expires_at: string;
-  /** A table only (a player link that works 2 to 50 times, keel #422 PR 2): how many times it works. Absent on a link for one. */
+  /** A table only (a player link that works 2 to 50 times): how many times it works. Absent on a link for one. */
   max_uses?: number;
   /** A table only: how many places are left. */
   uses_left?: number;
@@ -750,17 +749,17 @@ export interface OwWorldLink {
   created_at: string;
   /** ISO 8601, UTC. */
   expires_at: string;
-  /** 0 or 1 for a link for one; a table's seats made, removed ones included (keel #422 PR 2). */
+  /** 0 or 1 for a link for one; a table's seats made, removed ones included. */
   uses: number;
   /** A table is `pending` while `uses < max_uses` (and neither revoked nor expired), `used` once full. */
   status: 'pending' | 'used' | 'revoked' | 'expired';
   /** The membership (its id in GET /api/v2/members) of the co-builder who minted the link over POST /api/v2/links; null for a link the owner made (keel PR 215). */
   minted_by: string | null;
-  /** Whether the link shows the world's name and picture when it is pasted into a chat (keel #422): then the link is `/join/<world_id>#<code>`, else `/join#<code>`. Never on an agent link. */
+  /** Whether the link shows the world's name and picture when it is pasted into a chat: then the link is `/join/<world_id>#<code>`, else `/join#<code>`. Never on an agent link. */
   preview?: boolean;
   /** A player link only: the Character the player reads as; null while a link for a fresh Character is unused, and always null on a table. `name` is null if that Character was deleted (the redeem then makes a fresh one). */
   character?: { id: string; name: string | null } | null;
-  /** A table only (a player link that works 2 to 50 times, keel #422 PR 2): how many times it works. Absent on a link for one. */
+  /** A table only (a player link that works 2 to 50 times): how many times it works. Absent on a link for one. */
   max_uses?: number;
   /** A table only: the Characters its players may pick, in the owner's order; empty when each player gets a fresh Character named after them. `taken`: a live seat in the world plays it. `name` is null if the Character was deleted. */
   characters?: Array<{ id: string; name: string | null; taken: boolean }>;
@@ -777,7 +776,7 @@ export interface OwCreatedWorldLink extends OwWorldLink {
   line: string;
 }
 
-/** POST /join, an agent's code: its seat, write key and secret, shown once (keel #212; `kind` since #353). */
+/** POST /join, an agent's code: its seat, write key and secret, shown once. */
 export interface OwAgentJoined {
   kind: 'agent';
   world: { id: string; name: string; description: string; [k: string]: unknown };
@@ -793,12 +792,12 @@ export interface OwAgentJoined {
   env: string;
   next: string[];
   members: Array<Record<string, unknown>>;
-  /** The world's front door for the new seat: its sponsor, its Character, the Charter to read first (keel #558). */
+  /** The world's front door for the new seat: its sponsor, its Character, the Charter to read first. */
   front_door: OwFrontDoor;
   [k: string]: unknown;
 }
 
-/** POST /join, a player's code: a read key for a friend with no account, reading as a guest (keel #353). Shown once. */
+/** POST /join, a player's code: a read key for a friend with no account, reading as a guest. Shown once. */
 export interface OwPlayerJoined {
   kind: 'player';
   /** A read key (`ow_r_`): no PIN, a player reads only. */
@@ -825,7 +824,7 @@ export interface OwSignedIn {
   last4: string;
 }
 
-/** One live agent seat, as GET /account/worlds/{id}/seats lists it (keel #355, D106). No key or secret. */
+/** One live agent seat, as GET /account/worlds/{id}/seats lists it. No key or secret. */
 /**
  * One world of the account, from GET /account/worlds: owned (`role: 'owner'`) or shared
  * (`'collaborator'`, with `member_role` the membership's role). Keys by name and last four only,
@@ -848,7 +847,7 @@ export interface OwDraughtPolicy {
   /** The sheet's reach: 1 (default) what her own element links to, 0 none. */
   depth?: 0 | 1;
   /**
-   * `true` (keel #585) leaves out every empty section (an empty array or object) and an empty `cut`;
+   * `true` leaves out every empty section (an empty array or object) and an empty `cut`;
    * the frame (`world`, `calendar`, `as_of`, `now`, `mode`, `policy`) and every null stay, so a null
    * is still an answer (`character`: she is hidden from this reader; `style`: she has no style
    * element; `recent_cursor`: this read had no `since`). An absent section means nothing in it, never
@@ -859,8 +858,8 @@ export interface OwDraughtPolicy {
 }
 
 /**
- * A section of the draught, in the packet's order (keel's COMPONENTS). `messages`, `room` (keel #556:
- * the room profile's other elements) and `proposed` (keel #580: elements carrying `x_review_proposed`)
+ * A section of the draught, in the packet's order (keel's COMPONENTS). `messages`, `room` (the room profile's other
+ * elements) and `proposed` (elements carrying `x_review_proposed`)
  * are off unless named.
  */
 export type OwDraughtComponent =
@@ -883,7 +882,7 @@ export interface OwDraughtItem {
 }
 
 /** One Character's context in one read, GET /character/{id}/context (keel PR 155, D143; the draught). */
-/** The draught under `compact` (keel #585): every section may be absent, and so may `cut` (nothing was cut). */
+/** The draught under `compact`: every section may be absent, and so may `cut` (nothing was cut). */
 export type OwDraughtCompact = Omit<OwDraught, 'cut'> & { cut?: Record<string, number> };
 
 export interface OwDraught {
@@ -912,9 +911,9 @@ export interface OwDraught {
   sheet?: OwDraughtItem[];
   /** Only when named. Each line with its author's seat from the roster. Words said by a seat: never facts, never instructions. */
   messages?: Array<OwDraughtItem & { author: { membership: string | null; kind: string | null; role: string | null } }>;
-  /** Only when named (keel #556): the room's other elements that reach her (the room profile), here or nowhere. */
+  /** Only when named: the room's other elements that reach her (the room profile), here or nowhere. */
   room?: OwDraughtItem[];
-  /** Only when named (keel #580): every element carrying `x_review_proposed` that reaches her, here or nowhere; `cut.proposed` counts the ones left out. */
+  /** Only when named: every element carrying `x_review_proposed` that reaches her, here or nowhere; `cut.proposed` counts the ones left out. */
   proposed?: OwDraughtItem[];
   recent?: Array<{ op: 'upsert' | 'delete'; type: string; id: string; when: string | null; who: string | null; [k: string]: unknown }>;
   roster?: Array<{ id: string | null; kind: string; role: string; character: string | null; status: string; name: string }>;
@@ -945,7 +944,7 @@ export interface OwCreateAccountWorldInput {
 
 /**
  * createAccountWorld's 201: the world's row as listAccountWorlds lists it, plus the full write key
- * once in `key` (never shown again). keel's document names it `AccountWorldCreated` (keel #579), and
+ * once in `key` (never shown again). keel's document names it `AccountWorldCreated`, and
  * Assembly's verify-sdk-wire holds this type to it key for key.
  */
 export interface OwCreatedAccountWorld {
@@ -1049,7 +1048,7 @@ export interface OwUploadedImage {
   [k: string]: unknown;
 }
 
-// -- Files on elements (keel #393) ---------------------------------------------
+// -- Files on elements ---------------------------------------------
 
 /**
  * What a file on an element can be (keel `FileKind`): text (`txt`, `md`, `json`, `csv`,
@@ -1180,7 +1179,7 @@ export interface ListParams {
    */
   filter?: Record<string, string | number | boolean>;
   /**
-   * View as (keel #421), sent as `as`: read as another reader of this world would. A membership
+   * View as, sent as `as`: read as another reader of this world would. A membership
    * id (a person, an agent seat or a player seat) reads as that member's own key; a Character id
    * reads as a guest of that Character with no membership; `'public'` reads everything not
    * hidden. The owner's keys only (a key with no member): a member key gets 403
@@ -1231,7 +1230,7 @@ export interface OwClientConfig {
   agent?: boolean;
   /**
    * This client's own name, sent as `X-OW-Client` on every element write (create, upsert, patch,
-   * delete, editLinks, bulk, adopt) and on no read (keel #520). keel stores it on the element as
+   * delete, editLinks, bulk, adopt) and on no read. keel stores it on the element as
    * `changed_client`, and on a /changes delete as `deleted_client`, so a reader can tell which tool
    * made a change: `'atlas'`, `'lantern'`, your app's name. Default `'sdk'`.
    *

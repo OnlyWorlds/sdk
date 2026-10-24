@@ -2,9 +2,9 @@
  * Field labels: the one rule for turning a field name into the words a tool shows.
  *
  * Presentation, not the standard: the schema never carries a label. The house rule
- * (OW Style, the Captain 2026-10-20, h63 #8074; Studio/style/RULES.md) is sentence case
+ * (set 2026-10-20) is sentence case
  * with acronyms kept: "birth_date" → "Birth date", "image_url" → "Image URL". Seeded
- * from Atlas's humanizeFieldName as of 1.59.1 (Temper, h63 #8119), so Atlas, Lantern
+ * from Atlas's humanizeFieldName as of 1.59.1, so Atlas, Lantern
  * and Council read one copy instead of three.
  */
 
@@ -20,7 +20,7 @@ const ACRONYM_SET = new Set(FIELD_ACRONYMS);
  * lowercase, an acronym in capitals wherever it falls ("image_url" → "Image URL",
  * "url" → "URL", "time_range_current" → "Time range current"). A word written all in
  * capitals stays as written: a custom field named `STR` reads "STR"
- * (Lantern's stat blocks; Temper, h63 #8197). Every schema field name is lowercase, so this
+ * (Lantern's stat blocks). Every schema field name is lowercase, so this
  * reaches only names a person or tool chose.
  *
  * The name is taken as given: a tool that hides an extension prefix (`atlas_`, `x_`,

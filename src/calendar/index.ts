@@ -2,7 +2,7 @@
  * World calendars: the calendar kernel, and which calendars a world holds.
  *
  * `calendar.ts` beside this file came from Atlas's `src/core/calendar.ts` in 4.20.0, and is
- * the one copy since Atlas 245aad3 deleted its own and imports this one (Temper, h37 #4472):
+ * the one copy since Atlas 245aad3 deleted its own and imports this one:
  * a kernel change is an SDK release, and Atlas's 48 kernel tests run against it there too.
  * Its contract is still Atlas's calendar design, §5 and §5b. This file adapts Atlas's
  * `src/core/calendar-lens.ts` (readCalendarValue, worldCalendars, resolveCalendarLens) to
@@ -10,7 +10,7 @@
  *
  * The field: a calendar is an element (a Construct by convention) carrying `atlas_calendar`.
  * Atlas owns the field, its meaning and its writes (its calendar design, §5 and §5b); every
- * other tool reads it and never writes it (Skeld, h37 #4286: a prefix names the owner, not
+ * other tool reads it and never writes it (a prefix names the owner, not
  * who may read). Detection keys on the field's presence, never on the supertype.
  * Everything degrades to bare numbers: a missing, dangling or malformed calendar is null,
  * never an error.

@@ -4,7 +4,7 @@
  * the reader that opens one back. Absorbed from Atlas's
  * `src/store/world-file.ts` (Temper's, Atlas 1.17), so Atlas, Lantern and any
  * script read one file the same way; brought to §4.7's checks OW-1 to OW-22
- * and their fixture set (OW Council #522).
+ * and their fixture set.
  *
  * THE READER takes bytes and returns bytes: no DOM, `File` or file system, so
  * it runs in a browser and in Node alike. It reads the central directory
@@ -159,8 +159,8 @@ function isJunk(path: string): boolean {
 
 /**
  * Unicode's simple case folding as the table says it: the C and S rows of
- * CaseFolding.txt at Unicode 15.1 (Skeld's ruling for OW-18, OW Council
- * #9830), never a runtime's casing, so a fold a newer Unicode adds stays out
+ * CaseFolding.txt at Unicode 15.1 (Skeld's ruling for OW-18),
+ * never a runtime's casing, so a fold a newer Unicode adds stays out
  * until the pin moves. Runs of `start.count.stride.delta` in base 36 (an empty
  * count or stride is 1), made by `codegen/fold_runs.mjs` from
  * the schema dist's `fixtures/owworld/CaseFolding-15.1.0.txt` (vendored under

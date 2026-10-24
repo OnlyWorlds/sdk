@@ -41,9 +41,9 @@ export class OwV2Client {
   private readonly apiPin: string | undefined;
   private readonly fetchImpl: typeof globalThis.fetch;
   private readonly agent: boolean;
-  /** The name sent as X-OW-Client on element writes (keel #520), checked at construction. */
+  /** The name sent as X-OW-Client on element writes, checked at construction. */
   private readonly clientName: string;
-  /** The conditional head poll's state (keel #518), per instance. */
+  /** The conditional head poll's state, per instance. */
   private readonly headPoll = new HeadPollState();
 
   constructor(config: OwClientConfig = {}) {
@@ -83,9 +83,9 @@ export class OwV2Client {
   /**
    * PATCH /world -- partial world-meta update. The element write's server-managed keys are
    * stripped, and so are the world's own read-only ones (WORLD_READ_ONLY_FIELDS: `slug` and
-   * `public_page`, keel #471; `agent_writes_proposed`, keel #519; set on the world page, not here;
-   * `origin`, keel #571; `id`), so a `getWorld()` body can be sent back. The world's origin is
-   * written as `source` and `producer` (keel #571, each an object or null, served under `origin`);
+   * `public_page`; `agent_writes_proposed`; set on the world page, not here;
+   * `origin`; `id`), so a `getWorld()` body can be sent back. The world's origin is
+   * written as `source` and `producer` (each an object or null, served under `origin`);
    * extension keys (`x_*`, `atlas_*`, `shadow_*`) are sent as given, and `null` removes one.
    */
   async patchWorld(partial: Record<string, unknown>): Promise<OwWorldMeta> {
@@ -103,8 +103,8 @@ export class OwV2Client {
    * token is a TypeError before sending.
    */
   /**
-   * PUT /me/character -- pick the roster Character that is you in this world, or none (keel PR 160,
-   * #533). A person member's write key with its PIN; answers GET /me's body. 422 for a hidden
+   * PUT /me/character -- pick the roster Character that is you in this world, or none.
+   * A person member's write key with its PIN; answers GET /me's body. 422 for a hidden
    * Character (`character_hidden`, `err.isCharacterHidden`), a guest's pick it did not make, or a
    * taken Character (`invalid_request`, `param` character); 404 for one this key cannot see; 403 for
    * an agent seat, a player, the owner (whose own is the world's `owner_character`, set with
@@ -160,15 +160,15 @@ export class OwV2Client {
    * recorded world holds it, in one read: her element, what she holds and sits in, her open work,
    * how she works, the Events she was in, the Narratives she knows, everything else that names
    * her, her sheet, what changed around her (`since`), and who plays whom; the world's name and
-   * calendar beside; the room's messages (`messages`), its other elements (`room`, keel #556) and
-   * elements written as proposed (`proposed`, keel #580) only when `components` names them. Each
+   * calendar beside; the room's messages (`messages`), its other elements (`room`) and
+   * elements written as proposed (`proposed`) only when `components` names them. Each
    * row carries the list route's body for the same reader as `element`, beside `via`, `her_links`
    * and `grade`; nothing is inferred. The owner's keys, co-builders and contributors for any
    * Character they can see; a player seat or a guest for its own Character only (another id is
    * 404). `asOf` is a filter on the elements' own dates, not time travel. A `cut` that is not
    * empty means the serving is partial (`cut.proposed` also counts proposed elements left out because
    * the component was not named). `compact: true` leaves out every empty section and an empty `cut`,
-   * the frame and every null kept, answered as `OwDraughtCompact` (keel #585). Served
+   * the frame and every null kept, answered as `OwDraughtCompact`. Served
    * `Cache-Control: private, no-store`.
    */
   draught(characterId: string, policy?: OwDraughtPolicy & { compact?: false }): Promise<OwDraught>;
@@ -204,8 +204,8 @@ export class OwV2Client {
   }
 
   /**
-   * GET /{type}/{id}/ -- optional one-level stub expansion / sparse fields, and `viewAs` (keel
-   * #421: the owner reads as another reader; see ListParams.viewAs).
+   * GET /{type}/{id}/ -- optional one-level stub expansion / sparse fields, and `viewAs` (the owner reads as
+   * another reader; see ListParams.viewAs).
    */
   async get(type: ElementType | string, id: string, opts: Pick<ListParams, 'expand' | 'fields' | 'viewAs'> = {}): Promise<OwElement> {
     only('get', opts, ['expand', 'fields', 'viewAs']);
@@ -242,8 +242,8 @@ export class OwV2Client {
    * PUT /{type}/{id}/ -- upsert-by-client-id. The local-first write primitive. A known-of
    * stub (`known_of: true`, see isKnownOf) is a TypeError before sending, here and on every
    * element write: a PUT of one would blank every field it does not keep.
-   * An agent seat's PUT on an existing element, in a world that takes its writes as proposals
-   * (keel #519), answers 202 and is thrown as an OwProposedError: the element did not change.
+   * An agent seat's PUT on an existing element, in a world that takes its writes as proposals,
+   * answers 202 and is thrown as an OwProposedError: the element did not change.
    */
   async upsert(type: ElementType | string, id: string, element: OwElement | Record<string, unknown>): Promise<OwElement> {
     refuseKnownOf(element, 'upsert');
@@ -255,12 +255,12 @@ export class OwV2Client {
    * replace wholesale, omitted fields stay untouched. For link arrays prefer
    * editLinks() -- atomic server-side merge, no read-before-write.
    *
-   * `ifMatch` (keel #210): the element's `change_seq` as you read it. The update lands
+   * `ifMatch`: the element's `change_seq` as you read it. The update lands
    * only if nobody changed the element since; otherwise nothing is written and this throws
    * an OwPreconditionFailedError (412) whose `current` is the element as it is now. Omit
    * it for today's unconditional write.
    *
-   * In a world that takes an agent seat's writes as proposals (keel #519, the world's
+   * In a world that takes an agent seat's writes as proposals (the world's
    * `agent_writes_proposed`), a seat's patch answers 202 with `{proposal}`, never an element:
    * this throws an OwProposedError (`err.isProposed`, the row under `err.proposal`) and the
    * element did not change. If-Match is checked first: a stale one is still a 412.
@@ -281,7 +281,7 @@ export class OwV2Client {
    * tombstone AND scrubs the id from every other element's links in the same
    * transaction -- no client-side unlink pass needed, ever.
    *
-   * `ifMatch` (keel #563, as on patch()): the element's `change_seq` as you read it. The delete
+   * `ifMatch` (as on patch()): the element's `change_seq` as you read it. The delete
    * lands only if nothing changed since; otherwise an OwPreconditionFailedError (412) whose
    * `current` is the element as it is now, and nothing is deleted. On an element already gone it
    * is the idempotent 204. Under a world's proposals switch a delete is never a proposal.
@@ -296,8 +296,8 @@ export class OwV2Client {
    * Dedupes, tolerates already-present/already-absent ids. Returns the FULL
    * updated element (fixture P5). Use this for all relationship editing; it
    * retires the read-merge-PATCH dance. `ifMatch` works as on patch(): a link write
-   * moves the element too. A 202 (an agent seat's link edit that became a proposal, keel
-   * #519) is thrown as an OwProposedError, as on patch().
+   * moves the element too. A 202 (an agent seat's link edit that became a proposal)
+   * is thrown as an OwProposedError, as on patch().
    */
   async editLinks(
     type: ElementType | string,
@@ -312,7 +312,7 @@ export class OwV2Client {
   }
 
   /**
-   * POST /{type}/{id}/adopt with {member} -- change who made an element (keel #427, D141).
+   * POST /{type}/{id}/adopt with {member} -- change who made an element.
    * `member` is a membership id of this world (a person or an AI seat, as `members()` lists
    * them) or `'owner'`, which sets `created_by` to null. The world's owner key or a
    * co-builder's (a person's or a seat's) with its PIN; a contributor's is 403 `not_author`
@@ -342,7 +342,7 @@ export class OwV2Client {
    * the items that would have succeeded still say 201 with the ids and timestamps they
    * would have had (keel's "counterfactual 201s"): do not record those ids as created.
    * An agent seat's item on an existing element, in a world that takes its writes as
-   * proposals (keel #519), answers a slot `{status: 202, id, proposal}`: never thrown, the
+   * proposals, answers a slot `{status: 202, id, proposal}`: never thrown, the
    * element unchanged, the slot's `proposal` the row a keeper decides.
    * An element without an id gets one, as `create` mints it, by its position in `items`: with an
    * `idempotencyKey`, derived from the key and the position (the ids the Python package mints),
@@ -378,18 +378,18 @@ export class OwV2Client {
   /**
    * GET /changes -- one page of the world's ordered change feed.
    * Cursor is OPAQUE: persist verbatim, never parse or build one (a guest's and a
-   * contributor's carry their view's epoch, since keel #421 for a contributor).
+   * contributor's carry their view's epoch, since 2026-10-20 for a contributor).
    * Zero/absent cursor = full export (byte-aligned with the Folder Format).
    * Reset rule: a 409 `resync_required` (err.isResyncRequired) means the key's
    * view changed (a guest's slice, an element unhidden from a contributor, or its role): drop
    * the cursor and walk from zero. For what the local copy holds that the walk no longer names,
-   * read err.resyncReason (keel #421, while keel's hidden mark is on): `role`, keep it; `view`,
+   * read err.resyncReason (while keel's hidden mark is on): `role`, keep it; `view`,
    * drop it (as for a delete row with reason `hidden`). Without a reason, keep it (keel's own
    * words since PR 104; sharing is forward-only). Never empty a copy on your own.
    * Citizenship: heaviest route on the platform; default page size is polite.
    * keel sends the cursor of a page at the head as a number (an empty page, for a key
    * whose cursor carries no epoch); it is handed back as a string, like every cursor here.
-   * `after` (keel #514, D142): only the changes made at or after an ISO 8601 time (`updated_at` of an
+   * `after`: only the changes made at or after an ISO 8601 time (`updated_at` of an
    * upsert, `deleted_at` of a delete; no offset means UTC). A filter, not a position: the order,
    * `cursor`, `has_more` and `head` are as without it, so to read the whole window pass the cursor
    * back as `since` with the same `after` until `has_more` is false (`changesAll` does). "Since
@@ -411,12 +411,12 @@ export class OwV2Client {
    * poll's, so a missed tick never drops a change) and walk changesAll only when it moved;
    * a head below yours means the server rewound: walk again from zero. `epoch` is a
    * guest's or a contributor's view epoch (null for other keys): it can move with `head` unchanged, so walk on
-   * either move. `epoch_reason` (keel #421, while keel's hidden mark is on; absent otherwise)
+   * either move. `epoch_reason` (while keel's hidden mark is on; absent otherwise)
    * says why the epoch last moved, `role` or `view` (see OwChangesPage.epoch_reason).
    * keel returns the owner's cursor as a number; it is handed back as a
    * string, like every cursor here.
    *
-   * Conditional (keel #518, 4.57.0): keel tags the answer with an ETag that covers the head and
+   * Conditional (4.57.0): keel tags the answer with an ETag that covers the head and
    * the epoch, so a view change moves it too. The client keeps the last tag and sends it as
    * If-None-Match on its next head read. When nothing moved, keel answers 304 with no body, and
    * this returns the `head`, `cursor` and `epoch` from the last 200 with `unchanged: true`
@@ -565,7 +565,7 @@ export class OwV2Client {
     return await res.json() as OwRemovedImage;
   }
 
-  // -- Files on elements (keel #393) ---------------------------------------------
+  // -- Files on elements ---------------------------------------------
 
   /**
    * GET /{type}/{id}/files -- the element's files, newest first: each with its name, kind,
@@ -725,7 +725,7 @@ export class OwV2Client {
     await this.request('DELETE', `/${type}/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}`);
   }
 
-  // -- Joining a world by link (keel #212) ----------------------------------
+  // -- Joining a world by link ----------------------------------
 
   /**
    * POST /join/preview -- what a join code holds, without using it: who invites, to
@@ -733,7 +733,7 @@ export class OwV2Client {
    * `agent`: an AI agent redeems it at POST /join). Sends no credential, whatever key
    * this client holds. Every bad code (unknown, used, revoked, expired) is the same
    * 404 `not_found` (`err.isNotFound`). `code` is the part of the link after `#`. A table
-   * (keel #422 PR 2) adds `max_uses`, `uses_left`, `name_required` and `characters`, the
+   * adds `max_uses`, `uses_left`, `name_required` and `characters`, the
    * pick screen's list; a link for one answers without them.
    */
   async previewJoin(code: string): Promise<OwJoinPreview> {
@@ -742,7 +742,7 @@ export class OwV2Client {
 
   /**
    * POST /join -- redeem a join code that needs no account: a player's (a friend reading as
-   * a guest, keel #353) or an AI agent's. Sends no credential, whatever key this client holds.
+   * a guest) or an AI agent's. Sends no credential, whatever key this client holds.
    * 201 with `kind` telling the two answers apart: `player` gives a read key (`ow_r_`, no PIN)
    * and the Character it reads as; `agent` gives a seat's write key, secret and `.env` lines.
    * Both are shown once, and the code is spent: a lost answer cannot be replayed (the owner
@@ -751,7 +751,7 @@ export class OwV2Client {
    * agent code). Every bad code is the same 404 `not_found`; a person's code is redeemed with
    * acceptJoin instead.
    *
-   * A table (a player code whose preview carries `max_uses`, keel #422 PR 2) seats one player
+   * A table (a player code whose preview carries `max_uses`) seats one player
    * per redeem, until `uses_left` is 0. With a list, `character` is the player's pick, the `id`
    * of one of the preview's `characters` not `taken`: a Character a live seat already plays is
    * 422 `character_taken` (`err.isCharacterTaken`; pick another), one off the list, hidden or
@@ -771,7 +771,7 @@ export class OwV2Client {
     return this.request('POST', '/join', { auth: false, body }) as Promise<OwJoined>;
   }
 
-  // -- Signing in with a password (keel #211) --------------------------------
+  // -- Signing in with a password --------------------------------
 
   /**
    * Sign in with an email address (or a username) and password, and get a new account token
@@ -911,8 +911,7 @@ export class OwV2Client {
    * POST /account/join -- accept an invite link's code as the account this client's
    * `ow_a_` token belongs to: 201 with the new membership. Refusals: 404 `not_found`
    * (every bad code, and a code made for an AI agent) and 409 `already_member`
-   * (`err.isAlreadyMember`). Accepting needs no account PIN, for any role (keel #297,
-   * ed73c90); a write key for the membership waits for one (`pin_required`). A refusal
+   * (`err.isAlreadyMember`). Accepting needs no account PIN, for any role; a write key for the membership waits for one (`pin_required`). A refusal
    * never spends the code. A world key here is a TypeError before anything is sent.
    */
   async acceptJoin(code: string): Promise<OwJoinedMembership> {
@@ -926,16 +925,16 @@ export class OwV2Client {
    * POST /account/worlds/{worldId}/links -- a new invite link for a world this client's
    * `ow_a_` token owns (keel C1): `reader` is required (`person`, accepted with acceptJoin;
    * `agent`, redeemed at POST /join; `player`, a friend with no account, redeemed with
-   * redeemJoin for a read key, keel #353); `role`, when left out, is keel's default: guest for a
+   * redeemJoin for a read key); `role`, when left out, is keel's default: guest for a
    * person link, contributor for an agent link (a player link is guest, and refuses any other), `days` (1, 7 or 30) to 7; `withCharacter` (agent links
    * only) to true; `character` (player links only) a Character's id or `new` (the default):
-   * whoever opens the link first reads as it, until removed. `preview` (person and player links,
-   * keel #422) to false: true puts the world's id in the link's path, so a chat that unfurls it
+   * whoever opens the link first reads as it, until removed. `preview` (person and player links)
+   * to false: true puts the world's id in the link's path, so a chat that unfurls it
    * shows the world's name and picture (the code stays after `#`); true on an agent link is
    * 422, param `preview`. `maxUses` (person and player links; an agent link takes none) to 1, a
-   * link for one. On a person link (keel #390, D140) 2 to 50 lets in that many accounts, each
+   * link for one. On a person link 2 to 50 lets in that many accounts, each
    * joining once with the link's role, until every use is taken, it expires or it is revoked;
-   * who already joined stays. On a player link (keel #422 PR 2) 2 to 50 makes a table, one
+   * who already joined stays. On a player link 2 to 50 makes a table, one
    * link that seats that many players, each picking one of
    * `characters` (Character ids of the world, in the order a pick screen shows them; a hidden
    * one is 422, param `characters`). `characters` empty or left out: each player names a fresh
@@ -1002,7 +1001,7 @@ export class OwV2Client {
     await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/links/${encodeURIComponent(linkId)}`);
   }
 
-  // -- Seats for your own AI (keel #355, D106) ------------------------------
+  // -- Seats for your own AI ------------------------------
 
   /**
    * POST /account/worlds/{worldId}/seats -- a seat for your own AI in a world you own or are a
@@ -1067,10 +1066,10 @@ export class OwV2Client {
     await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/seats/${encodeURIComponent(seatId)}`);
   }
 
-  // -- The hidden mark (keel #421) ------------------------------------------
+  // -- The hidden mark ------------------------------------------
 
   /**
-   * PUT /{type}/{id}/hidden -- hide an element (keel #421). The owner's key or a co-builder's
+   * PUT /{type}/{id}/hidden -- hide an element. The owner's key or a co-builder's
    * (a person's or a seat's) with its PIN; hiding a hidden element again changes nothing, and
    * the element's body and `change_seq` do not move. Hidden, it is seen only by the owner, the
    * co-builders and the member who created it; to every other key it is a 404, left out of
@@ -1095,7 +1094,7 @@ export class OwV2Client {
     return page.data;
   }
 
-  // -- The proposed change (keel #519) ---------------------------------------
+  // -- The proposed change ---------------------------------------
   //
   // A proposal is a record kept beside an element, never in its body: the element does not
   // change until the world's owner or a co-builder accepts it. A proposal is seen by the owner,
@@ -1156,7 +1155,7 @@ export class OwV2Client {
 
   /**
    * GET /world/proposals -- the world's queue, newest first by created_at, two kinds of row told
-   * apart by `kind` (keel #565): `proposal`, a proposed change to an element (OwProposal), and
+   * apart by `kind`: `proposal`, a proposed change to an element (OwProposal), and
    * `new_element`, an element written as proposed, carrying `x_review_proposed`
    * (OwProposedNewElement: settle it with reviewNewElement). A marked element is listed under
    * `open`, `lapsed` and `all`, never `accepted` or `declined`; keel reads at most the 500 newest.
@@ -1211,7 +1210,7 @@ export class OwV2Client {
 
   /**
    * POST /{type}/{id}/review -- settle a new element written as proposed, one carrying
-   * `x_review_proposed` (the queue's `new_element` row, keel #565). The owner's key or a
+   * `x_review_proposed` (the queue's `new_element` row). The owner's key or a
    * co-builder's, with its PIN. `{ decision: 'accept' }` clears the mark (a write by you: a new
    * change_seq, one /changes row) and answers `{ element }`; `{ decision: 'decline', reason? }`
    * deletes the element (a tombstone, the links to it scrubbed, its open proposals dropped) and
@@ -1336,7 +1335,7 @@ export class OwV2Client {
     return completeOAuthSignIn(this.baseUrl, this.fetchImpl, opts);
   }
 
-  // -- Ask your world (keel #159) -------------------------------------------
+  // -- Ask your world -------------------------------------------
 
   /**
    * POST /account/ask -- a question about a world the account owns or is in, answered by
@@ -1410,18 +1409,18 @@ export class OwV2Client {
       auth?: boolean;
       allowEmpty?: boolean;
       replayAware?: boolean;
-      /** A `change_seq` to send as `If-Match` (keel #210); a whole number, else TypeError before sending. */
+      /** A `change_seq` to send as `If-Match`; a whole number, else TypeError before sending. */
       /** A write keel's document lists X-OW-Agent on (the element writes, hide and unhide, the file ticket, setMyCharacter, mintWorldKey): where an agent client sends it. */
       write?: boolean;
-      /** One of the writes keel reads X-OW-Client on (keel #520: create, put, patch, delete, links, bulk, adopt; keel #519: propose, accept): where the client's name goes. */
+      /** One of the writes keel reads X-OW-Client on (create, put, patch, delete, links, bulk, adopt, propose, accept): where the client's name goes. */
       elementWrite?: boolean;
       /**
-       * A write keel may answer 202 with `{proposal}` (keel #519: put, patch, links): a 202 then
+       * A write keel may answer 202 with `{proposal}` (put, patch, links): a 202 then
        * throws an OwProposedError instead of returning a body that is not the element.
        */
       proposable?: boolean;
       ifMatch?: number;
-      /** A tag to send as `If-None-Match` exactly as given (keel #518, the head read): unlike ifMatch, nothing is quoted or checked. */
+      /** A tag to send as `If-None-Match` exactly as given (the head read): unlike ifMatch, nothing is quoted or checked. */
       ifNoneMatch?: string;
       /**
        * Called with every response's `ETag` header (as received, null when absent) and status, before
@@ -1444,11 +1443,11 @@ export class OwV2Client {
         headers['Authorization'] = `Bearer ${this.apiKey}`;
       } else {
         headers['API-Key'] = this.apiKey;
-        // The PIN only where keel checks it (Skeld's ruling, OW Keel h29 #10663): keel verifies a PIN
+        // The PIN only where keel checks it (Skeld's ruling): keel verifies a PIN
         // wherever it is sent (argon2, 64 MiB each), and scripts reading with it OOM-killed staging on
         // a cold cache (2026-10-22). Sent on every write (any method but GET), on GET /me, the
-        // test-connection read (keel #314, D93), and on every request of a 10-digit legacy key, which
-        // needs it on reads of a world with a PIN (v1 parity, keel #421). Never on any other read.
+        // test-connection read, and on every request of a 10-digit legacy key, which
+        // needs it on reads of a world with a PIN (v1 parity). Never on any other read.
         const read = method.toUpperCase() === 'GET';
         const me = path === '/me/' || path === '/me';
         if (this.apiPin && (!read || me || this.keyKind === 'legacy')) headers['API-Pin'] = this.apiPin;
@@ -1458,10 +1457,10 @@ export class OwV2Client {
     if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
     if (opts.ifMatch !== undefined) headers['If-Match'] = `"${opts.ifMatch}"`;
     if (opts.ifNoneMatch !== undefined) headers['If-None-Match'] = opts.ifNoneMatch;
-    // keel #299 (D104): presence is the declaration, the value is never stored. Opt-in only, and
+    // X-OW-Agent: presence is the declaration, the value is never stored. Opt-in only, and
     // on the element writes alone, the operations keel's document declares it on.
     if (this.agent && opts.write) headers['X-OW-Agent'] = '1';
-    // keel #520: the client's own name, on the seven element writes keel reads it on, never on a
+    // X-OW-Client: the client's own name, on the seven element writes keel reads it on, never on a
     // read, nor on the other writes (hide, the file ticket, setMyCharacter, a key), where keel ignores it.
     if (opts.elementWrite) headers['X-OW-Client'] = this.clientName;
 
@@ -1500,7 +1499,7 @@ export class OwV2Client {
 // -- Helpers ---------------------------------------------------------------
 
 /**
- * The conditional head poll's state (keel #518), one per client: the last head read's ETag,
+ * The conditional head poll's state, one per client: the last head read's ETag,
  * exactly as received, sent back as If-None-Match, and the head, cursor and epoch that 200
  * answered, which a 304 hands back. Kept off the client's own methods, which the wire gate
  * holds to routes.
@@ -1537,25 +1536,25 @@ const READ_ONLY_FIELDS = ['world', 'type', 'created_at', 'updated_at', 'change_s
 
 /**
  * The world's own read-only keys, stripped by patchWorld on top of READ_ONLY_FIELDS: the public
- * page's two (keel #471, set on the world page), `public_read` (the same 422, keel's recipe) and
+ * page's two (set on the world page), `public_read` (the same 422, keel's recipe) and
  * `agent_narrator_rule` (the owner's switch on the world page; a 422 naming it, measured on
- * staging 2026-10-22), and `agent_writes_proposed` (keel #519: the owner's switch on the world page,
- * readOnly in keel's `World`), `origin` (keel #571: served on GET, an unknown key on PATCH, a 422;
+ * staging 2026-10-22), and `agent_writes_proposed` (the owner's switch on the world page,
+ * readOnly in keel's `World`), `origin` (served on GET, an unknown key on PATCH, a 422;
  * it is written as the plain keys `source` and `producer`, which pass) and `id` (readOnly in keel's
  * `World`, and not a key PATCH takes: the same 422). `owner_character` is accepted by the server and
  * left in. The extension keys (`x_*`, `atlas_*`, `shadow_*`) pass, as on an element write. Kept
  * apart so an element write never loses a field of these names.
  */
-// `counts` rides only a keyless GET /world (keel #421 PR 4) and is an unknown key to PATCH.
+// `counts` rides only a keyless GET /world and is an unknown key to PATCH.
 const WORLD_READ_ONLY_FIELDS = ['id', 'slug', 'public_page', 'public_read', 'agent_narrator_rule', 'agent_writes_proposed', 'origin', 'counts'] as const;
 
-/** The proposals of one element (keel #519): /{type}/{id}/proposals. */
+/** The proposals of one element: /{type}/{id}/proposals. */
 function proposalsPath(type: string, id: string): string {
   return `/${type}/${encodeURIComponent(id)}/proposals`;
 }
 
 /**
- * A 202 on a write that may become a proposal (keel #519): an OwProposedError carrying the row.
+ * A 202 on a write that may become a proposal: an OwProposedError carrying the row.
  * A 202 whose body holds no proposal is an OwApiError with status 202 and the body as `detail`:
  * the client never hands back a body that is not the element, and never makes up a proposal.
  */
@@ -1803,7 +1802,7 @@ function only(method: string, obj: object | undefined, keys: readonly string[], 
 /** Every key `OwClientConfig` declares; the constructor refuses any other by name. A new option joins this list in the same commit. */
 const CLIENT_CONFIG_KEYS = ['apiKey', 'apiPin', 'baseUrl', 'pageSize', 'changesPageSize', 'fetch', 'agent', 'client'] as const;
 
-/** keel #520's rule for X-OW-Client, exact here: keel trims and stores null for anything else, this package refuses it. */
+/** keel's rule for X-OW-Client, exact here: keel trims and stores null for anything else, this package refuses it. */
 const CLIENT_NAME_RULE = /^[a-z0-9-]{1,32}$/;
 const DEFAULT_CLIENT_NAME = 'sdk';
 
