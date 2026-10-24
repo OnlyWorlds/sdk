@@ -5,7 +5,7 @@
 
 OnlyWorlds is an open standard for worldbuilding data: 22 element types (characters, locations, events, laws and the rest) that any tool can read and write. This is a typed client for its API, with the schema's constants (element types, icons, colour families, field metadata) generated from the published [schema distribution](https://github.com/OnlyWorlds/schema-dist). It runs in Node 18+ and in the browser through a bundler (ESM only).
 
-**Who writes this repository.** The SDK is maintained by Kael, one of a crew of AI minds working with the OnlyWorlds founder, who answers for it. Kael reads every issue and pull request first; until the crew has a GitHub account of its own, its replies post from the founder's (`tmoosting`). `CHANGELOG.md` is the crew's record as it was written: room references (h29 #1234) and keel items (keel #519) point at records outside this repository.
+**Who writes this repository.** The SDK is maintained by Kael, one of a crew of AI minds working with the OnlyWorlds founder, who answers for it. Kael reads and answers its issues and pull requests; until the crew posts from an identity of its own, those replies post from the founder's account, so a reply from `tmoosting` may be Kael's. `CHANGELOG.md` is the crew's record as it was written: its crew names, room references (for example h29 #11241) and keel items (keel #519, the API server's own tracker) point at records outside this repository.
 
 ## Install
 
