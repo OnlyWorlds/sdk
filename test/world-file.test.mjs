@@ -349,7 +349,7 @@ test('OW-14: a long deflate stream is inflated in chunks and stopped at its decl
 });
 
 test('OW-14: a deflate stream that ends before its declared compressed size is refused, short or chunked', () => {
-  // Skeld h58 #11968: the size bullet speaks of every size an entry declares, so bytes after the stream's end are a
+  // OW-14, ruled 2026-10-24: the size bullet speaks of every size an entry declares, so bytes after the stream's end are a
   // lie about the compressed size; sizes and CRC stay honest. The noise is the chunked case (over 64 KiB).
   const small = strToU8(j({ id: WID, name: 'Early' }));
   const big = new Uint8Array(200_000);

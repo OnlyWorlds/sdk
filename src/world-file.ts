@@ -362,7 +362,7 @@ const CHUNK = 64 * 1024;
 
 /**
  * Whether a deflate stream ends before the payload its entry declares does (OW-14: the size bullet speaks of the
- * compressed size too, Skeld h58 #11968). fflate stops at the stream's end and never says where that was, so the
+ * compressed size too, ruled 2026-10-24). fflate stops at the stream's end and never says where that was, so the
  * payload is inflated again short of its last byte: a stream that ends at its declared size needs that byte and runs
  * out, which fflate refuses; one that ends sooner still inflates. Called once the whole payload inflated to its
  * declared size, so the shortened stream gives at most that many bytes; a long one goes in chunks, its output dropped.
