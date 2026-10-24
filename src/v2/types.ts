@@ -277,7 +277,7 @@ export interface OwBulkItem {
  * the NUMERIC HTTP status of that slot (201/400/...), success slots echo
  * created_at/updated_at, error slots carry an OwErrorBody under `error`.
  * A contributor's write on someone else's element fails in its slot as
- * `{status: 403, error: {code: 'not_author'}}` (keel D72), never as a thrown error.
+ * `{status: 403, error: {code: 'not_author'}}`, never as a thrown error.
  * After an `atomic: true` request with `errors` true NOTHING was written, yet the slots of
  * the items that would have succeeded still say 201 (keel's "counterfactual 201s"): do not
  * record their ids as created.
@@ -730,7 +730,7 @@ export interface OwJoinPreview {
   [k: string]: unknown;
 }
 
-/** One of a world's invite links, as GET /account/worlds/{id}/links lists it (keel C1, 48c10d4). */
+/** One of a world's invite links, as GET /account/worlds/{id}/links lists it. */
 export interface OwWorldLink {
   /** The link's id: revokeWorldLink takes it. */
   id: string;
@@ -828,9 +828,9 @@ export interface OwSignedIn {
 /**
  * One world of the account, from GET /account/worlds: owned (`role: 'owner'`) or shared
  * (`'collaborator'`, with `member_role` the membership's role). Keys by name and last four only,
- * never the key; on a shared world only the member's own keys (keel H8).
+ * never the key; on a shared world only the member's own keys.
  */
-/** The draught's policy (keel PR 155, D143): what GET /character/{id}/context serves and how. */
+/** The draught's policy (keel PR 155): what GET /character/{id}/context serves and how. */
 export interface OwDraughtPolicy {
   /** Sections to serve; default every one but `messages`, `room` and `proposed`, each served only when named. */
   components?: OwDraughtComponent[];
@@ -881,7 +881,7 @@ export interface OwDraughtItem {
   element: OwElement;
 }
 
-/** One Character's context in one read, GET /character/{id}/context (keel PR 155, D143; the draught). */
+/** One Character's context in one read, GET /character/{id}/context (keel PR 155; the draught). */
 /** The draught under `compact`: every section may be absent, and so may `cut` (nothing was cut). */
 export type OwDraughtCompact = Omit<OwDraught, 'cut'> & { cut?: Record<string, number> };
 
@@ -945,7 +945,7 @@ export interface OwCreateAccountWorldInput {
 /**
  * createAccountWorld's 201: the world's row as listAccountWorlds lists it, plus the full write key
  * once in `key` (never shown again). keel's document names it `AccountWorldCreated`, and
- * Assembly's verify-sdk-wire holds this type to it key for key.
+ * the maintainers' wire check holds this type to it key for key.
  */
 export interface OwCreatedAccountWorld {
   id: string;
@@ -960,8 +960,8 @@ export interface OwCreatedAccountWorld {
 
 /**
  * A world key as minted by POST /account/worlds/{id}/keys: the row the account's key list shows,
- * plus the full key once in `key` (never shown again). A member's key carries its `member` label
- * (keel D72); an owner's row has no such field.
+ * plus the full key once in `key` (never shown again). A member's key carries its `member` label;
+ * an owner's row has no such field.
  */
 export interface OwMintedKey {
   id: string;
@@ -1172,7 +1172,7 @@ export interface ListParams {
   /**
    * Accepted: `name` (exact), `name__icontains`, `supertype`, `subtype`, and
    * `characters=<id>` (contains) on every type with a `characters` link (at schema
-   * 0.30.1: collective, construct, event, narrative, relation, title; keel D76d). Any other key 422s
+   * 0.30.1: collective, construct, event, narrative, relation, title). Any other key 422s
    * server-side with the list of filters in the message -- the client passes keys
    * through unchecked and lets the platform say so. (`__in`, `__gte`, `__lte` and
    * `__isnull` are designed in keel's spec but not built; `ordering` 422s too.)

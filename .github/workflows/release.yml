@@ -7,14 +7,13 @@ name: release
 #
 # Every gate runs first and a red one stops the publish. After the publish the job reads the
 # registry back: the version is live, and its tarball holds exactly what this commit packs.
-# The wire check against keel's OpenAPI document (Assembly's verify-sdk-wire.mjs) runs on the
+# The wire check against keel's OpenAPI document runs on the
 # maintainer's machine before the tag is pushed; it is not repeated here.
 #
-# Grant: the Captain, 2026-10-11 (OW Infra h37 #3053): releases are the maintainer's; a major
-# version asks him first.
+# Releases are the maintainer's (Titus, 2026-10-11); a major version asks him first.
 #
 # Once npm serves it, a second job makes the tag a GitHub release, its body the version's
-# CHANGELOG entry: the shared What's new page reads GitHub releases (OW Infra h37 #8766).
+# CHANGELOG entry: the shared What's new page reads GitHub releases.
 
 on:
   push:
@@ -62,7 +61,7 @@ jobs:
         run: |
           published="$(npm view @onlyworlds/sdk version)"
           if [ "${VERSION%%.*}" != "${published%%.*}" ]; then
-            echo "major $VERSION against npm's $published: a major asks the Captain first"; exit 1
+            echo "major $VERSION against npm's $published: a major asks Titus first"; exit 1
           fi
 
       - name: Not already on npm
@@ -71,7 +70,7 @@ jobs:
             echo "$VERSION is already on npm"; exit 1
           fi
 
-      # Every release is written up where its users look (the changelog question, OW Infra h37 #8286)
+      # Every release is written up where its users look (ruled 2026-10-20)
       - name: The changelog has this version's entry
         run: |
           if ! awk -v v="$VERSION" '$1=="##" && $2=="["v"]" {f=1} END {exit !f}' CHANGELOG.md; then
@@ -89,6 +88,8 @@ jobs:
       - run: npm run schema:verify
       - run: npm run codegen:check
       - run: npm test
+      # Published text names no one inside the team and points at no internal room or tracker.
+      - run: node scripts/public-words.mjs
 
       - run: npm publish --access public
 

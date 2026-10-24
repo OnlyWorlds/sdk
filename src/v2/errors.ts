@@ -35,7 +35,7 @@ export class OwApiError extends Error {
   /**
    * Seconds to wait before retrying, from the `Retry-After` header (a delay in
    * seconds or an HTTP date), else null. keel sends it on 503 `server_busy`
-   * (admission control, D71) and 429 `rate_limited`. This client never retries
+   * (admission control) and 429 `rate_limited`. This client never retries
    * on its own; the value is here so callers can back off politely.
    * Readable in browsers too: keel exposes `Retry-After` over CORS and its
    * admission gate's 503 carries CORS headers (keel `4949406`, 2026-09-28).
@@ -93,7 +93,7 @@ export class OwApiError extends Error {
 
   /**
    * The id is already taken (409 `id_conflict`): a create with an id that exists
-   * (keel D39), or a PUT whose id belongs to another world (D70). Retrying will not
+   * or a PUT whose id belongs to another world. Retrying will not
    * help; the id is the problem. `/bulk` never throws for this: it answers 200 with a
    * per-item slot `{status: 409, error: {code: 'id_conflict'}}` — check the slot.
    */
@@ -108,7 +108,7 @@ export class OwApiError extends Error {
    * the stored cursor and walk again from the start. What to do with what the local copy holds
    * that the new walk does not name is `resyncReason`'s: `role`, keep it; `view`, drop it.
    * Without a reason (keel's hidden mark off), keep it: a reset never empties a copy (keel PR
-   * 104, the Captain's ruling: sharing is forward-only). Never empty the copy on your own.
+   * 104, ruled by Titus: sharing is forward-only). Never empty the copy on your own.
    */
   get isResyncRequired(): boolean {
     return this.status === 409 && this.code === 'resync_required';
@@ -138,7 +138,7 @@ export class OwApiError extends Error {
 
   /**
    * A contributor tried to change, replace, relink or delete an element someone else
-   * created (403 `not_author`, keel D72 membership phase 2). Retrying will not help; the
+   * created (403 `not_author`). Retrying will not help; the
    * element is not theirs. `/bulk` never throws for this: it answers 200 with a per-item
    * slot `{status: 403, error: {code: 'not_author'}}`. Owners and co-builders never see it.
    */
@@ -148,7 +148,7 @@ export class OwApiError extends Error {
 
   /**
    * A member key tried what only the owner may do: `patchWorld`, even with a co-builder's
-   * key (403 `owner_only`, keel D72; sharing's publish, republish and revoke answer
+   * key (403 `owner_only`; sharing's publish, republish and revoke answer
    * contributors and guests with the same code). Retrying will not help. The owner's own
    * key never sees it.
    */

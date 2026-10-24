@@ -2,7 +2,7 @@
  * The world file, `.owworld` (Folder Format spec §4.7; a `.zip` by another
  * name): one archive holding one whole world as a portable copy (§4.1), and
  * the reader that opens one back. Absorbed from Atlas's
- * `src/store/world-file.ts` (Temper's, Atlas 1.17), so Atlas, Lantern and any
+ * `src/store/world-file.ts` (Atlas 1.17), so Atlas, Lantern and any
  * script read one file the same way; brought to §4.7's checks OW-1 to OW-22
  * and their fixture set.
  *
@@ -159,7 +159,7 @@ function isJunk(path: string): boolean {
 
 /**
  * Unicode's simple case folding as the table says it: the C and S rows of
- * CaseFolding.txt at Unicode 15.1 (Skeld's ruling for OW-18),
+ * CaseFolding.txt at Unicode 15.1 (ruled 2026-10-22 for OW-18),
  * never a runtime's casing, so a fold a newer Unicode adds stays out
  * until the pin moves. Runs of `start.count.stride.delta` in base 36 (an empty
  * count or stride is 1), made by `codegen/fold_runs.mjs` from

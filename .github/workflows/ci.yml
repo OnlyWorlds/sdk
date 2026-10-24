@@ -40,6 +40,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci || npm install
+      # Published text names no one inside the team and points at no internal room or tracker.
+      - run: node scripts/public-words.mjs
       # `npm test` runs pretest (tsup build) then node --test against the
       # compiled dist bundle — the same artifact npm publish ships.
       - run: npm test

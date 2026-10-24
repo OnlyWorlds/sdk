@@ -13,7 +13,7 @@
  * Since then keel mounts only `status/` and `encryption-info/` under /tokens/
  * (`accounts/token_api.py`; consume, access-key and both revokes answer 404 on
  * production, 2026-10-14), and spending moved server-side: the Council spends
- * through keel's council proxy (Skeld's ruling), and
+ * through keel's council proxy (ruled 2026-10-14), and
  * `OwV2Client.allowance()` reads the token rating. The four dead methods are
  * deprecated in 4.23.0 and leave in 5.0.
  */
@@ -100,7 +100,7 @@ export class TokenResource {
    * Consume tokens for service usage
    *
    * @deprecated keel serves no consume route (404 on production since 2026-10;
-   * no client decides what its act costs, Skeld's ruling): spending
+   * no client decides what its act costs, ruled 2026-10-14): spending
    * happens server-side in the route that does the work. Removed in 5.0.
    *
    * Reports token consumption to track daily usage. Allows consumption even if

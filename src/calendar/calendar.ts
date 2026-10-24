@@ -2,8 +2,8 @@
  * Calendar kernel — pure arithmetic, formatting, and parsing over the world's
  * integer time line.
  *
- * Contract: Forge/Notes/2026-07-14-calendar-design-final.md §5 + §5b (3-lens
- * gated 2026-07-14). The binding rules, restated where they bite:
+ * The contract is the calendar design of 2026-07-14 (its §5 and §5b). The
+ * binding rules, restated where they bite:
  *
  * - The number line is the only truth. A calendar names it; it never owns it.
  * - Absolute year index is ZERO-based: step 0 opens absolute year 0. All
@@ -211,7 +211,7 @@ export function readCalendarConfig(value: unknown): CalendarConfig | null {
     || (e.year_base != null && e.year_base !== 0 && e.year_base !== 1))) return null;
   if (cfg.intercalary != null && (!Array.isArray(cfg.intercalary)
     || cfg.intercalary.some((i) => typeof i?.name !== 'string' || !Number.isInteger(i?.after_month)))) return null;
-  // S367 critic K1: every divisor and step size must be a positive integer, or
+  // Every divisor and step size must be a positive integer, or
   // the year arithmetic can loop forever. Values, not just shapes.
   if (months && !months.lengths.every(isPositiveInt)) return null;
   const year = cfg.bundles?.year;
@@ -287,11 +287,11 @@ const MAX_YEAR_CORRECTION = 10_000;
 export function absoluteYear(cfg: CalendarConfig, step: number): number {
   const shape = yearShape(cfg);
   // Seed on the MEAN year length (leap days included) so the correction stays
-  // a few laps at any distance from zero (S367 critic K1).
+  // a few laps at any distance from zero.
   const meanLen = shape.leapPeriods.reduce((a, N) => a + 1 / N, shape.baseLen);
   let y = floorDiv(step, meanLen);
   if (!Number.isFinite(y)) return y; // non-finite step or zero-length year: nothing to correct
-  // Bounded laps (S367 critic K1): a config that slips the reader must not hang.
+  // Bounded laps: a config that slips the reader must not hang.
   for (let i = 0; i < MAX_YEAR_CORRECTION && step < yearStartStep(cfg, y); i++) y -= 1;
   for (let i = 0; i < MAX_YEAR_CORRECTION && step >= yearStartStep(cfg, y + 1); i++) y += 1;
   return y;

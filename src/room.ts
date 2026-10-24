@@ -22,7 +22,7 @@ const WHITE_SPACE: ReadonlySet<number> = new Set([
 /**
  * The profiles' "trimmed" (schema-dist profiles/room.md, dist.47, "Trimmed and without regard
  * to case, defined once"): leading and trailing whitespace removed, nothing inside touched.
- * Whitespace is Unicode White_Space exactly (Skeld's ruling), so a byte
+ * Whitespace is Unicode White_Space exactly (ruled 2026-10-22), so a byte
  * order mark (U+FEFF) and a zero width space (U+200B) stay. JavaScript's trim() is not used:
  * it also strips U+FEFF. The Python package's is_room_element trims by the same 25.
  */

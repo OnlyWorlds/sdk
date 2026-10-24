@@ -1,7 +1,7 @@
 /**
  * World lookup: find the elements a plain-language question is about, in a
- * world held in memory, with no model and no network. Ported from Assembly's
- * Lantern Ask trial (`dossiers/lantern-ask/lookup.mjs`, round 2), with the
+ * world held in memory, with no model and no network. Ported from the
+ * Lantern Ask trial (round 2), with the
  * same ranking, so the trial's measurements on two real worlds describe this
  * code. Pure: runs in a browser and in Node alike.
  *

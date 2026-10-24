@@ -2,7 +2,7 @@
  * Photo preparation: make a picture from a phone's camera or files ready for
  * `uploadImage` (webp, png, jpeg or avif, at most 15 MB), in the browser,
  * before it leaves the device. Lifted from the upload page's converter
- * (upload.onlyworlds.com, Boss's): canvas, webp at quality 0.82, alpha kept.
+ * (upload.onlyworlds.com): canvas, webp at quality 0.82, alpha kept.
  *
  * Two traps it handles:
  * - A browser that cannot encode webp hands back a PNG instead (Safari has

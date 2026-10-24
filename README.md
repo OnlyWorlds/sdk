@@ -368,7 +368,7 @@ A lore view (a list, a count, search, a graph, a link picker, a story's context)
 
 ### A world's own words for the types
 
-A world may carry `x_names` on the World: its own word for a type (Character shown as *Employee* in a work world), and a finer word for a supertype inside one. `typeWord(world, type, { supertype, many })` returns that word, or `null` for the standard's name. `world` is a `getWorld()` body (keel serves `x_` keys on the World from Keel #571) or a folder's `world.json`. The API, the folder, the schema and every id keep the standard's names; the word is for display only.
+A world may carry `x_names` on the World: its own word for a type (Character shown as *Employee* in a work world), and a finer word for a supertype inside one. `typeWord(world, type, { supertype, many })` returns that word, or `null` for the standard's name. `world` is a `getWorld()` body (keel serves `x_` keys on the World) or a folder's `world.json`. The API, the folder, the schema and every id keep the standard's names; the word is for display only.
 
 ```typescript
 import { typeWord } from '@onlyworlds/sdk';

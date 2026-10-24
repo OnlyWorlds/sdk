@@ -27,7 +27,7 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Never send a `"world"` field in payloads — world identity comes from the API key (422 otherwise).
 - v2 link fields use ONE name both directions (no `_ids` suffix — that is v1 dialect only).
 - PATCH is destructive on sent fields; use `editLinks` (atomic add/remove) for relationships.
-- Offline or stale edits: pass `{ ifMatch: el.change_seq }` to `patch`/`editLinks` (since 4.9.0) and `delete` (since 4.61.0, keel #563).
+- Offline or stale edits: pass `{ ifMatch: el.change_seq }` to `patch`/`editLinks` (since 4.9.0) and `delete` (since 4.61.0).
   If the element moved, nothing is written and `OwPreconditionFailedError` (412) carries
   `current`; the server never merges, the client decides.
 - Polling: `changesHead()` (since 4.15.0) gives `{head, cursor, epoch, unchanged}` without a
@@ -44,7 +44,7 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Images: `uploadImage(bytes)` returns `{ url, ... }`; set `url` as `image_url`. The bytes go
   to the edge with a single-use ticket from keel, never with the API key. `removeImage(urlOrKey)`
   takes one back (its uploader or the world's owner); it leaves `image_url` on elements as is.
-- Files on elements (keel #393): `listFiles(type, id)`, `uploadFile(type, id, bytes, { name?,
+- Files on elements: `listFiles(type, id)`, `uploadFile(type, id, bytes, { name?,
   label?, onProgress? })` (ticket from keel, bytes to the upload host; the kind from the name's
   extension), `fileDownloadLink(type, id, fileId)` (a 5-minute link: fetch it at once, never
   store it), `removeFile(type, id, fileId)`, `worldFiles()` (`used_bytes` of `cap_bytes`).
@@ -70,7 +70,7 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   without spending: `{ token_rating, tokens_used_today, tokens_remaining, resets_at }`.
 - Who am I (since 4.22.0, a world key): `client.me()` is `{ world, scope, kind, role,
   membership, character, front_door }` (`membership` is what `created_by` holds for what you
-  create; null for the owner); `front_door` (since 4.60.0, keel #558) names who answers for your
+  create; null for the owner); `front_door` (since 4.60.0) names who answers for your
   seat (`sponsor`, `sponsor_character`), your Character, and the world's Charter with up to five
   skill Objects: an agent reads `charter` first. `client.members()` is the roster's rows. An
   account token is a TypeError.
@@ -135,13 +135,13 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   is lower case letters, digits and hyphens, 1 to 32 characters, else a TypeError at construction.
   keel stores it as `changed_client` on the element and `deleted_client` on a `/changes` delete:
   the client's claim, never proof, and null when none was sent.
-- **Proposals** (keel #519): `propose(type, id, { fields, evidence, expires? })` suggests a change
+- **Proposals**: `propose(type, id, { fields, evidence, expires? })` suggests a change
   without making it; any member who reads the element may, a read key included. The owner or a
   co-builder decides: `acceptProposal(type, id, pid)` (the write is theirs; 409 `stale_proposal`,
   an `OwStaleProposalError` with `conflicts` and `current`, when a proposed field moved since),
   `declineProposal(type, id, pid, { reason? })`; the proposer may `withdrawProposal`. Lists:
   `listProposals(type, id)`, `worldProposals({ state?, element? })`; the world's queue (since
-  4.66.0, keel #565) also lists each new element written as proposed (`kind: 'new_element'`
+  4.66.0) also lists each new element written as proposed (`kind: 'new_element'`
   beside `kind: 'proposal'`), which a keeper settles with `reviewNewElement(type, id, { decision:
   'accept' | 'decline', reason? })` (decline deletes it; 422 `err.isNotProposed` when unmarked).
   A row's `fields` holds only what differs; `omitted` names what an upsert left empty. When the world's

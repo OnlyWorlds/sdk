@@ -25,8 +25,8 @@ DEFAULT_SCHEMA_DIR = REPO / "codegen" / "schema-dist" / "schema"
 
 # NOTE (2026-07-28): --cache no longer has a default, deliberately.
 #
-# It used to default to a SESSION-SCOPED TEMP DIRECTORY belonging to a different
-# consciousness's scratchpad — long dead. Combined with `main()` never calling
+# It used to default to a SESSION-SCOPED TEMP DIRECTORY belonging to another
+# session's scratchpad — long dead. Combined with `main()` never calling
 # sys.exit, this script would print "0 elements (no coverage)" 22 times and exit
 # 0, while codegen/README.md called it "the gate". A check that cannot fail is
 # worse than no check: it answers the question "is this verified?" with a yes.

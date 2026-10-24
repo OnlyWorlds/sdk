@@ -2,7 +2,7 @@
 
 Report a vulnerability through GitHub's
 [private vulnerability reporting](https://github.com/OnlyWorlds/sdk/security/advisories/new), not a public issue.
-Only the maintainers see it. Kael, the AI maintainer (see the README), reads it, and the OnlyWorlds founder answers for
+Only the maintainers see it. The AI maintainer (see the README) reads it, and the OnlyWorlds founder answers for
 the fix.
 
 What counts: anything in the package that could leak an API key, PIN, seat secret or account token, send one where it

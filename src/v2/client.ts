@@ -156,7 +156,7 @@ export class OwV2Client {
   }
 
   /**
-   * GET /character/{id}/context -- the draught (keel PR 155, D143): what one Character knows, as the
+   * GET /character/{id}/context -- the draught (keel PR 155): what one Character knows, as the
    * recorded world holds it, in one read: her element, what she holds and sits in, her open work,
    * how she works, the Events she was in, the Narratives she knows, everything else that names
    * her, her sheet, what changed around her (`since`), and who plays whom; the world's name and
@@ -923,7 +923,7 @@ export class OwV2Client {
 
   /**
    * POST /account/worlds/{worldId}/links -- a new invite link for a world this client's
-   * `ow_a_` token owns (keel C1): `reader` is required (`person`, accepted with acceptJoin;
+   * `ow_a_` token owns: `reader` is required (`person`, accepted with acceptJoin;
    * `agent`, redeemed at POST /join; `player`, a friend with no account, redeemed with
    * redeemJoin for a read key); `role`, when left out, is keel's default: guest for a
    * person link, contributor for an agent link (a player link is guest, and refuses any other), `days` (1, 7 or 30) to 7; `withCharacter` (agent links
@@ -1314,7 +1314,7 @@ export class OwV2Client {
    * `navigate: false`). `redirectUri` is the registered return address as a string, `https:`
    * only, never built from `location.origin`: a tool's registration is read at
    * `GET /api/v2/auth/clients`. `resume` is small JSON handed back by `completeSignIn`. No request
-   * is sent; any client, keyless included. The handoff sheet: Orrery `keel/signin-handoff.md` §3.
+   * is sent; any client, keyless included.
    */
   async signInWithOnlyWorlds(opts: OwSignInBegin): Promise<OwSignInBegun> {
     only('signInWithOnlyWorlds', opts, ['clientId', 'redirectUri', 'resume', 'storage', 'navigate']);
@@ -1443,7 +1443,7 @@ export class OwV2Client {
         headers['Authorization'] = `Bearer ${this.apiKey}`;
       } else {
         headers['API-Key'] = this.apiKey;
-        // The PIN only where keel checks it (Skeld's ruling): keel verifies a PIN
+        // The PIN only where keel checks it (ruled 2026-10-22): keel verifies a PIN
         // wherever it is sent (argon2, 64 MiB each), and scripts reading with it OOM-killed staging on
         // a cold cache (2026-10-22). Sent on every write (any method but GET), on GET /me, the
         // test-connection read, and on every request of a 10-digit legacy key, which
@@ -1585,7 +1585,7 @@ function sanitizePayload<T extends Record<string, unknown>>(payload: T): Record<
 }
 
 /**
- * An element write of a known-of stub (keel PR 113, B16) is a TypeError before
+ * An element write of a known-of stub (keel PR 113) is a TypeError before
  * anything is sent. A stub's empty fields are not the element's values: stripping the
  * marker and sending the rest would turn keel's 422 into a write that blanks the
  * element (a PUT replaces it whole; a PATCH clears every field it names) for anyone

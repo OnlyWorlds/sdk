@@ -1,4 +1,4 @@
-// The OW-18 NFC tables (Folder Format §4.7, serial 57; OW Council #656): Unicode's own files at the pinned version,
+// The OW-18 NFC tables (Folder Format §4.7, serial 57; 2026-10-24): Unicode's own files at the pinned version,
 // UnicodeData and CompositionExclusions, as three strings, `NFC_CLASS_RUNS`, `NFC_DECOMP` and `NFC_EXCLUDED`, which
 // src/nfc.ts builds its NFC from. Never a runtime's NFC: Node 22's is Unicode 16.0's, which composes 20 code points
 // 15.1 leaves alone.
