@@ -247,10 +247,12 @@ To have an answer written from what you found, OnlyWorlds runs a small AI proxy 
 
 ```typescript
 const shown = hits.slice(0, 8);                          // what your screen lists
-const { context, kept } = buildAskContext(shown, index); // within the proxy's limits; kept = what was sent
+const { context, kept, leftOut } = buildAskContext(shown, index); // within the proxy's limits; kept = what was sent
 const reply = await account.ask({ worldId, question, context }); // account: a client with an ow_a_ token
 reply.answer;                                            // from those elements only, or "The world doesn't say."
 ```
+
+`buildAskContext` hands world elements to an AI, so it leaves three kinds out unless you ask (since 4.72.0): elements marked proposed (`x_review_proposed` anything but absent or null), elements marked hidden (`hidden` anything but absent, null or false) and room elements (`isRoomElement`). Their ids come back in `leftOut.proposed`, `leftOut.hidden` and `leftOut.room`, so you can say how many were held back; an element both hidden and proposed is listed under `hidden` only. Pass `{ includeProposed: true }`, `{ includeHidden: true }` or `{ includeRoom: true }` to send them; a proposed element sent carries `[proposed, not yet reviewed]` (`REVIEW_PROPOSED_LABEL`) on its first line. A sent element's link to one left out reads as not present, never by its name. `dropped` stays the proxy's limits: past the 8th, or past the 12,000 characters, counted over what remains.
 
 The same proxy sorts loose notes into changes for the user to review. Send the elements your own lookup found for them as the `slice`; every id in a row comes from it, and nothing is written until your app applies what the user accepts.
 

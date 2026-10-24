@@ -835,6 +835,46 @@ def render_room_pairs(pairs: list[tuple[str, str]], mark: str) -> str:
     return "\n".join(lines)
 
 
+REVIEW_LABEL = re.compile(r'labels each one it keeps \*\*"([^"]+)"\*\*')
+
+
+def load_review_label(schema_dir: Path) -> str:
+    """The review profile's label (schema-dist serial 52 on, `profiles/review.md`, rule 1): the
+    words a reader that hands a world on puts on each proposed element it keeps. Read from rule 1's
+    own sentence ("labels each one it keeps **"…"**"), which must occur exactly once on a page that
+    names `x_review_proposed`, or this exits 1: no fallback, since a reader with the wrong words
+    hands a proposal on unlabelled."""
+    page_path = schema_dir.parent / "profiles" / "review.md"
+    if not page_path.is_file():
+        raise SystemExit(f"REVIEW_PROPOSED_LABEL comes only from the distribution's profiles/review.md "
+                         f"(serial 52 on); this tree lacks {page_path}.")
+    page = page_path.read_text(encoding="utf-8")
+    found = REVIEW_LABEL.findall(page)
+    if len(found) != 1:
+        raise SystemExit(f"review.md: rule 1's label sentence ('labels each one it keeps **\"...\"**') "
+                         f"occurs {len(found)} times, expected once. Route it to the schema-dist owner.")
+    label = found[0]
+    if "`x_review_proposed`" not in page:
+        raise SystemExit("review.md does not name `x_review_proposed`. Route it to the schema-dist owner.")
+    if label != label.strip() or "'" in label or "\\" in label:
+        raise SystemExit(f"review.md: the label {label!r} carries edge spaces, or a quote or backslash this "
+                         "emitter does not escape.")
+    return label
+
+
+def render_review_label(label: str) -> str:
+    lines = [
+        "/** The review profile's label (schema-dist `profiles/review.md`, rule 1): the words a reader that",
+        " *  hands a world on (a context for an AI, a pack, a share) puts on each proposed element it keeps,",
+        " *  one whose `x_review_proposed` is anything but absent or null (a doubt, rule 4, included).",
+        " *  buildAskContext writes it on the element's first line. Source: rule 1's own sentence, read at",
+        " *  codegen. */",
+        f"export const REVIEW_PROPOSED_LABEL = '{label}' as const;",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--schema", default=str(DEFAULT_SCHEMA_DIR))
@@ -897,6 +937,7 @@ def main() -> None:
     parts = [header, ""]
     parts.append(render_maps(all_fields, families, icons, sections, public))
     parts.append(render_room_pairs(load_room_pairs(schema_dir), load_room_mark(schema_dir)))
+    parts.append(render_review_label(load_review_label(schema_dir)))
     parts.append(render_field_schema(all_fields, sections, required_sets))
     parts.append("\n\n".join(interfaces))
     parts.append("")

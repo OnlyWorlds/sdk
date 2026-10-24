@@ -1341,7 +1341,7 @@ export class OwV2Client {
   /**
    * POST /account/ask -- a question about a world the account owns or is in, answered by
    * keel's AI proxy from `context` only (build it with buildAskContext from the elements
-   * the user sees). The answer is "The world doesn't say." when the context does not hold
+   * the user sees; it leaves proposed, hidden and room elements out unless asked). The answer is "The world doesn't say." when the context does not hold
    * it. Needs the client's `ow_a_` token (a world key is a TypeError before sending).
    * Refusals: 429 `quota_exceeded` (`err.isQuotaExceeded`, the account's token rating used up for the day;
    * Retry-After runs to midnight UTC), 503 `ask_unavailable` (`err.isAskUnavailable`:

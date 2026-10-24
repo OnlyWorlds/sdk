@@ -68,9 +68,10 @@ export type {
   OwWorldIndex, OwLookupHit, OwLookupReason, OwLookupLink, OwLookupElement, OwLookupOptions, OwRenderOptions,
 } from './lookup';
 
-// Ask your world: the context keel's AI proxy takes, from the elements the user sees
-export { buildAskContext, ASK_LIMITS } from './ask';
-export type { OwAskContext } from './ask';
+// Ask your world: the context keel's AI proxy takes, from the elements the user sees, with proposed,
+// hidden and room elements left out unless asked (REVIEW_PROPOSED_LABEL generated from the vendored dist)
+export { buildAskContext, ASK_LIMITS, REVIEW_PROPOSED_LABEL } from './ask';
+export type { OwAskContext, OwAskContextOptions, OwAskLeftOut } from './ask';
 
 // Photo preparation: shrink and convert a picture in the browser before uploadImage
 export { preparePhoto, planPhoto, PHOTO_TYPES, PHOTO_MAX_BYTES } from './photo';

@@ -5,6 +5,19 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.72.0] - 2026-10-24
+
+### Changed
+
+- **`buildAskContext` now leaves proposed, hidden and room elements out of the context unless asked.** A caller that passes such elements gets fewer items in `context` and `kept` than before: an element whose `x_review_proposed` is anything but absent or null (the review profile, rules 1 and 4: a value that is not a proper mark is a doubt and counts as proposed), one whose `hidden` is anything but absent, null or false (folder format §4.8, the same test as `writeWorldFile`'s `includeHidden`), and a room element (`isRoomElement`, the room profile, rules 1 and 4) are not sent. Their ids come back in the new `leftOut: { proposed, hidden, room }`, in the order given, so a tool can say how many it held back. An element carrying more than one mark is listed once, in the first of hidden, proposed, room whose option is off: a hidden proposed element is under `hidden`, so `includeProposed` alone never sends it. A sent element's link to an element a mark leaves out, anywhere in the index, reads as "not present in the world data", never by its name. `dropped` keeps its meaning (the 8 items and the 12,000 characters), counted over what remains. Until now the SDK relied on the caller (Lantern) to filter first; the rules bind the exported function itself.
+
+### Added
+
+- **`buildAskContext(items, index, { includeProposed, includeHidden, includeRoom })`**, each default false: true sends that kind again. A proposed element sent carries the review profile's label on its first line, `[proposed, not yet reviewed] Name (type)`, where the AI reading the text sees it. An option that is not a boolean is a TypeError, and an unknown key is refused by name (the options fence, `test/options.test.mjs`). Types `OwAskContextOptions` and `OwAskLeftOut`.
+- **`REVIEW_PROPOSED_LABEL`** (`'proposed, not yet reviewed'`), generated into `types.generated.ts` from rule 1's own sentence in the vendored `profiles/review.md` ("labels each one it keeps **"…"**"); codegen exits 1 if the sentence is missing or occurs twice.
+- **`minted_by: string | null` on `OwWorldLink` and `OwCreatedWorldLink`** (keel PR 215): the membership (its id in GET /api/v2/members) of the co-builder who minted the link over POST /api/v2/links; null for a link the owner made. Served by `createWorldLink` and `listWorldLinks`. No client for `/api/v2/links` itself yet.
+- Tests: each mark left out by default and listed; `hidden` as §4.8 reads it (`"true"` and 1 out, false and null in); a doubt (`"yes"`, `{}`) treated as proposed and labelled when asked, a cleared `null` settled; each `include*` bringing back its own kind only; the label on the first line; a hidden proposed element counted once, under hidden; a kept element's links to a hidden element and from a room element read without their names; the limits over what remains; the fence and the boolean check. Ten mutants, each red on its own test: no proposed filter, no hidden filter, no room filter, no label, a doubt not proposed, proposed checked before hidden, left-out elements counted toward the total, no link view, no option fence, no boolean check.
+
 ## [4.71.0] - 2026-10-24
 
 ### Added

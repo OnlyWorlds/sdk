@@ -341,6 +341,13 @@ export const ROOM_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly su
  *  `profiles/room.fixture.json`'s `mark.field`, checked against room.md at codegen. */
 export const ROOM_MARK = 'x_room_of' as const;
 
+/** The review profile's label (schema-dist `profiles/review.md`, rule 1): the words a reader that
+ *  hands a world on (a context for an AI, a pack, a share) puts on each proposed element it keeps,
+ *  one whose `x_review_proposed` is anything but absent or null (a doubt, rule 4, included).
+ *  buildAskContext writes it on the element's first line. Source: rule 1's own sentence, read at
+ *  codegen. */
+export const REVIEW_PROPOSED_LABEL = 'proposed, not yet reviewed' as const;
+
 
 // ---------------------------------------------------------------------------
 // FIELD_SCHEMA -- per-type field metadata (type, link target, required flag).

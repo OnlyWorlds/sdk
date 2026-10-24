@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 
 import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
-  preparePhoto, parseDate, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement,
+  preparePhoto, parseDate, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
 
@@ -89,6 +89,7 @@ const FENCED = {
   'resolveCalendarLens#2': () => resolveCalendarLens(elements, undefined, U),
   'lookupWorld#2': () => lookupWorld(index, 'Eknomos', U),
   'renderElement#2': () => renderElement(elements[0], index, U),
+  'buildAskContext#2': () => buildAskContext(elements, index, U),
 };
 
 /** The object parameters that are not options: data a caller hands over, by nature open or required. */
@@ -146,6 +147,7 @@ test('the fenced calls work without the unknown key: a refusal is the key, not t
   assert.equal(resolveCalendarLens(elements, undefined, { fallbackToOnly: true })?.id, 'c');
   assert.equal(lookupWorld(index, 'Eknomos', { limit: 1 }).length, 1);
   assert.match(renderElement(elements[0], index, { descMax: 10 }), /Eknomos/);
+  assert.equal(buildAskContext(elements, index, { includeRoom: false }).kept.length, 2);
   assert.equal(planPhoto({ width: 10, height: 10, type: 'image/png' }, { maxSide: 5 }).width, 5);
   assert.equal(readWorldFile(writeWorldFile([worldJson], 'w'), { maxBytes: 1e6 }).worldId, 'w');
   assert.equal(new OwSignInError('failed', 'm', { status: 500 }).status, 500);

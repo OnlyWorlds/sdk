@@ -56,6 +56,11 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   account's daily token rating (`tokens_remaining`, `token_rating`; `remaining` counts answers of
   this size still in it); used up → `err.isQuotaExceeded`. `isAskUnavailable`, `isAskFailed`
   count nothing. Custom fields (`x_*`) are in the lookup and the context; `atlas_*` is not.
+  Since 4.72.0 `buildAskContext` leaves proposed (`x_review_proposed` not absent or null), hidden
+  (`hidden` not absent, null or false) and room elements out unless asked
+  (`{ includeProposed, includeHidden, includeRoom }`), lists their ids in `leftOut.proposed`,
+  `.hidden`, `.room` (hidden and proposed: under `hidden` only), and labels a proposed element it
+  sends `[proposed, not yet reviewed]` on its first line; say how many were held back.
 - Sort (since 4.18.0, account token): `account.sort({ worldId, notes, slice })` turns unsorted
   notes (text, or a picture already uploaded into the world) into rows to review: `make`,
   `add_to`, `link`, `ask`, plus `not_proposed` with reasons. Ids come only from your `slice`

@@ -754,6 +754,8 @@ export interface OwWorldLink {
   uses: number;
   /** A table is `pending` while `uses < max_uses` (and neither revoked nor expired), `used` once full. */
   status: 'pending' | 'used' | 'revoked' | 'expired';
+  /** The membership (its id in GET /api/v2/members) of the co-builder who minted the link over POST /api/v2/links; null for a link the owner made (keel PR 215). */
+  minted_by: string | null;
   /** Whether the link shows the world's name and picture when it is pasted into a chat (keel #422): then the link is `/join/<world_id>#<code>`, else `/join#<code>`. Never on an agent link. */
   preview?: boolean;
   /** A player link only: the Character the player reads as; null while a link for a fresh Character is unused, and always null on a table. `name` is null if that Character was deleted (the redeem then makes a fresh one). */

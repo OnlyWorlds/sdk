@@ -6,7 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  OwV2Client, OwApiError, buildWorldIndex, lookupWorld, buildAskContext, renderElement, ASK_LIMITS,
+  OwV2Client, OwApiError, buildWorldIndex, lookupWorld, buildAskContext, renderElement, ASK_LIMITS, REVIEW_PROPOSED_LABEL,
 } from '../dist/index.js';
 
 const el = (id, name, description = '') => ({ id, type: 'character', name, description });
@@ -64,6 +64,136 @@ test('the 12,000 total stops the list at the first that does not fit; the rest i
   const r2 = buildAskContext(withSmall, buildWorldIndex(withSmall));
   assert.deepEqual(r2.kept, ['u0', 'u1', 'u2', 'u3', 'u4', 'u5']);
   assert.deepEqual(r2.dropped, ['u6', 's']);
+});
+
+// -- The three marks (4.72.0): a reader that hands a world on leaves them out unless asked ----
+
+const mark = { by: '0d4e8a2c-0000-7000-8000-000000000009', evidence: 'the Harbour Ledger, entry 14', expires: '2026-11-21' };
+const proposed = { ...el('p', 'The Lower Quays'), type: 'location', x_review_proposed: mark };
+const hidden = { ...el('h', 'Secret Heir'), hidden: true };
+const room = { id: 'r', type: 'narrative', name: 'A line in the parlor', supertype: 'Message', x_room_of: 'w1' };
+const settled = el('s', 'Mira Thel', 'Holds the fort.');
+const none = { proposed: [], hidden: [], room: [] };
+
+test('the review profile\'s label is rule 1\'s own words, generated from the vendored page', () => {
+  assert.equal(REVIEW_PROPOSED_LABEL, 'proposed, not yet reviewed');
+});
+
+test('each mark is left out by default and listed in leftOut, in the order given; dropped stays the limits\' list', () => {
+  const p2 = { ...proposed, id: 'p2' };
+  const els = [proposed, settled, hidden, room, p2];
+  const r = buildAskContext(els, buildWorldIndex(els));
+  assert.deepEqual(r.kept, ['s']);
+  assert.deepEqual(r.context, [renderElement(settled, buildWorldIndex(els))]);
+  assert.deepEqual(r.leftOut, { proposed: ['p', 'p2'], hidden: ['h'], room: ['r'] });
+  assert.deepEqual(r.dropped, []);
+  assert.deepEqual(buildAskContext([settled], buildWorldIndex([settled])).leftOut, none);
+});
+
+test('hidden is §4.8\'s test: anything but absent, null or false', () => {
+  const els = [{ ...el('a', 'A'), hidden: 'true' }, { ...el('b', 'B'), hidden: 1 }, { ...el('c', 'C'), hidden: false }, { ...el('d', 'D'), hidden: null }];
+  const r = buildAskContext(els, buildWorldIndex(els));
+  assert.deepEqual(r.leftOut.hidden, ['a', 'b']);
+  assert.deepEqual(r.kept, ['c', 'd']);
+});
+
+test('a doubt (x_review_proposed not a proper mark) is proposed: left out, counted with the proposed, labelled when asked', () => {
+  const doubt = { ...el('d', 'Doubtful'), x_review_proposed: 'yes' };
+  const emptyObj = { ...el('e', 'Empty'), x_review_proposed: {} };
+  const cleared = { ...el('c', 'Cleared'), x_review_proposed: null };
+  const els = [doubt, emptyObj, cleared];
+  const r = buildAskContext(els, buildWorldIndex(els));
+  assert.deepEqual(r.leftOut.proposed, ['d', 'e']);
+  assert.deepEqual(r.kept, ['c']);
+  assert.ok(!r.context[0].includes(REVIEW_PROPOSED_LABEL), 'a cleared mark is settled, never labelled');
+  const asked = buildAskContext(els, buildWorldIndex(els), { includeProposed: true });
+  assert.deepEqual(asked.kept, ['d', 'e', 'c']);
+  assert.ok(asked.context[0].startsWith(`[${REVIEW_PROPOSED_LABEL}] `));
+});
+
+test('each include* brings its own elements back, and only those', () => {
+  const els = [proposed, hidden, room, settled];
+  const index = buildWorldIndex(els);
+  const p = buildAskContext(els, index, { includeProposed: true });
+  assert.deepEqual(p.kept, ['p', 's']);
+  assert.deepEqual(p.leftOut, { proposed: [], hidden: ['h'], room: ['r'] });
+  const h = buildAskContext(els, index, { includeHidden: true });
+  assert.deepEqual(h.kept, ['h', 's']);
+  assert.deepEqual(h.leftOut, { proposed: ['p'], hidden: [], room: ['r'] });
+  const rm = buildAskContext(els, index, { includeRoom: true });
+  assert.deepEqual(rm.kept, ['r', 's']);
+  assert.deepEqual(rm.leftOut, { proposed: ['p'], hidden: ['h'], room: [] });
+  const all = buildAskContext(els, index, { includeProposed: true, includeHidden: true, includeRoom: true });
+  assert.deepEqual(all.kept, ['p', 'h', 'r', 's']);
+  assert.deepEqual(all.leftOut, none);
+  // a room pair without the mark is lore: always sent
+  const lore = { ...room, id: 'l', x_room_of: undefined };
+  assert.deepEqual(buildAskContext([lore], buildWorldIndex([lore])).kept, ['l']);
+});
+
+test('a kept proposed element carries the label on its first line, its card otherwise as renderElement writes it', () => {
+  const index = buildWorldIndex([proposed, settled]);
+  const r = buildAskContext([proposed, settled], index, { includeProposed: true });
+  const [first] = r.context[0].split('\n');
+  assert.equal(first, `[${REVIEW_PROPOSED_LABEL}] The Lower Quays (location)`);
+  assert.equal(r.context[0], `[${REVIEW_PROPOSED_LABEL}] ${renderElement(proposed, index)}`);
+  assert.ok(!r.context[1].includes(REVIEW_PROPOSED_LABEL), 'a settled element is never labelled');
+  // a hidden element sent on includeHidden is not proposed, so not labelled
+  const h = buildAskContext([hidden], buildWorldIndex([hidden]), { includeHidden: true });
+  assert.ok(!h.context[0].includes(REVIEW_PROPOSED_LABEL));
+});
+
+test('a hidden proposed element is counted once, under hidden; includeProposed alone never sends it', () => {
+  const both = { ...proposed, id: 'b', hidden: true };
+  const index = buildWorldIndex([both]);
+  assert.deepEqual(buildAskContext([both], index).leftOut, { proposed: [], hidden: ['b'], room: [] });
+  assert.deepEqual(buildAskContext([both], index, { includeProposed: true }).leftOut, { proposed: [], hidden: ['b'], room: [] });
+  const h = buildAskContext([both], index, { includeHidden: true });
+  assert.deepEqual(h.leftOut, { proposed: ['b'], hidden: [], room: [] });
+  const sent = buildAskContext([both], index, { includeHidden: true, includeProposed: true });
+  assert.deepEqual(sent.kept, ['b']);
+  assert.ok(sent.context[0].startsWith(`[${REVIEW_PROPOSED_LABEL}] `));
+});
+
+test('a kept element\'s link to one a mark leaves out reads as not present, never by name', () => {
+  const heir = { ...el('0192f0a0-0000-7000-8000-00000000000a', 'Secret Heir'), hidden: true };
+  const mira = { ...el('0192f0a0-0000-7000-8000-00000000000b', 'Mira Thel'), friends: [heir.id], x_ally: heir.id };
+  const line = { ...room, id: '0192f0a0-0000-7000-8000-00000000000c', name: 'Parlor gossip', characters: [mira.id] };
+  const els = [heir, mira, line];
+  const index = buildWorldIndex(els);
+  const r = buildAskContext([mira], index);
+  assert.deepEqual(r.kept, [mira.id]);
+  assert.ok(!r.context[0].includes('Secret Heir'), r.context[0]);
+  assert.ok(!r.context[0].includes('Parlor gossip'), r.context[0]);
+  assert.match(r.context[0], /friends: 1 linked element\(s\) not present/);
+  // asked for, the names come back as renderElement writes them
+  const all = buildAskContext([mira], index, { includeHidden: true, includeRoom: true });
+  assert.equal(all.context[0], renderElement(mira, index));
+  assert.match(all.context[0], /Secret Heir/);
+});
+
+test('the limits apply to what remains: left-out elements take no place of the 8 nor of the 12,000', () => {
+  const marked = Array.from({ length: 6 }, (_, i) => ({ ...long(`m${i}`, `M${i}`, 'z'.repeat(2500)), hidden: true }));
+  const plain = Array.from({ length: 10 }, (_, i) => el(`e${i}`, `Name ${i}`));
+  const els = [...marked, ...plain];
+  const r = buildAskContext(els, buildWorldIndex(els));
+  assert.equal(r.kept.length, 8);
+  assert.deepEqual(r.kept, plain.slice(0, 8).map((e) => e.id));
+  assert.deepEqual(r.dropped, ['e8', 'e9']);
+  assert.deepEqual(r.leftOut.hidden, marked.map((e) => e.id));
+  // asked for, they count again: six 2,000-character cards fill the 12,000, and every plain one is dropped
+  const all = buildAskContext(els, buildWorldIndex(els), { includeHidden: true });
+  assert.deepEqual(all.kept, marked.map((e) => e.id));
+  assert.deepEqual(all.truncated, marked.map((e) => e.id));
+  assert.deepEqual(all.dropped, plain.map((e) => e.id));
+  assert.deepEqual(all.leftOut, none);
+});
+
+test('an unknown option, or one that is not a boolean, is a TypeError', () => {
+  const index = buildWorldIndex([settled]);
+  assert.throws(() => buildAskContext([settled], index, { includeProposal: true }), (e) => e instanceof TypeError && /unknown option 'includeProposal'/.test(e.message));
+  assert.throws(() => buildAskContext([settled], index, { includeHidden: 'false' }), (e) => e instanceof TypeError && /includeHidden must be a boolean/.test(e.message));
+  assert.deepEqual(buildAskContext([settled], index, { includeHidden: false, includeProposed: false, includeRoom: false }).kept, ['s']);
 });
 
 function fake(script) {
