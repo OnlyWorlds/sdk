@@ -106,6 +106,26 @@ test('sanitizePayload strips world/type/created_at/updated_at/change_seq on patc
   }
 });
 
+// -- hidden on a create (keel #587): sent as the element has it, never stripped ----
+
+test('create, upsert and bulk send hidden as given (keel #587: a create takes it)', async () => {
+  const one = makeClient({ status: 201, body: { id: 'x', type: 'narrative', name: 'P', hidden: true } });
+  await one.client.create('narrative', { name: 'P', hidden: true });
+  assert.equal(lastBody(one.fetchImpl).hidden, true);
+  await one.client.upsert('narrative', '0eac22e7-f8d1-40d4-b550-18c164c38678', { name: 'P', hidden: true });
+  assert.equal(lastBody(one.fetchImpl).hidden, true);
+  const bulk = makeClient({ status: 200, body: FIX_P2a });
+  await bulk.client.bulk([{ type: 'narrative', element: { name: 'P', hidden: true } }, { type: 'event', element: { name: 'B' } }]);
+  const items = lastBody(bulk.fetchImpl).items;
+  assert.equal(items[0].element.hidden, true);
+  assert.equal('hidden' in items[1].element, false);
+});
+
+test('a create refused for hiding surfaces keel\'s code (403 hidden_not_allowed)', async () => {
+  const { client } = makeClient({ status: 403, body: { error: { type: 'permission_error', code: 'hidden_not_allowed', message: 'm', param: null, doc_url: null } } });
+  await assert.rejects(client.create('narrative', { name: 'P', hidden: true }), (err) => err instanceof OwApiError && err.status === 403 && err.code === 'hidden_not_allowed');
+});
+
 // -- known_of (keel PR 113, B16): never sent; a stub is never written ----------
 
 const WHOLE_READ = {

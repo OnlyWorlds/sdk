@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.72.2] - 2026-10-24
+
+### Fixed
+
+- **`OwElementBase.hidden`'s doc comment says what a create does with it.** It said a write ignores the mark. Since keel PR 199 (live 2026-10-23), a create (a POST, a PUT of a new id, a `/bulk` item that creates) carrying `hidden: true` creates the element hidden, from the owner's keys or a co-builder's; any other key gets 403 `hidden_not_allowed` and nothing is created. Every other write still ignores it. The SDK already sent the mark as the element had it; only the words were wrong, and they reach the docs' TypeScript reference.
+- Tests: `create`, `upsert` and `bulk` send `hidden` as given (it is not on the stripped list); a 403 `hidden_not_allowed` surfaces as `OwApiError.code`.
+
 ## [4.72.1] - 2026-10-24
 
 ### Fixed
