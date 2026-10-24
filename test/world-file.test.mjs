@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { zipSync, deflateSync, strToU8 } from 'fflate';
 import {
   readWorldFile, writeWorldFile, OwWorldFileError, WORLD_FILE_MAX_BYTES, WORLD_FILE_MAX_ENTRIES, WORLD_FILE_MEDIA_TYPE,
-  simpleCaseFold,
+  simpleCaseFold, nfc,
 } from '../dist/index.js';
 
 const j = (v) => JSON.stringify(v, null, 2) + '\n';
@@ -395,7 +395,88 @@ test('OW-18: the fold is CaseFolding.txt 15.1, C and S rows, for every code poin
   readWorldFile(pair(cp(0x131), 'i'));
 });
 
-test('OW-20: a link or a special file is refused; regular files and folders made on Unix are read', () => {
+test('OW-18: the NFC is UnicodeData and CompositionExclusions 15.1, for every code point, never the runtime\'s', () => {
+  // Unicode's files as published (unicode.org/Public/15.1.0/ucd/), the copies the schema dist carries beside the
+  // fixture set since serial 57 (OW Council #656). Read here on their own, apart from the built tables.
+  const dir = new URL('../codegen/schema-dist/fixtures/owworld/', import.meta.url);
+  const ccc = new Map();
+  const mapping = new Map();
+  const assigned = new Set();
+  let first = -1;
+  for (const line of readFileSync(new URL('UnicodeData-15.1.0.txt', dir), 'utf8').split(/\r?\n/)) {
+    if (!line) continue;
+    const f = line.split(';');
+    const c = parseInt(f[0], 16);
+    if (f[1].endsWith(', First>')) { first = c; continue; }
+    if (f[1].endsWith(', Last>')) { for (let k = first; k <= c; k++) assigned.add(k); continue; }
+    assigned.add(c);
+    if (Number(f[3])) ccc.set(c, Number(f[3]));
+    if (f[5] && !f[5].startsWith('<')) mapping.set(c, f[5].split(' ').map(h => parseInt(h, 16)));
+  }
+  const listed = new Set();
+  for (const line of readFileSync(new URL('CompositionExclusions-15.1.0.txt', dir), 'utf8').split(/\r?\n/)) {
+    const m = /^([0-9A-F]+)\s*#/.exec(line);
+    if (m) listed.add(parseInt(m[1], 16));
+  }
+  assert.equal(mapping.size, 2061, 'the canonical mappings of 15.1');
+  assert.equal(listed.size, 81, 'the listed exclusions of 15.1');
+  const hex = (s) => [...s].map(x => x.codePointAt(0).toString(16).toUpperCase()).join(' ');
+  const wrong = [];
+  const expect = (input, got, want) => { if (got !== want && wrong.length < 20) wrong.push(`${hex(input)} -> ${hex(got)}, not ${hex(want)}`); };
+  const PROBE = cp(0x334); // class 1, composes with nothing
+  for (let c = 0; c < 0x110000; c++) {
+    if (c >= 0xd800 && c <= 0xdfff) continue;
+    const s = cp(c);
+    const to = mapping.get(c);
+    if (to) {
+      // A composite comes back from NFC unless it is excluded from composition: listed, a singleton, or a
+      // non-starter decomposition. Its mapping is canonically equivalent to it, so both give one NFC.
+      const excluded = to.length === 1 || listed.has(c) || ccc.has(c) || ccc.has(to[0]);
+      const out = nfc(s);
+      if (excluded ? out.includes(s) : out !== s) wrong.push(`U+${c.toString(16).toUpperCase()}: ${excluded ? 'excluded, composed' : 'not composed'}`);
+      expect(cp(...to), nfc(cp(...to)), out);
+    } else if (c >= 0xac00 && c <= 0xd7a3) {
+      const n = c - 0xac00;
+      const jamo = [0x1100 + Math.floor(n / 588), 0x1161 + Math.floor((n % 588) / 28), ...(n % 28 ? [0x11a7 + n % 28] : [])];
+      expect(s, nfc(s), s);
+      expect(cp(...jamo), nfc(cp(...jamo)), s);
+    } else {
+      expect(s, nfc(s), s);
+      // A combining class is where canonical ordering puts the mark: past the probe's class 1, or in place.
+      const k = ccc.get(c) ?? 0;
+      const probed = `q${s}${PROBE}`;
+      expect(probed, nfc(probed), k > 1 ? `q${PROBE}${s}` : probed);
+    }
+  }
+  assert.deepEqual(wrong.slice(0, 20), [], `${wrong.length} code points normalise otherwise than the files say`);
+
+  // Where the runtime's Unicode is newer, a code point 15.1 leaves unassigned decomposes in the runtime and composes
+  // there, and stays as it is at 15.1: two names, accepted (U+11383 against U+11382 U+113C9, Tulu-Tigalari, 16.0).
+  const pair = (a, b) => W([{ name: `w/media/${a}.png`, data: PNG }, { name: `w/media/${b}.png`, data: PNG }]);
+  readWorldFile(pair(cp(0x11383), cp(0x11382, 0x113c9)));
+  readWorldFile(pair(cp(0x16d68), cp(0x16d67, 0x16d67)));
+  refuses(pair(cp(0x1ec7), cp(0x65, 0x302, 0x323)), 'collision');
+  // Where both know a code point, the runtime agrees (Unicode's normalization stability), so the pin moves nothing
+  // a runtime already got right.
+  const assignedHere = /^\p{Assigned}$/u;
+  const differ = [];
+  for (const c of [...mapping.keys(), ...ccc.keys()]) {
+    if (!assignedHere.test(cp(c))) continue;
+    for (const s of [cp(c), cp(...(mapping.get(c) ?? [c])), `q${cp(c)}${PROBE}`]) {
+      if (nfc(s) !== s.normalize('NFC') && differ.length < 20) differ.push(hex(s));
+    }
+  }
+  assert.deepEqual(differ, [], `where 15.1 and the runtime (Unicode ${process.versions.unicode}) both assign`);
+  // Only what 15.1 assigns is changed: every code point it leaves unassigned normalises to itself in a name.
+  for (let c = 0; c < 0x110000; c++) {
+    if (assigned.has(c) || (c >= 0xd800 && c <= 0xdfff)) continue;
+    const d = cp(c).normalize('NFD');
+    if (nfc(d) !== d && wrong.length < 20) wrong.push(`unassigned U+${c.toString(16).toUpperCase()}: ${hex(d)} -> ${hex(nfc(d))}`);
+  }
+  assert.deepEqual(wrong, [], 'code points 15.1 leaves unassigned');
+});
+
+test('OW-20:a link or a special file is refused; regular files and folders made on Unix are read', () => {
   refuses(W([{ name: 'w/media/link.png', data: strToU8('../../etc/passwd'), mode: 0o120777 }]), 'link');
   refuses(W([{ name: 'w/media/fifo', data: new Uint8Array(0), mode: 0o010644 }]), 'link');
   const back = readWorldFile(W([{ name: 'w/media/', mode: 0o040755 }, { name: 'w/media/a.png', data: PNG, mode: 0o100644 }]));
@@ -547,7 +628,7 @@ test('the .owworld fixture set (§4.7): every verdict and every cause', (t) => {
     else if (got === 'refuse' && reason !== v.reason) reasonDiffs.push(`${v.file}: ${v.reason} -> ${reason}`);
   }
   t.diagnostic(`the .owworld set: ${run} fixtures run, ${verdictDiffs.length + reasonDiffs.length} disagreeing, from ${FIXTURES}`);
-  assert.ok(run >= 85, `the set holds ${run} fixtures`);
+  assert.ok(run >= 93, `the set holds ${run} fixtures`); // serial 57's count
   assert.deepEqual(verdictDiffs, [], 'verdict disagreements');
   assert.deepEqual(reasonDiffs, [], 'right verdict for another reason');
 });

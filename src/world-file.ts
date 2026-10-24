@@ -19,7 +19,8 @@
  * - `method` (OW-21): encrypted, or a method other than stored or deflate.
  * - `name` (OW-22): a Windows device name, a trailing dot or space, one of
  *   `<>:"|?*` or a control character, a non-ASCII name without the UTF-8 flag.
- * - `duplicate` (OW-17), `collision` (OW-18: NFC, then simple case folding).
+ * - `duplicate` (OW-17), `collision` (OW-18: NFC, then simple case folding,
+ *   both Unicode 15.1's from its own files, never the runtime's).
  * - `too_many`, `too_big` (OW-14, OW-15): past the budget by count or declared
  *   size, or an entry that inflates past the size it declares.
  * - `marker` (OW-6): a root `mimetype` entry with other bytes than the media
@@ -45,6 +46,7 @@
 
 import { Inflate, inflateSync, zipSync, type Zippable } from 'fflate';
 import { refuseUnknownOptions } from './options';
+import { nfc } from './nfc';
 
 const WORLD_FILE = 'world.json';
 const MARKER_NAME = 'mimetype';
@@ -213,9 +215,12 @@ export function simpleCaseFold(text: string): string {
   return out;
 }
 
-/** OW-18's one fold for every reader: NFC, then simple case folding. `/` folds to itself. */
+/**
+ * OW-18's one fold for every reader: NFC, then simple case folding, both at
+ * Unicode 15.1 from its own files (`nfc`, `simpleCaseFold`). `/` folds to itself.
+ */
 function foldName(name: string): string {
-  return simpleCaseFold(name.normalize('NFC'));
+  return simpleCaseFold(nfc(name));
 }
 
 /** Order by the UTF-8 bytes of the name, which is code point order (OW-13), never UTF-16 units. */

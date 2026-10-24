@@ -293,6 +293,8 @@ The reader checks every entry before it inflates anything, and refuses the file 
 | `marker` | a `mimetype` entry with other bytes than `WORLD_FILE_MEDIA_TYPE` (a marker is never required) |
 | `not_a_world`, `more_than_one` | no `world.json` with an `id`, two worlds, or a second `world.json` inside the world (one under `records/` is data) |
 
+Two names are one when they match after NFC and then simple case folding, both as Unicode 15.1 defines them, from Unicode's own files built into the package (`nfc`, `simpleCaseFold`), never the runtime's Unicode: every reader, in any browser or Node version, joins the same names.
+
 Files beside the world's folder and archive junk (`__MACOSX`, `.DS_Store`) are ignored. The world's OnlyWorlds link and key (`world.json`'s `api`) never travel: both functions remove them. A tool's own folder (`.atlas/` and the like) comes back like any other file; pass `skip: path => …` to leave files out.
 
 The writer gives the same bytes for the same files: the `mimetype` marker first, then every entry in the UTF-8 order of its name, stamped 1980-01-01 00:00. It writes `world.json`, `elements/`, `spatial/`, `media/` and `records/`, and leaves any other file out. A tool's dot-folder you hand it travels too, which makes the file a private copy rather than a portable `.owworld`.

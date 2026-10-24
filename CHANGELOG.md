@@ -5,6 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.71.0] - 2026-10-24
+
+### Added
+
+- **`nfc(text)`**: Normalization Form C as Unicode 15.1 defines it, built from Unicode's own `UnicodeData-15.1.0.txt` and `CompositionExclusions-15.1.0.txt` (schema-dist serial 57, OW Council #656), never the runtime's. It is the NFC half of OW-18's fold, beside `simpleCaseFold`, exported so a tool that compares names the way a world file does gets the same answer. This export is why the release is a minor, not 4.70.1.
+
+### Fixed
+
+- **The world file's name check uses Unicode 15.1's NFC, not the runtime's** (folder spec §4.7, OW-18, ruled at serial 57). `readWorldFile` and `writeWorldFile` folded names with `String.prototype.normalize('NFC')`, which follows the runtime's ICU: Node 22's is Unicode 16.0, which composes 20 code points 15.1 leaves unassigned (Todhri, Tulu-Tigalari, Gurung Khema, Kirat Rai), so a name with U+11383 and one with U+11382 U+113C9 were refused as one name where the spec keeps two, and an older runtime could miss what 15.1 added. Both now fold with `nfc`. Where 15.1 and the runtime both assign a code point, nothing changes (Unicode's normalization stability): the set's 93 cases read the same either way. The tables are `src/nfc-tables.generated.ts`, made by `codegen/nfc_tables.mjs` from the vendored files.
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.57`** (commit e21b867; same canonical 00.33.00; no schema file moved, `schema.json` and `presentation.json` unchanged, no generated type changed, `ONLYWORLDS_VERSION` still `'00.33.00'`; generated output moves only its source header and SCHEMA.md's line). Serials 50 to 57: the export fixture's world block is the World whole, with `origin` and `x_names` (50, 51); the review profile's reader rule, a reader that hands a world on leaves proposed elements out unless asked (52, 53); the folder lint takes `hidden` as a folder key (53); the checks profile's list case and reader rules 6 to 8 (54); the spine profile and its fixture (55, 56); the `.owworld` set at 93 zips, eight OW-18 NFC pairs with `UnicodeData-15.1.0.txt` and `CompositionExclusions-15.1.0.txt` beside `CaseFolding-15.1.0.txt` (57). None of the earlier 85 zips moved.
+- Tests: the NFC against the two files for every code point (each composite composed back unless excluded, its mapping to the same NFC, each Hangul syllable from its jamo, each combining class by where ordering puts the mark), against the runtime wherever both assign a code point, and every code point 15.1 leaves unassigned left alone; U+11383 against U+11382 U+113C9 and U+16D68 against U+16D67 U+16D67 accepted as two names. The fixture count is the published 93. Four mutants (the runtime's `normalize` back in the fold, one exclusion dropped from the table, an unstable ordering, no Hangul LV+T), each red on its own line. Checked outside the repo against Unicode's `NormalizationTest-15.1.0.txt`: 19,074 lines, 0 disagreements.
+
 ## [4.70.0] - 2026-10-23
 
 ### Added

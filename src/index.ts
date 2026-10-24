@@ -57,6 +57,7 @@ export {
   readWorldFile, writeWorldFile, OwWorldFileError, WORLD_FILE_MAX_BYTES, WORLD_FILE_MAX_ENTRIES,
   WORLD_FILE_MEDIA_TYPE, simpleCaseFold,
 } from './world-file';
+export { nfc } from './nfc';
 export type {
   OwReadWorldFile, OwReadWorldFileOptions, OwWorldFileEntry, OwWorldFileReason, OwWriteWorldFileOptions, OwWriteWorldFileReport,
 } from './world-file';

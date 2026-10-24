@@ -1,6 +1,6 @@
 # For AI agents using @onlyworlds/sdk
 
-**Current as of**: SDK **4.x** · schema-dist **v0.33.0-dist.49** (canonical 00.33.00).
+**Current as of**: SDK **4.x** · schema-dist **v0.33.0-dist.57** (canonical 00.33.00).
 This line is asserted by `codegen:check` in CI — if the pin moves and this file is not
 re-read against it, the check fails rather than letting this document rot quietly.
 
@@ -96,7 +96,9 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   `writeWorldFile(files, topDir, { includePrivateRecords: true })` (since 4.63.0; OW-8).
   Element files marked `hidden: true` travel by default (a copy); a share passes
   `{ includeHidden: false, report: r => r.hiddenLeftOut }` to leave them out whole and count
-  them (since 4.70.0; §4.8).
+  them (since 4.70.0; §4.8). Two names are one after OW-18's fold: NFC, then simple case
+  folding, both Unicode 15.1's from its own files (`nfc` since 4.71.0, `simpleCaseFold`), never
+  the runtime's `normalize`, whose Unicode is its ICU's (Node 22: 16.0).
 - World calendars (since 4.20.0): `worldCalendars(elements)` finds the elements carrying
   `atlas_calendar` (Atlas owns the field: read it, never write it); `resolveCalendarLens` picks
   one; `formatStep(config, step)` names a point on the world's integer time line, `parseDate`

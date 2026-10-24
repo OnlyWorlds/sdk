@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.49",
-  "commit": "826e2462c1f3ec1677c017004b240067ddbb54b2",
-  "manifest_sha256": "d926f4dcb42d21ccc7249b6d474601c0dd6e7a42307ea46c19889e21038282f7",
+  "tag": "v0.33.0-dist.57",
+  "commit": "e21b8673a4f0dd9950e9ac7d0a46db0833de8f3f",
+  "manifest_sha256": "e169b109c4abedf8439ff933d4b1dfda93d596d7c34c0607065b1d6c53ae8f73",
   "canonical_version": "00.33.00",
-  "dist_serial": 49,
-  "published": "2026-10-22",
-  "pinned_at": "2026-10-22",
+  "dist_serial": 57,
+  "published": "2026-10-24",
+  "pinned_at": "2026-10-24",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.49",
+      "manifest_sha256": "d926f4dcb42d21ccc7249b6d474601c0dd6e7a42307ea46c19889e21038282f7",
+      "note": "superseded by v0.33.0-dist.57 (same canonical 00.33.00; no schema file moved, schema.json and presentation.json unchanged. Serials 50 and 51: example/world-export.json's world block is the World whole, with origin and x_names (Keel #516, #571, folder format v0.3.16). 52 and 53: profiles/review.md's reader rule, a reader that hands a world on leaves proposed elements out unless asked, and rule 4 on a malformed mark (Keel #580). 53: walk/lint_folder.py takes hidden as a folder key, a boolean (folder spec 4.8). 54: profiles/checks.md and checks.fixture.json, where.type as a list and reader rules 6 to 8. 55 and 56: profiles/spine.md and spine.fixture.json, the spine profile (x_spine_*, OW Spine #614), 40 cases. 57: fixtures/owworld at 93 zips, eight OW-18 NFC cases (pass-OW-18-nfc-compat, pass-OW-18-nfc-same-class, fail-OW-18-nfc-exclusion, -hangul, -non-starter, -reorder, -singleton, -singleton-angstrom) with UnicodeData-15.1.0.txt and CompositionExclusions-15.1.0.txt beside CaseFolding, OW Council #656; none of the earlier 85 zips moved)"
+    },
     {
       "tag": "v0.33.0-dist.48",
       "manifest_sha256": "62c33f211b472075b27c053a400871b98e44129d56bcaa4de66e33f282bc5acd",
