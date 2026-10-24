@@ -78,6 +78,13 @@ jobs:
             echo "CHANGELOG.md has no '## [$VERSION]' entry: write it, then tag"; exit 1
           fi
 
+      - name: The entry carries no crew words (it becomes the public release notes; ruled 2026-10-24)
+        run: |
+          awk -v h="[$VERSION]" '$1=="##" { if (f) exit; if ($2==h) { f=1; next } } f' CHANGELOG.md > entry.md
+          if grep -nE 'h[0-9]{1,3} #[0-9]+|\bCaptain\b|\bthe Deck\b|\bCarrier\b|Armature|Orrery|Hangar|Hatchery|allthecarriercrew' entry.md; then
+            echo "the $VERSION entry names a room, the crew's ship or a bay (above): say the rule and its date instead"; exit 1
+          fi
+
       - run: npm ci || npm install
       - run: npm run schema:verify
       - run: npm run codegen:check
