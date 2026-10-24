@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.59",
-  "commit": "a40a5f3592f90957f684aba0c7a0fcb64fd47531",
-  "manifest_sha256": "f402293f61735f616457e90698b8e268de7125cf7b29d96f3fa88ed54e87d22e",
+  "tag": "v0.33.0-dist.61",
+  "commit": "8701cd6f2e016c07c88490f21cfccd77f322c2d4",
+  "manifest_sha256": "99642c7d404ac59e8dfa7dffccb9b494e6b2f29af2f82bf803b0e25f41939b8e",
   "canonical_version": "00.33.00",
-  "dist_serial": 59,
+  "dist_serial": 61,
   "published": "2026-10-24",
   "pinned_at": "2026-10-24",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.59",
+      "manifest_sha256": "f402293f61735f616457e90698b8e268de7125cf7b29d96f3fa88ed54e87d22e",
+      "note": "superseded by v0.33.0-dist.61 (same canonical 00.33.00; two serials: 60 profiles/spine.md's eight readings from the doctor's flag 13, x_spine_retires the thirteenth key; 61 schema.json carries the YAMLs' advisory minimum and maximum on the 15 integer fields that have them, flatten_fields' default output unchanged, the spine profile's two readings and four fixture cases, the profile pages' ruled-when lines, the folder lint names the format's version and warns on a newer stamp; no schema file moved)"
+    },
     {
       "tag": "v0.33.0-dist.58",
       "manifest_sha256": "7746970ee66bcb9dca9aa0974e9c17891bd9a38a4fff0fe73d3fad4f97ae9724",

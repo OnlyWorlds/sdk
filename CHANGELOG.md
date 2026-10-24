@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.72.3] - 2026-10-24
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.61`** (from dist.59; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'`, no schema file moved and no generated type changed). Serial 60 rules eight spine readings and adds `x_spine_retires`, the profile's thirteenth key; serial 61 gives `schema.json` the advisory minimum and maximum of the 15 integer fields that have them (this package's types and `FIELD_SCHEMA` are generated from the field list, which does not carry them), rules two more spine readings with four fixture cases, and has the folder lint name the format's version. The SDK reads no spine key; the profile pages it replays (names, room, review) moved only their ruled-when lines.
+
 ## [4.72.2] - 2026-10-24
 
 ### Fixed
