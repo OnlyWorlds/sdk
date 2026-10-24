@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.57",
-  "commit": "e21b8673a4f0dd9950e9ac7d0a46db0833de8f3f",
-  "manifest_sha256": "e169b109c4abedf8439ff933d4b1dfda93d596d7c34c0607065b1d6c53ae8f73",
+  "tag": "v0.33.0-dist.58",
+  "commit": "582bce25f5a65f3d2bf977918349f4a7d0d784dd",
+  "manifest_sha256": "7746970ee66bcb9dca9aa0974e9c17891bd9a38a4fff0fe73d3fad4f97ae9724",
   "canonical_version": "00.33.00",
-  "dist_serial": 57,
+  "dist_serial": 58,
   "published": "2026-10-24",
   "pinned_at": "2026-10-24",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.57",
+      "manifest_sha256": "e169b109c4abedf8439ff933d4b1dfda93d596d7c34c0607065b1d6c53ae8f73",
+      "note": "superseded by v0.33.0-dist.58 (same canonical 00.33.00; no schema file moved, schema.json and presentation.json unchanged. fixtures/owworld at 96 zips: fail-OW-14-deflate-early-end and fail-OW-14-deflate-no-end, a deflate stream that ends before its declared compressed size or never ends, both not_openable (Skeld h58 #11968), and pass-OW-18-nfc-unassigned, U+11383 beside U+11382 U+113C9, two names at Unicode 15.1, with their verdicts and generate.py's cases; none of the earlier 93 zips moved. profiles/spine.md's serial-58 sentences: x_spine_owner the keeping seat's name, the projection's World mark x_spine_projection, the audit's one Seat and folded-name uniqueness, the Retirement Event's typed link. README, LICENSE and SECURITY.md written by the publisher)"
+    },
     {
       "tag": "v0.33.0-dist.49",
       "manifest_sha256": "d926f4dcb42d21ccc7249b6d474601c0dd6e7a42307ea46c19889e21038282f7",

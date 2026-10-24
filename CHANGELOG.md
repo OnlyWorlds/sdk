@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.72.1] - 2026-10-24
+
+### Fixed
+
+- **`readWorldFile` refuses a deflate stream that ends before its entry's declared compressed size** (folder spec §4.7, OW-14; Skeld's ruling, h58 #11968, published at schema-dist serial 58). The size bullet speaks of every size an entry declares, the compressed one too. fflate stopped at the stream's end and ignored the bytes after it, so an entry whose stream ended four bytes early, those bytes junk and its sizes and CRC honest, was read (`fail-OW-14-deflate-early-end`); it is now `not_openable`. fflate never says where a stream ended, so each deflated entry is inflated twice: once whole, as before, then again short of its last byte (in 64 KiB chunks past that size, the output dropped), where a stream that ends at its declared size runs out and fflate refuses it, and one that ends sooner still inflates. A stream that never ends (`fail-OW-14-deflate-no-end`) was already refused, as `not_openable`. A world file whose streams end where their entries say reads as before.
+- Tests: the whole `.owworld` set, 96 cases, through the reader, the count floor 96; built streams with 1 and 4 junk bytes after their end, short and past 64 KiB, refused, and the same streams with nothing after them read. The three zips the fix was tested on before the serial was vendored (`test/fixtures/owworld-next/`) are gone: the set carries them.
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.58`** (commit 582bce2; same canonical 00.33.00; no schema file moved, `schema.json` and `presentation.json` unchanged, no generated type changed, `ONLYWORLDS_VERSION` still `'00.33.00'`; generated output moves only its source header and SCHEMA.md's line). The `.owworld` set at 96 zips: the two deflate cases above, and `pass-OW-18-nfc-unassigned`, U+11383 beside U+11382 U+113C9, two names at Unicode 15.1, which 4.71.0's `nfc` already keeps apart; none of the earlier 93 zips moved. The spine profile's serial-58 sentences: `x_spine_owner` the keeping seat's name, the projection's World mark `x_spine_projection`, the audit's one Seat and folded-name uniqueness, the Retirement Event's typed link. The dist's README, LICENSE and SECURITY.md, written by its publisher.
+
 ## [4.72.0] - 2026-10-24
 
 ### Changed
