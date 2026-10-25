@@ -60,6 +60,7 @@ for (const [name, extra, why] of [
   ['refuse-except-not-chain', { except: [100, 250] }, 'an except that is not a multiple of the one before'],
   ['refuse-except-descending', { except: [400, 100] }, 'an except list not ascending'],
   ['refuse-except-not-multiple', { except: [6] }, 'an except that is not a multiple of every_years'],
+  ['refuse-except-equal-period', { except: [4] }, 'an except not larger than every_years (every 4, not every 4: a rule that selects no year)'],
   ['refuse-except-not-list', { except: 100 }, 'except present and not a list'],
   ['refuse-offset-fraction', { offset: 0.5 }, 'an offset that is not a whole number'],
 ]) cases.push({ name, why, value: leapEntry(extra), valid: false });

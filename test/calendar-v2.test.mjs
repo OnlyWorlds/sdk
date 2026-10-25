@@ -108,7 +108,7 @@ test('version 2 refuses a leap rule it cannot read, by name; version 3 is not a 
   for (const [extra, why] of [
     [{ except: [100, 250] }, 'not a multiple of the one before'],
     [{ except: [400, 100] }, 'not ascending'],
-    [{ except: [4] }, 'not above every_years'],
+    [{ except: [4] }, 'not above every_years (the profile\'s own refusal example)'],
     [{ except: [6] }, 'not a multiple of every_years'],
     [{ except: 100 }, 'not a list'],
     [{ except: [100.5] }, 'not whole'],
