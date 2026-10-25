@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.74.0] - 2026-10-25
+
 ### Added
 
 - **A hide's and an unhide's row on `/changes`**: `OwChangeUpsert` names `changed_at`, `changed_by` and `changed_via`, which keel sends only on the upsert row a hide or an unhide gives the readers who still see the element (the owner's keys, a co-builder, the member who made it; keel #682). The body carries `hidden: true` after a hide and no `hidden` after an unhide; the row's `change_seq` is the act's, the element's own stays in `element`. Every other upsert row carries none of the three.
