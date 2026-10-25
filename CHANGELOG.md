@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.73.0] - 2026-10-25
+
+### Added
+
+- **`OwSignInResult.tokenId`**: the account token's id from Sign in with OnlyWorlds' exchange answer (`token_id`, live on onlyworlds.com 2026-10-25). A tool done with the token revokes it with `DELETE /account/tokens/{tokenId}`, sending the token itself as the bearer, instead of finding it in the token list by its last four characters. `null` from a server that does not send it yet, never a made-up id.
+
 ## [4.72.4] - 2026-10-25
 
 ### Changed

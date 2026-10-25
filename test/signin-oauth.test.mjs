@@ -60,9 +60,9 @@ test('completeSignIn trades the code once with the five body keys and no credent
   const state = await begun(storage);
   const verifier = JSON.parse(storage.get('ow_signin:atlas')).verifier;
   const calls = [];
-  const client = new OwV2Client({ fetch: fetchStub(200, { token: 'ow_a_new', token_type: 'bearer', account: { id: 'u1', username: 'ann' } }, calls) });
+  const client = new OwV2Client({ fetch: fetchStub(200, { token: 'ow_a_new', token_id: 't1', token_type: 'bearer', account: { id: 'u1', username: 'ann' } }, calls) });
   const got = await client.completeSignIn({ clientId: 'atlas', storage, url: `https://atlas.onlyworlds.com/signin/callback?code=c1&state=${state}` });
-  assert.deepEqual(got, { token: 'ow_a_new', tokenType: 'bearer', account: { id: 'u1', username: 'ann' }, resume: { open: 'w1' } });
+  assert.deepEqual(got, { token: 'ow_a_new', tokenId: 't1', tokenType: 'bearer', account: { id: 'u1', username: 'ann' }, resume: { open: 'w1' } });
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, `${BASE}/auth/token`);
   assert.equal(calls[0].init.method, 'POST');
@@ -72,6 +72,18 @@ test('completeSignIn trades the code once with the five body keys and no credent
   const headerNames = Object.keys(calls[0].init.headers).map((h) => h.toLowerCase());
   assert.ok(!headerNames.some((h) => ['api-key', 'api-pin', 'authorization'].includes(h)));
   assert.equal(storage.get('ow_signin:atlas'), null);
+});
+
+test('completeSignIn gives tokenId null when the server sends no token_id (an older keel), never a made-up id', async () => {
+  for (const tokenId of [undefined, '', 7]) {
+    const storage = memory();
+    const state = await begun(storage);
+    const answer = { token: 'ow_a_new', token_type: 'bearer', account: { id: 'u1', username: 'ann' } };
+    if (tokenId !== undefined) answer.token_id = tokenId;
+    const client = new OwV2Client({ fetch: fetchStub(200, answer, []) });
+    const got = await client.completeSignIn({ clientId: 'atlas', storage, url: `https://atlas.onlyworlds.com/signin/callback?code=c1&state=${state}` });
+    assert.equal(got.tokenId, null);
+  }
 });
 
 test('completeSignIn refuses a wrong state, a wrong page and a missing record before sending; the record goes either way', async () => {

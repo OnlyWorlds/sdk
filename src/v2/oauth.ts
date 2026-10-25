@@ -51,6 +51,11 @@ export interface OwSignInComplete {
 export interface OwSignInResult {
   /** An `ow_a_` account token: keep it, it is the only copy (the SDK stores none). */
   token: string;
+  /**
+   * The token's id: a tool done with the token revokes it with `DELETE /account/tokens/{tokenId}`,
+   * sending the token itself as the bearer. Null from a server that does not send it yet.
+   */
+  tokenId: string | null;
   tokenType: 'bearer';
   account: { id: string; username: string };
   /** The `resume` given to `beginSignIn`, or null. */
@@ -206,12 +211,13 @@ export async function completeSignIn(
   if (res.status === 400 && errCode === 'invalid_grant') {
     throw new OwSignInError('invalid_grant', errMessage ?? 'The sign-in code could not be exchanged: it was used, expired, or made for another tool. Start again.', { status: 400, code: errCode });
   }
-  const ok = body as { token?: unknown; token_type?: unknown; account?: { id?: unknown; username?: unknown } } | null;
+  const ok = body as { token?: unknown; token_id?: unknown; token_type?: unknown; account?: { id?: unknown; username?: unknown } } | null;
   if (!res.ok || typeof ok?.token !== 'string' || ok.token === '' || typeof ok.account?.id !== 'string') {
     throw new OwSignInError('failed', errMessage ?? `Signing in did not work (${res.status}).`, { status: res.status, code: errCode });
   }
   return {
     token: ok.token,
+    tokenId: typeof ok.token_id === 'string' && ok.token_id !== '' ? ok.token_id : null,
     tokenType: 'bearer',
     account: { id: ok.account.id, username: typeof ok.account.username === 'string' ? ok.account.username : '' },
     resume: record.resume ?? null,
