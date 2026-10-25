@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.72.4] - 2026-10-25
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.63`** (from dist.61; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'`, no schema file moved and no generated type changed). Serials 62 and 63 change only the dist's folder checker, `walk/lint_folder.py`: it imports the schema walk only when run as a command. This package does not ship it; the repin keeps both client packages on one serial.
+
 ## [4.72.3] - 2026-10-24
 
 ### Changed
