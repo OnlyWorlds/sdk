@@ -37,9 +37,11 @@ function witnessed(name, pick) {
   return { value: cal.config, steps: stepsOf(cal.config, pick) };
 }
 
-const sample = (name, n) => {
-  const steps = lk(name).probes.map(([s]) => s);
-  const leapish = lk(name).probes.filter(([, , , month, day]) => Object.values(lk(name).leap_days).some((m) => m.month === month && day >= m.length)).map(([s]) => s);
+// `skip`: probes added after a case was published, kept out of the stride so its sampled steps stay as published.
+const sample = (name, n, skip = []) => {
+  const probes = lk(name).probes.filter(([s]) => !skip.includes(s));
+  const steps = probes.map(([s]) => s);
+  const leapish = probes.filter(([, , , month, day]) => Object.values(lk(name).leap_days).some((m) => m.month === month && day >= m.length)).map(([s]) => s);
   return [...new Set([...steps.filter((_, i) => i % Math.ceil(steps.length / n) === 0), ...leapish])].sort((a, b) => a - b);
 };
 
@@ -47,7 +49,10 @@ const base = { version: 2, grain: 'day', bundles: { months: { names: ['Frost', '
 const leapEntry = (extra) => ({ ...base, intercalary: [{ name: 'Leap', after_month: 2, every_years: 4, ...extra }] });
 
 const cases = [];
-const g = witnessed('Gregorian', sample('Gregorian', 14));
+// The century years, after Leap Day: a reader whose days ignore `except` while its year count keeps it
+// misreads only these (1900 and 2100 have no Leap Day, 2000 does; found by a mutant in the Unity reader).
+const CENTURIES = [693653, 693654, 693655, 693959, 730177, 730178, 730179, 730484, 766702, 766703, 766704, 767008];
+const g = witnessed('Gregorian', [...new Set([...sample('Gregorian', 14, CENTURIES), ...CENTURIES])].sort((a, b) => a - b));
 cases.push({ name: 'v2-except-chain-gregorian', why: 'version 2: every_years 4, except [100, 400], offset 1 (no year 0): LegendKeeper\'s Gregorian; every step read back from LegendKeeper as it shows it (its leap day is the 29th of February, ours the day named Leap Day after February)', value: g.value, valid: true, steps: g.steps });
 const h = witnessed('Harptos', sample('Harptos', 14));
 cases.push({ name: 'v2-offset-harptos', why: 'version 2: every_years 4, offset 1 (no year 0): Shieldsmeet in displayed years 4, 8, ... (year index 3, 7, ...), after Midsummer; every step read back from LegendKeeper', value: h.value, valid: true, steps: h.steps });
