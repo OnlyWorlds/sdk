@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.75.0] - 2026-10-25
+
+### Changed
+
+- **Schema repinned to schema-dist v0.33.0-dist.66** (from dist.63; same canonical 00.33.00). `ROOM_PAIRS` gains the room profile's ninth pair, `relation`/`Take` (one member's take on a work item; it also carries `x_room_item`, the item's id), so `isRoomElement` counts a marked Take as a room element. The room fixture's 25 cases are replayed. No other generated type changed.
+
 ## [4.74.0] - 2026-10-25
 
 ### Added

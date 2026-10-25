@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.63
-//         commit          6326386ecf02d7f70f5f5e8cf4ffd4eeb228265b
-//         MANIFEST sha256 8326836abd7738d3ce51923e9dad496f3cd8e662c9ed985a44fe61373af2071a
-//         canonical 00.33.00, dist serial 63, published 2026-10-25
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.66
+//         commit          c4873649c54dd5f6c7cd9b2c75499a603410b2a0
+//         MANIFEST sha256 360e274956ab796a36589cfd1aa8c0fed6a908f1a43c8087b46bae544b49ff8e
+//         canonical 00.33.00, dist serial 66, published 2026-10-25
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -331,6 +331,7 @@ export const ROOM_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly su
   { type: 'relation', supertype: 'Work item' },
   { type: 'construct', supertype: 'Spec' },
   { type: 'relation', supertype: 'Heart' },
+  { type: 'relation', supertype: 'Take' },
   { type: 'relation', supertype: 'Vote' },
   { type: 'event', supertype: 'Sitting' },
   { type: 'character', supertype: 'Member' },

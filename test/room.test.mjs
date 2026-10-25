@@ -23,7 +23,7 @@ function loadFixture() {
 test('ROOM_PAIRS is the fixture\'s pairs, in its order, and the mark is x_room_of', () => {
   const doc = loadFixture();
   assert.deepEqual(ROOM_PAIRS.map(p => ({ ...p })), doc.pairs);
-  assert.equal(ROOM_PAIRS.length, 8);
+  assert.equal(ROOM_PAIRS.length, 9);
   assert.equal(doc.mark.field, 'x_room_of');
 });
 
@@ -36,7 +36,7 @@ test('isRoomElement answers every case of the room fixture', (t) => {
   }
   t.diagnostic(`the room fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   assert.deepEqual(wrong, []);
-  assert.ok(cases.length >= 23, `the fixture holds ${cases.length} cases`);
+  assert.ok(cases.length >= 25, `the fixture holds ${cases.length} cases`);
 });
 
 test('isRoomElement: an element without a string type, supertype or mark is not in the room', () => {
