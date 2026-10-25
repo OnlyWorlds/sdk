@@ -59,8 +59,13 @@ export interface CalendarIntercalary {
   name: string;
   /** 0 = before month 1; k = after month k. Requires months. */
   after_month: number;
-  /** Present only in years where floorMod(absYear, N) === 0 (the leap rule). */
+  /** Present only in years where floorMod(absYear + offset, N) === 0 (the leap rule). */
   every_years?: number;
+  /** Version 2: divisors that flip the rule in order, each a multiple of the one before
+   *  (`every_years: 4, except: [100, 400]`: every 4, not every 100, yet every 400). */
+  except?: number[];
+  /** Version 2: the rule reads year absYear + offset (default 0; 1 for a calendar with no year 0). */
+  offset?: number;
   /** Counts in the free-running week (default true). The Shire lock = opting
    *  exactly Mid-year's Day + Overlithe out (364 = 52 × 7). */
   in_week?: boolean;
@@ -126,7 +131,7 @@ export function floorMod(a: number, b: number): number {
 
 export function validateCalendarConfig(cfg: CalendarConfig): string[] {
   const errors: string[] = [];
-  if (cfg.version !== 1) errors.push(`Unsupported calendar version: ${cfg.version}`);
+  if (cfg.version !== 1 && cfg.version !== 2) errors.push(`Unsupported calendar version: ${cfg.version}`);
   if (!cfg.grain || typeof cfg.grain !== 'string') errors.push('Grain is required');
 
   const months = cfg.bundles?.months;
@@ -159,6 +164,11 @@ export function validateCalendarConfig(cfg: CalendarConfig): string[] {
     }
     if (ic.every_years != null && (!Number.isInteger(ic.every_years) || ic.every_years < 1)) {
       errors.push(`Festival day "${ic.name}": every N yrs must be a whole number, 1 or more`);
+    }
+    const rule = leapRuleProblem(ic);
+    if (rule) errors.push(`Festival day "${ic.name}": ${rule}`);
+    if (cfg.version === 1 && (ic.except != null || ic.offset != null)) {
+      errors.push(`Festival day "${ic.name}": except and offset need calendar version 2`);
     }
   }
 
@@ -195,7 +205,7 @@ export function validateCalendarConfig(cfg: CalendarConfig): string[] {
 export function readCalendarConfig(value: unknown): CalendarConfig | null {
   if (typeof value !== 'object' || value === null) return null;
   const cfg = value as CalendarConfig;
-  if (cfg.version !== 1 || typeof cfg.grain !== 'string') return null;
+  if ((cfg.version !== 1 && cfg.version !== 2) || typeof cfg.grain !== 'string') return null;
   // Structural sanity only — validateCalendarConfig covers semantics. A config
   // with semantic errors (overlaps) still formats via deterministic fallbacks.
   const months = cfg.bundles?.months;
@@ -219,7 +229,34 @@ export function readCalendarConfig(value: unknown): CalendarConfig | null {
   const week = cfg.bundles?.week;
   if (week != null && (!isPositiveInt(week.length) || !Array.isArray(week.names) || !week.names.every(isString))) return null;
   if (cfg.intercalary?.some((i) => i.every_years != null && !isPositiveInt(i.every_years))) return null;
+  // Version 2's leap keys (version 1 ignores them, as it ignores any unknown key).
+  if (cfg.version === 2 && cfg.intercalary?.some((i) => leapRuleProblem(i) != null)) return null;
   return cfg;
+}
+
+/**
+ * Why an entry's version-2 leap keys can't be read, or null. `except` must be a list of
+ * whole numbers, each above and a multiple of the one before (the first of `every_years`),
+ * so "the last divisor that matches" has one meaning and the closed-form count holds;
+ * `offset` a whole number; neither without `every_years`. `null` reads as absent.
+ */
+function leapRuleProblem(ic: CalendarIntercalary): string | null {
+  const ex: unknown = ic.except;
+  const off: unknown = ic.offset;
+  if (ex == null && off == null) return null;
+  if (ic.every_years == null) return 'except and offset need every_years';
+  if (off != null && !Number.isSafeInteger(off)) return 'offset must be a whole number';
+  if (ex != null) {
+    if (!Array.isArray(ex)) return 'except must be a list';
+    let prev = ic.every_years;
+    for (const d of ex) {
+      if (!isPositiveInt(d) || d <= prev || d % prev !== 0) {
+        return 'each except must be a multiple of the number before it, and larger';
+      }
+      prev = d;
+    }
+  }
+  return null;
 }
 
 function isString(s: unknown): s is string {
@@ -232,42 +269,85 @@ function isPositiveInt(n: unknown): n is number {
 
 // ---- Year arithmetic ----
 
+/** A leap entry's rule as read: period, the except chain and the offset (both version 2 only). */
+interface LeapRule {
+  n: number;
+  except: number[];
+  offset: number;
+}
+
+function leapRule(cfg: CalendarConfig, ic: CalendarIntercalary): LeapRule {
+  const v2 = cfg.version === 2;
+  return { n: ic.every_years as number, except: (v2 && ic.except) || [], offset: (v2 && ic.offset) || 0 };
+}
+
+function leapRules(cfg: CalendarConfig, inter: CalendarIntercalary[]): LeapRule[] {
+  return inter.filter((i) => i.every_years != null).map((i) => leapRule(cfg, i));
+}
+
 interface YearShape {
   /** Base year length: months + non-leap intercalary (or year.steps, or 1). */
   baseLen: number;
-  /** Leap entries: every_years periods (one extra step each in leap years). */
-  leapPeriods: number[];
+  /** Leap entries' rules (one extra step each in the years a rule selects). */
+  rules: LeapRule[];
 }
 
 function yearShape(cfg: CalendarConfig): YearShape {
   const months = cfg.bundles?.months;
   const inter = cfg.intercalary ?? [];
-  const leapPeriods = inter.filter((i) => i.every_years != null).map((i) => i.every_years as number);
+  const rules = leapRules(cfg, inter);
   if (months) {
     const base = months.lengths.reduce((a, b) => a + b, 0)
       + inter.filter((i) => i.every_years == null).length;
-    return { baseLen: base, leapPeriods };
+    return { baseLen: base, rules };
   }
-  return { baseLen: cfg.bundles?.year?.steps ?? 1, leapPeriods };
+  return { baseLen: cfg.bundles?.year?.steps ?? 1, rules };
 }
 
-/** Signed count of leap years k (floorMod(k, N) === 0) with 0 <= k < y, minus those with y <= k < 0. */
-function leapYearsBefore(y: number, N: number): number {
-  if (y > 0) return floorDiv(y - 1, N) + 1; // k = 0, N, 2N, ... < y
-  if (y === 0) return 0;
-  return -floorDiv(-y, N); // k = -N, -2N, ... >= y (year 0 itself is not in [y, 0))
+/** True when the rule selects absolute year y: floorMod(y + offset, n) === 0, flipped by each except dividing it. */
+function ruleHolds(r: LeapRule, y: number): boolean {
+  const Y = y + r.offset;
+  let on = floorMod(Y, r.n) === 0;
+  for (const d of r.except) if (floorMod(Y, d) === 0) on = !on;
+  return on;
 }
 
-/** True when absolute year y contains the leap entry with period N. */
+/** How many k in [a, b) have floorMod(k + offset, m) === 0. */
+function multiplesIn(a: number, b: number, m: number, offset: number): number {
+  return floorDiv(b - 1 + offset, m) - floorDiv(a - 1 + offset, m);
+}
+
+/**
+ * Signed count of the years k the rule selects with 0 <= k < y, minus those with y <= k < 0.
+ * Closed form: each except is a multiple of the divisor before it (the reader refuses any
+ * other list), so its years are a subset of the last term's and the terms alternate.
+ */
+function leapYearsBefore(y: number, r: LeapRule): number {
+  const [a, b, sign] = y >= 0 ? [0, y, 1] : [y, 0, -1];
+  let count = multiplesIn(a, b, r.n, r.offset);
+  let s = -1;
+  for (const d of r.except) {
+    count += s * multiplesIn(a, b, d, r.offset);
+    s = -s;
+  }
+  return sign * count;
+}
+
+/** True when absolute year y contains a leap entry with period N (the version-1 rule). */
 export function isLeapYear(y: number, N: number): boolean {
   return floorMod(y, N) === 0;
+}
+
+/** True when the intercalary day falls in absolute year y: always without `every_years`, else by its rule. */
+export function intercalaryInYear(cfg: CalendarConfig, ic: CalendarIntercalary, y: number): boolean {
+  return ic.every_years == null || ruleHolds(leapRule(cfg, ic), y);
 }
 
 /** First step of absolute year y. yearStart(0) === 0 by construction. */
 export function yearStartStep(cfg: CalendarConfig, y: number): number {
   const shape = yearShape(cfg);
   let start = y * shape.baseLen;
-  for (const N of shape.leapPeriods) start += leapYearsBefore(y, N);
+  for (const r of shape.rules) start += leapYearsBefore(y, r);
   return start;
 }
 
@@ -275,8 +355,19 @@ export function yearStartStep(cfg: CalendarConfig, y: number): number {
 export function yearLength(cfg: CalendarConfig, y: number): number {
   const shape = yearShape(cfg);
   let len = shape.baseLen;
-  for (const N of shape.leapPeriods) if (isLeapYear(y, N)) len += 1;
+  for (const r of shape.rules) if (ruleHolds(r, y)) len += 1;
   return len;
+}
+
+/** A rule's mean leap days per year: 1/n − 1/e1 + 1/e2 − … */
+function meanLeap(r: LeapRule): number {
+  let m = 1 / r.n;
+  let s = -1;
+  for (const d of r.except) {
+    m += s / d;
+    s = -s;
+  }
+  return m;
 }
 
 /** Correction laps allowed per direction. A valid config needs about
@@ -288,7 +379,7 @@ export function absoluteYear(cfg: CalendarConfig, step: number): number {
   const shape = yearShape(cfg);
   // Seed on the MEAN year length (leap days included) so the correction stays
   // a few laps at any distance from zero.
-  const meanLen = shape.leapPeriods.reduce((a, N) => a + 1 / N, shape.baseLen);
+  const meanLen = shape.rules.reduce((a, r) => a + meanLeap(r), shape.baseLen);
   let y = floorDiv(step, meanLen);
   if (!Number.isFinite(y)) return y; // non-finite step or zero-length year: nothing to correct
   // Bounded laps: a config that slips the reader must not hang.
@@ -314,8 +405,11 @@ export function resolveEraDomains(eras: CalendarEra[]): EraDomain[] {
       // Domain [end-or--inf, start): counts toward the pivot; pivot belongs to the next (up) era.
       out.push({ era, lo: era.end ?? -Infinity, hi: era.start });
     } else {
-      const nextStart = sorted[i + 1]?.start;
-      out.push({ era, lo: era.start, hi: era.end ?? nextStart ?? Infinity });
+      // An open end runs to the next UP era's start: a down era holds no step at or above its
+      // pivot, so it never ends an up era (before 4.76.0 an up era at 0 listed before a down
+      // era with pivot 0 ended where it began, decided by list order).
+      const nextUp = sorted.slice(i + 1).find((e) => (e.direction ?? 'up') === 'up');
+      out.push({ era, lo: era.start, hi: era.end ?? nextUp?.start ?? Infinity });
     }
   }
   return out;
@@ -369,8 +463,7 @@ function yearSlots(cfg: CalendarConfig, y: number): DaySlot[] {
   const months = cfg.bundles?.months;
   if (!months) return [];
   const inter = cfg.intercalary ?? [];
-  const active = (ic: CalendarIntercalary): boolean =>
-    ic.every_years == null || isLeapYear(y, ic.every_years);
+  const active = (ic: CalendarIntercalary): boolean => intercalaryInYear(cfg, ic, y);
   const slots: DaySlot[] = [];
   const push = (afterMonth: number): void => {
     for (const ic of inter) if (ic.after_month === afterMonth && active(ic)) slots.push({ kind: 'intercalary', intercalary: ic });
@@ -385,11 +478,11 @@ function yearSlots(cfg: CalendarConfig, y: number): DaySlot[] {
 
 // ---- Weekday ----
 
-function skippedWeekDaysPerYear(cfg: CalendarConfig): { base: number; leapPeriods: number[] } {
+function skippedWeekDaysPerYear(cfg: CalendarConfig): { base: number; rules: LeapRule[] } {
   const inter = (cfg.intercalary ?? []).filter((i) => i.in_week === false);
   return {
     base: inter.filter((i) => i.every_years == null).length,
-    leapPeriods: inter.filter((i) => i.every_years != null).map((i) => i.every_years as number),
+    rules: leapRules(cfg, inter),
   };
 }
 
@@ -407,7 +500,7 @@ export function weekdayForStep(cfg: CalendarConfig, step: number, pre?: StepPosi
   const skipped = skippedWeekDaysPerYear(cfg);
   const y = pos.absYear;
   let skippedBeforeYear = y * skipped.base;
-  for (const N of skipped.leapPeriods) skippedBeforeYear += leapYearsBefore(y, N);
+  for (const r of skipped.rules) skippedBeforeYear += leapYearsBefore(y, r);
   let skippedInYear = 0;
   if (pos.slots) {
     for (let i = 0; i < pos.offset; i++) {
@@ -568,8 +661,7 @@ export function monthStartSteps(cfg: CalendarConfig, y: number): { month: number
   const months = cfg.bundles?.months;
   if (!months) return [];
   const inter = cfg.intercalary ?? [];
-  const active = (ic: CalendarIntercalary): boolean =>
-    ic.every_years == null || isLeapYear(y, ic.every_years);
+  const active = (ic: CalendarIntercalary): boolean => intercalaryInYear(cfg, ic, y);
   const out: { month: number; name: string; step: number }[] = [];
   let offset = inter.filter((i) => i.after_month === 0 && active(i)).length;
   const start = yearStartStep(cfg, y);

@@ -97,10 +97,11 @@ const DATA = {
   'new TokenResource#0': 'the transport (a client), not settings',
 };
 for (const fn of ['absYearForEraYear', 'absoluteYear', 'approxYearLength', 'breakdownStep', 'displayYear', 'eraForStep',
-  'formatDuration', 'formatMidLabel', 'formatStep', 'formatYearLabel', 'monthStartSteps', 'parseDate',
+  'formatDuration', 'formatMidLabel', 'formatStep', 'formatYearLabel', 'intercalaryInYear', 'monthStartSteps', 'parseDate',
   'validateCalendarConfig', 'weekdayForStep', 'yearLength', 'yearStartStep']) {
   DATA[`${fn}#0`] = 'a CalendarConfig: the calendar itself';
 }
+DATA['intercalaryInYear#1'] = 'a CalendarIntercalary: one entry of the calendar';
 Object.assign(DATA, {
   'absYearForEraYear#1': 'a CalendarEra of the config',
   'displayYear#2': 'a CalendarEra of the config',
