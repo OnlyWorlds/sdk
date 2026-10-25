@@ -1,6 +1,5 @@
 /**
- * The calendar amendment (OW Council, ruled 2026-10-25; the profile page follows in a schema-dist
- * serial): version 2's leap keys `except` and `offset` on an intercalary entry, a version-1 reader's
+ * The calendar amendment (schema-dist serial 68, profiles/calendar.md): version 2's leap keys `except` and `offset` on an intercalary entry, a version-1 reader's
  * refusal of a version-2 value, and an up era's open end skipping down eras.
  *
  * Witnessed against another implementation: test/fixtures/legendkeeper-calendars.json holds five of
@@ -25,12 +24,6 @@ import {
 const read = (rel) => JSON.parse(readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8'));
 const LK = read('./fixtures/legendkeeper-calendars.json');
 const FIXTURE = read('../codegen/schema-dist/profiles/calendar.fixture.json');
-
-/** Fixture cases the amendment changes on purpose, until the serial moves them: name -> why. */
-const AMENDED = {
-  'refuse-version': 'version 2 is a calendar since the amendment; the serial moves the case to version 3',
-  'era-overlap-down-later-start': 'from step 100 the up era Rise holds (its open end skips the down era); it read no era',
-};
 
 for (const cal of LK.calendars) {
   test(`LegendKeeper's ${cal.name}: every probed day reads as LegendKeeper reads it`, () => {
@@ -140,8 +133,9 @@ test('an up era with no end runs to the next up era, past a down era listed afte
   assert.equal(eraForStep(later, 10)?.name, 'Third');
 });
 
-test('the vendored calendar fixture: every case reads as written, but the amended ones', () => {
+test('the vendored calendar fixture: every case reads as written', () => {
   assert.equal(FIXTURE.profile, 'atlas_calendar');
+  assert.equal(FIXTURE.cases.length, 64, 'serial 68 carries 64 cases');
   const failed = [];
   for (const c of FIXTURE.cases) {
     const cfg = readCalendarValue(c.value);
@@ -153,5 +147,5 @@ test('the vendored calendar fixture: every case reads as written, but the amende
     }
     if (!ok) failed.push(c.name);
   }
-  assert.deepEqual(failed.sort(), Object.keys(AMENDED).sort());
+  assert.deepEqual(failed, []);
 });

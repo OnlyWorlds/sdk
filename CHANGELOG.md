@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.76.0] - 2026-10-25
+
+### Added
+
+- **Calendar version 2: a leap rule with exceptions and an offset** (the calendar profile's amendment, schema-dist v0.33.0-dist.68). An intercalary entry with `every_years` may carry `except`, divisors that flip the rule in order (`every_years: 4, except: [100, 400]`: every 4, not every 100, yet every 400), and `offset`, added to the year index before the rule (1 for a calendar with no year 0). Gregorian is `every_years: 4, except: [100, 400], offset: 1`. A value that uses either key is `version: 2`; `readCalendarConfig` reads versions 1 and 2, reads the two keys only under version 2, and refuses an `except` that is not strictly ascending with each entry a multiple of the one before (the first of `every_years`), or an `offset` that is not a whole number. `validateCalendarConfig` names each of these, and the keys under version 1. Year arithmetic stays closed-form. `intercalaryInYear(cfg, entry, year)` says whether an intercalary day falls in a year.
+
+### Changed
+
+- **An era with no `end` runs to the next up era's start**, skipping down eras, whatever the list order. An up era listed before a down era with the same pivot no longer ends where it begins: with eras `After` (up, from 0) and `Before` (down, pivot 0), step 5 reads `6 AF`, where it read `5` with no era.
+- **Schema repinned to schema-dist v0.33.0-dist.68** (from dist.66; same canonical 00.33.00). The calendar fixture's 64 cases are replayed by a test, which no test did before; the import map profile (serial 67) is vendored with the distribution and not read by this package. No generated type changed.
+
 ## [4.75.0] - 2026-10-25
 
 ### Changed
