@@ -151,8 +151,21 @@ export type OwChange = OwChangeUpsert | OwChangeDelete;
 /** A /changes item for an element written: the element whole, as GET returns it. */
 export interface OwChangeUpsert {
   op: 'upsert'; id: string; type: string; element: OwElement; updated_at: string;
-  /** The change's place in the world's feed. */
+  /**
+   * The change's place in the world's feed. On a hide's or an unhide's row (the one carrying
+   * `changed_via`) it is that act's place; the element's own `change_seq`, in `element`, stays where it was.
+   */
   change_seq: number;
+  /**
+   * Only on a hide's or an unhide's row, sent to the readers who still see the element (the owner's
+   * keys, a co-builder, the member who made it): when it was hidden (`element.hidden` is true) or
+   * unhidden (no `hidden`). Absent on every other upsert row.
+   */
+  changed_at?: string | null;
+  /** Only on a hide's or an unhide's row: the membership that hid or unhid it, or null for the world's owner (as a `hidden` delete row's `deleted_by`). */
+  changed_by?: string | null;
+  /** Only on a hide's or an unhide's row: its door (see {@link OwWriteDoor}), `site` for the owner's page on onlyworlds.com. */
+  changed_via?: OwWriteDoor;
   [k: string]: unknown;
 }
 
