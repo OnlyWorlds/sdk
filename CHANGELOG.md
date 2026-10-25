@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.76.2] - 2026-10-25
+
+### Changed
+
+- **Schema repinned to schema-dist v0.33.0-dist.71** (from dist.69; same canonical 00.33.00). The room profile now says what trimmed means: Unicode White_Space removed at both ends, a byte order mark kept. Its fixture gains three cases, 28 in all: a tab and an ideographic space around the name still match, a leading U+FEFF and a trailing U+001C do not. `isRoomElement` already read all 28, so no reader changed; the room test now asserts exactly 28 cases. No generated type changed. Serial 70 carried the same content with a manifest that did not match its files and is pinned in no release.
+
 ## [4.76.1] - 2026-10-25
 
 ### Changed

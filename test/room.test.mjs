@@ -36,7 +36,7 @@ test('isRoomElement answers every case of the room fixture', (t) => {
   }
   t.diagnostic(`the room fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   assert.deepEqual(wrong, []);
-  assert.ok(cases.length >= 25, `the fixture holds ${cases.length} cases`);
+  assert.equal(cases.length, 28, `the fixture holds ${cases.length} cases, serial 71 has 28`);
 });
 
 test('isRoomElement: an element without a string type, supertype or mark is not in the room', () => {

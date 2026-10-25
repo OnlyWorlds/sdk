@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.69",
-  "commit": "55247b0dc6fbe91d519e1ccf9abb6624ac61fc6a",
-  "manifest_sha256": "0b2b2c715c061de22c17e90b1723275571d67a010364b9681fe079e24448b241",
+  "tag": "v0.33.0-dist.71",
+  "commit": "a81b7bd4c838227370cd31dcc355742d59fbfa35",
+  "manifest_sha256": "aaffaa512bd266dae86c6b349be9c587d56b6caa130b97a334d2c021119ba5a8",
   "canonical_version": "00.33.00",
-  "dist_serial": 69,
+  "dist_serial": 71,
   "published": "2026-10-25",
   "pinned_at": "2026-10-25",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.69",
+      "manifest_sha256": "0b2b2c715c061de22c17e90b1723275571d67a010364b9681fe079e24448b241",
+      "note": "superseded by v0.33.0-dist.71 (same canonical 00.33.00; the room profile's trim: room.md says trimmed is Unicode White_Space at both ends and a byte order mark stays, and the fixture gains three cases, 28 in all: a tab and an ideographic space around the name match, a leading U+FEFF and a trailing U+001C do not; no schema file moved. Serial 70, the same content with a manifest that listed two calendar files at their serial-68 hashes, was superseded within the hour and pinned in no release)"
+    },
     {
       "tag": "v0.33.0-dist.68",
       "manifest_sha256": "5ca5619f70a661100686ce2f692512fdaa64dc51fd3aa1be572b183060c5ed05",
