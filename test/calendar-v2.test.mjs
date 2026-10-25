@@ -135,7 +135,10 @@ test('an up era with no end runs to the next up era, past a down era listed afte
 
 test('the vendored calendar fixture: every case reads as written', () => {
   assert.equal(FIXTURE.profile, 'atlas_calendar');
-  assert.equal(FIXTURE.cases.length, 64, 'serial 68 carries 64 cases');
+  assert.equal(FIXTURE.cases.length, 64, 'serial 69 carries 64 cases');
+  assert.equal(FIXTURE.cases.reduce((n, c) => n + (c.steps?.length ?? 0), 0), 198, 'serial 69 carries 198 steps');
+  // Serial 69 added the days around Leap Day in 1900, 2000 and 2100 (12 steps) to the Gregorian case.
+  assert.equal(FIXTURE.cases.find((c) => c.name === 'v2-except-chain-gregorian')?.steps.length, 29, 'the Gregorian case holds 29 steps');
   const failed = [];
   for (const c of FIXTURE.cases) {
     const cfg = readCalendarValue(c.value);

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.76.1] - 2026-10-25
+
+### Changed
+
+- **Schema repinned to schema-dist v0.33.0-dist.69** (from dist.68; same canonical 00.33.00). The calendar fixture's `v2-except-chain-gregorian` case gains 12 steps, the days around Leap Day in 1900, 2000 and 2100 (no Leap Day in 1900 and 2100, one in 2000), each checked against LegendKeeper's own reading; a reader whose days ignore `except` while its year count keeps it misreads only these. The test replays all 64 cases, now 198 steps. The script that generates the amendment's cases (`scripts/calendar-fixture-cases.mjs`) adds those century days and keeps the case's earlier sampled steps as published; its 14 cases equal the published ones. No generated type changed.
+
 ## [4.76.0] - 2026-10-25
 
 ### Added

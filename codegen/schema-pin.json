@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.68",
-  "commit": "8b43a334a35f9d07b3b3368dc4b9a58909e66548",
-  "manifest_sha256": "5ca5619f70a661100686ce2f692512fdaa64dc51fd3aa1be572b183060c5ed05",
+  "tag": "v0.33.0-dist.69",
+  "commit": "55247b0dc6fbe91d519e1ccf9abb6624ac61fc6a",
+  "manifest_sha256": "0b2b2c715c061de22c17e90b1723275571d67a010364b9681fe079e24448b241",
   "canonical_version": "00.33.00",
-  "dist_serial": 68,
+  "dist_serial": 69,
   "published": "2026-10-25",
   "pinned_at": "2026-10-25",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.68",
+      "manifest_sha256": "5ca5619f70a661100686ce2f692512fdaa64dc51fd3aa1be572b183060c5ed05",
+      "note": "superseded by v0.33.0-dist.69 (same canonical 00.33.00; 69 adds 12 steps to the calendar fixture's v2-except-chain-gregorian case, the days around Leap Day in 1900, 2000 and 2100, each checked against LegendKeeper, and calendar.md's Conformance line counts 198 steps; 64 cases, no schema file moved)"
+    },
     {
       "tag": "v0.33.0-dist.66",
       "manifest_sha256": "360e274956ab796a36589cfd1aa8c0fed6a908f1a43c8087b46bae544b49ff8e",
