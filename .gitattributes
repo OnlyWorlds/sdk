@@ -1,0 +1,2 @@
+# The draughtText fixture is held byte for byte (MANIFEST.json, and the Python package vendors it).
+test/fixtures/draught-text/** -text

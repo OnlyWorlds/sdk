@@ -115,6 +115,7 @@ Object.assign(DATA, {
   'isRoomElement#0': 'an element',
   'isParseError#0': 'parseDate\'s answer',
   'planPhoto#0': 'the picture\'s size and type',
+  'draughtText#0': 'a draught body, as draught() returns it',
 });
 
 /** Run a call that may throw, return a promise, or return an iterator; hand back what it threw. */

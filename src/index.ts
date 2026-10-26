@@ -82,6 +82,10 @@ export type {
 export { buildAskContext, ASK_LIMITS, REVIEW_PROPOSED_LABEL } from './ask';
 export type { OwAskContext, OwAskContextOptions, OwAskLeftOut } from './ask';
 
+// A draught as plain text: one Character's context packet (draught()) as the text to paste, the
+// same byte for byte as the Python package's draught_text
+export { draughtText } from './draught-text';
+
 // Photo preparation: shrink and convert a picture in the browser before uploadImage
 export { preparePhoto, planPhoto, PHOTO_TYPES, PHOTO_MAX_BYTES } from './photo';
 export type { OwPhotoOptions, OwPhotoPlan, OwPreparedPhoto } from './photo';
