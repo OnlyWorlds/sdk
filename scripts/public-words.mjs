@@ -8,6 +8,7 @@
 //
 //   node scripts/public-words.mjs            scan the published paths (below)
 //   node scripts/public-words.mjs PATH ...   scan these files or directories instead
+//   node scripts/public-words.mjs --commits A..B   scan the messages of the commits B adds to A
 //
 // Exit 1 and one line per finding; exit 0 when the tree is clean. Not scanned: CHANGELOG.md
 // (the dated record, kept as written), test/, and codegen/schema-dist/ (vendored and
@@ -114,6 +115,32 @@ function filesFor(args) {
       .map((p) => join(ROOT, p));
   }
   return args.flatMap((a) => (statSync(a).isDirectory() ? walk(a) : [a]));
+}
+
+// A commit message is published text too: `--commits A..B` scans the messages of the commits B adds
+// to A, `--commits SHA` that one commit's. CI runs it on the commits each push or pull request adds.
+if (process.argv[2] === '--commits') {
+  const range = process.argv[3];
+  if (!range) {
+    console.log('public words: --commits needs a range (A..B) or one commit');
+    process.exit(2);
+  }
+  let log;
+  try {
+    const args = range.includes('..') ? [range] : ['-1', range];
+    log = execFileSync('git', ['log', '--format=%h%x00%B%x01', ...args], { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString('utf8');
+  } catch {
+    console.log(`public words: git could not read the commits ${range} (a shallow clone, or a commit gone); not a pass`);
+    process.exit(2);
+  }
+  const commits = log.split('\x01').map((c) => c.trim()).filter(Boolean);
+  const found = commits.flatMap((c) => {
+    const [sha, message] = c.split('\0');
+    return scanText(message ?? '', `commit ${sha}`);
+  });
+  for (const line of found) console.log(line);
+  console.log(`public words: ${found.length} finding(s) in ${commits.length} commit message(s)`);
+  process.exit(found.length ? 1 : 0);
 }
 
 const decoder = new TextDecoder('utf-8', { fatal: true });
