@@ -228,7 +228,7 @@ An accept is refused with nothing written when a proposed field moved since the 
 
 A world's owner can have agent seats propose instead of write (`agent_writes_proposed` on `getWorld()`, set on the world page). An agent seat's `patch`, `upsert` or `editLinks` on an existing element then throws `OwProposedError` (status 202, `err.isProposed`), with the row under `err.proposal`. A `bulk` slot says `status: 202` and carries `proposal` instead. A person's key is never held.
 
-## Finding things in a world
+## Finding elements in a world
 
 When you hold a world's elements in memory (from a sync, or a world file), `lookupWorld` finds the ones a plain question is about, with no model and no network:
 
