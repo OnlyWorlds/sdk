@@ -1,5 +1,5 @@
 /**
- * The proposed change (keel #519, PR 180): propose, listProposals, worldProposals, acceptProposal,
+ * The proposed change: propose, listProposals, worldProposals, acceptProposal,
  * declineProposal and withdrawProposal; a 202 on patch, upsert and editLinks thrown as an
  * OwProposedError (a /bulk slot's 202 left in its slot); the five codes keel added, with
  * stale_proposal's conflicts and current; agent_writes_proposed on the world, read-only.
@@ -19,7 +19,7 @@ const API = 'https://www.onlyworlds.com/api/v2';
 const EL = '018f0000-0000-7000-8000-0000000000e1';
 const PID = '018f0000-0000-7000-8000-0000000000a1';
 
-/** One row as the document's Proposal component gives it: all nineteen keys (kind and omitted, keel #565). */
+/** One row as the document's Proposal component gives it: all nineteen keys (kind and omitted). */
 const PROPOSAL = {
   kind: 'proposal', id: PID, element_type: 'location', element_id: EL, state: 'open',
   fields: { description: 'A harbour town.' }, omitted: [], base: { description: '' }, base_seq: 41,
@@ -29,14 +29,14 @@ const PROPOSAL = {
   created_at: '2026-10-22T16:00:00Z', updated_at: '2026-10-22T16:00:00Z',
 };
 const LIST = { data: [PROPOSAL], has_more: true, next_cursor: 'c2' };
-/** A queue row for a new element written as proposed (keel #565, the document's ProposedNewElement): all ten keys. */
+/** A queue row for a new element written as proposed (the document's ProposedNewElement): all ten keys. */
 const NEW_EL = '018f0000-0000-7000-8000-0000000000e2';
 const NEW_ELEMENT_ROW = {
   kind: 'new_element', id: NEW_EL, element_type: 'character', element_id: NEW_EL, state: 'open',
   by: '018f0000-0000-7000-8000-0000000000b1', evidence: 'Met her in chapter 4.', expires: '2026-11-22',
   created_at: '2026-10-23T07:00:00Z', updated_at: '2026-10-23T07:00:00Z',
 };
-/** The world's queue as keel #565 serves it: both kinds in one order, an opaque cursor (`<microseconds>.<id>`). */
+/** The world's queue as keel serves it: both kinds in one order, an opaque cursor (`<microseconds>.<id>`). */
 const QUEUE = { data: [NEW_ELEMENT_ROW, PROPOSAL], has_more: true, next_cursor: `1761202800000000.${NEW_EL}` };
 const ELEMENT = { id: EL, name: 'Harbour', type: 'location', description: 'A harbour town.', change_seq: 42 };
 
@@ -154,7 +154,7 @@ test('worldProposals: GET /world/proposals with state, since, element, limit and
   assert.equal(bare.calls[0].url, `${API}/world/proposals?limit=100`);
 });
 
-test('worldProposals: both kinds of row come back as keel sends them, in its order; the cursor goes back exactly as it came (keel #565)', async () => {
+test('worldProposals: both kinds of row come back as keel sends them, in its order; the cursor goes back exactly as it came', async () => {
   const { c, calls } = client({ body: QUEUE });
   const page = await c.worldProposals({ state: 'all' });
   assert.deepEqual(page, QUEUE);
@@ -166,7 +166,7 @@ test('worldProposals: both kinds of row come back as keel sends them, in its ord
   assert.equal(new URL(calls[2].url).searchParams.get('cursor'), PID);
 });
 
-// -- a new element written as proposed (keel #565) -----------------------------
+// -- a new element written as proposed -----------------------------------------
 
 test('reviewNewElement: accept is POST /{type}/{id}/review { decision }, with the PIN and X-OW-Client; returns { element }', async () => {
   const settled = { ...ELEMENT, id: NEW_EL, type: 'character', x_review_proposed: null };
@@ -411,7 +411,7 @@ test('the published types: OwProposal has the document\'s nineteen keys, the lis
   assert.match(block('OwProposal'), /\bkind: 'proposal';/);
   assert.match(block('OwProposal'), /\bomitted: string\[\];/);
   assert.match(block('OwProposal'), /\bstate: OwProposalState;/);
-  // keel #565: the queue's new-element row, its ten keys, and the queue a union told apart by kind
+  // The queue's new-element row, its ten keys, and the queue a union told apart by kind
   assert.deepEqual(keys(block('OwProposedNewElement')), ['kind', 'id', 'element_type', 'element_id', 'state', 'by', 'evidence',
     'expires', 'created_at', 'updated_at']);
   assert.match(block('OwProposedNewElement'), /\bkind: 'new_element';/);

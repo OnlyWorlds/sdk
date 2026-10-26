@@ -131,8 +131,8 @@ __ELEMENT_BASE__
 #   - Eight server-managed fields are ADDED. They exist on every wire body and in no
 #     element YAML: type, created_at, updated_at, change_seq, created_by, changed_by,
 #     changed_via, changed_client.
-#   - One server-managed marker is ADDED that rides only some bodies: `known_of`
-#     (keel PR 113), present and true only on a stub, never on a whole element.
+#   - One server-managed marker is ADDED that rides only some bodies: `known_of`,
+#     present and true only on a stub, never on a whole element.
 #   - Only Id and Name stay non-optional. Everything else is optional per
 #     rulings.yaml: nullable-by-default -- only `name` is truly required, and `id` is
 #     present on every body the server returns.
@@ -147,11 +147,11 @@ WIRE_ONLY_BASE_FIELDS = [
     ("created_by", "The membership that created this element (server-managed, read-only); null for the world's owner and for anything created before memberships existed.", "string | null", False),
     # The last write's author and the door it came through.
     ("changed_by", "The membership whose write last changed this element (server-managed, read-only); null for the world's owner and for anything last changed before writes recorded it.", "string | null", False),
-    ("changed_via", "The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, `server` (keel's own writes) or `site` (the owner signed in on onlyworlds.com; keel PR 160). The first three are agent-made. Null for anything last changed before writes recorded it.", "'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | 'site' | null", False),
+    ("changed_via", "The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, `server` (keel's own writes) or `site` (the owner signed in on onlyworlds.com). The first three are agent-made. Null for anything last changed before writes recorded it.", "'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | 'site' | null", False),
     # The client's own name for itself, from X-OW-Client.
     ("changed_client", "The name the client gave in the X-OW-Client header on the last write (server-managed, read-only): lower case letters, digits and hyphens, 1 to 32 characters, such as `sdk` or `atlas`. It is the client's claim about itself, never proof, and says nothing about whether an agent drove the write (that is `changed_via`). Null when the last write sent no name or one outside the rule, for keel's own writes, and for anything last changed before names were recorded. Sent in a write it is ignored. This SDK sends its `client` option, `sdk` by default.", "string | null", False),
-    # keel PR 113: the sheet grant's stub marker.
-    # keel PR 160: the hidden mark, shown to the readers who still see the element.
+    # The sheet grant's stub marker.
+    # The hidden mark, shown to the readers who still see the element.
     ("hidden", "Present, and true, only when the world's owner or a co-builder hid this element and this reader still sees it (server-managed, read-only): the owner, a co-builder, a key the owner minted, or the member who made it; to every other reader the element does not exist. Absent otherwise, whatever `fields` asked; on the read, the list, the change feed's upserts and MCP, never in the download, world sync or v1. Sent on a create (a POST, a PUT of a new id, a bulk item that creates), `hidden: true` creates the element hidden, from the owner's keys or a co-builder's; any other key gets 403 `hidden_not_allowed` and nothing is created. On any other write it is ignored: hide and unhide with hide() and unhide().", "true", False),
     ("known_of", "Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq, and the fields its type lists in PUBLIC_FIELDS with their values; every other field reads unset (\"\", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf().", "true", False),
 ]
@@ -326,7 +326,7 @@ def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str],
     lines.append("/** The fields onlyworlds.com shows on a known-of element (`known_of: true`, see isKnownOf)")
     lines.append(" *  besides the base fields, with their values; every other field of a stub reads unset.")
     lines.append(" *  Platform behaviour, not a default to override. Source: the distribution's")
-    lines.append(" *  `presentation.json` sidecar, `types.<type>.public` (keel PR 117). */")
+    lines.append(" *  `presentation.json` sidecar, `types.<type>.public`. */")
     lines.append("export const PUBLIC_FIELDS = {")
     for t in types_sorted:
         arr = ", ".join(f"'{n}'" for n in public[t])
@@ -715,7 +715,7 @@ def presentation_for(presentation: dict | None, doc: dict, tslug: str) -> tuple[
 
 
 def public_for(presentation: dict | None, tslug: str, fields: list[dict]) -> list[str]:
-    """The type's `public` list from the sidecar (schema-dist serial 28 on, keel PR 117):
+    """The type's `public` list from the sidecar (schema-dist serial 28 on):
     the fields the platform shows on a known-of element besides the base fields.
 
     Platform behaviour, not a default, so there is no fallback: a tree without the

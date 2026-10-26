@@ -1,5 +1,5 @@
 /**
- * Seats for your own AI (keel #355, D106): createSeat, listSeats and removeSeat send the
+ * Seats for your own AI: createSeat, listSeats and removeSeat send the
  * account Bearer to /account/worlds/{id}/seats, send only the options that are set, never an
  * Idempotency-Key (keel's rule: a replay would keep the key), and refuse a world key before
  * sending. Runs against dist.

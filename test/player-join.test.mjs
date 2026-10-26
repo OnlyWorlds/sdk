@@ -1,5 +1,5 @@
 /**
- * A friend with only a link (keel #353): redeemJoin posts the code to /join with no credential
+ * A friend with only a link: redeemJoin posts the code to /join with no credential
  * whatever key the client holds, sends only the names that are set, and returns the answer whose
  * `kind` tells a player's read key from an agent's seat; createWorldLink makes a player link.
  * Runs against dist.
@@ -48,7 +48,7 @@ test('redeemJoin: a player\'s name and an agent\'s name in keel\'s spelling, onl
   assert.deepEqual(JSON.parse(f.calls[1].init.body), { code: 'ow_j_code', agent_name: 'Quill' });
 });
 
-test('redeemJoin on a table (keel #422 PR 2): the pick as character, with or without a name; a link for one sends no new key', async () => {
+test('redeemJoin on a table: the pick as character, with or without a name; a link for one sends no new key', async () => {
   const f = fake(201, PLAYER);
   const c = new OwV2Client({ fetch: f.fetch });
   await c.redeemJoin('ow_j_code', { character: 'c2' });

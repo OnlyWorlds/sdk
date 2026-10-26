@@ -1,4 +1,4 @@
-// Sign in with OnlyWorlds (keel PR 154): the two calls on fakes, the PKCE vector from RFC 7636.
+// Sign in with OnlyWorlds: the two calls on fakes, the PKCE vector from RFC 7636.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { OwV2Client, OwSignInError } from '../dist/index.js';

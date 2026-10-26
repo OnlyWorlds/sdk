@@ -156,7 +156,7 @@ export class OwV2Client {
   }
 
   /**
-   * GET /character/{id}/context -- the draught (keel PR 155): what one Character knows, as the
+   * GET /character/{id}/context -- the draught: what one Character knows, as the
    * recorded world holds it, in one read: her element, what she holds and sits in, her open work,
    * how she works, the Events she was in, the Narratives she knows, everything else that names
    * her, her sheet, what changed around her (`since`), and who plays whom; the world's name and
@@ -385,7 +385,7 @@ export class OwV2Client {
    * the cursor and walk from zero. For what the local copy holds that the walk no longer names,
    * read err.resyncReason (while keel's hidden mark is on): `role`, keep it; `view`,
    * drop it (as for a delete row with reason `hidden`). Without a reason, keep it (keel's own
-   * words since PR 104; sharing is forward-only). Never empty a copy on your own.
+   * words; sharing is forward-only). Never empty a copy on your own.
    * Citizenship: heaviest route on the platform; default page size is polite.
    * keel sends the cursor of a page at the head as a number (an empty page, for a key
    * whose cursor carries no epoch); it is handed back as a string, like every cursor here.
@@ -622,7 +622,7 @@ export class OwV2Client {
     const kind = req.kind ?? requireFileKind(name);
     const body: Record<string, unknown> = { name, kind, size };
     if (req.label !== undefined) body.label = req.label;
-    // An agent client declares itself here, the one files route keel's document lists it on (keel PR 95):
+    // An agent client declares itself here, the one files route keel's document lists it on:
     // the upload's added_by.agent then reads true.
     return this.request('POST', `/${type}/${encodeURIComponent(id)}/files`, { body, write: true }) as Promise<OwFileTicket>;
   }
@@ -1331,7 +1331,7 @@ export class OwV2Client {
     await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/keys/${encodeURIComponent(keyId)}`, send);
   }
 
-  // -- Sign in with OnlyWorlds (OAuth 2.1 code + PKCE, keel PR 154) ---------
+  // -- Sign in with OnlyWorlds (OAuth 2.1 code + PKCE) ----------------------
 
   /**
    * Start Sign in with OnlyWorlds from a tool's page: mint `state` and a PKCE verifier, keep them
@@ -1607,7 +1607,7 @@ async function proposedFromResponse(res: Response, method: string, path: string)
  * beyond `world` (world identity comes from the key), the server 422s on
  * created_at / type / change_seq. Round-tripped read bodies carry all five, so
  * stripping (rather than throwing) keeps a read body directly writable.
- * `known_of` (keel PR 113) is an unknown field to keel's write path (a 422) and
+ * `known_of` is an unknown field to keel's write path (a 422) and
  * is stripped too; a body where it is `true` never gets here (refuseKnownOf).
  */
 function sanitizePayload<T extends Record<string, unknown>>(payload: T): Record<string, unknown> {
@@ -1618,7 +1618,7 @@ function sanitizePayload<T extends Record<string, unknown>>(payload: T): Record<
 }
 
 /**
- * An element write of a known-of stub (keel PR 113) is a TypeError before
+ * An element write of a known-of stub is a TypeError before
  * anything is sent. A stub's empty fields are not the element's values: stripping the
  * marker and sending the rest would turn keel's 422 into a write that blanks the
  * element (a PUT replaces it whole; a PATCH clears every field it names) for anyone

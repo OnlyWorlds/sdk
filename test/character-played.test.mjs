@@ -1,5 +1,5 @@
 /**
- * A Character someone plays on the roster is never deleted out from under them (keel #688):
+ * A Character someone plays on the roster is never deleted out from under them:
  * delete answers 422 character_played, param id, and isCharacterPlayed names it. A malformed
  * id's 422 carries the same param and is not it. Runs against dist.
  */

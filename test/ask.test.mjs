@@ -1,5 +1,5 @@
 /**
- * Ask your world (keel #159): buildAskContext keeps the caller's elements in order within
+ * Ask your world: buildAskContext keeps the caller's elements in order within
  * keel's limits and says what it kept; client.ask sends the account Bearer and the body
  * keel reads. Runs against the compiled public bundle (dist).
  */

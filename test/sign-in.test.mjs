@@ -1,5 +1,5 @@
 /**
- * Signing in with a password (keel #211): signInWithPassword turns an email (or username) and
+ * Signing in with a password: signInWithPassword turns an email (or username) and
  * password into a new account token through keel's sign-in service, keeps only the token and ends
  * the session. Every case runs on a client with NO key, the client a person signing in has (a fake
  * holding a key would prove nothing for them). Bodies are keel's and allauth's as production sent

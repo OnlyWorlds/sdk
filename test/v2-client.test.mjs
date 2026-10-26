@@ -106,9 +106,9 @@ test('sanitizePayload strips world/type/created_at/updated_at/change_seq on patc
   }
 });
 
-// -- hidden on a create (keel #587): sent as the element has it, never stripped ----
+// -- hidden on a create: sent as the element has it, never stripped ----------------
 
-test('create, upsert and bulk send hidden as given (keel #587: a create takes it)', async () => {
+test('create, upsert and bulk send hidden as given (a create takes it)', async () => {
   const one = makeClient({ status: 201, body: { id: 'x', type: 'narrative', name: 'P', hidden: true } });
   await one.client.create('narrative', { name: 'P', hidden: true });
   assert.equal(lastBody(one.fetchImpl).hidden, true);
@@ -126,14 +126,14 @@ test('a create refused for hiding surfaces keel\'s code (403 hidden_not_allowed)
   await assert.rejects(client.create('narrative', { name: 'P', hidden: true }), (err) => err instanceof OwApiError && err.status === 403 && err.code === 'hidden_not_allowed');
 });
 
-// -- known_of (keel PR 113, B16): never sent; a stub is never written ----------
+// -- known_of: never sent; a stub is never written -----------------------------
 
 const WHOLE_READ = {
   type: 'character', id: 'x', name: 'Dev', description: 'Dev desc', physicality: 'tall',
   created_at: '2026-10-20T00:00:00Z', updated_at: '2026-10-20T00:00:00Z', change_seq: 9,
   created_by: null, changed_by: null, changed_via: 'api', x_note: 'kept',
 };
-// physicality is one of a Character's PUBLIC_FIELDS: a stub carries its value (keel PR 117).
+// physicality is one of a Character's PUBLIC_FIELDS: a stub carries its value.
 const STUB_READ = {
   type: 'character', id: 'x', name: 'Dev', description: 'Dev desc', physicality: 'tall', location: null,
   friends: [], created_at: '2026-10-20T00:00:00Z', updated_at: '2026-10-20T00:00:00Z', change_seq: 9,
@@ -170,7 +170,7 @@ test('a known-of stub is a TypeError on every element write, before anything is 
   assert.equal(fetchImpl.calls.length, 0);
 });
 
-test('422 known_of_not_writable is isKnownOfNotWritable (keel PR 117); another 422 or the code on another status is not', async () => {
+test('422 known_of_not_writable is isKnownOfNotWritable; another 422 or the code on another status is not', async () => {
   const env = (code, param) => ({ error: { type: 'invalid_request', code, message: code, param,
     doc_url: `https://onlyworlds.github.io/api/errors#${code}` } });
   const thrown = async (status, body) => {
@@ -345,7 +345,7 @@ test('create with a key derives its id from the key, the same id Python mints, s
   assert.equal(lastBody(fetchImpl).id, 'mine', 'an id you pass is kept');
 });
 
-test('409 idempotency_in_flight is in flight with Retry-After, NOT a key conflict (keel #307)', async () => {
+test('409 idempotency_in_flight is in flight with Retry-After, NOT a key conflict', async () => {
   const err = await thrown({ status: 409, headers: { 'retry-after': '1' }, body: envelope('idempotency_error', 'idempotency_in_flight') },
     (c) => c.bulk([{ type: 'character', element: { name: 'K' } }], { idempotencyKey: 'k1' }));
   assert.equal(err.isIdempotencyInFlight, true);
@@ -379,7 +379,7 @@ test('409 resync_required is isResyncRequired (the guest feed reset), and not a 
   assert.equal(other.isResyncRequired, false);
 });
 
-test('resyncReason reads the 409 envelope\'s reason (keel #421), and is undefined without one or on another error', async () => {
+test('resyncReason reads the 409 envelope\'s reason, and is undefined without one or on another error', async () => {
   for (const reason of ['role', 'view']) {
     const body = envelope('invalid_request', 'resync_required');
     body.error.reason = reason;
@@ -401,7 +401,7 @@ test('resyncReason reads the 409 envelope\'s reason (keel #421), and is undefine
   assert.equal(other.resyncReason, undefined);
 });
 
-// -- If-Match: the PATCH precondition (keel #210, c1d5d2a) ---------------------
+// -- If-Match: the PATCH precondition ------------------------------------------
 
 const FIX_412 = {
   error: {
@@ -421,7 +421,7 @@ test('patch with ifMatch sends If-Match as a quoted change_seq; without it, no h
   assert.equal('If-Match' in fetchImpl.calls.at(-1).init.headers, false);
 });
 
-test('adopt posts {member} to /{type}/{id}/adopt and returns the element (keel #427)', async () => {
+test('adopt posts {member} to /{type}/{id}/adopt and returns the element', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', type: 'character', created_by: 'm1', change_seq: 9 } });
   const el = await client.adopt('character', 'x', 'm1');
   const call = fetchImpl.calls.at(-1);
@@ -437,7 +437,7 @@ test('adopt posts {member} to /{type}/{id}/adopt and returns the element (keel #
   assert.equal(fetchImpl.calls.length, 2);
 });
 
-test('changes({ after }) sends the time as after beside since and limit; changesAll carries it on every page (keel #514)', async () => {
+test('changes({ after }) sends the time as after beside since and limit; changesAll carries it on every page', async () => {
   const pages = [
     { status: 200, body: { cursor: '1:a', changes: [{ op: 'upsert', type: 'character', id: 'x', element: { id: 'x' } }], has_more: true, head: 2 } },
     { status: 200, body: { cursor: '2:a', changes: [], has_more: false, head: 2 } },
@@ -456,7 +456,7 @@ test('changes({ after }) sends the time as after beside since and limit; changes
   assert.equal(new URL(f2.calls[0].url).searchParams.has('after'), false);
 });
 
-test('hide and unhide send PUT and DELETE /{type}/{id}/hidden and take a 204 (keel #421)', async () => {
+test('hide and unhide send PUT and DELETE /{type}/{id}/hidden and take a 204', async () => {
   const { client, fetchImpl } = makeClient({ status: 204, body: undefined });
   await client.hide('character', 'x');
   await client.unhide('character', 'x');
@@ -468,7 +468,7 @@ test('hide and unhide send PUT and DELETE /{type}/{id}/hidden and take a 204 (ke
   assert.ok(u.url.endsWith('/character/x/hidden'), u.url);
 });
 
-test('setMyCharacter sends PUT /me/character with the pick and returns the /me body (keel PR 160)', async () => {
+test('setMyCharacter sends PUT /me/character with the pick and returns the /me body', async () => {
   const me = { world: 'w', kind: 'person', role: 'contributor', membership: 'm1', character: 'c1' };
   const { client, fetchImpl } = makeClient({ status: 200, body: me });
   assert.deepEqual(await client.setMyCharacter('c1'), me);
@@ -485,7 +485,7 @@ test('setMyCharacter sends PUT /me/character with the pick and returns the /me b
   await assert.rejects(hidden.client.setMyCharacter('c9'), (e) => e.isCharacterHidden === true && e.isCharacterTaken === false);
 });
 
-test('listHidden sends GET /world/hidden and returns the rows (keel #421)', async () => {
+test('listHidden sends GET /world/hidden and returns the rows', async () => {
   const row = { type: 'character', id: 'x', set_at: '2026-10-22T02:00:00Z', set_by: null };
   const { client, fetchImpl } = makeClient({ status: 200, body: { data: [row] } });
   const rows = await client.listHidden();
@@ -513,7 +513,7 @@ test('listAccountWorlds and mintWorldKey need an account token and send the docu
   assert.deepEqual(JSON.parse(bf.calls[1].init.body), {});
 });
 
-test('draught sends the seven policy keys to /character/{id}/context; list sends ids and created_by (keel PR 155)', async () => {
+test('draught sends the seven policy keys to /character/{id}/context; list sends ids and created_by', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { world: { id: 'w' }, character: null, cut: {} } });
   await client.draught('c1', { components: ['self', 'events'], mode: 'act', asOf: 453, undated: 'exclude', since: 'cur', budget: 5, depth: 0 });
   const u = new URL(fetchImpl.calls[0].url);
@@ -527,7 +527,7 @@ test('draught sends the seven policy keys to /character/{id}/context; list sends
   assert.equal(q.get('created_by'), 'owner');
 });
 
-test('draught: compact (keel #585) is sent as true or false and nothing else; absent, nothing is sent', async () => {
+test('draught: compact is sent as true or false and nothing else; absent, nothing is sent', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { world: { id: 'w' }, character: null } });
   await client.draught('c1', { compact: true });
   assert.equal(new URL(fetchImpl.calls[0].url).searchParams.get('compact'), 'true');
@@ -539,12 +539,12 @@ test('draught: compact (keel #585) is sent as true or false and nothing else; ab
   assert.equal(fetchImpl.calls.length, 3, 'a refused compact sends nothing');
 });
 
-test('draught: room (keel #556) and proposed (keel #580) are sent when named; the published types carry keel\'s thirteen components and rows with the element nested', async () => {
+test('draught: room and proposed are sent when named; the published types carry keel\'s thirteen components and rows with the element nested', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { world: { id: 'w' }, cut: { proposed: 2 }, room: [], proposed: [] } });
   await client.draught('c1', { components: ['room', 'proposed'] });
   assert.deepEqual(Object.fromEntries(new URL(fetchImpl.calls[0].url).searchParams), { components: 'room,proposed' });
 
-  // keel elements/draught.py COMPONENTS, in its order (origin/main 3d2b7e7, keel PR 194).
+  // keel elements/draught.py COMPONENTS, in its order.
   const KEEL = ['self', 'role', 'work', 'style', 'events', 'knowledge', 'names', 'sheet', 'recent', 'messages', 'room', 'proposed', 'roster'];
   const all = readFileSync(new URL('../dist/index.d.ts', import.meta.url), 'utf8');
   const m = all.match(/type OwDraughtComponent = ([^;]+);/);
@@ -598,7 +598,7 @@ test('editLinks with ifMatch sends If-Match too', async () => {
   assert.equal(fetchImpl.calls.at(-1).init.headers['If-Match'], '"7"');
 });
 
-test('delete with ifMatch sends If-Match (keel #563); without it, no header; an unknown option is a TypeError', async () => {
+test('delete with ifMatch sends If-Match; without it, no header; an unknown option is a TypeError', async () => {
   const { client, fetchImpl } = makeClient({ status: 204 });
   await client.delete('character', 'x', { ifMatch: 44 });
   assert.equal(fetchImpl.calls.at(-1).init.method, 'DELETE');
@@ -610,7 +610,7 @@ test('delete with ifMatch sends If-Match (keel #563); without it, no header; an 
   assert.equal(fetchImpl.calls.length, before);
 });
 
-test('a stale delete is an OwPreconditionFailedError carrying current (keel #563)', async () => {
+test('a stale delete is an OwPreconditionFailedError carrying current', async () => {
   const err = await thrown({ status: 412, body: FIX_412 }, (c) => c.delete('character', 'x', { ifMatch: 41 }));
   assert.ok(err instanceof OwPreconditionFailedError);
   assert.equal(err.current.change_seq, 44);
@@ -664,7 +664,7 @@ test('403 owner_only is isOwnerOnly, and not isNotAuthor', async () => {
   assert.equal(bare.isOwnerOnly, false);
 });
 
-test('viewAs is sent as `as` on list, listAll and get, and not sent when absent (keel #421)', async () => {
+test('viewAs is sent as `as` on list, listAll and get, and not sent when absent', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', type: 'character', name: 'A', data: [], has_more: false } });
   await client.list('character', { viewAs: 'public', filter: { supertype: 'npc' } });
   await client.get('character', 'x', { viewAs: '0190a1b2-0000-7000-8000-000000000001', fields: ['name'] });
@@ -681,7 +681,7 @@ test('viewAs is sent as `as` on list, listAll and get, and not sent when absent 
   assert.equal(qs[4].has('as'), false);
 });
 
-test('403 view_as_owner_only is isViewAsOwnerOnly, and not isOwnerOnly (keel #421)', async () => {
+test('403 view_as_owner_only is isViewAsOwnerOnly, and not isOwnerOnly', async () => {
   const err = await thrown({ status: 403, body: envelope('permission_error', 'view_as_owner_only') },
     (c) => c.list('character', { viewAs: 'public' }));
   assert.equal(err.isViewAsOwnerOnly, true);
@@ -1025,7 +1025,7 @@ test('patchWorld carries the three unit settings (canonical 00.31.00) and still 
   assert.equal(w.length_unit, 'cm');
 });
 
-// -- The public page (keel #471): slug and public_page, read-only ---------------
+// -- The public page: slug and public_page, read-only ---------------------------
 
 const PUBLIC_PAGE = { on: true, palette: 'parchment', hero: 'A city of bells.', sections: ['location', 'character'], pin: '11111111-2222-4333-8444-555555555555', index: false };
 
@@ -1059,14 +1059,14 @@ test('the published types declare slug and public_page on OwWorldMeta, and the p
     /\bhero: string;/, /\bsections: string\[\];/, /\bpin: string \| null;/, /\bindex: boolean;/]) assert.match(page, line);
 });
 
-// -- The world's origin and extension keys (keel #571, #477) -------------------------------------
+// -- The world's origin and extension keys -------------------------------------------------------
 
 const ORIGIN = {
   source: { server: 'https://www.onlyworlds.com', world: '0f1e2d3c-4b5a-4968-8776-655443322110', at: '2026-10-23T05:00:00Z' },
   producer: { tool: 'atlas', version: '1.82.0', input: 'folder' },
 };
 const X_NAMES = { version: 1, types: { character: { one: 'Soul', many: 'Souls' } } };
-// A GET /world body as keel serves it since keel #571: every World key, the origin and an extension key.
+// A GET /world body as keel serves it: every World key, the origin and an extension key.
 const WORLD_BODY = {
   id: 'w', name: 'V', description: '', image_url: '', time_format_names: [], time_format_equivalents: [],
   time_basic_unit: 'Year', time_range_min: null, time_range_max: null, time_range_current: null,
@@ -1095,7 +1095,7 @@ test('patchWorld: a getWorld() body sent back sends no origin and no id (keel 42
     'time_range_max', 'time_range_min', 'x_names']);
 });
 
-test('patchWorld: the counts a keyless read carries is not sent back (keel #421 PR 4: PATCH answers it as an unknown key)', async () => {
+test('patchWorld: the counts a keyless read carries is not sent back (PATCH answers it as an unknown key)', async () => {
   const { client, fetchImpl } = makeClient({ body: WORLD_BODY });
   await client.patchWorld({ ...WORLD_BODY, counts: { total: 1, types: { character: 1 } } });
   assert.equal('counts' in lastBody(fetchImpl), false);
@@ -1156,7 +1156,7 @@ test('the published types: OwWorldMeta.origin, the origin\'s two keys, and a get
   }
 });
 
-// -- Joining by link (keel #212) ---------------------------------------------
+// -- Joining by link ---------------------------------------------------------
 
 const PREVIEW = { reader: 'person', world: { name: 'W', description: '' }, invited_by: 'Ana', owner_character: null, role: 'guest', with_character: false, expires_at: '2026-10-19T00:00:00+00:00' };
 
@@ -1229,7 +1229,7 @@ test('changesHead: a keel from before the epoch field still answers, epoch null'
   assert.deepEqual(await client.changesHead(), { head: 7, cursor: '7', epoch: null, unchanged: false });
 });
 
-test('changesHead: epoch_reason passes through when keel sends it (keel #421, hidden mark on)', async () => {
+test('changesHead: epoch_reason passes through when keel sends it (hidden mark on)', async () => {
   const c = '4021:ffffffff-ffff-ffff-ffff-ffffffffffff:3';
   const { client } = makeClient({ body: { cursor: c, changes: [], has_more: false, head: 4021, epoch: 3, epoch_reason: 'role' } });
   assert.deepEqual(await client.changesHead(), { head: 4021, cursor: c, epoch: 3, unchanged: false, epoch_reason: 'role' });
@@ -1237,7 +1237,7 @@ test('changesHead: epoch_reason passes through when keel sends it (keel #421, hi
   assert.deepEqual(await owner.client.changesHead(), { head: 7, cursor: '7', epoch: null, unchanged: false, epoch_reason: null });
 });
 
-// -- The conditional head poll (keel #518: ETag "<head>:<epoch>", If-None-Match, 304) ----
+// -- The conditional head poll (ETag "<head>:<epoch>", If-None-Match, 304) ---------------
 
 const headBody = (head, epoch = null) => ({ cursor: head, changes: [], has_more: false, head, epoch });
 const sentTag = (fetchImpl, i) => fetchImpl.calls[i].init.headers['If-None-Match'];
@@ -1331,7 +1331,7 @@ test('changesAll: a keel without the epoch field returns epoch null', async () =
   assert.deepEqual(r.value, { cursor: '5:x', head: 5, epoch: null });
 });
 
-// -- keel #299: the agent declaration (X-OW-Agent) ---------------------------
+// -- The agent declaration (X-OW-Agent) --------------------------------------
 
 test('agent: off by default, no X-OW-Agent on reads or writes', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', type: 'character', name: 'A' } });
@@ -1371,7 +1371,7 @@ test('agent: true sends no X-OW-Agent on reads, world meta, account routes or th
   assert.deepEqual(img.calls[1].init.headers, { Authorization: 'Bearer tkt.sig', 'X-Key': 'u/w1/x.png' });
 });
 
-// -- keel #520: the client's name (X-OW-Client) --------------------------------
+// -- The client's name (X-OW-Client) -------------------------------------------
 
 /** The seven element writes keel reads X-OW-Client on, through one client; the methods and headers sent. */
 async function clientNameOnWrites(cfg = {}) {
@@ -1453,7 +1453,7 @@ test('isAgentDoor: seat, mcp and declared are agent-made; the surfaces and null 
   for (const d of ['api', 'v1', 'sync', 'server', null, undefined]) assert.equal(isAgentDoor(d), false, String(d));
 });
 
-test('isKnownOf: true only for known_of: true (keel PR 113); absent, false or anything else is whole', async () => {
+test('isKnownOf: true only for known_of: true; absent, false or anything else is whole', async () => {
   const { isKnownOf } = await import('../dist/index.js');
   assert.equal(isKnownOf({ id: 'x', name: 'Dev', known_of: true }), true);
   for (const el of [{ id: 'x', name: 'Dev' }, { known_of: false }, { known_of: 'true' }, { known_of: 1 }, {}, null, undefined]) {

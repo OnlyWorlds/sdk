@@ -1,5 +1,5 @@
 /**
- * Files on elements (keel #393): listFiles, worldFiles, createFileTicket, uploadFile,
+ * Files on elements: listFiles, worldFiles, createFileTicket, uploadFile,
  * fileDownloadLink and removeFile. Each route's method, path and body; no Idempotency-Key on
  * the ticket; the kind read from the name as keel reads it; the two-step upload (the ticket
  * from keel, the raw bytes to upload_url with the ticket alone); keel's and the upload host's

@@ -83,7 +83,7 @@ earlier history lives in git log only.
 
 ### Added
 
-- **A hide's and an unhide's row on `/changes`**: `OwChangeUpsert` names `changed_at`, `changed_by` and `changed_via`, which keel sends only on the upsert row a hide or an unhide gives the readers who still see the element (the owner's keys, a co-builder, the member who made it; keel #682). The body carries `hidden: true` after a hide and no `hidden` after an unhide; the row's `change_seq` is the act's, the element's own stays in `element`. Every other upsert row carries none of the three.
+- **A hide's and an unhide's row on `/changes`**: `OwChangeUpsert` names `changed_at`, `changed_by` and `changed_via`, which keel sends only on the upsert row a hide or an unhide gives the readers who still see the element (the owner's keys, a co-builder, the member who made it). The body carries `hidden: true` after a hide and no `hidden` after an unhide; the row's `change_seq` is the act's, the element's own stays in `element`. Every other upsert row carries none of the three.
 
 ## [4.73.0] - 2026-10-25
 
@@ -107,7 +107,7 @@ earlier history lives in git log only.
 
 ### Fixed
 
-- **`OwElementBase.hidden`'s doc comment says what a create does with it.** It said a write ignores the mark. Since keel PR 199 (live 2026-10-23), a create (a POST, a PUT of a new id, a `/bulk` item that creates) carrying `hidden: true` creates the element hidden, from the owner's keys or a co-builder's; any other key gets 403 `hidden_not_allowed` and nothing is created. Every other write still ignores it. The SDK already sent the mark as the element had it; only the words were wrong, in the types an editor shows (`dist/index.d.ts`). (Corrected after release: the entry first said they reach the docs' TypeScript reference, which lists the methods and not this field.)
+- **`OwElementBase.hidden`'s doc comment says what a create does with it.** It said a write ignores the mark. Since 2026-10-23, a create (a POST, a PUT of a new id, a `/bulk` item that creates) carrying `hidden: true` creates the element hidden, from the owner's keys or a co-builder's; any other key gets 403 `hidden_not_allowed` and nothing is created. Every other write still ignores it. The SDK already sent the mark as the element had it; only the words were wrong, in the types an editor shows (`dist/index.d.ts`). (Corrected after release: the entry first said they reach the docs' TypeScript reference, which lists the methods and not this field.)
 - Tests: `create`, `upsert` and `bulk` send `hidden` as given (it is not on the stripped list); a 403 `hidden_not_allowed` surfaces as `OwApiError.code`.
 
 ## [4.72.1] - 2026-10-24
@@ -131,7 +131,7 @@ earlier history lives in git log only.
 
 - **`buildAskContext(items, index, { includeProposed, includeHidden, includeRoom })`**, each default false: true sends that kind again. A proposed element sent carries the review profile's label on its first line, `[proposed, not yet reviewed] Name (type)`, where the AI reading the text sees it. An option that is not a boolean is a TypeError, and an unknown key is refused by name (the options fence, `test/options.test.mjs`). Types `OwAskContextOptions` and `OwAskLeftOut`.
 - **`REVIEW_PROPOSED_LABEL`** (`'proposed, not yet reviewed'`), generated into `types.generated.ts` from rule 1's own sentence in the vendored `profiles/review.md` ("labels each one it keeps **"…"**"); codegen exits 1 if the sentence is missing or occurs twice.
-- **`minted_by: string | null` on `OwWorldLink` and `OwCreatedWorldLink`** (keel PR 215): the membership (its id in GET /api/v2/members) of the co-builder who minted the link over POST /api/v2/links; null for a link the owner made. Served by `createWorldLink` and `listWorldLinks`. No client for `/api/v2/links` itself yet.
+- **`minted_by: string | null` on `OwWorldLink` and `OwCreatedWorldLink`**: the membership (its id in GET /api/v2/members) of the co-builder who minted the link over POST /api/v2/links; null for a link the owner made. Served by `createWorldLink` and `listWorldLinks`. No client for `/api/v2/links` itself yet.
 - Tests: each mark left out by default and listed; `hidden` as §4.8 reads it (`"true"` and 1 out, false and null in); a doubt (`"yes"`, `{}`) treated as proposed and labelled when asked, a cleared `null` settled; each `include*` bringing back its own kind only; the label on the first line; a hidden proposed element counted once, under hidden; a kept element's links to a hidden element and from a room element read without their names; the limits over what remains; the fence and the boolean check. Ten mutants, each red on its own test: no proposed filter, no hidden filter, no room filter, no label, a doubt not proposed, proposed checked before hidden, left-out elements counted toward the total, no link view, no option fence, no boolean check.
 
 ## [4.71.0] - 2026-10-24
@@ -158,42 +158,42 @@ earlier history lives in git log only.
 
 ### Fixed
 
-- **`draught`'s doc comment names `compact`** (4.69.0, keel #585), so the docs' generated reference row carries it.
+- **`draught`'s doc comment names `compact`** (4.69.0), so the docs' generated reference row carries it.
 - Tests: a hidden element file byte-identical by default and with `includeHidden: true`, the report 0; left out as a share, the report 1, every other file byte-identical; the legacy layout, `.JSON`, and a doubtful mark left out; not JSON, not UTF-8, not an object, a null or nested mark, a deeper file, a non-JSON file and the other parts kept; the same bytes for the same files either way; the report not called on a refusal; the fence. Watched failing with the leave-out turned into a keep (3 tests red), restored. The 85-case `.owworld` set unchanged.
 
 ## [4.69.0] - 2026-10-23
 
 ### Added
 
-- **`draught(id, { compact: true })`** (keel #585, PR 198): the draught without its empty sections. Every empty array or object section and an empty `cut` are left out. The frame (`world`, `calendar`, `as_of`, `now`, `mode`, `policy`) and every null stay, so a null is still an answer: `character` null means she is hidden from this reader, `style` null that she has no style element, `recent_cursor` null that the read had no `since`. An absent section means nothing in it, never that it was not read (`policy.components` says what was). The answer is typed `OwDraughtCompact` (`cut` optional); without `compact`, or with `compact: false`, it is `OwDraught` as before, the fixed shape. A `compact` that is not a boolean is a TypeError before anything is sent. MCP's `get_draught` defaults to compact; this route defaults to the fixed shape.
+- **`draught(id, { compact: true })`**: the draught without its empty sections. Every empty array or object section and an empty `cut` are left out. The frame (`world`, `calendar`, `as_of`, `now`, `mode`, `policy`) and every null stay, so a null is still an answer: `character` null means she is hidden from this reader, `style` null that she has no style element, `recent_cursor` null that the read had no `since`. An absent section means nothing in it, never that it was not read (`policy.components` says what was). The answer is typed `OwDraughtCompact` (`cut` optional); without `compact`, or with `compact: false`, it is `OwDraught` as before, the fixed shape. A `compact` that is not a boolean is a TypeError before anything is sent. MCP's `get_draught` defaults to compact; this route defaults to the fixed shape.
 
 ## [4.68.0] - 2026-10-23
 
 ### Fixed
 
-- **`patchWorld` strips `counts`**, which a keyless `GET /world` carries (keel #421 PR 4, the public reader on since 2026-10-23) and `PATCH` answers as an unknown key, so the body of a keyless read goes back too. Quillon's port found it (2026-10-23); the Python package's live wire test went red on the same key the same hour.
+- **`patchWorld` strips `counts`**, which a keyless `GET /world` carries (the public reader, on since 2026-10-23) and `PATCH` answers as an unknown key, so the body of a keyless read goes back too. Quillon's port found it (2026-10-23); the Python package's live wire test went red on the same key the same hour.
 - **`reviewNewElement` refuses a reason with an accept** before sending (keel takes `{ decision: 'accept' }` alone; a reason was its 422), and **checks its answer**: an accept that answers no `element`, or a decline no `deleted`, is a `TypeError` naming the route. Both as the Python package does (Quillon, 2026-10-23).
 
 ## [4.67.0] - 2026-10-23
 
 ### Added
 
-- **The draught's `room` and `proposed` components**: `OwDraughtComponent` is now keel's thirteen, in its order. `room` (keel #556) is the room profile's other elements that reach her (a board entry, a spec, a heart, a vote, a sitting, a member card, a work item that is not open or taken), each there or nowhere; the type missed it since keel shipped it. `proposed` (keel #580, live 2026-10-23) is every element carrying `x_review_proposed` that reaches her, there or nowhere, whatever section would have held it; `cut.proposed` counts the ones left out, the component unnamed or its budget spent, so a tool handing a draught on can say so. Both are off unless named, as `messages` is: `draught(id, { components: [..., 'room', 'proposed'] })`. `OwDraught.room` and `OwDraught.proposed` are typed.
+- **The draught's `room` and `proposed` components**: `OwDraughtComponent` is now keel's thirteen, in its order. `room` is the room profile's other elements that reach her (a board entry, a spec, a heart, a vote, a sitting, a member card, a work item that is not open or taken), each there or nowhere; the type missed it since keel shipped it. `proposed` (live 2026-10-23) is every element carrying `x_review_proposed` that reaches her, there or nowhere, whatever section would have held it; `cut.proposed` counts the ones left out, the component unnamed or its budget spent, so a tool handing a draught on can say so. Both are off unless named, as `messages` is: `draught(id, { components: [..., 'room', 'proposed'] })`. `OwDraught.room` and `OwDraught.proposed` are typed.
 
 ### Fixed
 
-- **`OwDraughtItem` nests the element**: keel has served each draught row as `{ via, circles?, her_links, grade, dated?, element }` since the route shipped (keel PR 155), and the type spread the element's fields onto the row instead. Read `row.element.name`, not `row.name` (which was `undefined` at runtime all along); TypeScript code that read the spread form now fails to compile where it was already wrong. In the same way `OwDraught.character` is `{ self, grade, element }`, and optional (absent unless `self` is served), `work` rows carry `packet` (the work item's `x_packet_elements`), `messages` rows carry `author` (`membership`, `kind`, `role`), and rows may carry `circles`. Read from keel's `elements/draught.py` and its OpenAPI `Draught` schema; nothing at runtime changed.
+- **`OwDraughtItem` nests the element**: keel has served each draught row as `{ via, circles?, her_links, grade, dated?, element }` since the route shipped, and the type spread the element's fields onto the row instead. Read `row.element.name`, not `row.name` (which was `undefined` at runtime all along); TypeScript code that read the spread form now fails to compile where it was already wrong. In the same way `OwDraught.character` is `{ self, grade, element }`, and optional (absent unless `self` is served), `work` rows carry `packet` (the work item's `x_packet_elements`), `messages` rows carry `author` (`membership`, `kind`, `role`), and rows may carry `circles`. Read from keel's `elements/draught.py` and its OpenAPI `Draught` schema; nothing at runtime changed.
 - Tests: `components: ['room', 'proposed']` is sent as `components=room,proposed`; the published `OwDraughtComponent` lists keel's COMPONENTS in order; the nested rows, `cut.proposed`, `character.element`, `packet`, `author` and `circles` compile against the built `.d.ts`, and a spread read and an unknown component do not. Watched failing with `'proposed'` cut from the type.
 
 ## [4.66.0] - 2026-10-23
 
 ### Added
 
-- **`createAccountWorld({ name, pin?, keyName?, source?, producer? })`** (account token): `POST /account/worlds` makes a world on the account with its one write key. Sent in keel's spelling, only the keys given (`keyName` as `key_name`, keel #363: 1 to 80 characters, trimmed, `null` for none; `source` and `producer`, keel #571: the folder format's provenance lines, each an object or `null`, kept on the World and served by `getWorld()` as `origin`). `pin` only while the account has no PIN (it becomes the account PIN); an account with one must leave it out. Either mistake is a 422 with `err.param === 'pin'` and nothing made, so a tool that cannot tell which account it holds sends without `pin` first and again with it on that 422, as Atlas's Make online does. Returns `OwCreatedAccountWorld`: the world's row as `listAccountWorlds` lists it, plus the full write key once in `key`. No Idempotency-Key (the document declares none), and neither `X-OW-Agent` nor `X-OW-Client` (it declares neither here). keel's document gives the 201 no schema, so the type is read from keel's handler. A world key is a `TypeError`, as is an unknown option or a missing `name`, before anything is sent. Atlas can retire its own `AccountClient.createWorld` for it.
-- **The world's queue lists new elements written as proposed** (keel #565, live 2026-10-23): `worldProposals()` now returns `OwWorldProposalList`, whose rows are `OwWorldProposalRow`, told apart by `kind`: `OwProposal` (`kind: 'proposal'`) or `OwProposedNewElement` (`kind: 'new_element'`: an element carrying `x_review_proposed`, its `by`, `evidence` and `expires` the mark's words, `state` `open` or `lapsed`). One order, newest first by `created_at`; the cursor is opaque and goes back as it came (an old bare proposal id still reads). `listProposals` keeps `OwProposalList`: one element's proposals only.
+- **`createAccountWorld({ name, pin?, keyName?, source?, producer? })`** (account token): `POST /account/worlds` makes a world on the account with its one write key. Sent in keel's spelling, only the keys given (`keyName` as `key_name`: 1 to 80 characters, trimmed, `null` for none; `source` and `producer`: the folder format's provenance lines, each an object or `null`, kept on the World and served by `getWorld()` as `origin`). `pin` only while the account has no PIN (it becomes the account PIN); an account with one must leave it out. Either mistake is a 422 with `err.param === 'pin'` and nothing made, so a tool that cannot tell which account it holds sends without `pin` first and again with it on that 422, as Atlas's Make online does. Returns `OwCreatedAccountWorld`: the world's row as `listAccountWorlds` lists it, plus the full write key once in `key`. No Idempotency-Key (the document declares none), and neither `X-OW-Agent` nor `X-OW-Client` (it declares neither here). keel's document gives the 201 no schema, so the type is read from keel's handler. A world key is a `TypeError`, as is an unknown option or a missing `name`, before anything is sent. Atlas can retire its own `AccountClient.createWorld` for it.
+- **The world's queue lists new elements written as proposed** (live 2026-10-23): `worldProposals()` now returns `OwWorldProposalList`, whose rows are `OwWorldProposalRow`, told apart by `kind`: `OwProposal` (`kind: 'proposal'`) or `OwProposedNewElement` (`kind: 'new_element'`: an element carrying `x_review_proposed`, its `by`, `evidence` and `expires` the mark's words, `state` `open` or `lapsed`). One order, newest first by `created_at`; the cursor is opaque and goes back as it came (an old bare proposal id still reads). `listProposals` keeps `OwProposalList`: one element's proposals only.
 - **`reviewNewElement(type, id, { decision, reason? })`**: `POST /{type}/{id}/review`, a keeper (the owner or a co-builder, with the PIN) settles a new element written as proposed. `accept` clears the mark and returns `{ element }`; `decline` deletes the element and returns `{ deleted }` (its id); the reason is answered back and kept nowhere. Sends `X-OW-Client`, as the document lists, and no `X-OW-Agent`. A `decision` other than `accept` or `decline`, or an unknown key, is a `TypeError` before sending. Type `OwReviewed`, options `OwReviewInput`.
 - **`err.isNotProposed`**: 422 `not_proposed`, the element carries no mark to settle. `isProposedOnly` (403) also answers the seat the mark names.
-- **`OwProposal.kind`** (`'proposal'`) and **`OwProposal.omitted`** (keel #565): a row's `fields` now holds only what differs from the element when proposed, and `omitted` names the fields an upsert left out that were not empty (each in `fields` at its empty value, so an accept empties it; `[]` for a patch, a link edit or `propose`). A propose with nothing new is a 422 with `param: 'fields'`; a seat's write that changes nothing under the world's switch answers 200 with the element and makes no row.
+- **`OwProposal.kind`** (`'proposal'`) and **`OwProposal.omitted`**: a row's `fields` now holds only what differs from the element when proposed, and `omitted` names the fields an upsert left out that were not empty (each in `fields` at its empty value, so an accept empties it; `[]` for a patch, a link edit or `propose`). A propose with nothing new is a 422 with `param: 'fields'`; a seat's write that changes nothing under the world's switch answers 200 with the element and makes no row.
 
 ### Changed
 
@@ -204,7 +204,7 @@ earlier history lives in git log only.
 
 ### Fixed
 
-- **`patchWorld` takes a `getWorld()` body back again** (keel #571, live 2026-10-23). keel's `GET /world` now serves `origin`, and a PATCH naming it is a 422 (an unknown key), so a world body read and sent back failed. `patchWorld` now leaves out `origin`, and `id` too: keel answers `id` with the same 422 (it is not a key PATCH takes), so the round trip 4.57.1's entry promised never held for a whole body. `owner_character` is still sent.
+- **`patchWorld` takes a `getWorld()` body back again** (live 2026-10-23). keel's `GET /world` now serves `origin`, and a PATCH naming it is a 422 (an unknown key), so a world body read and sent back failed. `patchWorld` now leaves out `origin`, and `id` too: keel answers `id` with the same 422 (it is not a key PATCH takes), so the round trip 4.57.1's entry promised never held for a whole body. `owner_character` is still sent.
 
 ### Added
 
@@ -246,31 +246,31 @@ earlier history lives in git log only.
 
 ### Added
 
-- **`delete(type, id, { ifMatch })`** (keel #563, PR 183, live 2026-10-22 21:3x): `DELETE` reads `If-Match` exactly as `PATCH` does. With the element's `change_seq` as you read it, a delete of an element someone changed since is refused, `OwPreconditionFailedError` (412) with `current`, nothing deleted; on an element already gone it is the idempotent 204. Under a world's proposals switch a delete is never a proposal. The options object refuses an unknown key like every other.
+- **`delete(type, id, { ifMatch })`** (live 2026-10-22 21:3x): `DELETE` reads `If-Match` exactly as `PATCH` does. With the element's `change_seq` as you read it, a delete of an element someone changed since is refused, `OwPreconditionFailedError` (412) with `current`, nothing deleted; on an element already gone it is the idempotent 204. Under a world's proposals switch a delete is never a proposal. The options object refuses an unknown key like every other.
 - Tests: the header sent and left out, the unknown option, the 412; each watched failing with the header dropped. The wire gate now reads from keel's document which Character operations take `If-Match` (it held a hand list of two and missed this one) and fails on 4.60.0.
 
 ## [4.60.0] - 2026-10-22
 
 ### Added
 
-- **`OwFrontDoor`, and `front_door` on `OwMe` and `OwAgentJoined`** (keel #558, D152, live 2026-10-22 20:1x). `me()`, `setMyCharacter()` and an agent's `redeemJoin()` answer carry the world's front door for the key: `sponsor` (`{id, kind, name}` of the person who answers for a seat, or null), `sponsor_character`, `my_character`, `charter` (the world's Charter, every member's to read: read it first) and `charter_skill` (up to five Objects the Charter names). Every id is one the key may read; anything hidden is null or left out. Types only: the client already passed the body through. Required on both types, as keel's document declares it; a hand-built `OwMe` in a consumer's test needs the field.
+- **`OwFrontDoor`, and `front_door` on `OwMe` and `OwAgentJoined`** (live 2026-10-22 20:1x). `me()`, `setMyCharacter()` and an agent's `redeemJoin()` answer carry the world's front door for the key: `sponsor` (`{id, kind, name}` of the person who answers for a seat, or null), `sponsor_character`, `my_character`, `charter` (the world's Charter, every member's to read: read it first) and `charter_skill` (up to five Objects the Charter names). Every id is one the key may read; anything hidden is null or left out. Types only: the client already passed the body through. Required on both types, as keel's document declares it; a hand-built `OwMe` in a consumer's test needs the field.
 
 ## [4.59.0] - 2026-10-22
 
 ### Changed
 
-- **`API-Pin` is sent only where keel checks it** (Skeld's ruling, 2026-10-22). keel verifies a PIN wherever one is sent (argon2, 64 MiB each), and on 2026-10-22 scripts reading with the PIN OOM-killed staging on a cold cache after a restart. The client used to send a configured `apiPin` on every request. It now sends it on every request whose method is not GET (every write: elements, links, bulk, adopt, hide and unhide, media and file tickets, seats, world links, proposals, `setMyCharacter`, `mintWorldKey`, `patchWorld`, and any route added later), on `GET /me` (`me()`, the connection test: keel checks a PIN there when sent, keel #314, D93), and on every request of a 10-digit legacy key (v1 parity, keel #421: such a key needs the PIN on reads of a world with a PIN). Any other read from an `ow_w_`, `ow_r_` or member key goes without it; an account token never sent it and still does not. The rule is derived in `request()` from the method and path, so a raw `request()` call follows it too. No API changed.
+- **`API-Pin` is sent only where keel checks it** (Skeld's ruling, 2026-10-22). keel verifies a PIN wherever one is sent (argon2, 64 MiB each), and on 2026-10-22 scripts reading with the PIN OOM-killed staging on a cold cache after a restart. The client used to send a configured `apiPin` on every request. It now sends it on every request whose method is not GET (every write: elements, links, bulk, adopt, hide and unhide, media and file tickets, seats, world links, proposals, `setMyCharacter`, `mintWorldKey`, `patchWorld`, and any route added later), on `GET /me` (`me()`, the connection test: keel checks a PIN there when sent), and on every request of a 10-digit legacy key (v1 parity: such a key needs the PIN on reads of a world with a PIN). Any other read from an `ow_w_`, `ow_r_` or member key goes without it; an account token never sent it and still does not. The rule is derived in `request()` from the method and path, so a raw `request()` call follows it too. No API changed.
 - Tests: `test/api-pin.test.mjs`, five, on a recorded fetch: eight reads, `me()` and ten writes across POST, PATCH, PUT and DELETE, for an `ow_w_` key with a PIN, a legacy key with a PIN, an `ow_r_` key with none and an account token with one configured; and raw `request()` GETs to other paths, `/me` and other methods. Two existing tests that expected the PIN on a GET now expect none. Mutants: the PIN on every request again fails four tests; without the `/me` clause, three; without the legacy clause, one.
 
 ## [4.58.0] - 2026-10-22
 
 ### Added
 
-- **The proposed change** (keel #519, PR 180, live 2026-10-22 16:25). Six calls: `propose(type, id, { fields, evidence, expires? })` (any member key that reads the element; `fields` cleaned as a PATCH body is; `Idempotency-Key` only when given), `listProposals(type, id, { limit?, cursor? })`, `worldProposals({ state?, since?, element?, limit?, cursor? })` (the queue, newest first; keepers see every row, others their own), `acceptProposal(type, id, pid)` (`{ proposal, element }`: the keeper's own write, one feed row), `declineProposal(type, id, pid, { reason? })` and `withdrawProposal(type, id, pid)` (204). Types `OwProposal`, `OwProposalList`, `OwProposed`, `OwProposalState`, `OwProposalQuery`, `OwWorldProposalQuery`, `OwProposalAccepted`. Every options object refuses an unknown key with a `TypeError` before anything is sent. `X-OW-Client` goes on `propose` and accept, where the document lists it; `X-OW-Agent` on none of them.
+- **The proposed change** (live 2026-10-22 16:25). Six calls: `propose(type, id, { fields, evidence, expires? })` (any member key that reads the element; `fields` cleaned as a PATCH body is; `Idempotency-Key` only when given), `listProposals(type, id, { limit?, cursor? })`, `worldProposals({ state?, since?, element?, limit?, cursor? })` (the queue, newest first; keepers see every row, others their own), `acceptProposal(type, id, pid)` (`{ proposal, element }`: the keeper's own write, one feed row), `declineProposal(type, id, pid, { reason? })` and `withdrawProposal(type, id, pid)` (204). Types `OwProposal`, `OwProposalList`, `OwProposed`, `OwProposalState`, `OwProposalQuery`, `OwWorldProposalQuery`, `OwProposalAccepted`. Every options object refuses an unknown key with a `TypeError` before anything is sent. `X-OW-Client` goes on `propose` and accept, where the document lists it; `X-OW-Agent` on none of them.
 - **A write held as a proposal is an error, never a body.** Under the world's **AI seats propose, a person accepts** switch an agent seat's `patch`, `upsert` or `editLinks` answers `202`: the client throws `OwProposedError` (`status` 202, `proposal`, `isProposed`) rather than returning something that is not the element; a `202` with no proposal in its body is a plain `OwApiError` 202. A `/bulk` slot with `status: 202` is left in the result as the document shapes it, typed. `create`, `adopt` and `delete` are not read for a 202: the document gives them none.
 - **Five codes**: `isStaleProposal` (`OwStaleProposalError` with `conflicts: [{ field, base, current }]` and `current`, parsed like the 412), `isOwnProposal`, `isProposedOnly`, `isTooManyOpen`, `isFieldNotVisible`.
 - **`OwWorldMeta.agent_writes_proposed?: boolean`**, read-only; `patchWorld` strips it with `slug`, `public_page`, `public_read` and `agent_narrator_rule`.
-- Tests: 20 on a recorded fetch, 18 red first; two mutants caught. Live on production with the demo key, reads only: `getWorld()` carries `agent_writes_proposed: false`; the queue answers `404` to a read key with no member, as the document says. Not exercised live yet: `propose`, accept, decline, withdraw and the `409` (staging has no #519 at release time; a round-trip script waits for it). Not wired yet: the queue's `ETag`/`If-None-Match` (a conditional `worldProposals`, on the `changesHead` pattern, when a poller asks).
+- Tests: 20 on a recorded fetch, 18 red first; two mutants caught. Live on production with the demo key, reads only: `getWorld()` carries `agent_writes_proposed: false`; the queue answers `404` to a read key with no member, as the document says. Not exercised live yet: `propose`, accept, decline, withdraw and the `409` (staging does not serve the proposed change at release time; a round-trip script waits for it). Not wired yet: the queue's `ETag`/`If-None-Match` (a conditional `worldProposals`, on the `changesHead` pattern, when a poller asks).
 
 ## [4.57.2] - 2026-10-22
 
@@ -292,8 +292,8 @@ earlier history lives in git log only.
 
 ### Added
 
-- **The conditional head poll** (keel #518, live 2026-10-22): `changesHead()` keeps the last head read's `ETag` per client and sends it back as `If-None-Match` on the next one, exactly as received (keel's 200 sends a weak `W/"821:-"`; nothing is quoted, parsed or compared). keel's tag is `"<head>:<epoch>"`, so a view change moves it as a new change does. When nothing moved, keel answers 304 Not Modified with no body, and `changesHead()` returns the `head`, `cursor` and `epoch` of the last 200 with `unchanged: true`; every 200 says `unchanged: false`. keel refunds a 304 against the request budget, so a poll that mostly finds nothing costs little. A 409 `resync_required` from `changesHead()`, `changes()` or `changesAll()` clears the held tag, so the next head read is a full 200 with `epoch_reason`. A 304 while no tag is held is an `OwApiError` with status 304, never a made-up head. The client still never polls or sleeps on its own: the interval is the caller's.
-- **The public page on `OwWorldMeta`** (keel #471, PR 173, live 2026-10-22), both read-only: `slug` (`string | null`), the page's address, onlyworlds.com/w/<slug>, null while the page is off, and also a keyless `?world=` value; `public_page` (the new `OwWorldPublicPage`), the page as its owner set it: `on`, `palette` (midnight, daylight, parchment, brass, dusk, or null for the house's), `hero` (one plain line), `sections` (the types shown in order, empty for all), `pin` (an element id or null) and `index` (always false for now), every key present with the page off. Both are set by the owner on the world page; `patchWorld()` strips them, so a body read from `getWorld()` stays writable.
+- **The conditional head poll** (live 2026-10-22): `changesHead()` keeps the last head read's `ETag` per client and sends it back as `If-None-Match` on the next one, exactly as received (keel's 200 sends a weak `W/"821:-"`; nothing is quoted, parsed or compared). keel's tag is `"<head>:<epoch>"`, so a view change moves it as a new change does. When nothing moved, keel answers 304 Not Modified with no body, and `changesHead()` returns the `head`, `cursor` and `epoch` of the last 200 with `unchanged: true`; every 200 says `unchanged: false`. keel refunds a 304 against the request budget, so a poll that mostly finds nothing costs little. A 409 `resync_required` from `changesHead()`, `changes()` or `changesAll()` clears the held tag, so the next head read is a full 200 with `epoch_reason`. A 304 while no tag is held is an `OwApiError` with status 304, never a made-up head. The client still never polls or sleeps on its own: the interval is the caller's.
+- **The public page on `OwWorldMeta`** (live 2026-10-22), both read-only: `slug` (`string | null`), the page's address, onlyworlds.com/w/<slug>, null while the page is off, and also a keyless `?world=` value; `public_page` (the new `OwWorldPublicPage`), the page as its owner set it: `on`, `palette` (midnight, daylight, parchment, brass, dusk, or null for the house's), `hero` (one plain line), `sections` (the types shown in order, empty for all), `pin` (an element id or null) and `index` (always false for now), every key present with the page off. Both are set by the owner on the world page; `patchWorld()` strips them, so a body read from `getWorld()` stays writable.
 - **`request()` gains two options**: `ifNoneMatch` (a tag sent as `If-None-Match` as given) and `onEtag(etag, status)` (called with each response's `ETag` and status before the body is read; with it given, a 304 returns null instead of throwing). Every other path is unchanged.
 
 ### Changed
@@ -304,7 +304,7 @@ earlier history lives in git log only.
 
 ### Added
 
-- **The client's name** (keel #520, live 2026-10-22): a constructor option `client`, default `'sdk'`, sent as `X-OW-Client` on every element write (`create`, `upsert`, `patch`, `delete`, `editLinks`, `bulk`, `adopt`) and on no read. keel stores it on the element as `changed_client`, so a reader can tell which tool made the last change (`new OwV2Client({ ..., client: 'atlas' })`). The rule is keel's, exact here: lower case letters, digits and hyphens, 1 to 32 characters (`[a-z0-9-]{1,32}`). Anything else, a capital, a space, an empty string, 33 characters or a value that is not a string, is a TypeError at construction naming the option and the rule, and nothing is trimmed; keel's own fence for a stranger's header is to store null, never a 422. The name is the client's claim about itself, never proof; it changes no door and no permission, and `agent` still decides `X-OW-Agent`.
+- **The client's name** (live 2026-10-22): a constructor option `client`, default `'sdk'`, sent as `X-OW-Client` on every element write (`create`, `upsert`, `patch`, `delete`, `editLinks`, `bulk`, `adopt`) and on no read. keel stores it on the element as `changed_client`, so a reader can tell which tool made the last change (`new OwV2Client({ ..., client: 'atlas' })`). The rule is keel's, exact here: lower case letters, digits and hyphens, 1 to 32 characters (`[a-z0-9-]{1,32}`). Anything else, a capital, a space, an empty string, 33 characters or a value that is not a string, is a TypeError at construction naming the option and the rule, and nothing is trimmed; keel's own fence for a stranger's header is to store null, never a 422. The name is the client's claim about itself, never proof; it changes no door and no permission, and `agent` still decides `X-OW-Agent`.
 - **`changed_client`** on `OwElementBase` (`string | null`, server-managed, read-only, beside `changed_by` and `changed_via`): the name the last write gave, null when it gave none or one outside the rule, for keel's own writes, and for changes from before names were recorded. Sent back in a write it is ignored. **`deleted_client`** on a `/changes` delete (`OwChangeDelete`, beside `deleted_by` and `deleted_via`), the same for the delete; null on a `hidden` row.
 
 ### Changed
@@ -372,9 +372,9 @@ earlier history lives in git log only.
 
 ### Added
 
-- `setMyCharacter(characterId | null)`: `PUT /me/character`, a person member's pick of the roster Character that is them in this world (keel PR 160, #533); answers the `/me` body. `err.isCharacterHidden` for the 422 `character_hidden` it and the member PATCH answer.
-- `hidden?: true` on every element body (`OwElementBase`): present only when the owner or a co-builder hid the element and this reader still sees it (keel #537); never on other readers' bodies, ignored in a write.
-- `site` joins `OwWriteDoor`: a write or delete the owner made signed in on onlyworlds.com (keel #530).
+- `setMyCharacter(characterId | null)`: `PUT /me/character`, a person member's pick of the roster Character that is them in this world; answers the `/me` body. `err.isCharacterHidden` for the 422 `character_hidden` it and the member PATCH answer.
+- `hidden?: true` on every element body (`OwElementBase`): present only when the owner or a co-builder hid the element and this reader still sees it; never on other readers' bodies, ignored in a write.
+- `site` joins `OwWriteDoor`: a write or delete the owner made signed in on onlyworlds.com.
 
 ## [4.49.0] - 2026-10-22
 
@@ -401,35 +401,35 @@ earlier history lives in git log only.
 
 ### Added
 
-- `listHidden()`: `GET /world/hidden`, the world's hidden elements newest first as `OwHiddenRow[]` (`type`, `id`, `set_at`, `set_by`; keel #421). Any key of the owner's or a co-builder's; served with `Cache-Control: no-store`, so read it each time. For the parlor, whose host room marks what it hid (Temper, 2026-10-22).
+- `listHidden()`: `GET /world/hidden`, the world's hidden elements newest first as `OwHiddenRow[]` (`type`, `id`, `set_at`, `set_by`). Any key of the owner's or a co-builder's; served with `Cache-Control: no-store`, so read it each time. For the parlor, whose host room marks what it hid (Temper, 2026-10-22).
 
 ## [4.47.0] - 2026-10-22
 
 ### Added
-- `draught(characterId, policy)`: `GET /character/{id}/context` (keel PR 155, D143, live 2026-10-22 02:05), one Character's context in one read, typed as `OwDraught` with the policy's seven keys (`components`, `mode`, `asOf`, `undated`, `since`, `budget`, `depth`) as `OwDraughtPolicy`.
+- `draught(characterId, policy)`: `GET /character/{id}/context` (live 2026-10-22 02:05), one Character's context in one read, typed as `OwDraught` with the policy's seven keys (`components`, `mode`, `asOf`, `undated`, `since`, `budget`, `depth`) as `OwDraughtPolicy`.
 - `list` takes `ids` (1 to 200, the list's own order; one the key cannot see is absent) and `createdBy` (a membership id, or `'owner'`), the two list filters of the same PR; both were already reachable through `filter`.
 
 ## [4.46.0] - 2026-10-22
 
 ### Added
-- **Sign in with OnlyWorlds** (keel PR 154, live 2026-10-22 01:50; the handoff sheet §3): `signInWithOnlyWorlds({ clientId, redirectUri, resume, storage, navigate })` mints `state` and a PKCE S256 verifier, keeps them under the client id in `storage` (sessionStorage by default; required in Node), refuses a `redirectUri` that is not an `https:` string before sending, and sends the browser to `/signin/authorize`. `completeSignIn({ clientId, storage, url })` on the callback page checks `state` and the page, takes `code` and `state` out of the address bar, trades the code once at `POST /api/v2/auth/token` with no credential, and returns `OwSignInResult` (`token`, `account`, `resume`); the record is cleared either way and the SDK keeps no token. `OwSignInError` gains `invalid_grant` and `state_mismatch`. `pkceChallenge` and `base64url` exported.
+- **Sign in with OnlyWorlds** (live 2026-10-22 01:50): `signInWithOnlyWorlds({ clientId, redirectUri, resume, storage, navigate })` mints `state` and a PKCE S256 verifier, keeps them under the client id in `storage` (sessionStorage by default; required in Node), refuses a `redirectUri` that is not an `https:` string before sending, and sends the browser to `/signin/authorize`. `completeSignIn({ clientId, storage, url })` on the callback page checks `state` and the page, takes `code` and `state` out of the address bar, trades the code once at `POST /api/v2/auth/token` with no credential, and returns `OwSignInResult` (`token`, `account`, `resume`); the record is cleared either way and the SDK keeps no token. `OwSignInError` gains `invalid_grant` and `state_mismatch`. `pkceChallenge` and `base64url` exported.
 
 ## [4.45.0] - 2026-10-22
 
 ### Added
-- `hide(type, id)` and `unhide(type, id)`: the hidden mark's writes, `PUT` and `DELETE /{type}/{id}/hidden` (keel #421), for the parlor (Temper, 2026-10-22). 204; the element's body and `change_seq` do not move.
+- `hide(type, id)` and `unhide(type, id)`: the hidden mark's writes, `PUT` and `DELETE /{type}/{id}/hidden`, for the parlor (Temper, 2026-10-22). 204; the element's body and `change_seq` do not move.
 - `listAccountWorlds()` (`GET /account/worlds`, `OwAccountWorld[]`: owned and shared worlds with their keys by name and last four) and `mintWorldKey(worldId, { scope, name })` (`POST /account/worlds/{id}/keys`, `OwMintedKey` with the full key once), the two account routes Atlas and the parlor hand-rolled. Account token only.
 
 ## [4.44.0] - 2026-10-22
 
 ### Added
-- `changes({ after })` and `changesAll(since, { after })`: keel #514 (PR 152, D142, live 2026-10-22 00:55), `GET /changes?after=<ISO time>` returns only the changes made at or after that time, a filter and not a position: order, `cursor`, `has_more` and `head` are unchanged, and the window is read by passing the cursor back as `since` with the same `after`. A bad value is a 422 naming `after`.
+- `changes({ after })` and `changesAll(since, { after })` (live 2026-10-22 00:55): `GET /changes?after=<ISO time>` returns only the changes made at or after that time, a filter and not a position: order, `cursor`, `has_more` and `head` are unchanged, and the window is read by passing the cursor back as `since` with the same `after`. A bad value is a 422 naming `after`.
 
 ## [4.43.0] - 2026-10-22
 
 ### Added
-- `adopt(type, id, member)`: change who made an element, `POST /{type}/{id}/adopt` with `{member}` (keel #427, D141, live 2026-10-22 00:43). `member` is a membership id of the world or `'owner'` (`created_by` null). The owner's key or a co-builder's with its PIN; a contributor's is 403 `not_author` (`isNotAuthor`). Returns the updated element; the write takes a new `change_seq` and the feed carries the element with its new `created_by`.
-- `createWorldLink`'s `maxUses` is documented for person links too (keel #390, D140, live the same hour): 2 to 50 lets in that many accounts, each joining once with the link's role. The client sent it already; the comment said player links only.
+- `adopt(type, id, member)`: change who made an element, `POST /{type}/{id}/adopt` with `{member}` (live 2026-10-22 00:43). `member` is a membership id of the world or `'owner'` (`created_by` null). The owner's key or a co-builder's with its PIN; a contributor's is 403 `not_author` (`isNotAuthor`). Returns the updated element; the write takes a new `change_seq` and the feed carries the element with its new `created_by`.
+- `createWorldLink`'s `maxUses` is documented for person links too (live the same hour): 2 to 50 lets in that many accounts, each joining once with the link's role. The client sent it already; the comment said player links only.
 
 ## [4.42.4] - 2026-10-21
 
@@ -468,7 +468,7 @@ Schema 00.32.02 (Skeld, 2026-10-20): repinned to schema-dist v0.32.2-dist.29.
 
 ## [4.41.0] - 2026-10-20
 
-A known-of stub's public fields (keel PR 117, keel #448), live in production, and schema-dist v0.32.1-dist.28, which publishes them.
+A known-of stub's public fields, live in production, and schema-dist v0.32.1-dist.28, which publishes them.
 
 ### Added
 - **`PUBLIC_FIELDS`** (generated from the distribution's `presentation.json`, `types.<type>.public`): per element type,
@@ -488,7 +488,7 @@ A known-of stub's public fields (keel PR 117, keel #448), live in production, an
 
 ## [4.40.0] - 2026-10-20
 
-The "known of" stub's client half (keel PR 113, B16; keel #421 §7g), live in production since 2026-10-20 13:47.
+The "known of" stub's client half, live in production since 2026-10-20 13:47.
 
 ### Added
 - **`known_of?: true`** on `OwElementBase` (generated; `SCHEMA.md` says it too): present, and true, only on a
@@ -507,10 +507,10 @@ The "known of" stub's client half (keel PR 113, B16; keel #421 §7g), live in pr
 
 ## [4.39.0] - 2026-10-20
 
-The party link (keel #422 PR 2, keel PR 110), live in production since 2026-10-20 13:15.
+The party link, live in production since 2026-10-20 13:15.
 
 ### Added
-- The party link (keel #422 PR 2, keel PR 110; for Lantern's pick screen, Temper): one player link for a
+- The party link (for Lantern's pick screen, Temper): one player link for a
   table of players. `createWorldLink(worldId, { reader: 'player', maxUses, characters })`, sent as `max_uses`
   and `characters`: 2 to 50 uses, each player picking one Character from the owner's list, in its order; no
   list, each player names a fresh Character after themselves. A table takes no `character`. A link for one
@@ -536,18 +536,18 @@ Schema 00.32.01 (Titus's word, 2026-10-20): repinned to schema-dist v0.32.1-dist
 
 ## [4.37.0] - 2026-10-20
 
-The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked on staging with the mark on, 25 of 25.
+The hidden mark, live in production since 2026-10-20 09:24; walked on staging with the mark on, 25 of 25.
 
 ### Added
-- A `/changes` delete row's `reason` (`OwDeleteReason`: `deleted` | `hidden` | `out_of_view`; keel #421's hidden
+- A `/changes` delete row's `reason` (`OwDeleteReason`: `deleted` | `hidden` | `out_of_view`; keel's hidden
   mark): an element hidden from this reader leaves its copy as a deleted one does, and a GET of it answers 404,
   not 410. `isResyncRequired`'s comment names every case keel now sends it for, not only a guest's.
-- `viewAs` on `get`, `list` and `listAll`, sent as `as` (keel #421 PR 3, view as): the owner's key reads as a
+- `viewAs` on `get`, `list` and `listAll`, sent as `as` (view as): the owner's key reads as a
   member (a membership id), as a Character's guest (a Character id) or as the public (`'public'`). A member key
   gets 403 `view_as_owner_only` (`err.isViewAsOwnerOnly`); an element hidden from that reader is 404, never 410;
   an unknown value is 422. Until keel's hidden mark is on, keel answers 422 (an unknown parameter).
 - `err.resyncReason` (`'role'` | `'view'` | `undefined`) and `OwResyncReason`: why `/changes` answered 409
-  `resync_required`, from the envelope's `reason` (keel #421, keel PR 103; only while keel's hidden mark is on).
+  `resync_required`, from the envelope's `reason` (only while keel's hidden mark is on).
   `epoch_reason` beside `epoch` on `OwChangesPage` and on `changesHead()`'s answer: why the epoch last moved.
 
 ### Changed
@@ -562,13 +562,13 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 
 ### Changed
 
-- `pinExpectation`'s doc comment: a legacy key that can write sends its PIN on every read of a world that has one, whether or not the world is open to read (keel #421 PR 105, the demo split). The `'required-for-private-reads'` literal keeps its name until 5.0, since renaming a literal in a published union is a type break. A demo-range key is kind `legacy` too and never needs a PIN. No code change.
+- `pinExpectation`'s doc comment: a legacy key that can write sends its PIN on every read of a world that has one, whether or not the world is open to read (the demo split). The `'required-for-private-reads'` literal keeps its name until 5.0, since renaming a literal in a published union is a type break. A demo-range key is kind `legacy` too and never needs a PIN. No code change.
 
 ## [4.36.1] - 2026-10-20
 
 ### Changed
 
-- The reset rule in `isResyncRequired`'s and `changes`' doc comments: on a 409 `resync_required`, walk from zero and keep what the local copy holds that the new walk does not name; a reset never empties a copy. It said replace. Keel says keep since PR 104 (Titus's ruling, 2026-10-20: sharing is forward-only). No code change.
+- The reset rule in `isResyncRequired`'s and `changes`' doc comments: on a 409 `resync_required`, walk from zero and keep what the local copy holds that the new walk does not name; a reset never empties a copy. It said replace. Keel says keep (Titus's ruling, 2026-10-20: sharing is forward-only). No code change.
 
 ## [4.36.0] - 2026-10-20
 
@@ -580,7 +580,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 
 ### Added
 
-- **`createWorldLink(worldId, { preview })`** and `preview` on `OwWorldLink` (keel #422 PR 1, live 2026-10-20): a person or player link with `preview: true` is `/join/<world_id>#<code>`, so a chat that unfurls it shows the world's name and picture; the code stays in the fragment. Absent means off, as keel rules for the API; `true` on an agent link is 422, param `preview`. The wire gate failed on production's document until this release.
+- **`createWorldLink(worldId, { preview })`** and `preview` on `OwWorldLink` (live 2026-10-20): a person or player link with `preview: true` is `/join/<world_id>#<code>`, so a chat that unfurls it shows the world's name and picture; the code stays in the fragment. Absent means off, as keel rules for the API; `true` on an agent link is 422, param `preview`. The wire gate failed on production's document until this release.
 
 ## [4.34.0] - 2026-10-20
 
@@ -592,7 +592,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 
 ### Fixed
 - An `agent: true` client's file uploads now declare it: `createFileTicket` (and so `uploadFile`) sends
-  `X-OW-Agent`, the one files route keel's document lists it on (keel PR 95), so the file reads
+  `X-OW-Agent`, the one files route keel's document lists it on, so the file reads
   `added_by.agent: true`. The other files routes and the upload host get no such header.
 
 ## [4.33.0] - 2026-10-19
@@ -605,7 +605,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 ## [4.32.0] - 2026-10-19
 
 ### Added
-- **Files on elements** (keel #393), for Atlas's file list on an element:
+- **Files on elements**, for Atlas's file list on an element:
   - `listFiles(type, id)`: the element's files, newest first (`OwFileRow`: `id`, `name`, `kind`,
     `size`, `label`, `added_by` with `name`, `membership` and `agent`, `added_at`), as keel sends them.
   - `uploadFile(type, id, file, { name?, kind?, label?, ticket?, onProgress? })`: a ticket from the API,
@@ -632,7 +632,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 ## [4.31.0] — 2026-10-18
 
 ### Added
-- **Signing in with a password** (keel #211): `signInWithPassword({ email | username, password, tokenName })`
+- **Signing in with a password**: `signInWithPassword({ email | username, password, tokenName })`
   turns an email address (or username) and password into a new account token (`ow_a_`) for this device,
   named `tokenName`, the name the account's tokens page lists it under. It signs in at keel's sign-in service
   (`{baseUrl}/auth/app/v1`), mints the token with that session at `POST /account/tokens`, then ends the
@@ -647,7 +647,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   account's worlds, revoked and read back as `key_revoked`).
 
 ### Changed
-- `me()`'s doc names the player kind (keel #353).
+- `me()`'s doc names the player kind.
 
 ## [4.30.1] — 2026-10-16
 
@@ -661,7 +661,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 ## [4.30.0] — 2026-10-16
 
 ### Added
-- **A friend with only a link** (keel #353, D111):
+- **A friend with only a link**:
   - `redeemJoin(code, { name?, agentName? })`: redeems a join code that needs no account, at `POST /join`,
     sending no credential whatever key the client holds. The answer's `kind` tells the two apart:
     `OwPlayerJoined` (a read key, `ow_r_`, no PIN, and the Character the player reads as) or
@@ -678,19 +678,19 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 ## [4.29.0] — 2026-10-16
 
 ### Added
-- `rekeySeat(worldId, seatId)` (keel #355 piece 3, D108): a new key and secret for a seat whose AI lost
+- `rekeySeat(worldId, seatId)`: a new key and secret for a seat whose AI lost
   its own, by its sponsor or the world's owner. The old key and secret stop at once; the answer has
   `createSeat`'s shape (`OwSeatCreated`: `key`, `pin`, `env`), shown once. No Idempotency-Key, by keel's
   rule: if the answer is lost too, ask for another.
 
 ### Changed
 - `createSeat`'s doc names `rekeySeat` as the way back from a lost answer.
-- `OwApiError.param`'s doc: `API-Pin` on a 401 PIN refusal (keel #357, D107), not only a 422/400's field.
+- `OwApiError.param`'s doc: `API-Pin` on a 401 PIN refusal, not only a 422/400's field.
 
 ## [4.28.0] — 2026-10-16
 
 ### Added
-- **Seats for your own AI** (keel #355, D106), on an account token (`ow_a_`):
+- **Seats for your own AI**, on an account token (`ow_a_`):
   - `createSeat(worldId, { name, role?, character? })`: a seat for your own AI in a world you own or
     belong to, with its own write key and `ow_s_` secret and no join link. You answer for it. `role` is at
     most your own; `character` is `new` (default), `none`, or `mine` (it plays the Character you play).
@@ -725,7 +725,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 ## [4.27.0] — 2026-10-16
 
 ### Added
-- `OwApiError.isIdempotencyInFlight` (keel #307, D105): a request with the same Idempotency-Key is still
+- `OwApiError.isIdempotencyInFlight`: a request with the same Idempotency-Key is still
   running (409 `idempotency_in_flight`, `retryAfter` 1). Nothing was written by this one; send again with
   the same key and body after `retryAfter` and it replays the first answer. `isIdempotencyConflict` stays
   the different-body case only. The client still does not retry for you.
@@ -733,7 +733,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 ## [4.26.0] — 2026-10-15
 
 ### Added
-- **The door of every write** (keel #299, D104; keel 7c1b493). An opt-in
+- **The door of every write**. An opt-in
   `agent: true` on `OwClientConfig` sends `X-OW-Agent` on every element write (create, upsert,
   patch, delete, editLinks, bulk: the operations keel's document declares it on; never on reads,
   account routes or the image edge); keel records such writes as `declared`, agent-made, and stores only that the header was
@@ -750,7 +750,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 - **`OwWorldMeta` types every field keel's `World` declares** (it named four): the description and
   picture, the calendar (`time_format_names`, `time_format_equivalents`, `time_basic_unit`, the three
   `time_range_*`), the three unit labels, `public_read`, `owner_character`, `created_at`, and new
-  **`agent_narrator_rule`** (keel #298, D103: whether a Narrative written through an agent seat is
+  **`agent_narrator_rule`** (whether a Narrative written through an agent seat is
   narrated by that seat's own Character; read-only, set on the world page). Past `id` and `name`
   they stay optional so code that builds a world meta keeps compiling; keel always sends all of them.
   `updated_at` and `created_at` read `string | null`, as the document says. The wire gate now
@@ -768,8 +768,8 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   For Lantern's Invite someone (Temper, 2026-10-15).
 
 ### Changed
-- `acceptJoin`'s doc comment and the README: accepting needs no account PIN for any role (keel
-  #297, ed73c90), so its refusals are 404 and 409 `already_member`; `pin_required` now belongs to
+- `acceptJoin`'s doc comment and the README: accepting needs no account PIN for any role,
+  so its refusals are 404 and 409 `already_member`; `pin_required` now belongs to
   minting a write key for the membership. `isPinRequired` stays.
 - Doc comments say "token rating" for the account's daily budget (`ask`, `sort`, `allowance`,
   `OwAllowance`, the answers' `token_rating`), as the README did in 4.23.0; the docs site's
@@ -781,7 +781,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 - **`TokenResource.consume()`, `getAccessKey()`, `revokeSession()`, `revokeAllSessions()`**: keel
   serves none of these routes (each answers 404 `not_found` on production; `accounts/token_api.py`
   mounts only `status/` and `encryption-info/`). Spending is server-side, in the route that does the
-  work (the Council's acts through keel's council proxy, keel #274, Skeld's ruling, 2026-10-14), and
+  work (the Council's acts through keel's council proxy, Skeld's ruling, 2026-10-14), and
   `OwV2Client.allowance()` reads the token rating. They stay callable and leave in 5.0. A 404 from
   any token route now says what keel serves instead of "an older server". Found by the wire
   gate, which until now never drove this class (its routes are not in keel's document).
@@ -892,7 +892,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   `epoch` moved; nothing needs to read inside the cursor. `changesHead()` answers
   `epoch: null` from a keel without the field. Checked live on Moppetopia (the head read and a
   page both carry `epoch: null`). The wire gate now holds `OwChangesPage` and `OwBulkResponse`
-  to keel's `ChangesPage` and `BulkResult` (keel #108), and failed on 4.15.0 for the missing
+  to keel's `ChangesPage` and `BulkResult`, and failed on 4.15.0 for the missing
   `epoch` before this release.
   Published from tag `v4.16.0`; the workflow's read-back gave up before npm showed the
   version, so the tarball (shasum `d08de22b`) was read back by hand against a build of the tag.
@@ -923,7 +923,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 ## [4.13.0] — 2026-10-12
 
 ### Added
-- **Ask your world (keel #159).** `client.ask({ worldId, question, context })` sends a
+- **Ask your world.** `client.ask({ worldId, question, context })` sends a
   question to keel's AI proxy with the account's `ow_a_` token (a world key is a `TypeError`
   before sending) and returns `OwAskAnswer` (`answer`, `model`, `stop_reason`, `usage`,
   `remaining`). The answer comes from `context` only, or is "The world doesn't say.".
@@ -940,7 +940,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 ## [4.12.0] — 2026-10-12
 
 ### Added
-- **Joining a world by link (keel #212).** `previewJoin(code)` reads what a join code holds
+- **Joining a world by link.** `previewJoin(code)` reads what a join code holds
   without using it (`OwJoinPreview`: `reader`, `world`, `invited_by`, `owner_character`,
   `role`, `with_character`, `expires_at`) and sends no credential, whatever key the client
   holds. `acceptJoin(code)` accepts an invite link as the account behind the client's `ow_a_`
@@ -1002,7 +1002,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 ## [4.9.0] — 2026-10-11
 
 ### Added
-- **Only if unchanged (keel #210).** `patch(type, id, partial, { ifMatch })` and
+- **Only if unchanged.** `patch(type, id, partial, { ifMatch })` and
   `editLinks(type, id, field, edit, { ifMatch })` send `If-Match: "<change_seq>"`: the write
   lands only if the element is still at that `change_seq`. When it has moved, nothing is
   written and the call throws **`OwPreconditionFailedError`** (412 `precondition_failed`), an

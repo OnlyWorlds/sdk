@@ -49,7 +49,7 @@ export interface OwElementBase {
   created_by?: string | null;
   /** The membership whose write last changed this element (server-managed, read-only); null for the world's owner and for anything last changed before writes recorded it. */
   changed_by?: string | null;
-  /** The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, `server` (keel's own writes) or `site` (the owner signed in on onlyworlds.com; keel PR 160). The first three are agent-made. Null for anything last changed before writes recorded it. */
+  /** The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, `server` (keel's own writes) or `site` (the owner signed in on onlyworlds.com). The first three are agent-made. Null for anything last changed before writes recorded it. */
   changed_via?: 'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | 'site' | null;
   /** The name the client gave in the X-OW-Client header on the last write (server-managed, read-only): lower case letters, digits and hyphens, 1 to 32 characters, such as `sdk` or `atlas`. It is the client's claim about itself, never proof, and says nothing about whether an agent drove the write (that is `changed_via`). Null when the last write sent no name or one outside the rule, for keel's own writes, and for anything last changed before names were recorded. Sent in a write it is ignored. This SDK sends its `client` option, `sdk` by default. */
   changed_client?: string | null;
@@ -131,7 +131,7 @@ export const ELEMENT_ICONS: Record<ElementType, string> = {
 /** The fields onlyworlds.com shows on a known-of element (`known_of: true`, see isKnownOf)
  *  besides the base fields, with their values; every other field of a stub reads unset.
  *  Platform behaviour, not a default to override. Source: the distribution's
- *  `presentation.json` sidecar, `types.<type>.public` (keel PR 117). */
+ *  `presentation.json` sidecar, `types.<type>.public`. */
 export const PUBLIC_FIELDS = {
   ability: [],
   character: ['physicality', 'height', 'weight', 'species', 'reputation'],

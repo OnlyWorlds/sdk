@@ -43,7 +43,7 @@ test('createWorldLink: each option in keel\'s spelling', async () => {
   assert.deepEqual(JSON.parse(f.calls[1].init.body), { reader: 'player', preview: true });
 });
 
-test('createWorldLink: a table (keel #422 PR 2) sends max_uses and characters in keel\'s spelling, the list in the order given', async () => {
+test('createWorldLink: a table sends max_uses and characters in keel\'s spelling, the list in the order given', async () => {
   const f = fake(201, CREATED);
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
   await c.createWorldLink('w1', { reader: 'player', maxUses: 4, characters: ['c2', 'c1', 'c3'] });

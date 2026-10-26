@@ -766,7 +766,7 @@ export interface OwWorldLink {
   uses: number;
   /** A table is `pending` while `uses < max_uses` (and neither revoked nor expired), `used` once full. */
   status: 'pending' | 'used' | 'revoked' | 'expired';
-  /** The membership (its id in GET /api/v2/members) of the co-builder who minted the link over POST /api/v2/links; null for a link the owner made (keel PR 215). */
+  /** The membership (its id in GET /api/v2/members) of the co-builder who minted the link over POST /api/v2/links; null for a link the owner made. */
   minted_by: string | null;
   /** Whether the link shows the world's name and picture when it is pasted into a chat: then the link is `/join/<world_id>#<code>`, else `/join#<code>`. Never on an agent link. */
   preview?: boolean;
@@ -843,7 +843,7 @@ export interface OwSignedIn {
  * (`'collaborator'`, with `member_role` the membership's role). Keys by name and last four only,
  * never the key; on a shared world only the member's own keys.
  */
-/** The draught's policy (keel PR 155): what GET /character/{id}/context serves and how. */
+/** The draught's policy: what GET /character/{id}/context serves and how. */
 export interface OwDraughtPolicy {
   /** Sections to serve; default every one but `messages`, `room` and `proposed`, each served only when named. */
   components?: OwDraughtComponent[];
@@ -894,7 +894,7 @@ export interface OwDraughtItem {
   element: OwElement;
 }
 
-/** One Character's context in one read, GET /character/{id}/context (keel PR 155; the draught). */
+/** One Character's context in one read, GET /character/{id}/context (the draught). */
 /** The draught under `compact`: every section may be absent, and so may `cut` (nothing was cut). */
 export type OwDraughtCompact = Omit<OwDraught, 'cut'> & { cut?: Record<string, number> };
 
@@ -1174,9 +1174,9 @@ export interface OwFileDownload {
 export interface ListParams {
   limit?: number;
   cursor?: string;
-  /** Only these ids (1 to 200), in the list's own order; one this key cannot see is simply absent (keel PR 155). */
+  /** Only these ids (1 to 200), in the list's own order; one this key cannot see is simply absent. */
   ids?: string[];
-  /** A membership id, or `'owner'` for the owner's own writes: only what that member created (keel PR 155). */
+  /** A membership id, or `'owner'` for the owner's own writes: only what that member created. */
   createdBy?: string;
   /** One-level stub expansion, e.g. ['friends', 'location']. */
   expand?: string[];

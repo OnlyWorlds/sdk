@@ -1,5 +1,5 @@
 /**
- * createAccountWorld (POST /api/v2/account/worlds, keel #363 key_name, keel #571 source and
+ * createAccountWorld (POST /api/v2/account/worlds, key_name, source and
  * producer): the account Bearer, a body of `name` and only the options given, in keel's spelling;
  * the PIN dance Atlas's Make online runs (an account with no PIN answers 422 `param: 'pin'` until
  * one is sent); the 201's world row and write key returned as keel sends them. Shapes from keel's

@@ -1,6 +1,6 @@
 /**
  * API-Pin only where keel checks it (Skeld's ruling, 2026-10-22): every write (any method
- * but GET), GET /me (keel #314, D93), and every request of a 10-digit legacy key (keel #421). keel
+ * but GET), GET /me, and every request of a 10-digit legacy key. keel
  * verifies a PIN wherever it is sent (argon2, 64 MiB each); reads sent with one OOM-killed staging
  * on a cold cache (2026-10-22). Each call below states its own expectation for a prefixed key, so
  * the test does not re-derive the rule from the method it checks. Runs against dist.
@@ -92,7 +92,7 @@ test('API-Pin, ow_w_ key with a PIN: on every write and on GET /me, on no other 
   assert.match(me.url, /\/me\/$/);
 });
 
-test('API-Pin, 10-digit legacy key with a PIN: on every request, reads included (keel #421)', async () => {
+test('API-Pin, 10-digit legacy key with a PIN: on every request, reads included', async () => {
   const sent = await sweep({ apiKey: '0123456789', apiPin: '1234' }, 'world');
   for (const { call, url, headers } of sent) {
     assert.equal(headers['API-Key'], '0123456789', call.name);

@@ -1,6 +1,6 @@
 /**
  * Sign in with OnlyWorlds: OAuth 2.1's authorization code with PKCE (S256) for public clients
- * (keel PR 154, live 2026-10-22).
+ * (live 2026-10-22).
  *
  * Two calls. `beginSignIn` mints `state` and a PKCE verifier, keeps them under the client id in a
  * storage the page shares with its callback (sessionStorage by default), and hands back the
