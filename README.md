@@ -268,6 +268,14 @@ Asking and sorting spend tokens from the account's token rating, its daily budge
 const { token_rating, tokens_remaining, resets_at } = await account.allowance(); // resets_at: the next midnight UTC
 ```
 
+### A Character's context as text
+
+`draughtText(draught)` gives one Character's context packet (`draught(characterId)`, full or `compact`) as plain text to paste into a prompt or a note. It reads the packet alone and calls nothing, and the Python package's `draught_text` gives the same bytes. The title claims only the read's horizon ("dated up to Year 300"), never what the Character knew, and the last line says only what the budget left out (`cut`).
+
+```typescript
+const text = draughtText(await client.draught(characterId));
+```
+
 ## World files
 
 A world file (`.owworld`, a `.zip` by another name) is one archive holding a whole world folder (`world.json` and `elements/<type>/*.json`, as Atlas keeps a world on disk), the way Atlas downloads and opens one. It needs no account and works in the browser and in Node. Both functions follow the Folder Format spec's §4.7 and pass its fixture set.

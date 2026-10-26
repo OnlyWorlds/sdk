@@ -89,6 +89,10 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Lookup without a model (since 4.11.0): `buildWorldIndex(elements)` then
   `lookupWorld(index, question)` ranks the elements a question is about (names, then kind, one
   link step, then text); `renderElement(el, index)` is a compact card with links by name.
+- A Character's context as text: `draughtText(draught)` turns a `draught(characterId)` packet,
+  full or compact, into plain text, read from the packet alone (the same bytes as the Python
+  package's `draught_text`). Its title says "dated up to" the horizon, never what the Character
+  knew; its last line counts only what the budget left out.
 - Photos (browser only, since 4.11.0): `preparePhoto(blob)` shrinks to 2048 px and converts to
   webp (JPEG where webp can't be encoded) before `uploadImage`.
 - World files (no account needed; since 4.10.0): `readWorldFile(bytes)` opens a `.zip` holding one

@@ -27,7 +27,7 @@ test('draughtText fixture: every file is in the manifest and matches its sha256'
 });
 
 test('draughtText: every case gives its expected text, byte for byte', () => {
-  assert.ok(cases.length >= 34, `the fixture holds ${cases.length} cases`);
+  assert.ok(cases.length >= 45, `the fixture holds ${cases.length} cases`);
   for (const real of ['as-of-248', 'as-of-300', 'as-of-453']) {
     assert.ok(cases.includes(real) && cases.includes(`${real}-compact`), `the real case ${real} and its compact twin`);
   }
@@ -37,9 +37,13 @@ test('draughtText: every case gives its expected text, byte for byte', () => {
   }
 });
 
+/** The cases with no compact twin: compact drops "" and {} from a body, and the proposed mark with them. */
+const NO_TWIN = ['proposed-odd-values'];
+
 test('draughtText: a full packet and its compact twin give the same text', () => {
   const twins = cases.filter((n) => n.endsWith('-compact'));
-  assert.equal(twins.length * 2, cases.length, 'every case has its twin');
+  for (const name of NO_TWIN) assert.ok(cases.includes(name) && !cases.includes(`${name}-compact`), name);
+  assert.equal(twins.length * 2 + NO_TWIN.length, cases.length, 'every other case has its twin');
   for (const twin of twins) {
     const full = twin.slice(0, -'-compact'.length);
     assert.ok(cases.includes(full), `${twin} has its full packet`);
@@ -47,6 +51,13 @@ test('draughtText: a full packet and its compact twin give the same text', () =>
     const a = draughtText(JSON.parse(read(full, 'draught.json').toString('utf8')));
     const b = draughtText(JSON.parse(read(twin, 'draught.json').toString('utf8')));
     assert.equal(a, b, `${full}: full and compact give different text`);
+  }
+});
+
+test('draughtText: the float case holds its floats as a file writes them (249.0), not as JSON.stringify does', () => {
+  for (const name of ['float-integral', 'float-integral-compact']) {
+    const raw = read(name, 'draught.json').toString('utf8');
+    for (const literal of ['"start_date": 249.0', '"as_of": 300.0', '"now": 453.0']) assert.ok(raw.includes(literal), `${name}: ${literal}`);
   }
 });
 

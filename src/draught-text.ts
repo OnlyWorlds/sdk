@@ -77,9 +77,10 @@ function kindOf(el: Obj): string | null {
   return sup ?? sub;
 }
 
-/** ` · hidden` and ` · proposed`, as they apply. */
+/** ` · hidden` when `hidden` is true, ` · proposed` when `x_review_proposed` is present and not null (as the server counts it). */
 function marks(el: Obj): string {
-  return (own(el, 'hidden') === true ? ' · hidden' : '') + (isSet(own(el, 'x_review_proposed')) ? ' · proposed' : '');
+  const proposed = own(el, 'x_review_proposed');
+  return (own(el, 'hidden') === true ? ' · hidden' : '') + (proposed !== undefined && proposed !== null ? ' · proposed' : '');
 }
 
 /** The description's lines, each indented by two spaces; none when it is not set. */
@@ -123,6 +124,8 @@ export function draughtText(draught: OwDraught | OwDraughtCompact): string {
     const id = own(el, 'id');
     if (typeof id === 'string' && !names.has(id)) names.set(id, text(own(el, 'name')) ?? '(unnamed)');
   };
+  // An absent `character` is not a hidden one: absent, `self` was not asked and there is no block of her own.
+  const asked = Object.prototype.hasOwnProperty.call(d, 'character');
   const character = own(d, 'character');
   const her = isObj(character) && isObj(own(character, 'element')) ? (own(character, 'element') as Obj) : null;
   hold(her);
@@ -136,12 +139,17 @@ export function draughtText(draught: OwDraught | OwDraughtCompact): string {
 
   const herName = her === null ? 'the Character' : (text(own(her, 'name')) ?? '(unnamed)');
   const out: string[] = [];
+  /** One line of the text. A line break a value brought in starts a continuation line indented by `cont`; an empty one is the indent alone. */
+  const put = (line: string, cont = '  '): void => {
+    const [first, ...rest] = line.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    out.push(first, ...rest.map((l) => cont + l));
+  };
 
-  out.push(`# ${herName}, in ${text(own(world, 'name')) ?? '(unnamed)'}`);
+  put(`# ${herName}, in ${text(own(world, 'name')) ?? '(unnamed)'}`);
   const asOf = own(d, 'as_of');
   const now = own(d, 'now');
   const mode = own(d, 'mode');
-  out.push(
+  put(
     `What the record holds around ${herName}`
     + (isInt(asOf) ? `, dated up to ${moment(asOf)}` : '')
     + (isInt(now) ? ` (the world's now: ${moment(now)})` : '')
@@ -149,15 +157,18 @@ export function draughtText(draught: OwDraught | OwDraughtCompact): string {
     + (mode === 'voice' ? " Read as the Character's own view." : mode === 'act' ? " Read as the caller's view." : ''),
   );
 
-  // Her block.
-  out.push('', `## ${herName}`);
-  if (her === null) {
+  // Her block, when `self` was asked.
+  if (asked) {
+    out.push('');
+    put(`## ${herName}`);
+  }
+  if (asked && her === null) {
     out.push('Hidden from this reader.');
-  } else {
+  } else if (her !== null) {
     const type = own(her, 'type');
     const kind = kindOf(her);
-    out.push(typeWordOf(type) + (kind === null ? '' : ` · ${kind}`) + marks(her));
-    out.push(...descriptionLines(her));
+    put(typeWordOf(type) + (kind === null ? '' : ` · ${kind}`) + marks(her));
+    for (const l of descriptionLines(her)) put(l);
     for (const key of Object.keys(her)) {
       if (UNPRINTED.has(key) || UNPRINTED_PREFIXES.some((p) => key.startsWith(p))) continue;
       const v = her[key];
@@ -182,7 +193,7 @@ export function draughtText(draught: OwDraught | OwDraughtCompact): string {
       } else {
         value = text(v);
       }
-      if (value !== null) out.push(`  ${key.replace(/_/g, ' ')}: ${value}`);
+      if (value !== null) put(`  ${key.replace(/_/g, ' ')}: ${value}`, '    ');
     }
   }
 
@@ -236,25 +247,32 @@ export function draughtText(draught: OwDraught | OwDraughtCompact): string {
     return line;
   };
 
+  // `recent_more` true makes Recent a section even with no rows.
+  const recentMore = own(d, 'recent_more') === true;
+  const sectionSet = (key: string): boolean => isSet(own(d, key)) || (key === 'recent' && recentMore);
+
   for (const [key, heading] of SECTIONS) {
     const v = own(d, key);
-    if (!isSet(v)) continue;
+    if (!sectionSet(key)) continue;
     out.push('', `## ${heading}`);
     for (const row of rowsOf(key, v)) {
       if (!isObj(row)) continue;
-      if (key === 'recent') out.push(recentRow(row));
-      else if (key === 'roster') out.push(memberRow(row));
-      else out.push(...elementRow(row));
+      if (key === 'recent') put(recentRow(row));
+      else if (key === 'roster') put(memberRow(row));
+      else for (const l of elementRow(row)) put(l);
     }
-    if (key === 'recent' && own(d, 'recent_more') === true) out.push('More changes than these; read on from recent_cursor.');
+    if (key === 'recent' && recentMore) out.push('More changes than these; read on from recent_cursor.');
   }
 
   // Nothing in: the components read whose sections hold nothing, as keel spells them.
   const policy = own(d, 'policy');
   const components = isObj(policy) ? own(policy, 'components') : undefined;
   if (Array.isArray(components)) {
-    const empty = components.filter((c): c is string => typeof c === 'string' && c !== 'self' && !isSet(own(d, c)));
-    if (empty.length) out.push('', `Nothing in: ${empty.join(', ')}.`);
+    const empty = components.filter((c): c is string => typeof c === 'string' && c !== 'self' && !sectionSet(c));
+    if (empty.length) {
+      out.push('');
+      put(`Nothing in: ${empty.join(', ')}.`);
+    }
   }
 
   // Left out: only what the budget dropped.
@@ -262,7 +280,8 @@ export function draughtText(draught: OwDraught | OwDraughtCompact): string {
   const left = isObj(cut)
     ? Object.keys(cut).filter((k) => isInt(cut[k])).map((k) => `${BigInt(cut[k] as number).toString()} ${k}`)
     : [];
-  out.push('', `Left out by the budget: ${left.length ? left.join(', ') : 'nothing'}.`);
+  out.push('');
+  put(`Left out by the budget: ${left.length ? left.join(', ') : 'nothing'}.`);
 
   return out.join('\n') + '\n';
 }

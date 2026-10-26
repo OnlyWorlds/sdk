@@ -6,7 +6,8 @@
  * The real cases (`as-of-*`) are server answers, kept as served; this script never writes their
  * draught.json. The planted cases are small packets made from the as-of-453 packet's shape, each with
  * a `-compact` twin made by the server's compact rule (each element body less its null, "", [] and {}
- * fields, id, type and name kept; then each empty section and an empty cut left out, the frame kept).
+ * fields, id, type and name kept; then each empty section and an empty cut left out, the frame kept),
+ * except the cases in NO_TWIN. A float the file must write as `249.0` goes in as F('249.0').
  * Every expected.txt is the compiled draughtText's answer.
  *
  *   npm run build && node test/fixtures/generate-draught-text.mjs --write
@@ -177,9 +178,76 @@ const PLANTED = {
   'empty': (d) => {
     Object.assign(d, { role: [], work: [], style: null, events: [], knowledge: [], names: {}, sheet: [], recent: [], roster: [] });
   },
+  // A float with an integral value reads as that integer wherever a number is read (written 249.0 in
+  // the file); a fraction is skipped.
+  'float-integral': (d) => {
+    d.as_of = F('300.0');
+    d.policy.as_of = F('300.0');
+    d.now = F('453.0');
+    d.character.element.birth_date = F('249.0');
+    d.character.element.height = 1.5;
+    d.events[0].element.start_date = F('249.0');
+    d.cut = { events: F('2.0') };
+  },
+  // `self` not asked: no character key at all, so no block of her own and nothing said hidden.
+  'no-self': (d) => {
+    d.policy.components = d.policy.components.filter((c) => c !== 'self');
+    delete d.character;
+  },
+  // More changes than these, and no rows read.
+  'recent-more-only': (d) => {
+    d.policy.since = 'c1';
+    d.recent_cursor = 'c1';
+    d.recent_more = true;
+    d.recent = [];
+  },
+  // Line breaks in field values, a blank line among them, and in the description.
+  'field-line-breaks': (d) => {
+    const el = d.character.element;
+    el.description = 'Admiral of the Puddle Navy.\r\n\r\nPink felt, immaculately kept.';
+    el.background = 'Son of Admiral Stuffington.\r\nNaval Academy graduate.\r\n\r\nCarries an eye.';
+    el.mentality = 'Duty first.\rDenial second.\n';
+  },
+  // Proposed is any value but null: false, "" and {} (no compact twin: compact drops "" and {}).
+  'proposed-odd-values': (d) => {
+    d.events[0].element.x_review_proposed = false;
+    d.names.construct[0].element.x_review_proposed = '';
+    d.sheet[0].element.x_review_proposed = {};
+    d.sheet[1].element.x_review_proposed = null;
+    d.sheet[2].element.hidden = false;
+  },
+  // Unset names, a recent row with no time and one with an op the text does not know, list items that
+  // are neither strings nor integers, a non-dated type with a date, and cut counts that are not integers.
+  'ratified-edges': (d) => {
+    d.world.name = '';
+    d.policy.since = 'c1';
+    d.recent_cursor = 'c3';
+    d.recent_more = false;
+    d.recent = [
+      { op: 'upsert', type: 'character', id: herId, when: null, who: 'owner', door: 'site' },
+      { op: 'touch', type: 'location', id: d.sheet[0].element.id, when: '2026-10-24T08:00:00.000000+00:00', who: null, door: null },
+    ];
+    const el = d.character.element;
+    el.species = [d.sheet[2].element.id, 7, null, { id: d.sheet[3].element.id }, d.sheet[3].element.id];
+    el.nicknames = ['Fluff', 3, true, null, 2.5, {}, 'Admiral F'];
+    d.sheet[4].element.name = '';
+    d.names.location = [row({
+      type: 'location', id: '0699bb00-0000-7000-8000-00000000b004', name: 'Old Drydock', description: '',
+      supertype: 'Ruin', subtype: '', start_date: 120,
+    }, ['locations'])];
+    d.cut = { events: '3', proposed: 1.5 };
+  },
 };
 
-const json = (v) => `${JSON.stringify(v, null, 2)}\n`;
+/** The planted cases with no compact twin, and why. */
+const NO_TWIN = { 'proposed-odd-values': 'compact drops "" and {} from a body, so the mark goes with them' };
+
+/** A float as a file writes it (`249.0`): JSON.stringify writes 249, so the value is a marker until the text is out. */
+function F(literal) {
+  return `@@float:${literal}@@`;
+}
+const floats = (text) => text.replace(/"@@float:([-0-9.eE+]+)@@"/g, '$1');
+const json = (v) => floats(`${JSON.stringify(v, null, 2)}\n`);
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 
 /** Every file the fixture holds, by its path under DIR, as bytes. */
@@ -188,7 +256,12 @@ for (const [name, plant] of Object.entries(PLANTED)) {
   const d = base();
   plant(d);
   files.set(`${name}/draught.json`, Buffer.from(json(d), 'utf8'));
-  files.set(`${name}-compact/draught.json`, Buffer.from(json(compact(d)), 'utf8'));
+  if (!(name in NO_TWIN)) files.set(`${name}-compact/draught.json`, Buffer.from(json(compact(d)), 'utf8'));
+}
+for (const literal of ['"start_date": 249.0', '"as_of": 300.0', '"now": 453.0']) {
+  for (const path of ['float-integral/draught.json', 'float-integral-compact/draught.json']) {
+    if (!files.get(path).toString('utf8').includes(literal)) throw new Error(`${path} lost ${literal} on the way out`);
+  }
 }
 for (const name of readdirSync(DIR).filter((n) => n.startsWith('as-of-'))) {
   files.set(`${name}/draught.json`, readFileSync(join(DIR, name, 'draught.json')));
