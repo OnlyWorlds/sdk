@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.86.0] - 2026-10-26
+
+### Added
+
+- **`draughtText(draught)`**: one Character's context packet (`draught(characterId)`, full or compact) as plain text to paste into a prompt or a note, the same bytes from both packages and held to them by one shared fixture (47 cases, the full and compact reads of each giving the same text). It reads the packet alone and calls nothing: a link the packet does not hold is counted, never looked up. The title claims only the read's horizon ("dated up to Year 300"), never what the Character knew; every row says how it was reached (`via`), its grade or date, and the marks hidden and proposed; the sections that hold nothing are named on one line, and the last line says only what the budget left out (`cut`). Nothing is trimmed or cut by length, so the two languages cannot disagree on where a string ends. One known difference between a full and a compact read: the server's compact form drops an empty `x_review_proposed` (`""`, `[]`, `{}`), which the full read counts as proposed. The Python package's `draught_text` (0.70.0) gives the same text.
+
 ## [4.85.0] - 2026-10-26
 
 ### Changed
