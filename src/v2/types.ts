@@ -684,10 +684,28 @@ export interface OwFrontDoor {
   sponsor_character: string | null;
   /** Your own Character (the owner's: the world's `owner_character`), or null. */
   my_character: string | null;
+  /**
+   * The live AI and player seats you answer for, agent seats first (since keel's front door of
+   * 2026-10-26). Empty for an AI or a player seat's own key and for anyone who answers for none;
+   * a seat made from a link for an email address is never listed.
+   */
+  my_seats: OwMySeat[];
   /** The world's Charter: the newest Law with supertype Charter made by the owner or a co-builder, or null. Every member may read it. */
   charter: string | null;
   /** The Objects the Charter's description names (by `ow://` link or id), in the order written, at most five; empty when none. */
   charter_skill: string[];
+}
+
+/** One seat you answer for, a row of `front_door.my_seats`. */
+export interface OwMySeat {
+  /** The seat's membership id, as `GET /members` lists it. */
+  id: string;
+  /** `agent` for an AI seat, `player` for a player seat. */
+  kind: 'agent' | 'player';
+  /** The seat's name, or null when it has none. */
+  name: string | null;
+  /** The Character the seat plays, or null when it plays none you can read. */
+  character: string | null;
 }
 
 /** One row of GET /members, the world's roster. */

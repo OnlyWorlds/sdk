@@ -71,8 +71,9 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Who am I (since 4.22.0, a world key): `client.me()` is `{ world, scope, kind, role,
   membership, character, front_door }` (`membership` is what `created_by` holds for what you
   create; null for the owner); `front_door` (since 4.60.0) names who answers for your
-  seat (`sponsor`, `sponsor_character`), your Character, and the world's Charter with up to five
-  skill Objects: an agent reads `charter` first. `client.members()` is the roster's rows. An
+  seat (`sponsor`, `sponsor_character`), your Character, the AI and player seats you answer
+  for (`my_seats`, since 4.82.0: `{ id, kind, name, character }`, agent seats first), and the
+  world's Charter with up to five skill Objects: an agent reads `charter` first. `client.members()` is the roster's rows. An
   account token is a TypeError.
 - Signing in (no key needed): `new OwV2Client().signInWithPassword({ email, password,
   tokenName })` (or `username`) mints an `ow_a_` account token named for the device and ends
