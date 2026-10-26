@@ -908,12 +908,12 @@ export interface OwDraughtItem {
   grade: 'whole' | 'known_of';
   /** In `events` and `knowledge`: false when it carries no date (ranked after the dated). */
   dated?: boolean;
-  /** The element's body exactly as the list route serves it to the same reader. */
+  /** The element's body as the list route serves it to the same reader; under `compact`, less each field that is null, "", [] or {} (`id`, `type` and `name` always stay): read a missing field as empty. */
   element: OwElement;
 }
 
 /** One Character's context in one read, GET /character/{id}/context (the draught). */
-/** The draught under `compact`: every section may be absent, and so may `cut` (nothing was cut). */
+/** The draught under `compact`: every section may be absent, and so may `cut` (nothing was cut); each element body leaves out its empty fields, `id`, `type` and `name` kept. */
 export type OwDraughtCompact = Omit<OwDraught, 'cut'> & { cut?: Record<string, number> };
 
 export interface OwDraught {

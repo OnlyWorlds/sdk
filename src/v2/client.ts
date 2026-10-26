@@ -168,7 +168,10 @@ export class OwV2Client {
    * 404). `asOf` is a filter on the elements' own dates, not time travel. A `cut` that is not
    * empty means the serving is partial (`cut.proposed` also counts proposed elements left out because
    * the component was not named). `compact: true` leaves out every empty section and an empty `cut`,
-   * the frame and every null kept, answered as `OwDraughtCompact`. Served
+   * the frame and every null kept, and leaves out each element body's empty fields (`null`, `""`,
+   * `[]`, `{}`; `id`, `type` and `name` always stay), answered as `OwDraughtCompact`. A Message
+   * without the room mark is placed as any Narrative unless `messages` is named, when it is there
+   * and in no other section; a room-marked Message is in `messages` or nowhere. Served
    * `Cache-Control: private, no-store`.
    */
   draught(characterId: string, policy?: OwDraughtPolicy & { compact?: false }): Promise<OwDraught>;

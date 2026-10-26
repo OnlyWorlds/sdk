@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.82.1] - 2026-10-26
+
+### Changed
+
+- **The draught's words follow keel's 2026-10-26 change.** Under `compact: true` every element body in the packet now leaves out each field whose value is `null`, `""`, `[]` or `{}` (`id`, `type` and `name` always stay; `0` and `false` are values and stay), so a compact body is the list route's body less its empty fields, not byte for byte the same. And a Message without the room mark is placed as any Narrative unless `messages` is named, when it is in `messages` and no other section; a room-marked Message is in `messages` or nowhere. The doc comments on `draught()`, `OwDraughtItem.element` and `OwDraughtCompact` said the body was the list route's exactly; they now say both rules. Types only in words: `OwElement` already lets every field but `id`, `type` and `name` be absent, so no type changed.
+
 ## [4.82.0] - 2026-10-26
 
 ### Added
