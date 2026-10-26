@@ -3,15 +3,25 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.71",
-  "commit": "a81b7bd4c838227370cd31dcc355742d59fbfa35",
-  "manifest_sha256": "aaffaa512bd266dae86c6b349be9c587d56b6caa130b97a334d2c021119ba5a8",
+  "tag": "v0.33.0-dist.73",
+  "commit": "22f5e0e02db600e8a04272a4e5b27de5127ed65d",
+  "manifest_sha256": "ea0402f70bfa445f890c17e563d216fead9c35e995585d009edadc05966ac9f1",
   "canonical_version": "00.33.00",
-  "dist_serial": 71,
-  "published": "2026-10-25",
-  "pinned_at": "2026-10-25",
+  "dist_serial": 73,
+  "published": "2026-10-26",
+  "pinned_at": "2026-10-26",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.72",
+      "manifest_sha256": "8db3de91e798e9425bb462db9a88f709c186287c6db89dd83be80066b6061d91",
+      "note": "superseded by v0.33.0-dist.73 (same canonical 00.33.00; the message profile's rule 1 rewritten as ruled: a Message Narrative without the room mark stays lore in every lore view, a message view is a second reading of it; senderStatus(message, members), the roster parameter dropped; the 43 cases unchanged; no schema file moved)"
+    },
+    {
+      "tag": "v0.33.0-dist.71",
+      "manifest_sha256": "aaffaa512bd266dae86c6b349be9c587d56b6caa130b97a334d2c021119ba5a8",
+      "note": "superseded by v0.33.0-dist.72 (same canonical 00.33.00; profiles/ gains message.md and message.fixture.json, the message profile: a Narrative with supertype Message, its recipients (an empty characters is everyone), the sender as a claim until created_by and the members list prove it, the read mark as a Read Relation in the reader's own hand, the thread by parent_narrative; 43 cases; the README's profiles row names it; no schema file moved)"
+    },
     {
       "tag": "v0.33.0-dist.69",
       "manifest_sha256": "0b2b2c715c061de22c17e90b1723275571d67a010364b9681fe079e24448b241",

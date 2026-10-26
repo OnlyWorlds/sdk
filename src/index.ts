@@ -34,6 +34,11 @@ export type {
 // The room profile (schema-dist profiles/room.md): the pairs a parlor puts in a world, and the
 // matcher a lore view uses to leave them out (ROOM_PAIRS generated from the vendored dist)
 export { ROOM_PAIRS, isRoomElement } from './room';
+// The message profile (schema-dist profiles/message.md): a message between a world's members, to whom
+// it is addressed, whether its sender is proved, a reader's read mark and unread list, a thread
+// (MESSAGE_PAIR generated from the vendored dist)
+export { MESSAGE_PAIR, isMessage, recipientsOf, isAddressedTo, isSentBy, senderStatus, readMarkOf, unreadFor, threadOf } from './message';
+export type { OwSender, OwSenderStatus, OwMessageMember } from './message';
 // The names profile (schema-dist profiles/names.md): a world's own words for the types, x_names on the World.
 export { typeWord } from './names';
 export type { OwNamesMap, OwWordPair } from './names';

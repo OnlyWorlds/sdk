@@ -5,6 +5,26 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.80.0] - 2026-10-26
+
+### Added
+
+- **The message profile** (schema-dist `profiles/message.md`, serial 72): a message between a world's members is a Narrative with supertype `Message`, from its `narrator` to the Characters in its `characters`. `MESSAGE_PAIR` is that pair, generated from the fixture's `pair` and checked at codegen against the page and against `ROOM_PAIRS` (a parlor's line is a message too). The readers:
+  - `isMessage(element)`: the pair, the type and supertype each trimmed and compared without regard to case by the room profile's own trim and fold (`Messages` is not a message).
+  - `recipientsOf(message)` and `isAddressedTo(message, characterId)`: an empty `characters` (absent, null or `[]`) is addressed to every member. Nothing else addresses a message: not `narrator`, not a name in the text, not `protagonist` or any other link. A list that names no valid id, or a value that is not a list, addresses nobody, never everyone.
+  - `isSentBy(message, characterId)`: the `narrator` is the Character, the claimed sender, proved or not.
+  - `senderStatus(message, members)`: `{ status, claimed, writtenBy }`. `verified` when the Character of the membership in `created_by` (on `client.members()`, the owner's row matching a `created_by` of null; a removed member still proves it) is the `narrator`; `mismatch` when it is another, named in `writtenBy`; `unverifiable` with no `narrator`, no `created_by` key (a folder, an export), no members list (pass null), an author not on it, or a row naming no Character. Show a claim that is not verified as a claim, never as a proved sender. `roster` is in the profile's signature and no rule reads it yet.
+  - `readMarkOf(relations, characterId, members)`: the reader's read mark, a Relation with supertype `Read` whose `actor` is the reader, counted only in the reader's own hand (`created_by` on the members list; a mark without `created_by` at all, in a folder or an export, counts), the newest `updated_at` of those. A newer mark in another hand is ignored.
+  - `unreadFor(messages, characterId, readMark)`: the messages addressed to the reader, not sent by them and not on the mark, in `created_at` order. A message one sent is never unread for them.
+  - `threadOf(messages, rootId)`: every message whose chain of `parent_narrative` reaches the root, the root included; a loop in a chain ends the walk. Not named on the profile's page; its thread rule and fixture cases are.
+  - Both lists order by `created_at` (microseconds counted), and equal times keep the order of the list given, the server's, so every reader agrees. Never by id.
+  - Types `OwSender`, `OwSenderStatus`, `OwMessageMember`. A convention on the 22 types: no type, field or wire change.
+- Tests: the profile's 43-case fixture, read from the vendored distribution, as its own test, with the count of each kind; the documented calls compiled against the built types.
+
+### Changed
+
+- **Schema repinned to schema-dist v0.33.0-dist.73** (from dist.71; same canonical 00.33.00). Serial 72 adds `profiles/message.md` and `profiles/message.fixture.json`, and serial 73 settles the page's rule 1: a Message Narrative without the room mark stays lore in every lore view, and a message view is a second reading of it; `VERSION`, `README.md` and `MANIFEST.json` carry the new serial; no schema file moved. Generated output moves its provenance lines and gains `MESSAGE_PAIR` and the read mark's pair and fields.
+
 ## [4.79.0] - 2026-10-26
 
 ### Added

@@ -875,6 +875,73 @@ def render_review_label(label: str) -> str:
     return "\n".join(lines)
 
 
+def load_message_profile(schema_dir: Path, pairs: list[tuple[str, str]],
+                         all_fields: dict[str, list[dict]]) -> tuple[tuple[str, str], dict[str, str]]:
+    """The message profile (schema-dist serial 72 on, `profiles/message.md`): the pair a message is,
+    and the read mark's pair and fields. From the fixture's `pair` and `read_mark`, checked against
+    the page's own words (the pair, the mark's supertype), against the room profile's pairs (the page
+    calls the message pair a line in the room), and against the walk's fields for the mark's two links.
+    No fallback: a tree without the profile exits 1 rather than emitting a pair nobody ruled."""
+    profiles = schema_dir.parent / "profiles"
+    fixture_path, page_path = profiles / "message.fixture.json", profiles / "message.md"
+    if not fixture_path.is_file() or not page_path.is_file():
+        raise SystemExit(
+            f"MESSAGE_PAIR comes only from the distribution's profiles/message.fixture.json and "
+            f"profiles/message.md (serial 72 on); this tree lacks {fixture_path if not fixture_path.is_file() else page_path}."
+        )
+    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+    page = page_path.read_text(encoding="utf-8")
+    pair, mark = fixture.get("pair"), fixture.get("read_mark")
+    if not (isinstance(pair, dict) and set(pair) == {"type", "supertype"}
+            and all(isinstance(pair[k], str) and pair[k] for k in pair)):
+        raise SystemExit(f"{fixture_path}: `pair` is {pair!r}, expected {{type, supertype}} strings.")
+    keys = {"type", "supertype", "name", "reader_field", "messages_field"}
+    if not (isinstance(mark, dict) and set(mark) == keys and all(isinstance(mark[k], str) and mark[k] for k in keys)):
+        raise SystemExit(f"{fixture_path}: `read_mark` is {mark!r}, expected the strings {sorted(keys)}.")
+    for t, s in ((pair["type"], pair["supertype"]), (mark["type"], mark["supertype"])):
+        if t not in ELEMENT_TYPES:
+            raise SystemExit(f"{fixture_path}: {t!r} is not an element type.")
+        if s != s.strip() or "'" in s or "\\" in s:
+            raise SystemExit(f"{fixture_path}: the supertype {s!r} carries edge spaces, or a quote or backslash "
+                             "this emitter does not escape.")
+    if f"the pair `{pair['type']}` + supertype `{pair['supertype']}`" not in page:
+        raise SystemExit(f"message.md does not name the fixture's pair `{pair['type']}` + supertype "
+                         f"`{pair['supertype']}`. Route it to the schema-dist owner; never pick one.")
+    if f"supertype `{mark['supertype']}`" not in page or f"`{mark['reader_field']}`" not in page \
+            or f"`{mark['messages_field']}`" not in page:
+        raise SystemExit(f"message.md does not name the fixture's read mark {mark!r}. Route it to the schema-dist owner.")
+    if (pair["type"].lower(), pair["supertype"].lower()) not in [(t.lower(), s.lower()) for t, s in pairs]:
+        raise SystemExit(f"the message pair {pair!r} is not one of the room profile's pairs {pairs!r}, and "
+                         "message.md says it is. Route it to the schema-dist owner.")
+    names = {f["name"] for f in all_fields[mark["type"]]}
+    stray = [mark[k] for k in ("reader_field", "messages_field") if mark[k] not in names]
+    if stray:
+        raise SystemExit(f"{fixture_path}: the read mark's fields {stray} are not fields of {mark['type']}.")
+    return (pair["type"], pair["supertype"]), mark
+
+
+def render_message_profile(pair: tuple[str, str], mark: dict[str, str]) -> str:
+    lines = [
+        "/** The message profile's pair (schema-dist `profiles/message.md`, a convention on the 22 types,",
+        " *  never a change to the standard): a message between a world's members is a Narrative with this",
+        " *  supertype, the type and supertype each trimmed and compared without regard to case. Match with",
+        " *  isMessage. Source: `profiles/message.fixture.json`'s `pair`, checked against the page and against",
+        " *  ROOM_PAIRS at codegen. */",
+        f"export const MESSAGE_PAIR: {{ readonly type: ElementType; readonly supertype: string }} = "
+        f"{{ type: '{pair[0]}', supertype: '{pair[1]}' }};",
+        "",
+        "/** The message profile's read mark: one Relation per reader with this supertype, the reader's",
+        " *  Character in `readerField`, the ids of the messages read in `messagesField`. Source:",
+        " *  `profiles/message.fixture.json`'s `read_mark`, checked against the page and the walk at codegen. */",
+        "export const MESSAGE_READ_MARK = {",
+        f"  type: '{mark['type']}', supertype: '{mark['supertype']}', "
+        f"readerField: '{mark['reader_field']}', messagesField: '{mark['messages_field']}',",
+        "} as const;",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--schema", default=str(DEFAULT_SCHEMA_DIR))
@@ -936,8 +1003,10 @@ def main() -> None:
               .replace("__ELEMENT_BASE__", render_element_base(schema_dir)))
     parts = [header, ""]
     parts.append(render_maps(all_fields, families, icons, sections, public))
-    parts.append(render_room_pairs(load_room_pairs(schema_dir), load_room_mark(schema_dir)))
+    room_pairs = load_room_pairs(schema_dir)
+    parts.append(render_room_pairs(room_pairs, load_room_mark(schema_dir)))
     parts.append(render_review_label(load_review_label(schema_dir)))
+    parts.append(render_message_profile(*load_message_profile(schema_dir, room_pairs, all_fields)))
     parts.append(render_field_schema(all_fields, sections, required_sets))
     parts.append("\n\n".join(interfaces))
     parts.append("")

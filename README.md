@@ -366,6 +366,23 @@ const lore = elements.filter(el => !isRoomElement(el)); // a lore view, unless t
 
 A lore view (a list, a count, search, a graph, a link picker, a story's context) leaves room elements out unless the person asks to see them; the room's own views show them whole, and a tool that writes the world writes them like any element. A Law with supertype `Charter` is lore on purpose. The profile: [`profiles/room.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/room.md) in the schema distribution.
 
+### Messages
+
+A message between a world's members is a Narrative with supertype `Message` (`MESSAGE_PAIR`; `isMessage(el)` matches it trimmed and case-blind): `narrator` is the sender, `characters` the recipients, and an empty `characters` is addressed to everyone. The sender is a claim until the server's `created_by` proves it, so `senderStatus` answers `verified`, `mismatch` or `unverifiable`, and a reader shows anything but `verified` as a claim. A reader's read mark is a Relation with supertype `Read` and the reader as `actor`, counted only in the reader's own hand.
+
+```typescript
+import { isMessage, readMarkOf, senderStatus, unreadFor, threadOf } from '@onlyworlds/sdk';
+
+const messages = (await client.list('narrative', { filter: { supertype: 'Message' } })).data.filter(isMessage);
+const marks = (await client.list('relation', { filter: { supertype: 'Read' } })).data;
+const members = await client.members();
+const unread = unreadFor(messages, me, readMarkOf(marks, me, members)); // created_at order
+const { status, claimed, writtenBy } = senderStatus(unread[0], members);
+const thread = threadOf(messages, rootId); // the root and every reply under it
+```
+
+Both lists are in `created_at` order, and equal times keep the order of the list given. The profile: [`profiles/message.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/message.md) in the schema distribution.
+
 ### A world's own words for the types
 
 A world may carry `x_names` on the World: its own word for a type (Character shown as *Employee* in a work world), and a finer word for a supertype inside one. `typeWord(world, type, { supertype, many })` returns that word, or `null` for the standard's name. `world` is a `getWorld()` body (keel serves `x_` keys on the World) or a folder's `world.json`. The API, the folder, the schema and every id keep the standard's names; the word is for display only.

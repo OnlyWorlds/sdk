@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.71
-//         commit          a81b7bd4c838227370cd31dcc355742d59fbfa35
-//         MANIFEST sha256 aaffaa512bd266dae86c6b349be9c587d56b6caa130b97a334d2c021119ba5a8
-//         canonical 00.33.00, dist serial 71, published 2026-10-25
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.73
+//         commit          22f5e0e02db600e8a04272a4e5b27de5127ed65d
+//         MANIFEST sha256 ea0402f70bfa445f890c17e563d216fead9c35e995585d009edadc05966ac9f1
+//         canonical 00.33.00, dist serial 73, published 2026-10-26
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -348,6 +348,20 @@ export const ROOM_MARK = 'x_room_of' as const;
  *  buildAskContext writes it on the element's first line. Source: rule 1's own sentence, read at
  *  codegen. */
 export const REVIEW_PROPOSED_LABEL = 'proposed, not yet reviewed' as const;
+
+/** The message profile's pair (schema-dist `profiles/message.md`, a convention on the 22 types,
+ *  never a change to the standard): a message between a world's members is a Narrative with this
+ *  supertype, the type and supertype each trimmed and compared without regard to case. Match with
+ *  isMessage. Source: `profiles/message.fixture.json`'s `pair`, checked against the page and against
+ *  ROOM_PAIRS at codegen. */
+export const MESSAGE_PAIR: { readonly type: ElementType; readonly supertype: string } = { type: 'narrative', supertype: 'Message' };
+
+/** The message profile's read mark: one Relation per reader with this supertype, the reader's
+ *  Character in `readerField`, the ids of the messages read in `messagesField`. Source:
+ *  `profiles/message.fixture.json`'s `read_mark`, checked against the page and the walk at codegen. */
+export const MESSAGE_READ_MARK = {
+  type: 'relation', supertype: 'Read', readerField: 'actor', messagesField: 'narratives',
+} as const;
 
 
 // ---------------------------------------------------------------------------
