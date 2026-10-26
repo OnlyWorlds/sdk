@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.85.0] - 2026-10-26
+
+### Changed
+
+- **`resolveCalendar` is the new name of `resolveCalendarLens`**, with the same arguments and answers. "Lens" now names a cut of a world (what a reader is shown of it), so the function that picks a world's chosen calendar no longer uses the word. `resolveCalendarLens` stays as a deprecated function with the same answers until 5.0; its refusal of an unknown option names the function called.
+
 ## [4.84.1] - 2026-10-26
 
 ### Fixed

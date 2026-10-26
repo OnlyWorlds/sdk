@@ -106,7 +106,7 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   folding, both Unicode 15.1's from its own files (`nfc` since 4.71.0, `simpleCaseFold`), never
   the runtime's `normalize`, whose Unicode is its ICU's (Node 22: 16.0).
 - World calendars (since 4.20.0): `worldCalendars(elements)` finds the elements carrying
-  `atlas_calendar` (Atlas owns the field: read it, never write it); `resolveCalendarLens` picks
+  `atlas_calendar` (Atlas owns the field: read it, never write it); `resolveCalendar` picks
   one; `formatStep(config, step)` names a point on the world's integer time line, `parseDate`
   reads one back. No calendar or a broken one is null: show the bare number.
 - Ids: the client mints **UUIDv7** on an id-less `create` (since 4.2.0; keel mints v7 too).

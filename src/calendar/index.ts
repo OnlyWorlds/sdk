@@ -5,7 +5,7 @@
  * the one copy since Atlas 245aad3 deleted its own and imports this one:
  * a kernel change is an SDK release, and Atlas's 48 kernel tests run against it there too.
  * Its contract is still Atlas's calendar design, §5 and §5b. This file adapts Atlas's
- * `src/core/calendar-lens.ts` (readCalendarValue, worldCalendars, resolveCalendarLens) to
+ * `src/core/calendar-lens.ts` (readCalendarValue, worldCalendars, and its resolveCalendarLens as resolveCalendar) to
  * any element shape, since the SDK has no Atlas `Element`.
  *
  * The field: a calendar is an element (a Construct by convention) carrying `atlas_calendar`.
@@ -79,16 +79,31 @@ export function worldCalendars(elements: Iterable<OwCalendarElement>): WorldCale
  * stays null. With several calendars and no choice, nothing is guessed. An unknown option is a
  * TypeError (the caller's bug, not the world's data).
  */
-export function resolveCalendarLens(
+export function resolveCalendar(
   elements: Iterable<OwCalendarElement>,
   activeId: string | null | undefined,
   opts?: { fallbackToOnly?: boolean },
 ): WorldCalendar | null {
-  refuseUnknownOptions('resolveCalendarLens', opts, ['fallbackToOnly']);
+  refuseUnknownOptions('resolveCalendar', opts, ['fallbackToOnly']);
   if (activeId === undefined && opts?.fallbackToOnly) {
     const all = worldCalendars(elements);
     return all.length === 1 ? all[0] : null;
   }
   if (!activeId) return null;
   return worldCalendars(elements).find((c) => c.id === activeId) ?? null;
+}
+
+/**
+ * The old name of {@link resolveCalendar}, with the same answers: "lens" now names a cut of a
+ * world, not a chosen calendar.
+ *
+ * @deprecated Since 4.85.0. Use `resolveCalendar`; this name leaves in 5.0.
+ */
+export function resolveCalendarLens(
+  elements: Iterable<OwCalendarElement>,
+  activeId: string | null | undefined,
+  opts?: { fallbackToOnly?: boolean },
+): WorldCalendar | null {
+  refuseUnknownOptions('resolveCalendarLens', opts, ['fallbackToOnly']);
+  return resolveCalendar(elements, activeId, opts);
 }

@@ -317,10 +317,10 @@ The two defaults differ on purpose: private records stay out unless you ask, hid
 A world's time is an integer line (`time_range_current` is a point on it, and so is an Event's `start_date`). A calendar names its points: months, days, eras. Atlas keeps a calendar on an element (a Construct by convention) in its `atlas_calendar` field, and the SDK reads it with Atlas's own calendar code (since 4.20.0). Atlas owns that field and is its only writer; read it, never write it.
 
 ```typescript
-import { worldCalendars, resolveCalendarLens, formatStep, formatYearLabel, parseDate } from '@onlyworlds/sdk';
+import { worldCalendars, resolveCalendar, formatStep, formatYearLabel, parseDate } from '@onlyworlds/sdk';
 
 const calendars = worldCalendars(elements);  // [{ id, name, config }]: every element with a valid atlas_calendar
-const cal = resolveCalendarLens(elements, chosenId, { fallbackToOnly: true }); // a world with one calendar uses it
+const cal = resolveCalendar(elements, chosenId, { fallbackToOnly: true }); // a world with one calendar uses it
 if (cal) {
   formatStep(cal.config, 400);      // "4 Alturiak, 1 DR" (with Harptos, from Atlas's tests)
   formatYearLabel(cal.config, 400); // "1 DR"

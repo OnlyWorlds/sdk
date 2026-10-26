@@ -1,10 +1,10 @@
 /**
  * Which calendars a world holds: Atlas's tests/unit/calendar-lens.test.ts, its three
- * portable blocks (worldCalendars, readCalendarValue, resolveCalendarLens), on plain
+ * portable blocks (worldCalendars, readCalendarValue, resolveCalendar), on plain
  * elements. Atlas's chart-store and registry blocks stay in Atlas.
  */
 import { describe, it, expect } from './expect.mjs';
-import { worldCalendars, resolveCalendarLens, readCalendarValue, CALENDAR_FIELD } from '../dist/index.js';
+import { worldCalendars, resolveCalendar, resolveCalendarLens, readCalendarValue, CALENDAR_FIELD } from '../dist/index.js';
 
 const CONFIG = {
   version: 1,
@@ -50,25 +50,35 @@ describe('readCalendarValue', () => {
   });
 });
 
-describe('resolveCalendarLens', () => {
+describe('resolveCalendar', () => {
   const elements = [{ id: 'c1', type: 'construct', name: 'Imperial', atlas_calendar: CONFIG }];
   it('resolves a live id and degrades dangling or null to bare numbers', () => {
-    expect(resolveCalendarLens(elements, 'c1')?.name).toBe('Imperial');
-    expect(resolveCalendarLens(elements, 'gone')).toBe(null);
-    expect(resolveCalendarLens(elements, null)).toBe(null);
-    expect(resolveCalendarLens([], 'c1')).toBe(null);
+    expect(resolveCalendar(elements, 'c1')?.name).toBe('Imperial');
+    expect(resolveCalendar(elements, 'gone')).toBe(null);
+    expect(resolveCalendar(elements, null)).toBe(null);
+    expect(resolveCalendar([], 'c1')).toBe(null);
   });
   it('falls back to the only calendar when none was ever chosen', () => {
-    expect(resolveCalendarLens(elements, undefined, { fallbackToOnly: true })?.name).toBe('Imperial');
+    expect(resolveCalendar(elements, undefined, { fallbackToOnly: true })?.name).toBe('Imperial');
   });
   it('respects an explicit no-calendar choice even when one exists', () => {
-    expect(resolveCalendarLens(elements, null, { fallbackToOnly: true })).toBe(null);
+    expect(resolveCalendar(elements, null, { fallbackToOnly: true })).toBe(null);
   });
   it('does not guess when the world has more than one calendar', () => {
     const two = [...elements, { id: 'c2', type: 'construct', name: 'Guild', atlas_calendar: CONFIG }];
-    expect(resolveCalendarLens(two, undefined, { fallbackToOnly: true })).toBe(null);
+    expect(resolveCalendar(two, undefined, { fallbackToOnly: true })).toBe(null);
   });
   it('is opt-in: without fallbackToOnly an unchosen calendar stays bare numbers', () => {
-    expect(resolveCalendarLens(elements, undefined)).toBe(null);
+    expect(resolveCalendar(elements, undefined)).toBe(null);
+  });
+  it('keeps its old name, resolveCalendarLens, with the same answers until 5.0', () => {
+    const two = [...elements, { id: 'c2', type: 'construct', name: 'Guild', atlas_calendar: CONFIG }];
+    for (const els of [elements, two, []]) {
+      for (const id of ['c1', 'c2', 'gone', null, undefined]) {
+        for (const opts of [undefined, { fallbackToOnly: true }, { fallbackToOnly: false }]) {
+          expect(resolveCalendarLens(els, id, opts)).toEqual(resolveCalendar(els, id, opts));
+        }
+      }
+    }
   });
 });

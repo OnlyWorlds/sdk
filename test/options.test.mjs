@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 
 import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
-  preparePhoto, parseDate, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
+  preparePhoto, parseDate, resolveCalendar, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
 
@@ -87,7 +87,8 @@ const FENCED = {
   'planPhoto#1': () => planPhoto({ width: 10, height: 10, type: 'image/png' }, U),
   'preparePhoto#1': () => preparePhoto(new Blob([new Uint8Array([1])], { type: 'image/png' }), U),
   'parseDate#2': () => parseDate(cfg, '12 Sowmarch 3 FT', U),
-  'resolveCalendarLens#2': () => resolveCalendarLens(elements, undefined, U),
+  'resolveCalendar#2': () => resolveCalendar(elements, undefined, U),
+  'resolveCalendarLens#2': () => resolveCalendarLens(elements, undefined, U), // 4.85.0: the old name, until 5.0
   'lookupWorld#2': () => lookupWorld(index, 'Eknomos', U),
   'renderElement#2': () => renderElement(elements[0], index, U),
   'buildAskContext#2': () => buildAskContext(elements, index, U),
@@ -146,7 +147,7 @@ test('the fenced calls work without the unknown key: a refusal is the key, not t
   const { __unknown__: _, ...none } = U;
   assert.equal(typeWord({ x_names: { version: 1, types: { character: { one: 'Employee' } } } }, 'character', none), 'Employee');
   assert.equal(parseDate(cfg, '12 Sowmarch 3 FT', { now: 0 }).error, undefined);
-  assert.equal(resolveCalendarLens(elements, undefined, { fallbackToOnly: true })?.id, 'c');
+  assert.equal(resolveCalendar(elements, undefined, { fallbackToOnly: true })?.id, 'c');
   assert.equal(lookupWorld(index, 'Eknomos', { limit: 1 }).length, 1);
   assert.match(renderElement(elements[0], index, { descMax: 10 }), /Eknomos/);
   assert.equal(buildAskContext(elements, index, { includeRoom: false }).kept.length, 2);
