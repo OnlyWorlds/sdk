@@ -222,6 +222,19 @@ export class OwApiError extends Error {
   }
 
   /**
+   * delete, or reviewNewElement's decline: the Character is one someone plays on the roster, the
+   * world's `owner_character` or a live member's, an AI seat's or a player's Character (422
+   * `character_played`, `param` id). Nothing was deleted; the message says who plays it, never by
+   * email or username. Re-point that member to another Character (the owner's own through
+   * patchWorld's `owner_character`, a seat's by the owner on the member PATCH, a person's own
+   * through setMyCharacter), or remove the member, then delete. Never true for a malformed id's
+   * 422, which carries the same `param`.
+   */
+  get isCharacterPlayed(): boolean {
+    return this.status === 422 && this.code === 'character_played';
+  }
+
+  /**
    * redeemJoin: the world already has its 50 live players (422 `world_full`),
    * at any player link, a table's or a link for one's. Nothing is spent; a place frees when the
    * owner removes a player.

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.77.0] - 2026-10-26
+
+### Added
+
+- **`isCharacterPlayed`** on `OwApiError`: a delete (or a review's decline) of a Character someone plays on the roster, the world's `owner_character` or a live member's, an AI seat's or a player's, answers 422 `character_played` (`param` id) and deletes nothing. The predicate tells it from a malformed id's 422, which carries the same `param`. The way out is to re-point that member to another Character, or remove the member, then delete.
+
 ## [4.76.2] - 2026-10-25
 
 ### Changed
