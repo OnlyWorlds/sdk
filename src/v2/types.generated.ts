@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.73
-//         commit          22f5e0e02db600e8a04272a4e5b27de5127ed65d
-//         MANIFEST sha256 ea0402f70bfa445f890c17e563d216fead9c35e995585d009edadc05966ac9f1
-//         canonical 00.33.00, dist serial 73, published 2026-10-26
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.74
+//         commit          a38647e8e5a5ab8856c03a8db4c5b0a84917618a
+//         MANIFEST sha256 e12f7c758758f986000edce7b607d98734d480de8fa4937d005e362cdf209230
+//         canonical 00.33.00, dist serial 74, published 2026-10-26
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json

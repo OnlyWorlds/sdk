@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.81.1] - 2026-10-26
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.74`** (from dist.73; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'`, no schema file moved and no generated type changed). Serial 74 is text only: the dist's README ends on a maintainer line, and six profile pages (checks, names, packet, review, room, spine) no longer name people or point inside the project's own tracker. No reader and no fixture changed.
+
 ## [4.81.0] - 2026-10-26
 
 ### Added
