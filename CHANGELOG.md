@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.84.1] - 2026-10-26
+
+### Fixed
+
+- **`validateCalendarConfig` answers with its errors, never a TypeError, when `bundles.months` has no names list** (`0`, `''`, `false`, `{}`, or `names` that is not an array). It read `months?.names.length` and threw where it should have listed the problem; such months now count as none for the festival-day check, and their own error is listed as before. `readCalendarValue` was not affected (it answered `null`). Found by comparing this reader with the Python package's port of it, input by input.
+
 ## [4.84.0] - 2026-10-26
 
 ### Changed

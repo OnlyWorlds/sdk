@@ -157,7 +157,8 @@ export function validateCalendarConfig(cfg: CalendarConfig): string[] {
 
   const inter = cfg.intercalary ?? [];
   if (inter.length > 0 && !months) errors.push('Festival days need months');
-  const monthCount = months?.names.length ?? 0;
+  // Months without a names list (`0`, `''`, `false`, `{}`) count as none here; their error is pushed above.
+  const monthCount = Array.isArray(months?.names) ? months.names.length : 0;
   for (const ic of inter) {
     if (!Number.isInteger(ic.after_month) || ic.after_month < 0 || ic.after_month > monthCount) {
       errors.push(`Festival day "${ic.name}": pick the month it follows`);

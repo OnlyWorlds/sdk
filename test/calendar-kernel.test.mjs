@@ -388,6 +388,12 @@ describe('validation', () => {
         };
         expect(validateCalendarConfig(bad).some((e) => e.includes('overlap'))).toBe(true);
     });
+    it('answers with errors, never throws, when months has no names list', () => {
+        for (const months of [0, '', false, {}, { names: 'abc', lengths: [1, 2, 3] }]) {
+            const cfg = { ...KIRROWMOSS, bundles: { ...KIRROWMOSS.bundles, months } };
+            expect(Array.isArray(validateCalendarConfig(cfg))).toBe(true);
+        }
+    });
     it('era gaps are legal and silent — no validation error', () => {
         expect(validateCalendarConfig(VESSACH)).toEqual([]);
     });
