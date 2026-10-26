@@ -208,6 +208,18 @@ const PLANTED = {
     el.background = 'Son of Admiral Stuffington.\r\nNaval Academy graduate.\r\n\r\nCarries an eye.';
     el.mentality = 'Duty first.\rDenial second.\n';
   },
+  // Line breaks in values outside her field lines: her name (title, frame, heading), the world's name,
+  // a row's name, a recent row's time and a member's role, each continued two spaces in.
+  'value-line-breaks': (d) => {
+    d.world.name = 'Moppet\r\nopia';
+    d.character.element.name = 'Admiral\rFluffington';
+    d.sheet[1].element.name = 'Felt\r\n\r\nropolis';
+    d.policy.since = 'c1';
+    d.recent_cursor = 'c2';
+    d.recent_more = false;
+    d.recent = [{ op: 'upsert', type: 'character', id: herId, when: '2026-10-20\nT09:15', who: 'owner', door: 'site' }];
+    d.roster = [{ id: null, kind: 'owner', role: 'own\ner', character: herId, status: 'active' }];
+  },
   // Proposed is any value but null: false, "" and {} (no compact twin: compact drops "" and {}).
   'proposed-odd-values': (d) => {
     d.events[0].element.x_review_proposed = false;

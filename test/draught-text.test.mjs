@@ -27,7 +27,7 @@ test('draughtText fixture: every file is in the manifest and matches its sha256'
 });
 
 test('draughtText: every case gives its expected text, byte for byte', () => {
-  assert.ok(cases.length >= 45, `the fixture holds ${cases.length} cases`);
+  assert.ok(cases.length >= 47, `the fixture holds ${cases.length} cases`);
   for (const real of ['as-of-248', 'as-of-300', 'as-of-453']) {
     assert.ok(cases.includes(real) && cases.includes(`${real}-compact`), `the real case ${real} and its compact twin`);
   }
