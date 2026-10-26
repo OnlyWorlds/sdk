@@ -11,6 +11,7 @@ earlier history lives in git log only.
 
 - **`front_door.my_seats`, and `OwMySeat`** (keel's front door, live 2026-10-26). `me()`, `setMyCharacter()` and an agent's `redeemJoin()` answer now list the live AI and player seats the key's holder answers for, agent seats first: each row is `{ id, kind, name, character }`, with `id` the seat's membership id as `members()` lists it, `kind` `'agent'` or `'player'`, `name` null when the seat has none, and `character` the Character it plays (null when it plays none the key can read). The list is empty for an AI or a player seat's own key and for anyone who answers for none; a seat made from a link for an email address is never listed. Types only: the client already passed the body through. Required on `OwFrontDoor`, as keel's document declares it; a hand-built `OwMe` or `OwAgentJoined` in a consumer's test needs the field.
 - Tests: `me()` reads a front door with seats and one with an empty list through unchanged; the published `OwFrontDoor` declares its six keys in the document's order and `OwMySeat` its four.
+- Test: `readMarkOf` takes the newest read mark wherever it stands in the list. The message profile's fixture lists the newer mark first, so a reader that kept the first mark that counts passed every case; the new test lists it last (and replays the fixture's case reversed), and fails on that reader. No reader changed.
 
 ## [4.81.1] - 2026-10-26
 

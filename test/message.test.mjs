@@ -162,3 +162,23 @@ test('recipients keep their order and a malformed list is not everyone (the Pyth
   for (const m of [{}, { characters: null }, { characters: [] }]) assert.equal(isToEveryone(m), true, JSON.stringify(m));
   assert.equal(isToEveryone(null), false);
 });
+
+test('the newest read mark wins wherever it stands in the list (the fixture lists it first)', () => {
+  // The fixture's mark-newest-updated-at-wins lists the newer mark first, so a reader that kept the
+  // first mark that counts would pass it. Here the newest stands last; a readable time beats an
+  // unreadable one, and equal times keep the first in the list.
+  const ADA = '019a3b10-0000-7000-8000-0000000000a1';
+  const mark = (id, updatedAt) => ({ id, type: 'relation', supertype: 'Read', actor: ADA, narratives: [], ...(updatedAt ? { updated_at: updatedAt } : {}) });
+  const older = mark('old', '2026-10-26T08:00:00Z');
+  const newer = mark('new', '2026-10-26T11:00:00Z');
+  const undated = mark('undated', null);
+  const twin = mark('twin', '2026-10-26T11:00:00Z');
+  assert.equal(readMarkOf([older, newer], ADA, null)?.id, 'new');
+  assert.equal(readMarkOf([undated, older, newer], ADA, null)?.id, 'new');
+  assert.equal(readMarkOf([older, undated], ADA, null)?.id, 'old');
+  assert.equal(readMarkOf([newer, twin], ADA, null)?.id, 'new');
+  // The fixture's own case, its relations reversed: the owner's hand, checked on the members list.
+  const doc = loadFixture();
+  const c = doc.cases.find((x) => x.name === 'mark-newest-updated-at-wins');
+  assert.equal(readMarkOf([...c.relations].reverse(), c.reader, doc.members)?.id, c.mark);
+});
