@@ -1310,13 +1310,25 @@ export class OwV2Client {
    * returned: from then on it answers 401 `key_revoked`. The owner revokes any of the world's keys,
    * a member only their own; any other id is a 404 (`err.isNotFound`). Revoking a revoked key
    * changes nothing and answers the same 204, so a tool that signs out can revoke its key without
-   * knowing whether it already did. Account token only.
+   * knowing whether it already did. An account token already revoked or expired is a 401
+   * (`err.isAuthError`): the key was not revoked and still reads. `signal` (an AbortSignal, e.g.
+   * `AbortSignal.timeout(5000)`) and `keepalive` go to fetch as given: with `keepalive: true` a
+   * browser finishes the revoke after the tab that sent it closes; an abort rejects with an
+   * OwNetworkError whose `cause2` is the abort. Account token only.
    */
-  async revokeWorldKey(worldId: string, keyId: string): Promise<void> {
+  async revokeWorldKey(
+    worldId: string,
+    keyId: string,
+    opts: { signal?: AbortSignal; keepalive?: boolean } = {},
+  ): Promise<void> {
+    only('revokeWorldKey', opts, ['signal', 'keepalive']);
     if (this.keyKind !== 'account') {
       throw new TypeError('revokeWorldKey needs an account token (ow_a_)');
     }
-    await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/keys/${encodeURIComponent(keyId)}`);
+    const send: { signal?: AbortSignal; keepalive?: boolean } = {};
+    if (opts.signal !== undefined) send.signal = opts.signal;
+    if (opts.keepalive !== undefined) send.keepalive = opts.keepalive;
+    await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/keys/${encodeURIComponent(keyId)}`, send);
   }
 
   // -- Sign in with OnlyWorlds (OAuth 2.1 code + PKCE, keel PR 154) ---------
@@ -1441,6 +1453,10 @@ export class OwV2Client {
        * the body is read. With it given, a 304 Not Modified returns null instead of throwing.
        */
       onEtag?: (etag: string | null, status: number) => void;
+      /** Passed to fetch as given: aborting it rejects with an OwNetworkError whose `cause2` is the abort. */
+      signal?: AbortSignal;
+      /** Passed to fetch as given: a browser finishes the request after the page closes. */
+      keepalive?: boolean;
     } = {},
   ): Promise<T> {
     only('request', opts, REQUEST_OPTION_KEYS);
@@ -1480,11 +1496,14 @@ export class OwV2Client {
 
     let res: Response;
     try {
-      res = await this.fetchImpl(url, {
+      const init: RequestInit = {
         method,
         headers,
         body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-      });
+      };
+      if (opts.signal !== undefined) init.signal = opts.signal;
+      if (opts.keepalive !== undefined) init.keepalive = opts.keepalive;
+      res = await this.fetchImpl(url, init);
     } catch (cause) {
       throw new OwNetworkError(`OnlyWorlds request failed: ${method} ${path}`, cause);
     }
@@ -1797,7 +1816,7 @@ const LIST_FILTER_HINT = 'A wire filter (name, name__icontains, supertype, subty
 /** Every key `request()` reads; the escape hatch refuses any other like the typed methods (4.64.0). */
 const REQUEST_OPTION_KEYS = [
   'query', 'body', 'idempotencyKey', 'auth', 'allowEmpty', 'replayAware', 'write', 'elementWrite',
-  'proposable', 'ifMatch', 'ifNoneMatch', 'onEtag',
+  'proposable', 'ifMatch', 'ifNoneMatch', 'onEtag', 'signal', 'keepalive',
 ] as const;
 
 /**

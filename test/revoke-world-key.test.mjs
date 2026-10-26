@@ -7,7 +7,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { OwV2Client } from '../dist/index.js';
+import { OwV2Client, OwNetworkError } from '../dist/index.js';
 
 function fake(status, body) {
   const calls = [];
@@ -41,5 +41,45 @@ test('revokeWorldKey: a world key is a TypeError before anything is sent', async
   const f = fake(204);
   const c = new OwV2Client({ apiKey: 'ow_w_world', apiPin: '1234', fetch: f.fetch });
   await assert.rejects(c.revokeWorldKey('w1', 'k1'), TypeError);
+  assert.equal(f.calls.length, 0);
+});
+
+test('revokeWorldKey: signal and keepalive go to fetch as given, and neither is sent when not given', async () => {
+  const f = fake(204);
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+  const signal = new AbortController().signal;
+  await c.revokeWorldKey('w1', 'k1', { signal, keepalive: true });
+  assert.equal(f.calls[0].init.signal, signal);
+  assert.equal(f.calls[0].init.keepalive, true);
+  await c.revokeWorldKey('w1', 'k1');
+  assert.equal('signal' in f.calls[1].init, false);
+  assert.equal('keepalive' in f.calls[1].init, false);
+});
+
+test('revokeWorldKey: an abort rejects with an OwNetworkError whose cause2 is the abort; nothing else is thrown', async () => {
+  const fetch = async (url, init) => {
+    if (init.signal?.aborted) throw init.signal.reason;
+    return { ok: true, status: 204, headers: new Headers(), async text() { return ''; } };
+  };
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch });
+  const ctl = new AbortController();
+  ctl.abort();
+  const err = await c.revokeWorldKey('w1', 'k1', { signal: ctl.signal }).then(() => assert.fail('expected a throw'), (e) => e);
+  assert.equal(err instanceof OwNetworkError, true);
+  assert.equal(err.cause2.name, 'AbortError');
+});
+
+test('revokeWorldKey: a dead account token is a 401, isAuthError (the key still reads)', async () => {
+  const f = fake(401, { error: { type: 'authentication_error', code: 'invalid_credentials', message: 'x', param: null, doc_url: null } });
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+  const err = await c.revokeWorldKey('w1', 'k1', { keepalive: true }).then(() => assert.fail('expected a throw'), (e) => e);
+  assert.equal(err.isAuthError, true);
+  assert.equal(err.isNotFound, false);
+});
+
+test('revokeWorldKey: an unknown option is a TypeError before anything is sent', async () => {
+  const f = fake(204);
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+  await assert.rejects(c.revokeWorldKey('w1', 'k1', { keepAlive: true }), TypeError);
   assert.equal(f.calls.length, 0);
 });

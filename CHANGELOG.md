@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.79.0] - 2026-10-26
+
+### Added
+
+- **`revokeWorldKey(worldId, keyId, { signal, keepalive })`**: both go to `fetch` as given. With `keepalive: true` a browser finishes the revoke after the tab that sent it closes, so a page can revoke its key on Sign out and close at once; a `signal` (for example `AbortSignal.timeout(5000)`) puts a time limit on it, and an abort rejects with an `OwNetworkError` whose `cause2` is the abort. A dead account token is a 401 (`err.isAuthError`), and then the key was not revoked. An unknown option is a TypeError before anything is sent.
+- **`request()` takes `signal` and `keepalive`**, passed to `fetch` as given and sent only when given.
+
 ## [4.78.0] - 2026-10-26
 
 ### Added
