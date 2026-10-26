@@ -388,7 +388,7 @@ test('OW-18: two names that are one after NFC and simple case folding are refuse
 
 test('OW-18: the fold is CaseFolding.txt 15.1, C and S rows, for every code point and nothing more', () => {
   // Unicode's file as published (unicode.org/Public/15.1.0/ucd/CaseFolding.txt), the copy the schema dist carries
-  // beside the fixture set; Skeld's ruling, OW Council #9830.
+  // beside the fixture set; Skeld's ruling, 2026-10-22.
   const table = new Map();
   for (const line of readFileSync(new URL('../codegen/schema-dist/fixtures/owworld/CaseFolding-15.1.0.txt', import.meta.url), 'utf8').split(/\r?\n/)) {
     const m = /^([0-9A-F]+); ([CS]); ([0-9A-F]+);/.exec(line);
@@ -414,7 +414,7 @@ test('OW-18: the fold is CaseFolding.txt 15.1, C and S rows, for every code poin
 
 test('OW-18: the NFC is UnicodeData and CompositionExclusions 15.1, for every code point, never the runtime\'s', () => {
   // Unicode's files as published (unicode.org/Public/15.1.0/ucd/), the copies the schema dist carries beside the
-  // fixture set since serial 57 (OW Council #656). Read here on their own, apart from the built tables.
+  // fixture set since serial 57. Read here on their own, apart from the built tables.
   const dir = new URL('../codegen/schema-dist/fixtures/owworld/', import.meta.url);
   const ccc = new Map();
   const mapping = new Map();

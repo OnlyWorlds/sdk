@@ -14,6 +14,7 @@
 // hash-verified).
 
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,7 +33,6 @@ const PUBLISHED = [
   'package.json',
 ];
 const VENDORED = ['codegen/schema-dist/'];
-const SELF = 'scripts/public-words.mjs'; // its patterns would match themselves
 
 // Each row: a pattern, and what a writer puts instead.
 const PATTERNS = [
@@ -41,40 +41,45 @@ const PATTERNS = [
   [/\b(?:[Kk]eel|OW [A-Z][a-z]+) #[0-9]+/g, 'the date, or what changed'],
   [/(?<![\w/.&-])#[0-9]{4,5}\b/g, 'the date of the ruling'],
   [/\bD[0-9]{2,3}[a-z]?\b/g, 'nothing: an internal decision id'],
-  [/\bCaptain\b/g, 'Titus, or the founder'],
-  [/\bthe Deck\b/g, 'nothing: an internal surface'],
-  [/\bCarrier\b/g, 'nothing: an internal surface'],
-  [/allthecarriercrew/g, 'nothing: an internal mailbox'],
-  [
-    /\b(?:Orrery|Hatchery|Armature|Hangar|Bridge|Forge|Assembly|Studio)\b/g,
-    'nothing, or the thing described plainly: a team folder',
-  ],
-  [
-    /\b(?:Kael|Skeld|Temper|Seethe|Quillon|Nucleus|Simmer|Boss|TC|Claudette|Vesper)\b/g,
-    'nothing, Titus, or the maintainers',
-  ],
   [/[A-Za-z]:[/\\]Users[/\\]/g, "nothing: a path on a maintainer's machine"],
 ];
 
-// Lines allowed by their exact text (trimmed), never by file.
+// The team's own words, held as the first 12 hex of each word's sha256, so this list does not
+// publish what it refuses: one word, or "the" and a word. Case-sensitive, as the words are names.
+const WORDS = new Map([
+  ['2e786c488b83', 'Titus, or the founder'],
+  ['9dd2ca99ffc9', 'nothing: an internal surface'],
+  ['271c535631ff', 'nothing: an internal surface'],
+  ['4340fc2d9418', 'nothing: an internal mailbox'],
+  ...['d97084040035', 'b372644b8fec', '0c6874e447ef', '66ada4d485d7', '3892e10346fd', '8899ecd1626d',
+    '44e7d4b24846', '0aa91af2ec4c'].map((h) => [h, 'nothing, or the thing described plainly: a team folder']),
+  ...['7d07b8e5c49d', '0ced2c75df2d', '9c2a44c4716d', 'd3aaf0e63f73', '9067ae5c5374', 'fdfd7512f532',
+    'fbee9d8f57c5', '6a6ac8386005', 'd5ef0f0e059a', 'c62063d665f3', '06110f3dd13d'].map((h) => [h, 'nothing, Titus, or the maintainers']),
+]);
+const hash = (w) => createHash('sha256').update(w).digest('hex').slice(0, 12);
+
+// Lines allowed by their exact text (trimmed; the first 16 hex of its sha256), never by file.
 const EXEMPT_LINES = new Set([
-  // README: the one line that says who maintains the repository.
-  '**Who writes this repository.** The SDK is maintained by Kael, one of a crew of AI minds ' +
-    'working with the OnlyWorlds founder, who answers for it. Kael reads and answers its issues ' +
-    'and pull requests; until the crew posts from an identity of its own, those replies post from ' +
-    "the founder's account, so a reply from `tmoosting` may be Kael's. `CHANGELOG.md` is the " +
-    "crew's record as it was written: its crew names, room references and keel items (keel #519, " +
-    "the API server's own tracker) point at records outside this repository.",
-  // release.yml: the changelog-entry check's own list of the words it refuses.
-  "if grep -nE 'h[0-9]{1,3} #[0-9]+|\\bCaptain\\b|\\bthe Deck\\b|\\bCarrier\\b|Armature|Orrery|" +
-    "Hangar|Hatchery|allthecarriercrew' entry.md; then",
+  '012d30a55f7b2ad2', // README: the one line that says who maintains the repository
 ]);
 
 export function scanText(text, where) {
   const out = [];
   text.split(/\r?\n/).forEach((line, i) => {
-    if (EXEMPT_LINES.has(line.trim())) return;
-    const taken = []; // "h37 #3053" is one finding, not two
+    if (EXEMPT_LINES.has(createHash('sha256').update(line.trim()).digest('hex').slice(0, 16))) return;
+    let prev = null;
+    let prevEnd = -1;
+    for (const m of line.matchAll(/[A-Za-z][A-Za-z0-9]*/g)) {
+      const words = [m[0]];
+      if (prev === 'the' && line.slice(prevEnd, m.index) === ' ') words.push(`the ${m[0]}`);
+      for (const w of words) {
+        const instead = WORDS.get(hash(w));
+        if (instead) out.push(`${where}:${i + 1}: '${w}' (write ${instead})`);
+      }
+      prev = m[0];
+      prevEnd = m.index + m[0].length;
+    }
+    const taken = []; // a room pointer is one finding, not two (its room and its #number)
     for (const [pat, instead] of PATTERNS) {
       for (const m of line.matchAll(pat)) {
         if (taken.some(([a, b]) => a <= m.index && m.index < b)) continue;
@@ -105,7 +110,7 @@ function walk(dir) {
 function filesFor(args) {
   if (args.length === 0) {
     return tracked(PUBLISHED)
-      .filter((p) => !VENDORED.some((v) => p.startsWith(v)) && p !== SELF)
+      .filter((p) => !VENDORED.some((v) => p.startsWith(v)))
       .map((p) => join(ROOT, p));
   }
   return args.flatMap((a) => (statSync(a).isDirectory() ? walk(a) : [a]));

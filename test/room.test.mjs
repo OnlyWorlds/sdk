@@ -54,7 +54,7 @@ test('isRoomElement folds case by Unicode simple case folding, as the Python pac
   assert.equal(isRoomElement({ type: 'Relation', supertype: '\tWORK ITEM\n', x_room_of: WORLD }), true);
 });
 
-test('isRoomElement trims Unicode White_Space at both ends and nothing else (room.md, dist.47; OW Parlor h66 #10415)', () => {
+test('isRoomElement trims Unicode White_Space at both ends and nothing else (room.md, dist.47)', () => {
   const IDEO = String.fromCodePoint(0x3000); // IDEOGRAPHIC SPACE, White_Space
   const NBSP = String.fromCodePoint(0xa0); // NO-BREAK SPACE, White_Space
   const PARA = String.fromCodePoint(0x2029); // PARAGRAPH SEPARATOR, White_Space

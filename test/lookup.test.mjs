@@ -1,6 +1,6 @@
 /**
  * World lookup: ranking, the link step, cards, and parity with the trial's
- * lookup.mjs (Assembly's dossiers/lantern-ask, round 2), whose ordered ids for
+ * lookup.mjs (round 2), whose ordered ids for
  * the ten PARITY questions below were recorded on this fixture and frozen here.
  * Runs against the compiled public bundle (dist), same as the other tests.
  */

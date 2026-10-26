@@ -436,7 +436,7 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { months: { names: ['a'], lengths: [1, 2] } } })).toBe(null);
         expect(readCalendarConfig({ version: 1, grain: 'day', eras: [{ name: 'X' }] })).toBe(null);
     });
-    // 4.42.1 (Quillon h58 #8917): a falsy non-list threw a TypeError; the profile's whole numbers and string names.
+    // 4.42.1 (Quillon): a falsy non-list threw a TypeError; the profile's whole numbers and string names.
     it('refuses a falsy eras or intercalary instead of throwing', () => {
         for (const bad of [false, 0, '']) {
             expect(readCalendarConfig({ version: 1, grain: 'day', eras: bad })).toBe(null);
@@ -456,7 +456,7 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         expect(readCalendarConfig(named(['a', 2]))).toBe(null);
         expect(readCalendarConfig(named(['a', 'b'], { length: 2, names: ['x', null] }))).toBe(null);
     });
-    // 4.42.2: a mid-year down pivot (the profile's fixture, h58 #8943) and equal-start ties.
+    // 4.42.2: a mid-year down pivot (the profile's fixture) and equal-start ties.
     it('a down era has no year zero, even with a mid-year pivot', () => {
         const months = { names: ['Frost', 'Thaw'], lengths: [10, 10] }; // a 20-step year
         const cal = (pivot) => ({ version: 1, grain: 'day', bundles: { months }, eras: [
@@ -470,7 +470,7 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         expect(formatStep(cal(5), -1)).toBe('10 Thaw, 2 BG');
         expect(formatStep(cal(5), 5)).toBe('6 Frost, 1 AG');
     });
-    // 4.42.3: parseDate is formatStep's inverse on both sides of a mid-year pivot (Quillon h58 #8962).
+    // 4.42.3: parseDate is formatStep's inverse on both sides of a mid-year pivot (Quillon).
     it('a mid-year down pivot round-trips through parseDate', () => {
         const months = { names: ['Frost', 'Thaw'], lengths: [10, 10] };
         for (const pivot of [0, 5]) {
@@ -484,7 +484,7 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
             }
         }
     });
-    // 4.42.4: a typed era names the date's era (Temper h58 #9304).
+    // 4.42.4: a typed era names the date's era (Temper).
     it('a date the typed era does not hold is refused, not read in another era', () => {
         const cfg = { version: 1, grain: 'day', bundles: { months: { names: ['Frost', 'Thaw'], lengths: [10, 10] } }, eras: [
             { name: 'Before Gate', abbrev: 'BG', start: 5, direction: 'down' }, { name: 'After Gate', abbrev: 'AG', start: 5 }] };

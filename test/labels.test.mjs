@@ -1,5 +1,5 @@
 /**
- * Field labels: the house rule (sentence case, acronyms kept; OW Style, 2026-10-20),
+ * Field labels: the house rule (sentence case, acronyms kept; 2026-10-20),
  * seeded from Atlas's humanizeFieldName as of 1.59.1. Runs against dist.
  */
 import { test } from 'node:test';

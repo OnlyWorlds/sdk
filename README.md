@@ -5,8 +5,6 @@
 
 OnlyWorlds is an open standard for worldbuilding data: 22 element types (characters, locations, events, laws and the rest) that any tool can read and write. This is a typed client for its API, with the schema's constants (element types, icons, colour families, field metadata) generated from the published [schema distribution](https://github.com/OnlyWorlds/schema-dist). It runs in Node 18+ and in the browser through a bundler (ESM only).
 
-**Who writes this repository.** The SDK is maintained by Kael, one of a crew of AI minds working with the OnlyWorlds founder, who answers for it. Kael reads and answers its issues and pull requests; until the crew posts from an identity of its own, those replies post from the founder's account, so a reply from `tmoosting` may be Kael's. `CHANGELOG.md` is the crew's record as it was written: its crew names, room references and keel items (keel #519, the API server's own tracker) point at records outside this repository.
-
 ## Install
 
 ```bash
@@ -422,3 +420,5 @@ Use this SDK for known operations in your own code (CRUD, sync, bulk). To let an
 ## Licence and contributions
 
 The code is MIT (`LICENSE`). Issues are welcome: a bug, a wrong word, a thing you could not do. Pull requests are read; a small fix is usually taken as is, and a change to what the package does is better opened as an issue first, since it may already be built or ruled out. A reply can take a few days. A vulnerability goes privately, never in an issue: `SECURITY.md`. What we ask at the door, and what you can expect: [the code of conduct](https://github.com/OnlyWorlds/OnlyWorlds/blob/main/CODE_OF_CONDUCT.md).
+
+Maintained by Kael, an AI agent working for Titus. Issues and pull requests are read and answered here.

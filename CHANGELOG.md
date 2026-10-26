@@ -138,7 +138,7 @@ earlier history lives in git log only.
 
 ### Added
 
-- **`nfc(text)`**: Normalization Form C as Unicode 15.1 defines it, built from Unicode's own `UnicodeData-15.1.0.txt` and `CompositionExclusions-15.1.0.txt` (schema-dist serial 57, OW Council #656), never the runtime's. It is the NFC half of OW-18's fold, beside `simpleCaseFold`, exported so a tool that compares names the way a world file does gets the same answer. This export is why the release is a minor, not 4.70.1.
+- **`nfc(text)`**: Normalization Form C as Unicode 15.1 defines it, built from Unicode's own `UnicodeData-15.1.0.txt` and `CompositionExclusions-15.1.0.txt` (schema-dist serial 57), never the runtime's. It is the NFC half of OW-18's fold, beside `simpleCaseFold`, exported so a tool that compares names the way a world file does gets the same answer. This export is why the release is a minor, not 4.70.1.
 
 ### Fixed
 
@@ -153,7 +153,7 @@ earlier history lives in git log only.
 
 ### Added
 
-- **`writeWorldFile(files, topDir, { includeHidden: false })`** (folder spec §4.8, Skeld, OW Atlas h20 #11469): a world file is a copy, so an element file carrying the hidden mark travels byte for byte by default, as before. A tool making a file to hand to someone else passes `includeHidden: false`, and every `.json` file directly in a type folder of `elements/` or the legacy `spatial/` whose JSON has a top-level `hidden` (anything but absent, `null` or `false`, so `"true"` and `1` count, as the Python package's `is_hidden`) is left out whole. A file there that is not UTF-8 JSON, or not an object, is kept. Nothing else is rewritten: a visible element's link to a hidden one keeps its id. The two defaults differ on purpose: private records out unless asked, hidden kept unless the write is a share.
+- **`writeWorldFile(files, topDir, { includeHidden: false })`** (folder spec §4.8, Skeld, 2026-10-23): a world file is a copy, so an element file carrying the hidden mark travels byte for byte by default, as before. A tool making a file to hand to someone else passes `includeHidden: false`, and every `.json` file directly in a type folder of `elements/` or the legacy `spatial/` whose JSON has a top-level `hidden` (anything but absent, `null` or `false`, so `"true"` and `1` count, as the Python package's `is_hidden`) is left out whole. A file there that is not UTF-8 JSON, or not an object, is kept. Nothing else is rewritten: a visible element's link to a hidden one keeps its id. The two defaults differ on purpose: private records out unless asked, hidden kept unless the write is a share.
 - **`report: (r: OwWriteWorldFileReport) => void`**, a `writeWorldFile` option: called once with `{ hiddenLeftOut }` after the archive is made and before it is returned, never on a refusal. The return stays the bytes. An `includeHidden` that is not a boolean, or a `report` that is not a function, is a `TypeError` before anything is written; both keys join the options fence.
 
 ### Fixed
@@ -171,8 +171,8 @@ earlier history lives in git log only.
 
 ### Fixed
 
-- **`patchWorld` strips `counts`**, which a keyless `GET /world` carries (keel #421 PR 4, the public reader on since 2026-10-23) and `PATCH` answers as an unknown key, so the body of a keyless read goes back too. Quillon's port found it (h29 #11241); the Python package's live wire test went red on the same key the same hour.
-- **`reviewNewElement` refuses a reason with an accept** before sending (keel takes `{ decision: 'accept' }` alone; a reason was its 422), and **checks its answer**: an accept that answers no `element`, or a decline no `deleted`, is a `TypeError` naming the route. Both as the Python package does (Quillon, h29 #11241).
+- **`patchWorld` strips `counts`**, which a keyless `GET /world` carries (keel #421 PR 4, the public reader on since 2026-10-23) and `PATCH` answers as an unknown key, so the body of a keyless read goes back too. Quillon's port found it (2026-10-23); the Python package's live wire test went red on the same key the same hour.
+- **`reviewNewElement` refuses a reason with an accept** before sending (keel takes `{ decision: 'accept' }` alone; a reason was its 422), and **checks its answer**: an accept that answers no `element`, or a decline no `deleted`, is a `TypeError` naming the route. Both as the Python package does (Quillon, 2026-10-23).
 
 ## [4.67.0] - 2026-10-23
 
@@ -235,7 +235,7 @@ earlier history lives in git log only.
 
 ### Added
 
-- **`typeWord(world, type, { supertype, many })`**, the names profile's reader (schema-dist `profiles/names.md`, OW Council #567): a world's own word for a type, from `x_names` on the World (a `getWorld()` body, keel serving `x_` keys on the World from Keel #571, or a folder's `world.json`). The supertype's entry first, matched trimmed and without regard to case (the room profile's one definition, shared with `isRoomElement`), then the type's entry, else `null`: print the standard's name. `many: true` gives the plural, `one` when the pair has none. A value that is not a names map is `null` everywhere; a bad entry or an unknown slug is ignored. The options object refuses an unknown key with a `TypeError`. Types `OwNamesMap` and `OwWordPair`. Display only: the API, the folder, the schema and every id keep the standard's names.
+- **`typeWord(world, type, { supertype, many })`**, the names profile's reader (schema-dist `profiles/names.md`): a world's own word for a type, from `x_names` on the World (a `getWorld()` body, keel serving `x_` keys on the World, or a folder's `world.json`). The supertype's entry first, matched trimmed and without regard to case (the room profile's one definition, shared with `isRoomElement`), then the type's entry, else `null`: print the standard's name. `many: true` gives the plural, `one` when the pair has none. A value that is not a names map is `null` everywhere; a bad entry or an unknown slug is ignored. The options object refuses an unknown key with a `TypeError`. Types `OwNamesMap` and `OwWordPair`. Display only: the API, the folder, the schema and every id keep the standard's names.
 - Tests: the profile's 23-case fixture, read from the vendored distribution, as its own test; no world, no map and an unknown option.
 
 ### Changed
@@ -259,7 +259,7 @@ earlier history lives in git log only.
 
 ### Changed
 
-- **`API-Pin` is sent only where keel checks it** (Skeld's ruling, OW Keel h29 #10663). keel verifies a PIN wherever one is sent (argon2, 64 MiB each), and on 2026-10-22 scripts reading with the PIN OOM-killed staging on a cold cache after a restart. The client used to send a configured `apiPin` on every request. It now sends it on every request whose method is not GET (every write: elements, links, bulk, adopt, hide and unhide, media and file tickets, seats, world links, proposals, `setMyCharacter`, `mintWorldKey`, `patchWorld`, and any route added later), on `GET /me` (`me()`, the connection test: keel checks a PIN there when sent, keel #314, D93), and on every request of a 10-digit legacy key (v1 parity, keel #421: such a key needs the PIN on reads of a world with a PIN). Any other read from an `ow_w_`, `ow_r_` or member key goes without it; an account token never sent it and still does not. The rule is derived in `request()` from the method and path, so a raw `request()` call follows it too. No API changed.
+- **`API-Pin` is sent only where keel checks it** (Skeld's ruling, 2026-10-22). keel verifies a PIN wherever one is sent (argon2, 64 MiB each), and on 2026-10-22 scripts reading with the PIN OOM-killed staging on a cold cache after a restart. The client used to send a configured `apiPin` on every request. It now sends it on every request whose method is not GET (every write: elements, links, bulk, adopt, hide and unhide, media and file tickets, seats, world links, proposals, `setMyCharacter`, `mintWorldKey`, `patchWorld`, and any route added later), on `GET /me` (`me()`, the connection test: keel checks a PIN there when sent, keel #314, D93), and on every request of a 10-digit legacy key (v1 parity, keel #421: such a key needs the PIN on reads of a world with a PIN). Any other read from an `ow_w_`, `ow_r_` or member key goes without it; an account token never sent it and still does not. The rule is derived in `request()` from the method and path, so a raw `request()` call follows it too. No API changed.
 - Tests: `test/api-pin.test.mjs`, five, on a recorded fetch: eight reads, `me()` and ten writes across POST, PATCH, PUT and DELETE, for an `ow_w_` key with a PIN, a legacy key with a PIN, an `ow_r_` key with none and an account token with one configured; and raw `request()` GETs to other paths, `/me` and other methods. Two existing tests that expected the PIN on a GET now expect none. Mutants: the PIN on every request again fails four tests; without the `/me` clause, three; without the legacy clause, one.
 
 ## [4.58.0] - 2026-10-22
@@ -276,11 +276,11 @@ earlier history lives in git log only.
 
 ### Changed
 
-- **Schema repinned to schema-dist `v0.33.0-dist.47`** (same canonical 00.33.00; no schema file moved, no generated type changed). The distribution gains `profiles/checks.md` and `profiles/checks.fixture.json`, the checks profile: a work world's Charter carries its house rules as `x_checks_rules`, beside the sentences a person reads (OW Council #559). `profiles/room.md` now defines "trimmed and without regard to case" once, for every profile that folds like the room's pairs: trimmed is leading and trailing whitespace removed, nothing inside touched; without regard to case is the trimmed value after simple case folding.
+- **Schema repinned to schema-dist `v0.33.0-dist.47`** (same canonical 00.33.00; no schema file moved, no generated type changed). The distribution gains `profiles/checks.md` and `profiles/checks.fixture.json`, the checks profile: a work world's Charter carries its house rules as `x_checks_rules`, beside the sentences a person reads. `profiles/room.md` now defines "trimmed and without regard to case" once, for every profile that folds like the room's pairs: trimmed is leading and trailing whitespace removed, nothing inside touched; without regard to case is the trimmed value after simple case folding.
 
 ### Fixed
 
-- **`isRoomElement` trims Unicode White_Space exactly**, the 25 code points of the property, at both ends of the type and the supertype. It used JavaScript's `trim()`, which also strips U+FEFF, a byte order mark. Skeld's ruling (OW Parlor h66 #10415) is that a byte order mark stays, so a supertype `"\uFEFFMessage"` is no longer a room element; `" Message\u3000"` still is, and a leading U+200B (zero width space, not White_Space) still is not. The room fixture's 23 cases answer as before.
+- **`isRoomElement` trims Unicode White_Space exactly**, the 25 code points of the property, at both ends of the type and the supertype. It used JavaScript's `trim()`, which also strips U+FEFF, a byte order mark. Skeld's ruling (2026-10-22) is that a byte order mark stays, so a supertype `"\uFEFFMessage"` is no longer a room element; `" Message\u3000"` still is, and a leading U+200B (zero width space, not White_Space) still is not. The room fixture's 23 cases answer as before.
 
 ## [4.57.1] - 2026-10-22
 
@@ -292,7 +292,7 @@ earlier history lives in git log only.
 
 ### Added
 
-- **The conditional head poll** (keel #518, live 2026-10-22; Orrery's `revision-poll.md`, decision 3): `changesHead()` keeps the last head read's `ETag` per client and sends it back as `If-None-Match` on the next one, exactly as received (keel's 200 sends a weak `W/"821:-"`; nothing is quoted, parsed or compared). keel's tag is `"<head>:<epoch>"`, so a view change moves it as a new change does. When nothing moved, keel answers 304 Not Modified with no body, and `changesHead()` returns the `head`, `cursor` and `epoch` of the last 200 with `unchanged: true`; every 200 says `unchanged: false`. keel refunds a 304 against the request budget, so a poll that mostly finds nothing costs little. A 409 `resync_required` from `changesHead()`, `changes()` or `changesAll()` clears the held tag, so the next head read is a full 200 with `epoch_reason`. A 304 while no tag is held is an `OwApiError` with status 304, never a made-up head. The client still never polls or sleeps on its own: the interval is the caller's.
+- **The conditional head poll** (keel #518, live 2026-10-22): `changesHead()` keeps the last head read's `ETag` per client and sends it back as `If-None-Match` on the next one, exactly as received (keel's 200 sends a weak `W/"821:-"`; nothing is quoted, parsed or compared). keel's tag is `"<head>:<epoch>"`, so a view change moves it as a new change does. When nothing moved, keel answers 304 Not Modified with no body, and `changesHead()` returns the `head`, `cursor` and `epoch` of the last 200 with `unchanged: true`; every 200 says `unchanged: false`. keel refunds a 304 against the request budget, so a poll that mostly finds nothing costs little. A 409 `resync_required` from `changesHead()`, `changes()` or `changesAll()` clears the held tag, so the next head read is a full 200 with `epoch_reason`. A 304 while no tag is held is an `OwApiError` with status 304, never a made-up head. The client still never polls or sleeps on its own: the interval is the caller's.
 - **The public page on `OwWorldMeta`** (keel #471, PR 173, live 2026-10-22), both read-only: `slug` (`string | null`), the page's address, onlyworlds.com/w/<slug>, null while the page is off, and also a keyless `?world=` value; `public_page` (the new `OwWorldPublicPage`), the page as its owner set it: `on`, `palette` (midnight, daylight, parchment, brass, dusk, or null for the house's), `hero` (one plain line), `sections` (the types shown in order, empty for all), `pin` (an element id or null) and `index` (always false for now), every key present with the page off. Both are set by the owner on the world page; `patchWorld()` strips them, so a body read from `getWorld()` stays writable.
 - **`request()` gains two options**: `ifNoneMatch` (a tag sent as `If-None-Match` as given) and `onEtag(etag, status)` (called with each response's `ETag` and status before the body is read; with it given, a 304 returns null instead of throwing). Every other path is unchanged.
 
@@ -304,7 +304,7 @@ earlier history lives in git log only.
 
 ### Added
 
-- **The client's name** (keel #520, live 2026-10-22; Orrery's `client-name.md`, decision 2): a constructor option `client`, default `'sdk'`, sent as `X-OW-Client` on every element write (`create`, `upsert`, `patch`, `delete`, `editLinks`, `bulk`, `adopt`) and on no read. keel stores it on the element as `changed_client`, so a reader can tell which tool made the last change (`new OwV2Client({ ..., client: 'atlas' })`). The rule is keel's, exact here: lower case letters, digits and hyphens, 1 to 32 characters (`[a-z0-9-]{1,32}`). Anything else, a capital, a space, an empty string, 33 characters or a value that is not a string, is a TypeError at construction naming the option and the rule, and nothing is trimmed; keel's own fence for a stranger's header is to store null, never a 422. The name is the client's claim about itself, never proof; it changes no door and no permission, and `agent` still decides `X-OW-Agent`.
+- **The client's name** (keel #520, live 2026-10-22): a constructor option `client`, default `'sdk'`, sent as `X-OW-Client` on every element write (`create`, `upsert`, `patch`, `delete`, `editLinks`, `bulk`, `adopt`) and on no read. keel stores it on the element as `changed_client`, so a reader can tell which tool made the last change (`new OwV2Client({ ..., client: 'atlas' })`). The rule is keel's, exact here: lower case letters, digits and hyphens, 1 to 32 characters (`[a-z0-9-]{1,32}`). Anything else, a capital, a space, an empty string, 33 characters or a value that is not a string, is a TypeError at construction naming the option and the rule, and nothing is trimmed; keel's own fence for a stranger's header is to store null, never a 422. The name is the client's claim about itself, never proof; it changes no door and no permission, and `agent` still decides `X-OW-Agent`.
 - **`changed_client`** on `OwElementBase` (`string | null`, server-managed, read-only, beside `changed_by` and `changed_via`): the name the last write gave, null when it gave none or one outside the rule, for keel's own writes, and for changes from before names were recorded. Sent back in a write it is ignored. **`deleted_client`** on a `/changes` delete (`OwChangeDelete`, beside `deleted_by` and `deleted_via`), the same for the delete; null on a `hidden` row.
 
 ### Changed
@@ -316,7 +316,7 @@ earlier history lives in git log only.
 
 ### Added
 
-- **The room profile** (schema-dist `profiles/room.md`, serial 45; Skeld's rulings, OW Council #554 and OW Parlor h66 #10392): `ROOM_PAIRS`, the eight type-and-supertype pairs a parlor puts in a world (narrative/Message, narrative/Board, relation/Work item, construct/Spec, relation/Heart, relation/Vote, event/Sitting, character/Member), and `isRoomElement(el)`, true when an element's type and supertype, each trimmed and compared without regard to case, match one of them **and** it carries the mark `x_room_of` (the id of the world or sitting the room belongs to) as a non-empty string. A pair without the mark is lore (a novel's letters are Narratives with supertype Message); a mark without a pair is not a room element. The pair match is the whole word, a missing or empty supertype is never a room element, and a Law with supertype `Charter` stays lore. A lore view leaves room elements out unless the person asks; the room's own views show them whole. A convention on the 22 types: no type, field or wire change. `ROOM_PAIRS` is generated from the fixture's `pairs` and checked at codegen against the page's table (they must agree, or codegen exits 1); the mark's name is generated from the fixture's `mark.field` and checked against the page. Case is folded by Unicode simple case folding (`simpleCaseFold`), the same fold as the Python package's `is_room_element`. A new test replays the fixture's 23 cases from the vendored dist.
+- **The room profile** (schema-dist `profiles/room.md`, serial 45; Skeld's rulings, 2026-10-22): `ROOM_PAIRS`, the eight type-and-supertype pairs a parlor puts in a world (narrative/Message, narrative/Board, relation/Work item, construct/Spec, relation/Heart, relation/Vote, event/Sitting, character/Member), and `isRoomElement(el)`, true when an element's type and supertype, each trimmed and compared without regard to case, match one of them **and** it carries the mark `x_room_of` (the id of the world or sitting the room belongs to) as a non-empty string. A pair without the mark is lore (a novel's letters are Narratives with supertype Message); a mark without a pair is not a room element. The pair match is the whole word, a missing or empty supertype is never a room element, and a Law with supertype `Charter` stays lore. A lore view leaves room elements out unless the person asks; the room's own views show them whole. A convention on the 22 types: no type, field or wire change. `ROOM_PAIRS` is generated from the fixture's `pairs` and checked at codegen against the page's table (they must agree, or codegen exits 1); the mark's name is generated from the fixture's `mark.field` and checked against the page. Case is folded by Unicode simple case folding (`simpleCaseFold`), the same fold as the Python package's `is_room_element`. A new test replays the fixture's 23 cases from the vendored dist.
 
 ### Changed
 
@@ -380,10 +380,10 @@ earlier history lives in git log only.
 
 ### Changed
 
-- **The world file follows Folder Format §4.7, the `.owworld` archive** (OW Council #522), and gives the spec's verdict and cause on every one of the 74 fixtures in its conformance set (Quillon's, `owworld-fixtures`), plus its three on-demand floor cases.
+- **The world file follows Folder Format §4.7, the `.owworld` archive**, and gives the spec's verdict and cause on every one of the 74 fixtures in its conformance set (Quillon's, `owworld-fixtures`), plus its three on-demand floor cases.
   - The reader parses the central directory itself (zip64 included) and runs every check on names, kinds, methods and sizes before it inflates anything.
   - Six new refusal causes join `OwWorldFileReason`: `duplicate` (OW-17), `collision` (OW-18: NFC, then simple case folding), `link` (OW-20), `method` (OW-21), `name` (OW-22) and `marker` (OW-6). A `Record<OwWorldFileReason, …>` in a caller needs the six new keys.
-  - The OW-18 fold is the C and S rows of Unicode's CaseFolding.txt 15.1, built in as a table, never the runtime's casing, so a fold a newer Unicode adds stays out until the pin moves (Skeld's ruling, OW Council #9830). `simpleCaseFold(text)` exports it.
+  - The OW-18 fold is the C and S rows of Unicode's CaseFolding.txt 15.1, built in as a table, never the runtime's casing, so a fold a newer Unicode adds stays out until the pin moves (Skeld's ruling, 2026-10-22). `simpleCaseFold(text)` exports it.
   - Files beside the world's folder are ignored, no longer `more_than_one` (OW-4). A `world.json` under `records/` is a producer's data, not a second world (OW-5). A spanned archive is `not_openable`. An entry that inflates past the size it declares is `too_big` at any budget (OW-14).
   - The default budget is the spec's floor: `WORLD_FILE_MAX_BYTES` 2 GiB (was 1 GiB), `WORLD_FILE_MAX_ENTRIES` 500,000 (was 200,000) (OW-15).
   - A `mimetype` marker is never required. One with other bytes than `WORLD_FILE_MEDIA_TYPE` (`application/vnd.onlyworlds.world+zip`, newly exported) is refused, and the marker is never returned as a file.
@@ -401,7 +401,7 @@ earlier history lives in git log only.
 
 ### Added
 
-- `listHidden()`: `GET /world/hidden`, the world's hidden elements newest first as `OwHiddenRow[]` (`type`, `id`, `set_at`, `set_by`; keel #421). Any key of the owner's or a co-builder's; served with `Cache-Control: no-store`, so read it each time. For the parlor, whose host room marks what it hid (Temper, h66 #9778).
+- `listHidden()`: `GET /world/hidden`, the world's hidden elements newest first as `OwHiddenRow[]` (`type`, `id`, `set_at`, `set_by`; keel #421). Any key of the owner's or a co-builder's; served with `Cache-Control: no-store`, so read it each time. For the parlor, whose host room marks what it hid (Temper, 2026-10-22).
 
 ## [4.47.0] - 2026-10-22
 
@@ -417,7 +417,7 @@ earlier history lives in git log only.
 ## [4.45.0] - 2026-10-22
 
 ### Added
-- `hide(type, id)` and `unhide(type, id)`: the hidden mark's writes, `PUT` and `DELETE /{type}/{id}/hidden` (keel #421), for the parlor (Temper, h66 #9720). 204; the element's body and `change_seq` do not move.
+- `hide(type, id)` and `unhide(type, id)`: the hidden mark's writes, `PUT` and `DELETE /{type}/{id}/hidden` (keel #421), for the parlor (Temper, 2026-10-22). 204; the element's body and `change_seq` do not move.
 - `listAccountWorlds()` (`GET /account/worlds`, `OwAccountWorld[]`: owned and shared worlds with their keys by name and last four) and `mintWorldKey(worldId, { scope, name })` (`POST /account/worlds/{id}/keys`, `OwMintedKey` with the full key once), the two account routes Atlas and the parlor hand-rolled. Account token only.
 
 ## [4.44.0] - 2026-10-22
@@ -434,17 +434,17 @@ earlier history lives in git log only.
 ## [4.42.4] - 2026-10-21
 
 ### Fixed
-- **`parseDate` refuses a date the typed era does not hold**, rather than reading its number as an absolute year in another era. With a down era Before Gate turning on 6 Frost, "10 Thaw, 1 BG" read as step 39 ("10 Thaw, 2 AG") and "3 Frost, 0 BG" as "3 Frost, 1 BG"; both now answer `not a date in Before Gate`. The absolute reading stays for a step in no era, where `formatStep` prints the absolute year. No date `formatStep` prints changes how it parses: 20,826 round trips over the profile fixture's calendars read the same before and after. Found by Temper in Atlas 1.67.1 (OW Council h58 #9304).
+- **`parseDate` refuses a date the typed era does not hold**, rather than reading its number as an absolute year in another era. With a down era Before Gate turning on 6 Frost, "10 Thaw, 1 BG" read as step 39 ("10 Thaw, 2 AG") and "3 Frost, 0 BG" as "3 Frost, 1 BG"; both now answer `not a date in Before Gate`. The absolute reading stays for a step in no era, where `formatStep` prints the absolute year. No date `formatStep` prints changes how it parses: 20,826 round trips over the profile fixture's calendars read the same before and after. Found by Temper in Atlas 1.67.1 (2026-10-21).
 
 ## [4.42.3] - 2026-10-21
 
 ### Fixed
-- **`parseDate` reads a down era's dates back to the step they were written from, with a mid-year pivot too.** 4.42.2 moved the display count to the year holding the step before the pivot, and the parse kept the old count, so with a mid-year pivot every date before it parsed back one year early ("6 Frost, 4 BG" read 20 steps early on a 20-step year). Year-boundary pivots were never affected. Found by Quillon porting 4.42.2 to the Unity SDK and confirmed on this kernel by Temper (OW Council h58 #8962, #9111); a round-trip test now holds every step on both sides of the pivot.
-- `redeemJoin`'s doc names a full world's refusal as 422 `world_full` (`isWorldFull`), as keel answers since the party link; it said `invalid_request` (Quillon, OW Keel h29 #9038).
+- **`parseDate` reads a down era's dates back to the step they were written from, with a mid-year pivot too.** 4.42.2 moved the display count to the year holding the step before the pivot, and the parse kept the old count, so with a mid-year pivot every date before it parsed back one year early ("6 Frost, 4 BG" read 20 steps early on a 20-step year). Year-boundary pivots were never affected. Found by Quillon porting 4.42.2 to the Unity SDK and confirmed on this kernel by Temper (2026-10-20); a round-trip test now holds every step on both sides of the pivot.
+- `redeemJoin`'s doc names a full world's refusal as 422 `world_full` (`isWorldFull`), as keel answers since the party link; it said `invalid_request` (Quillon, 2026-10-20).
 
 ## [4.42.2] - 2026-10-20
 
-Two calendar reading fixes, found writing the `atlas_calendar` profile's conformance fixture (OW Council h58 #8943, #8946).
+Two calendar reading fixes, found writing the `atlas_calendar` profile's conformance fixture (2026-10-20).
 
 ### Fixed
 - **A down era has no year zero, even when its pivot falls mid-year.** Its year is now counted from the year holding the step just before the pivot, which reads `year_base` (1 by default). With the pivot mid-year, the earlier steps of the pivot's own year read year 0 ("0 BG") and every year before it one lower; with the pivot on a year's first step, nothing changes. The mirror of an up era, whose first partial year is year 1.
@@ -452,7 +452,7 @@ Two calendar reading fixes, found writing the `atlas_calendar` profile's conform
 
 ## [4.42.1] - 2026-10-20
 
-The calendar reader refuses what the `atlas_calendar` profile refuses (schema-dist `profiles/calendar.md`; Quillon's Unity read, OW Council h58 #8917).
+The calendar reader refuses what the `atlas_calendar` profile refuses (schema-dist `profiles/calendar.md`; Quillon's Unity read, 2026-10-20).
 
 ### Fixed
 - **`readCalendarValue` / `readCalendarConfig` no longer throw on a falsy `eras` or `intercalary`** (`false`, `0`, `""`): it threw a `TypeError` where the profile says a reader refuses and shows bare numbers. It now returns `null`.
@@ -460,7 +460,7 @@ The calendar reader refuses what the `atlas_calendar` profile refuses (schema-di
 
 ## [4.42.0] - 2026-10-20
 
-Schema 00.32.02 (Skeld, OW Council h58 #8811): repinned to schema-dist v0.32.2-dist.29.
+Schema 00.32.02 (Skeld, 2026-10-20): repinned to schema-dist v0.32.2-dist.29.
 
 ### Changed
 - **A Narrative's `start_date`** reads "Date when the narrative is first told or recorded, measured in world TIME units; the span it recounts lives on its events" (it read "Date when the narrative begins"), and **its `end_date`** reads "Date when the narrative stops being told, measured in world TIME units; empty while it is still told" (it read "Date when the narrative ends"), in the generated doc comments and `SCHEMA.md`. No field, type or link changed.
@@ -520,15 +520,15 @@ The party link (keel #422 PR 2, keel PR 110), live in production since 2026-10-2
   `redeemJoin(code, { character })` sends the pick; with `name_required`, `name` alone. A pick a live seat
   already plays is 422 `character_taken` (`err.isCharacterTaken`); a pick off the list, hidden or deleted
   since the link was made, or missing, is 422 `invalid_request` with param `character`
-  (`err.isCharacterInvalid`, true for that param only); a world with its 50 players is 422 `world_full` (`err.isWorldFull`, its own code at my ask, Skeld h29 #8394); the last place
+  (`err.isCharacterInvalid`, true for that param only); a world with its 50 players is 422 `world_full` (`err.isWorldFull`, its own code at my ask, Skeld, 2026-10-20); the last place
   lost to another player is the one 404 (`err.isNotFound`).
 
 ### Changed
-- Repinned to schema-dist v0.32.1-dist.27: only `example/world-export.json` moved (its `schema_version` now 00.32.01, Skeld h29 #8455); no schema file moved, so the generated files change only their source lines.
+- Repinned to schema-dist v0.32.1-dist.27: only `example/world-export.json` moved (its `schema_version` now 00.32.01, Skeld, 2026-10-20); no schema file moved, so the generated files change only their source lines.
 
 ## [4.38.0] - 2026-10-20
 
-Schema 00.32.01 (the Captain's word, h55 #8395): repinned to schema-dist v0.32.1-dist.26.
+Schema 00.32.01 (Titus's word, 2026-10-20): repinned to schema-dist v0.32.1-dist.26.
 
 ### Changed
 - **An Event's `characters`** reads "Characters who know about the event: they were present, aware of it, or involved in it" (it read "Key characters relevant to the event"), in the generated doc comment and `SCHEMA.md`. No field, type or link changed.
@@ -551,7 +551,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   `epoch_reason` beside `epoch` on `OwChangesPage` and on `changesHead()`'s answer: why the epoch last moved.
 
 ### Changed
-- The resync instruction adds the hidden mark's reasons to 4.36.1's keep (the Captain, 2026-10-20): after a
+- The resync instruction adds the hidden mark's reasons to 4.36.1's keep (Titus, 2026-10-20): after a
   409 `resync_required`, walk again from the start; reason `role` (the key's own role or membership moved):
   keep what the local copy holds that the walk no longer names; reason `view`, or a delete row with reason
   `hidden`: drop it; no reason (keel's hidden mark off): keep it, a reset never empties a copy. A tool never
@@ -568,13 +568,13 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 
 ### Changed
 
-- The reset rule in `isResyncRequired`'s and `changes`' doc comments: on a 409 `resync_required`, walk from zero and keep what the local copy holds that the new walk does not name; a reset never empties a copy. It said replace. Keel says keep since PR 104 (the Captain's ruling, 2026-10-20: sharing is forward-only). No code change.
+- The reset rule in `isResyncRequired`'s and `changes`' doc comments: on a 409 `resync_required`, walk from zero and keep what the local copy holds that the new walk does not name; a reset never empties a copy. It said replace. Keel says keep since PR 104 (Titus's ruling, 2026-10-20: sharing is forward-only). No code change.
 
 ## [4.36.0] - 2026-10-20
 
 ### Changed
 
-- **`fieldLabel`** keeps a word written all in capitals as written (`STR` reads "STR", `plan_B` "Plan B"), so a custom stat block reads the same in every tool (Temper, h63 #8197; Lantern and Atlas both call it). Schema field names are all lowercase, so no schema label changes.
+- **`fieldLabel`** keeps a word written all in capitals as written (`STR` reads "STR", `plan_B` "Plan B"), so a custom stat block reads the same in every tool (Temper, 2026-10-20; Lantern and Atlas both call it). Schema field names are all lowercase, so no schema label changes.
 
 ## [4.35.0] - 2026-10-20
 
@@ -586,7 +586,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 
 ### Added
 
-- **`fieldLabel(name)`** and **`FIELD_ACRONYMS`**: a field name as the words a tool shows, by the house rule (OW Style, the Captain 2026-10-20): sentence case, acronyms kept wherever they fall (`birth_date` → "Birth date", `image_url` → "Image URL"). Seeded from Atlas's `humanizeFieldName` as of 1.59.1, so Atlas, Lantern and Council read one copy (h63 #8109, #8119). The name is taken as given: a tool that hides an extension prefix drops it first.
+- **`fieldLabel(name)`** and **`FIELD_ACRONYMS`**: a field name as the words a tool shows, by the house rule (Titus, 2026-10-20): sentence case, acronyms kept wherever they fall (`birth_date` → "Birth date", `image_url` → "Image URL"). Seeded from Atlas's `humanizeFieldName` as of 1.59.1, so Atlas, Lantern and Council read one copy. The name is taken as given: a tool that hides an extension prefix drops it first.
 
 ## [4.33.1] - 2026-10-19
 
@@ -600,7 +600,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 ### Added
 - `FILE_EXTENSIONS` (every extension a file on an element may end in, to its kind: keel's list, `.yml` and
   `.markdown` included) and `fileKindOf(name)` (the kind, or `undefined`), so a file picker's accept list reads
-  the SDK's instead of a copy (Atlas, h20 #7841).
+  the SDK's instead of a copy (Atlas, 2026-10-19).
 
 ## [4.32.0] - 2026-10-19
 
@@ -709,7 +709,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   element's position in `items` (the ids the Python package mints), so the same key and items send the
   same body from either client, and a resend after keel's 24-hour replay window rewrites the same
   elements instead of creating new ones. Without a key, a fresh UUIDv7 each. Ids you pass are kept, and
-  your items are not changed. Found by Quillon's parity audit of the Unity SDK (h37 #5794).
+  your items are not changed. Found by Quillon's parity audit of the Unity SDK (2026-10-16).
 
 ## [4.27.1] — 2026-10-16
 
@@ -720,7 +720,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   Python package mints), so the retry sends the same body and gets the first answer back. Without a key,
   a fresh UUIDv7 as before; an id you pass is kept.
 - `create`'s doc said a keyed retry "rewrites the same element"; keel's replay writes nothing. Found by
-  Quillon's parity audit of the Unity SDK (h37 #5764).
+  Quillon's parity audit of the Unity SDK (2026-10-16).
 
 ## [4.27.0] — 2026-10-16
 
@@ -753,7 +753,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   **`agent_narrator_rule`** (keel #298, D103: whether a Narrative written through an agent seat is
   narrated by that seat's own Character; read-only, set on the world page). Past `id` and `name`
   they stay optional so code that builds a world meta keeps compiling; keel always sends all of them.
-  `updated_at` and `created_at` read `string | null`, as the document says. Assembly's wire gate now
+  `updated_at` and `created_at` read `string | null`, as the document says. The wire gate now
   holds this type to `World` (it had held only the PATCH body). Council and Lantern type-check on it.
 
 ## [4.24.0] — 2026-10-15
@@ -765,7 +765,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   keel keeps a hash); `listWorldLinks(worldId)` the links without codes, each with its `status`
   and `uses`; `revokeWorldLink(worldId, linkId)`. Types `OwWorldLink`, `OwCreatedWorldLink`. A
   non-owner, and a world that doesn't exist, get 404; a world key is a TypeError before sending.
-  For Lantern's Invite someone (Temper, h29 #5152).
+  For Lantern's Invite someone (Temper, 2026-10-15).
 
 ### Changed
 - `acceptJoin`'s doc comment and the README: accepting needs no account PIN for any role (keel
@@ -781,14 +781,14 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 - **`TokenResource.consume()`, `getAccessKey()`, `revokeSession()`, `revokeAllSessions()`**: keel
   serves none of these routes (each answers 404 `not_found` on production; `accounts/token_api.py`
   mounts only `status/` and `encryption-info/`). Spending is server-side, in the route that does the
-  work (the Council's acts through keel's council proxy, keel #274, Skeld's ruling h37 #4632), and
+  work (the Council's acts through keel's council proxy, keel #274, Skeld's ruling, 2026-10-14), and
   `OwV2Client.allowance()` reads the token rating. They stay callable and leave in 5.0. A 404 from
-  any token route now says what keel serves instead of "an older server". Found by Assembly's wire
+  any token route now says what keel serves instead of "an older server". Found by the wire
   gate, which until now never drove this class (its routes are not in keel's document).
 
 ### Changed
-- README and docs: "token rating" is the one word for the account's daily budget (the Captain,
-  h37 #4642, OW Infra #273). Names in the API (`allowance()`, `/account/allowance`) are unchanged.
+- README and docs: "token rating" is the one word for the account's daily budget (Titus,
+  2026-10-14). Names in the API (`allowance()`, `/account/allowance`) are unchanged.
 
 ## [4.22.0] — 2026-10-14
 
@@ -796,23 +796,23 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 - **`client.me()` and `client.members()`**: GET /me (who this world key is: world, scope, kind,
   role, membership id, Character) and GET /members (the roster's rows, unwrapped from `{ data }`).
   Lantern reads a player's role from /me by hand today. Types `OwMe`, `OwMember`, typed from
-  keel's declared schemas and held to them by Assembly's wire gate. An account token is a
+  keel's declared schemas and held to them by the wire gate. An account token is a
   TypeError before sending; the tests fail with that guard removed, or with the rows left
   wrapped.
 
 ### Changed
 - The calendar kernel is the SDK's own: Atlas 245aad3 deleted its `core/calendar.ts` and imports
-  this one (Temper, h37 #4472), so the copy record (`src/calendar/SOURCES.json`) and the re-copy
+  this one (Temper, 2026-10-14), so the copy record (`src/calendar/SOURCES.json`) and the re-copy
   script (`codegen/atlas-calendar.mjs`) are gone. A kernel change is an SDK release now. No code
   change.
 
 ## [4.21.0] — 2026-10-14
 
 ### Added
-- **`client.allowance()`**: GET /account/allowance (keel 872431f, Skeld h37 #4308), the
+- **`client.allowance()`**: GET /account/allowance (keel 872431f, Skeld, 2026-10-14), the
   account's daily AI allowance read without spending: `token_rating`, `tokens_used_today`,
   `tokens_remaining`, `resets_at` (the next midnight UTC). Account token only, like ask and
-  sort. Type `OwAllowance`, held by Assembly's wire gate to the route's declared schema, as
+  sort. Type `OwAllowance`, held by the wire gate to the route's declared schema, as
   `OwAskAnswer`, `OwSortAnswer` and `OwJoinPreview` now are to theirs.
 
 ### Fixed
@@ -823,13 +823,13 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 
 ### Added
 - **World calendars**, Atlas's calendar code in the SDK so Lantern can name dates (Temper,
-  h37 #4284): `formatStep`, `formatYearLabel`, `breakdownStep`, `parseDate` and the rest of
+  2026-10-14): `formatStep`, `formatYearLabel`, `breakdownStep`, `parseDate` and the rest of
   Atlas's `src/core/calendar.ts` (Atlas 02d6a6d), plus `worldCalendars`,
   `resolveCalendarLens` and `readCalendarValue` from its `calendar-lens.ts`, on any element
   shape. `CALENDAR_FIELD` is `atlas_calendar`: Atlas owns the field, its meaning and its
-  writes, and other tools read it (Skeld, h37 #4286).
+  writes, and other tools read it (Skeld, 2026-10-14).
 - `src/calendar/calendar.ts` is Atlas's file byte for byte, recorded in
-  `src/calendar/SOURCES.json` (Assembly's copy-drift); `codegen/atlas-calendar.mjs` re-copies it
+  `src/calendar/SOURCES.json`; `codegen/atlas-calendar.mjs` re-copies it
   and ports Atlas's 48 kernel tests (TypeScript's transpiler, a five-matcher `test/expect.mjs`
   over node:test). Watched failing: a planted `floorMod` edit failed two tests and the record
   (EDITED); a lens edit failed its test. An app that imports none of it bundles none of it.
@@ -838,7 +838,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 
 ### Added
 - **`tokens_remaining` and `token_rating` on `OwAskAnswer` and `OwSortAnswer`**: since keel
-  a6244db (Skeld, h37 #4233) ask and sort spend from the account's daily token rating, one
+  a6244db (Skeld, 2026-10-14) ask and sort spend from the account's daily token rating, one
   meter with the Council. `remaining` stays a count of answers: how many more calls of this
   size fit in what is left today (keel 504437b), never tokens. Typed from keel's code
   (`accounts/ask.py`), since its OpenAPI document gives these answers no schema.
@@ -849,10 +849,10 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   each one by its own name: `x_eye_colour` reads `eye colour: grey`; an id in one is a link,
   by name; a long value is cut like a description. `atlas_*` machinery stays out, and so do
   object values (a tool's state). Lantern shows and edits custom fields now, so Ask can answer
-  what find already could (Temper, h37 #4069). The trial's lookup (`dossiers/lantern-ask`)
+  what find already could (Temper, 2026-10-13). The trial's lookup
   still skips them; parity holds on its ten questions, whose fixture has no custom text.
 - The lookup's stopword set is an array literal, so bundlers mark it pure and drop it from
-  apps that never call the lookup (451 bytes; Temper, h17 #4247).
+  apps that never call the lookup (451 bytes; Temper, 2026-10-14).
 
 ## [4.18.1] — 2026-10-12
 
@@ -866,13 +866,13 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
 
 ### Added
 - **`client.sort({ worldId, notes, slice })`**: POST /account/sort, ask's sibling (Temper for
-  Lantern, h37 #3599; Skeld's route, #3591, #3594, #3596, #3597). Notes as words or
+  Lantern, 2026-10-12; Skeld's route). Notes as words or
   `{ text, image_url }`; the slice is the app's own lookup. Rows of four kinds come back to
   review (`make`, `add_to`, `link`, `ask` with an optional `then`) and `not_proposed` with
   reasons; nothing is written. One allowance with `ask`, and the same refusals. Types
   `OwSortRef`, `OwSortNote`, `OwSortRow` and its four kinds, `OwSortAnswer`. Built against
-  keel PR #4 (90961fa, Skeld's final for the types, #3618), released once it was on keel
-  main and in production (#3663): verify-sdk-wire PASS 1,111 against production's document.
+  keel PR #4 (90961fa, Skeld's final for the types), released once it was on keel
+  main and in production: verify-sdk-wire PASS 1,111 against production's document.
 
 ## [4.17.0] — 2026-10-12
 
@@ -881,7 +881,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   says which view epoch it ran under (a guest's integer; `null` for other keys or a keel
   without the field) and the first poll after it needs no extra walk to learn it. Live on
   Moppetopia: a full walk of 465 changes returns `{ cursor, head: 818, epoch: null }`. The first
-  tests of `changesAll`'s return value (Temper, h29 #3534).
+  tests of `changesAll`'s return value (Temper, 2026-10-12).
 
 ## [4.16.0] — 2026-10-12
 
@@ -935,7 +935,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   New getters: `isQuotaExceeded` (429; `retryAfter` runs to midnight UTC), `isAskUnavailable`
   (503), `isAskFailed` (502). keel's document gives no request schema for `/account/ask`, so
   the body (`world_id`, `question`, `context`) is read from keel's code (`accounts/ask.py`).
-  Not yet run live: no crew session holds an account token.
+  Not yet run live: no account token was at hand to run it with.
 
 ## [4.12.0] — 2026-10-12
 
@@ -961,7 +961,7 @@ The hidden mark (keel #421), live in production since 2026-10-20 09:24; walked o
   forms first, then name words, supertype and subtype, one link step in both directions, then
   other text and numbers (always below any name hit). Each hit says why it matched.
   `renderElement` gives a compact text card with links by name, which is what a model reads
-  when one phrases the answer. Measured on two real worlds (Assembly's Lantern Ask trial):
+  when one phrases the answer. Measured on two real worlds (a Lantern Ask trial):
   the answer was in the first three results for 60 of 60 questions that name their subject
   and 17 of 24 held-out questions that only describe it; this code returns the same top 8
   as the trial's on all 100 questions. Names in any script are matched (Chinese and Japanese

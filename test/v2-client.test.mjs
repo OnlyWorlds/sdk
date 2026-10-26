@@ -878,7 +878,7 @@ test('account key uses Bearer auth, world key uses API-Key, and API-Pin on a wri
   const { client: w, fetchImpl: wf } = makeClient({ status: 200, body: {} });
   await w.getWorld();
   assert.equal(wf.calls.at(-1).init.headers['API-Key'], 'ow_w_test');
-  assert.equal(wf.calls.at(-1).init.headers['API-Pin'], undefined); // a read (h29 #10663)
+  assert.equal(wf.calls.at(-1).init.headers['API-Pin'], undefined); // a read
   await w.patchWorld({ name: 'W' });
   assert.equal(wf.calls.at(-1).init.headers['API-Pin'], '1234');
 });
