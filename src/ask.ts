@@ -24,6 +24,7 @@
 import { renderElement, type OwLookupElement, type OwLookupHit, type OwWorldIndex } from './lookup';
 import { refuseUnknownOptions } from './options';
 import { isRoomElement } from './room';
+import { handsOnAsProposed } from './review';
 import { REVIEW_PROPOSED_LABEL } from './v2/types.generated';
 
 export { REVIEW_PROPOSED_LABEL };
@@ -78,7 +79,7 @@ const cut = (s: string, n: number): string => [...s].slice(0, n).join('');
 /** Folder format §4.8: marked hidden unless `hidden` is absent, null or false (`"true"` and 1 count, as in writeWorldFile and the Python package's `is_hidden`). */
 const isHidden = (el: OwLookupElement): boolean => el.hidden !== undefined && el.hidden !== null && el.hidden !== false;
 /** The review profile: proposed unless `x_review_proposed` is absent or null; a value that is not a proper mark is a doubt, counted with the proposed (rule 4). */
-const isProposed = (el: OwLookupElement): boolean => el.x_review_proposed !== undefined && el.x_review_proposed !== null;
+const isProposed = (el: OwLookupElement): boolean => handsOnAsProposed(el);
 
 function readOptions(opts: unknown): Required<OwAskContextOptions> {
   refuseUnknownOptions('buildAskContext', opts, ASK_OPTION_KEYS);

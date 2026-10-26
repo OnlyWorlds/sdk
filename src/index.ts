@@ -39,6 +39,10 @@ export { ROOM_PAIRS, isRoomElement } from './room';
 // (MESSAGE_PAIR generated from the vendored dist)
 export { MESSAGE_PAIR, isMessage, recipientsOf, isAddressedTo, isToEveryone, isSentBy, senderStatus, readMarkOf, unreadFor, threadOf } from './message';
 export type { OwSender, OwSenderStatus, OwMessageMember } from './message';
+// The review profile (schema-dist profiles/review.md): an element written as proposed, as a reader that
+// shows a world shows the mark, and as a reader that hands a world on leaves it out.
+export { PROPOSED_MARK, proposedMarkOf, handsOnAsProposed } from './review';
+export type { OwProposedMark } from './review';
 // The names profile (schema-dist profiles/names.md): a world's own words for the types, x_names on the World.
 export { typeWord } from './names';
 export type { OwNamesMap, OwWordPair } from './names';

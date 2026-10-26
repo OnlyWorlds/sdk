@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.83.0] - 2026-10-26
+
+### Added
+
+- **The review profile's readers: `proposedMarkOf`, `handsOnAsProposed`, `PROPOSED_MARK` and `OwProposedMark`.** An element whose `x_review_proposed` is an object was written as proposed and is not canon until a keeper settles it. `proposedMarkOf(element, today?)` gives the mark as a reader that shows a world shows it, `{ by, expires, lapsed }`, or null for a settled element (absent, null, or a value that is not an object); `by` and `expires` are trimmed of Unicode White_Space as the room profile trims, `expires` is read only as a day (YYYY-MM-DD, ASCII digits), and `lapsed` is true from that day on, in UTC as keel reads it (`today` defaults to today in UTC; a `today` that is not a day is a TypeError). `handsOnAsProposed(element)` is what a reader that hands a world on leaves out: `x_review_proposed` with any value but absent or null, so a malformed value (a doubt) is left out too (the profile's rule 4). `buildAskContext` now reads the same function. The profile has no fixture yet; the tests hold 17 cases, the Python package's `tests/test_review.py` the same ones, including one per language default that would read differently (a byte order mark, U+001C, Arabic-Indic digits).
+
 ## [4.82.1] - 2026-10-26
 
 ### Changed
