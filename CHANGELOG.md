@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.87.0] - 2026-10-26
+
+### Changed
+
+- **`draughtText` names what the date horizon left out.** When the draught has an `as_of`, a line above the budget line says it: `Not listed: rows dated after Year 300.` when the read was the Character's own view (`mode: voice`, where the horizon fences every section), and `Not listed: Events, Knowledge and proposed Events or Narratives dated after Year 300.` when it was the caller's (`act`, where it fences only those). The packet carries no count of those rows, so the line gives none. Before, only the title said the horizon, and `Left out by the budget: nothing.` could be read as a complete record when the text was pasted alone.
+- **A removed member reads `removed from the world`**, not `removed`, so the word cannot be read as part of the member's name. The shared fixture's expected texts are regenerated (45 of 47 cases change; the two with no `as_of` are unchanged), and the Python package's `draught_text` gives the same bytes from 0.71.0.
+
 ## [4.86.0] - 2026-10-26
 
 ### Added

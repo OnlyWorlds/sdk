@@ -106,8 +106,9 @@ function rowsOf(key: string, v: unknown): unknown[] {
  * The frame says what the packet does: the horizon (`as_of`), the world's now, and whose view it
  * was read through (`mode`). Her own element prints whole; every other row prints its name, type
  * and kind, how it reached her (`via`), its grade or date, the marks `hidden` and `proposed`, and
- * its description. The sections that hold nothing are named on one line, and what the budget left
- * out (`cut`) is always said.
+ * its description. The sections that hold nothing are named on one line; what the date horizon left
+ * out is named (never counted: the packet carries no count), and what the budget left out (`cut`) is
+ * always said.
  *
  * A draught that is not an object, or has no `world` object, is a TypeError. Takes no options.
  */
@@ -243,7 +244,7 @@ export function draughtText(draught: OwDraught | OwDraughtCompact): string {
       const n = typeof plays === 'string' ? names.get(plays) : undefined;
       line += n === undefined ? ' · plays a Character not in this draught' : ` · plays ${n}`;
     }
-    if (own(row, 'status') === 'removed') line += ' · removed';
+    if (own(row, 'status') === 'removed') line += ' · removed from the world';
     return line;
   };
 
@@ -275,12 +276,14 @@ export function draughtText(draught: OwDraught | OwDraughtCompact): string {
     }
   }
 
-  // Left out: only what the budget dropped.
+  // Left out: what the horizon fenced, by mode (keel's `_past_horizon`; uncounted), then only what the budget dropped.
   const cut = own(d, 'cut');
   const left = isObj(cut)
     ? Object.keys(cut).filter((k) => isInt(cut[k])).map((k) => `${BigInt(cut[k] as number).toString()} ${k}`)
     : [];
   out.push('');
+  if (isInt(asOf) && mode === 'voice') put(`Not listed: rows dated after ${moment(asOf)}.`);
+  else if (isInt(asOf) && mode === 'act') put(`Not listed: Events, Knowledge and proposed Events or Narratives dated after ${moment(asOf)}.`);
   put(`Left out by the budget: ${left.length ? left.join(', ') : 'nothing'}.`);
 
   return out.join('\n') + '\n';
