@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.78.0] - 2026-10-26
+
+### Added
+
+- **`revokeWorldKey(worldId, keyId)`**: revoke a world key by the `id` `mintWorldKey` returned (`DELETE /account/worlds/{id}/keys/{key_id}`, account token only). The key then answers 401 `key_revoked`. The owner revokes any of the world's keys, a member only their own; any other id is a 404. Revoking a revoked key answers the same 204, so a tool that mints a key when a person signs in can revoke it when they sign out without tracking whether it already did.
+
 ## [4.77.0] - 2026-10-26
 
 ### Added

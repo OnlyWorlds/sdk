@@ -1305,6 +1305,20 @@ export class OwV2Client {
     return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/keys`, { write: true, body }) as Promise<OwMintedKey>;
   }
 
+  /**
+   * DELETE /account/worlds/{worldId}/keys/{keyId} -- revoke a world key, by the `id` mintWorldKey
+   * returned: from then on it answers 401 `key_revoked`. The owner revokes any of the world's keys,
+   * a member only their own; any other id is a 404 (`err.isNotFound`). Revoking a revoked key
+   * changes nothing and answers the same 204, so a tool that signs out can revoke its key without
+   * knowing whether it already did. Account token only.
+   */
+  async revokeWorldKey(worldId: string, keyId: string): Promise<void> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('revokeWorldKey needs an account token (ow_a_)');
+    }
+    await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/keys/${encodeURIComponent(keyId)}`);
+  }
+
   // -- Sign in with OnlyWorlds (OAuth 2.1 code + PKCE, keel PR 154) ---------
 
   /**
