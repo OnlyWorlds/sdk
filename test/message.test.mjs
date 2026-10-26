@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  MESSAGE_PAIR, ROOM_PAIRS, isMessage, recipientsOf, isAddressedTo, isSentBy, senderStatus, readMarkOf, unreadFor, threadOf,
+  MESSAGE_PAIR, ROOM_PAIRS, isMessage, recipientsOf, isAddressedTo, isToEveryone, isSentBy, senderStatus, readMarkOf, unreadFor, threadOf,
 } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/message.fixture.json', import.meta.url));
@@ -158,4 +158,7 @@ test('recipients keep their order and a malformed list is not everyone (the Pyth
   assert.equal(isSentBy({ narrator: ADA }, ADA), true);
   assert.equal(isSentBy({ narrator: ADA }, MARA), false);
   assert.equal(isSentBy({}, ''), false);
+  for (const characters of [ADA, [''], [5], [ADA]]) assert.equal(isToEveryone({ characters }), false, JSON.stringify(characters));
+  for (const m of [{}, { characters: null }, { characters: [] }]) assert.equal(isToEveryone(m), true, JSON.stringify(m));
+  assert.equal(isToEveryone(null), false);
 });

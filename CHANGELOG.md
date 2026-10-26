@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.81.0] - 2026-10-26
+
+### Added
+
+- **`isToEveryone(message)`**: true when a message is addressed to every member (its `characters` absent, null or `[]`). A list that names no valid id, or a value that is not a list, is addressed to nobody and false here, though `recipientsOf` gives `[]` for both; this is the one call that tells them apart.
+
 ## [4.80.0] - 2026-10-26
 
 ### Added

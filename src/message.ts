@@ -105,9 +105,20 @@ export function recipientsOf(message: object | null | undefined): string[] {
  */
 export function isAddressedTo(message: object | null | undefined, characterId: string): boolean {
   if (!isBody(message) || typeof characterId !== 'string' || characterId === '') return false;
+  if (isToEveryone(message)) return true;
   const list = message.characters;
-  if (list === undefined || list === null || (Array.isArray(list) && list.length === 0)) return true;
   return Array.isArray(list) && list.includes(characterId);
+}
+
+/**
+ * True when the message is addressed to every member: its `characters` is absent, null or `[]`.
+ * A list that names no valid id (`['']`) or a value that is not a list is addressed to nobody,
+ * so it is false here, though `recipientsOf` gives `[]` for both.
+ */
+export function isToEveryone(message: object | null | undefined): boolean {
+  if (!isBody(message)) return false;
+  const list = message.characters;
+  return list === undefined || list === null || (Array.isArray(list) && list.length === 0);
 }
 
 /** True when the message's `narrator` is the Character: the claim, whether or not `senderStatus` proves it. */
