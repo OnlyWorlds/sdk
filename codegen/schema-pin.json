@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.74",
-  "commit": "a38647e8e5a5ab8856c03a8db4c5b0a84917618a",
-  "manifest_sha256": "e12f7c758758f986000edce7b607d98734d480de8fa4937d005e362cdf209230",
+  "tag": "v0.33.0-dist.75",
+  "commit": "889fa3b492e01428d6723ae169b1f8013bf7f2d7",
+  "manifest_sha256": "6f0150dfa47849453676c5c6a33ab43bdf3c3791dd0b3b42b56f4b138cb80e82",
   "canonical_version": "00.33.00",
-  "dist_serial": 74,
+  "dist_serial": 75,
   "published": "2026-10-26",
   "pinned_at": "2026-10-26",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.74",
+      "manifest_sha256": "e12f7c758758f986000edce7b607d98734d480de8fa4937d005e362cdf209230",
+      "note": "superseded by v0.33.0-dist.75 (same canonical 00.33.00; the message profile's unread rule reads the verified sender on the wire and trusts narrator only where no created_by exists, a read mark counts only when changed_by (where visible) equals created_by, the newest mark by updated_at wherever it stands, three edge rulings (no narrator is sent by nobody, an empty id is addressed to nothing and has no mark, a thread walk stops at a parent_narrative that is not a string), 43 to 55 cases; text in the calendar, import-map and names pages; no schema file moved)"
+    },
     {
       "tag": "v0.33.0-dist.73",
       "manifest_sha256": "ea0402f70bfa445f890c17e563d216fead9c35e995585d009edadc05966ac9f1",

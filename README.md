@@ -366,7 +366,7 @@ A lore view (a list, a count, search, a graph, a link picker, a story's context)
 
 ### Messages
 
-A message between a world's members is a Narrative with supertype `Message` (`MESSAGE_PAIR`; `isMessage(el)` matches it trimmed and case-blind): `narrator` is the sender, `characters` the recipients, and an empty `characters` is addressed to everyone. The sender is a claim until the server's `created_by` proves it, so `senderStatus` answers `verified`, `mismatch` or `unverifiable`, and a reader shows anything but `verified` as a claim. A reader's read mark is a Relation with supertype `Read` and the reader as `actor`, counted only in the reader's own hand.
+A message between a world's members is a Narrative with supertype `Message` (`MESSAGE_PAIR`; `isMessage(el)` matches it trimmed and case-blind): `narrator` is the sender, `characters` the recipients, and an empty `characters` is addressed to everyone. The sender is a claim until the server's `created_by` proves it, so `senderStatus` answers `verified`, `mismatch` or `unverifiable`, and a reader shows anything but `verified` as a claim. A reader's read mark is a Relation with supertype `Read` and the reader as `actor`, counted only when every write on it was the reader's own hand (its `created_by`, and its `changed_by` where the reader can see it).
 
 ```typescript
 import { isMessage, readMarkOf, senderStatus, unreadFor, threadOf } from '@onlyworlds/sdk';
@@ -374,12 +374,12 @@ import { isMessage, readMarkOf, senderStatus, unreadFor, threadOf } from '@onlyw
 const messages = (await client.list('narrative', { filter: { supertype: 'Message' } })).data.filter(isMessage);
 const marks = (await client.list('relation', { filter: { supertype: 'Read' } })).data;
 const members = await client.members();
-const unread = unreadFor(messages, me, readMarkOf(marks, me, members)); // created_at order
+const unread = unreadFor(messages, me, readMarkOf(marks, me, members), members); // created_at order
 const { status, claimed, writtenBy } = senderStatus(unread[0], members);
 const thread = threadOf(messages, rootId); // the root and every reply under it
 ```
 
-Both lists are in `created_at` order, and equal times keep the order of the list given. The profile: [`profiles/message.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/message.md) in the schema distribution.
+Both lists are in `created_at` order, and equal times keep the order of the list given. A message the reader sent is not unread for them, but on the wire only a verified sender counts: pass `members` to `unreadFor`, or every message claiming to be from the reader stays unread. A world folder carries no `created_by`, so there `narrator` is trusted and `members` can be left out. The profile: [`profiles/message.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/message.md) in the schema distribution.
 
 ### A world's own words for the types
 

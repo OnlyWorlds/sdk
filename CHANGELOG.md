@@ -5,6 +5,15 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.84.0] - 2026-10-26
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.75`** (from dist.74; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'`, no schema file moved and no generated type changed). Serial 75 changes the message profile's rules and its fixture (43 to 55 cases), and text in the calendar, import-map and names pages.
+- **`unreadFor(messages, characterId, readMark, members?)` takes the world's members list, and on the wire a message is the reader's own only when its sender is verified.** Before, a message whose `narrator` was the reader was never unread for them, so anyone could write a message claiming to be from you and it would never show as unread to you. Now a message that carries `created_by` (wire data) is the reader's own only when `senderStatus(message, members)` is `verified` with the reader as sender: a mismatch, an author off the members list or playing no Character, and every wire message when no members list is given, stays unread for the Character it claims. A message with no `created_by` key (a world folder, an export) has no hand to check, so its `narrator` is trusted as before. The decision is made per message. **Callers who pass wire data and no `members` will now see their own sent messages in the unread list**: pass `await client.members()` as the fourth argument.
+- **`readMarkOf` counts a mark only when every write on it was its reader's own hand.** Besides the author check (its `created_by` on the members list plays the reader's Character), a mark that carries `changed_by` counts only when `changed_by` equals `created_by` (both null for the owner), so a mark someone else changed after it was made is ignored, the owner's hand included, and the reader's own older mark stands. A mark with `changed_by` but no `created_by` is ignored; a mark with `created_by` and no `changed_by` key gets the author check only; a mark with neither (a folder) counts as before.
+- **The edge rulings now written in the doc comments**, which the readers already answered: a message with no `narrator` is sent by nobody, an empty id (`""`) is addressed by nothing and has no mark, and a thread walk stops at a `parent_narrative` that is not a string. The fixture's 12 new cases run as the message test; 3 of them failed on 4.83.0's readers (a mark changed by another hand, a mismatched sender, an author off the members list), and all 55 pass now.
+
 ## [4.83.0] - 2026-10-26
 
 ### Added

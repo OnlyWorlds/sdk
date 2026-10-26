@@ -1,5 +1,5 @@
 /**
- * The message profile (schema-dist profiles/message.md, serial 72): MESSAGE_PAIR against the
+ * The message profile (schema-dist profiles/message.md, serial 75): MESSAGE_PAIR against the
  * fixture's pair, and the readers (isMessage, isAddressedTo, senderStatus, readMarkOf, unreadFor,
  * threadOf) on every conformance case in codegen/schema-dist/profiles/message.fixture.json,
  * vendored with the distribution. Runs against the compiled public bundle (dist).
@@ -13,7 +13,7 @@ import {
 } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/message.fixture.json', import.meta.url));
-const COUNTS = { pair: 9, addressed: 8, sent_by: 2, sender: 9, unread: 8, mark: 5, thread: 2 };
+const COUNTS = { pair: 9, addressed: 9, sent_by: 3, sender: 10, unread: 12, mark: 9, thread: 3 };
 
 function loadFixture() {
   assert.ok(existsSync(FIXTURE), `no message fixture at ${FIXTURE}`);
@@ -39,7 +39,7 @@ function answer(c, doc) {
       return got;
     }
     case 'mark': return { mark: readMarkOf(c.relations, c.reader, members)?.id ?? null };
-    case 'unread': return { unread: ids(unreadFor(c.messages, c.reader, c.read_mark)) };
+    case 'unread': return { unread: ids(unreadFor(c.messages, c.reader, c.read_mark, members)) };
     case 'thread': return { thread: ids(threadOf(c.messages, c.root)) };
     default: throw new Error(`a case of unknown kind ${c.kind}`);
   }
@@ -82,7 +82,7 @@ test('the message readers answer every case of the message fixture', (t) => {
   }
   t.diagnostic(`the message fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 43, `the fixture holds ${cases.length} cases, serial 72 has 43`);
+  assert.equal(cases.length, 55, `the fixture holds ${cases.length} cases, serial 75 has 55`);
   assert.deepEqual(counts, COUNTS);
 });
 
@@ -113,7 +113,8 @@ test('the documented calls compile against the built types: bodies and member ro
       "  const marks: OwElement[] = (await c.list('relation', { filter: { supertype: 'Read' } })).data;",
       '  const members: OwMember[] = await c.members();',
       '  const mark: OwElement | null = readMarkOf(marks, me, members);',
-      '  const unread: OwElement[] = unreadFor(messages, me, mark);',
+      '  const unread: OwElement[] = unreadFor(messages, me, mark, members);',
+      '  unreadFor(messages, me, mark); unreadFor(messages, me, null, null);',
       '  const thread: OwElement[] = threadOf(messages, messages[0].id);',
       '  const from: OwSender = senderStatus(messages[0], members);',
       '  senderStatus(messages[0], null);',
@@ -181,4 +182,51 @@ test('the newest read mark wins wherever it stands in the list (the fixture list
   const doc = loadFixture();
   const c = doc.cases.find((x) => x.name === 'mark-newest-updated-at-wins');
   assert.equal(readMarkOf([...c.relations].reverse(), c.reader, doc.members)?.id, c.mark);
+});
+
+test('a read mark counts only when every write on it was its reader\'s own hand (inputs the fixture leaves open)', () => {
+  const doc = loadFixture();
+  const OWNER_CHAR = '019a3b10-0000-7000-8000-0000000000a1', MARA = '019a3b10-0000-7000-8000-0000000000a2';
+  const MARA_HAND = '019a3b10-0000-7000-8000-0000000000b2', WREN_HAND = '019a3b10-0000-7000-8000-0000000000b3';
+  const mark = (actor, hands) => ({ id: 'r', type: 'relation', supertype: 'Read', actor, narratives: [], updated_at: '2026-10-26T10:00:00Z', ...hands });
+  // No changed_by key: only the author is checked (a reader that cannot see the last writer).
+  assert.equal(readMarkOf([mark(MARA, { created_by: MARA_HAND })], MARA, doc.members)?.id, 'r');
+  // The owner made it and the owner last changed it: both null, equal, the owner's own mark.
+  assert.equal(readMarkOf([mark(OWNER_CHAR, { created_by: null, changed_by: null })], OWNER_CHAR, doc.members)?.id, 'r');
+  // The owner made it and a member changed it since.
+  assert.equal(readMarkOf([mark(OWNER_CHAR, { created_by: null, changed_by: MARA_HAND })], OWNER_CHAR, doc.members), null);
+  // changed_by with no created_by beside it: a last writer and no author to compare it to.
+  assert.equal(readMarkOf([mark(MARA, { changed_by: MARA_HAND })], MARA, doc.members), null);
+  assert.equal(readMarkOf([mark(MARA, { changed_by: null })], MARA, doc.members), null);
+  // One hand throughout, but not the reader's: the author check still refuses it.
+  assert.equal(readMarkOf([mark(MARA, { created_by: WREN_HAND, changed_by: WREN_HAND })], MARA, doc.members), null);
+  // A key set to undefined is no key: the folder rule.
+  assert.equal(readMarkOf([mark(MARA, { created_by: undefined, changed_by: undefined })], MARA, doc.members)?.id, 'r');
+  // A changed mark is out, so the reader's own older mark stands.
+  const older = { ...mark(MARA, { created_by: MARA_HAND, changed_by: MARA_HAND }), id: 'old', updated_at: '2026-10-26T08:00:00Z' };
+  assert.equal(readMarkOf([older, mark(MARA, { created_by: MARA_HAND, changed_by: null })], MARA, doc.members)?.id, 'old');
+});
+
+test('unreadFor on the wire proves the reader\'s own messages only through the members list (inputs the fixture leaves open)', () => {
+  const doc = loadFixture();
+  const MARA = '019a3b10-0000-7000-8000-0000000000a2', MARA_HAND = '019a3b10-0000-7000-8000-0000000000b2';
+  const GUEST_HAND = '019a3b10-0000-7000-8000-0000000000b5';
+  const msg = (id, narrator, extra) => ({ id, type: 'narrative', supertype: 'Message', name: id, narrator, characters: [], created_at: `2026-10-26T09:0${id.length}:00Z`, ...extra });
+  const mine = msg('m', MARA, { created_by: MARA_HAND });
+  // Verified with the members list: Mara's own, never unread for her.
+  assert.deepEqual(ids(unreadFor([mine], MARA, null, doc.members)), []);
+  // No members list, a null one, or an empty one: nothing on the wire is proved.
+  assert.deepEqual(ids(unreadFor([mine], MARA, null)), ['m']);
+  assert.deepEqual(ids(unreadFor([mine], MARA, null, null)), ['m']);
+  assert.deepEqual(ids(unreadFor([mine], MARA, null, [])), ['m']);
+  // The author's row plays no Character: unverifiable, so unread for the Character it claims.
+  assert.deepEqual(ids(unreadFor([msg('g', MARA, { created_by: GUEST_HAND })], MARA, null, doc.members)), ['g']);
+  // Decided per message: one with no created_by among wire messages trusts its narrator.
+  const folderish = msg('ff', MARA, {});
+  assert.deepEqual(ids(unreadFor([mine, folderish], MARA, null, doc.members)), []);
+  assert.deepEqual(ids(unreadFor([mine, folderish], MARA, null)), ['m']);
+  // created_by set to undefined is no created_by: the folder rule.
+  assert.deepEqual(ids(unreadFor([msg('u', MARA, { created_by: undefined })], MARA, null)), []);
+  // An empty id reads nothing, though the message is to everyone.
+  assert.deepEqual(ids(unreadFor([msg('e', '', {})], '', null, doc.members)), []);
 });
