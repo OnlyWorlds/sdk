@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.87.1] - 2026-10-26
+
+### Fixed
+
+- **`OwDraught`'s `recent` rows declare `door`** (`string | null`, the door the change came through), which the API's document requires on every row and keel has always served. The type left it out, so `row.door` compiled only through the row's index signature as `unknown`; `draughtText` already read it. Found by checking every nested object in the document against the SDK's types.
+
 ## [4.87.0] - 2026-10-26
 
 ### Changed

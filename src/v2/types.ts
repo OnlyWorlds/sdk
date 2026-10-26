@@ -946,7 +946,7 @@ export interface OwDraught {
   room?: OwDraughtItem[];
   /** Only when named: every element carrying `x_review_proposed` that reaches her, here or nowhere; `cut.proposed` counts the ones left out. */
   proposed?: OwDraughtItem[];
-  recent?: Array<{ op: 'upsert' | 'delete'; type: string; id: string; when: string | null; who: string | null; [k: string]: unknown }>;
+  recent?: Array<{ op: 'upsert' | 'delete'; type: string; id: string; when: string | null; who: string | null; door: string | null; [k: string]: unknown }>;
   roster?: Array<{ id: string | null; kind: string; role: string; character: string | null; status: string; name: string }>;
 }
 
