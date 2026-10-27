@@ -91,9 +91,9 @@ export interface OwWorldMeta {
    * patchWorld sends them as given; `null` removes one; 64 KB in all, else a 422 `param: extensions`.
    */
   /**
-   * Read only, on a keyless read alone (the public reader, `world` with no key): how many elements
-   * the public reads, in all and per type, counted as it reads them, hidden elements left out.
-   * Absent with a key. Never sent back: patchWorld strips it.
+   * Read only: how many elements this reader may read, in all and per type, counted as it reads
+   * them, for every key and token (keel PR 289, 2026-10-27; before it, the keyless read alone).
+   * Never sent back: patchWorld strips it.
    */
   counts?: { total: number; types: Record<string, number> };
   [extension: `x_${string}`]: unknown;

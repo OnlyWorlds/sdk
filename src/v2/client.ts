@@ -79,7 +79,7 @@ export class OwV2Client {
    * GOTCHA (by server design): world-meta edits do NOT appear in /changes and
    * do not bump change_seq. Poll getWorld().updated_at for meta freshness.
    * On a client with `world` set (an account token or no key), it reads that world, sending `world=<id>`;
-   * a keyless read carries `counts`. `signal` is passed to fetch as given.
+   * every read carries `counts`, as that reader may read. `signal` is passed to fetch as given.
    */
   async getWorld(opts: { signal?: AbortSignal } = {}): Promise<OwWorldMeta> {
     only('getWorld', opts, ['signal']);
