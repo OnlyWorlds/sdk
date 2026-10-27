@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.89.0] - 2026-10-27
+
 ### Added
 
 - **The address profile's readers (schema-dist serial 77): `elementAddress(address)` and `parseOwLink(text)`.** One element is named by one triple, the world's id, the type word and the element's id, in three spellings: the site's address `https://www.onlyworlds.com/w/<world id>/<type>/<id>`, `ow://<type>/<id>` inside a world and `ow://<world id>/<type>/<id>` across worlds; a world by itself is `https://www.onlyworlds.com/w/<world id>` or `ow://<world id>`. Each may carry a moment (`@<step>`, one whole step of the world's time line) and a lens (`?lens=<id>`). `elementAddress` writes the canonical string: lowercase, the world's id and never its slug, the moment before the lens. `parseOwLink` reads one string whole and gives `{ form, world, worldIsSlug, type, id, lens, moment, canonical }`; a slug in the site's address reads, and is never canonical. Both refuse with `OwAddressError`, whose `reason` is one of the profile's ten names (`OwAddressReason`), the first check that fails in the profile's order. The parser is written out, not the runtime's URL class: nothing is percent-decoded and case is ASCII case. An address object with a key it does not know is a TypeError, so a misspelt `world` cannot write an address inside a world. The fixture's 133 cases are its test, and the Python package's `element_address` and `parse_ow_link` give the same answer on every input (compared on 54,018 random and adversarial inputs, no disagreement). Schema repinned to schema-dist v0.33.0-dist.77 (from dist.76; same canonical 00.33.00, no generated type changed).
