@@ -393,11 +393,15 @@ export function threadOf<T extends object>(messages: readonly T[], rootId: strin
  * when its `narrator` is the Character, it is in its author's hand (no `created_by` key, a folder:
  * the narrator is trusted; with `created_by`, the wire: `senderStatus` against `members` is
  * `verified`, so a mismatch or an unverifiable Note is nobody's), it is not hidden
- * (`hidden: true`) and not proposed (`x_review_proposed` an object, the review profile), and its
+ * (the platform's hidden mark: any `hidden` but absent, null or false, as every reader of this package
+ * reads it) and not proposed (`x_review_proposed` an object, the review profile), and its
  * id is a string. Of those, the newest by `created_at` (the last in `created_at` order among those
  * whose time can be read; equal times: the later in the list), or the last in the list when none
  * can be read. A Note is never a message: it is never unread and in no thread.
  */
+/** The hidden mark as every reader in this package reads it: any value but absent, null and false, so a doubt is left out. */
+const isHiddenMark = (value: unknown): boolean => value !== undefined && value !== null && value !== false;
+
 export function noteOf(narratives: readonly object[], characterId: string, members: Members): string | null {
   if (!Array.isArray(narratives) || typeof characterId !== 'string' || characterId === '') return null;
   let line: string | null = null;
@@ -407,7 +411,7 @@ export function noteOf(narratives: readonly object[], characterId: string, membe
     const note = el as Body;
     const id = idOf(note);
     if (typeof id !== 'string' || id === '' || note.narrator !== characterId) continue;
-    if (note.hidden === true || proposedMarkOf(note) !== null || !isOwnHand(note, characterId, members)) continue;
+    if (isHiddenMark(note.hidden) || proposedMarkOf(note) !== null || !isOwnHand(note, characterId, members)) continue;
     const key = timeKey(note.created_at);
     // A readable time beats an unreadable one; the newer, or the later of two equal, wins.
     if (line === null || (key !== null ? lineKey === null || compareKeys(key, lineKey) >= 0 : lineKey === null)) {

@@ -285,7 +285,7 @@ test('unreadFor on the wire proves the reader\'s own messages only through the m
 // The shared edge cases: inputs the fixture leaves open, the same file byte for byte as the Python
 // package's tests/fixtures/message-edges.json (both suites hold its sha256), answers written by hand.
 const EDGES_FILE = fileURLToPath(new URL('./fixtures/message-edges.json', import.meta.url));
-const EDGES_SHA256 = '83a1d2d5c447bb4b95b13133f81300d458c2b30aa24e3396750f235f44ef94b8';
+const EDGES_SHA256 = 'b4b93ec587045c5b1e672df93337544f4b039ef129378ff53e59d4fa4a21de2e';
 
 function edgeAnswer(e) {
   switch (e.reader) {

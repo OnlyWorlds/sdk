@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.89.1] - 2026-10-27
+
+### Fixed
+
+- **`noteOf` reads the hidden mark as every other reader in the package does**: any `hidden` but absent, null or false leaves a Note out (it read only `true`), so a doubt is left out, as the review and world-file readers already decide. The shared edge case moves with it, in both packages.
+
 ## [4.89.0] - 2026-10-27
 
 ### Added
