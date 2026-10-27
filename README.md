@@ -407,6 +407,8 @@ if (r.unreadable) console.warn(`x_lens.${r.unreadable} is outside the profile's 
 
 The world holds the elements as the owner is served them; the reader's `rung` (`owner`, `contributor`, `guest` with its `whole` and `known_of` ids, `public`) decides what it sees, and an owner reading `as` another reader keeps the owner's two counts (`anchor_not_visible`, `not_visible`), which no other reader ever carries. The profile: [`profiles/lens.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/lens.md).
 
+`DATE_FIELD` is the profile's date table (each dated type's date field; the ten timeless types are not in it), and `dateOf(el)` is an element's date as that table reads it: the whole number in its type's date field, else null. A timeline or a horizon dates elements exactly as the lens reader's fence does.
+
 `worldGraph(world, reader, options)` reads the same snapshot, for the same reader, as nodes and edges: `nodes` (`{ id, type, name, family, icon }`, by id), `edges` (`{ source, field, target, index }`, one per link, by source, field and index), `edgesCut` (links to elements that are not nodes, by reason; with a lens, `outside_lens` counts links to elements the reader sees that the lens left out), `cut` and `unreadable` (the `x_lens` key a lens could not be read by, else null). Room elements, hidden and proposed ones and map space are out unless `rooms`, `hidden`, `proposed` or `mapSpace` brings them back (`hidden` and `proposed` are the owner's alone, and a public reader takes no flag); with `{ lens }` the nodes are exactly what the lens kept.
 
 ```typescript

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.96.0] - 2026-10-27
+
+### Added
+
+- **`DATE_FIELD`** and **`dateOf(element)`**: the lens profile's date table, exported (each dated type's date field by the type's lowercase name; the ten timeless types are not in it; frozen), and an element's date as that table reads it: the whole number in its type's date field, or null for a timeless type, a body with no known `type`, and a date field that is absent, null or not a whole number. It reads the body it is given, so a known-of stub reads null. A timeline or a horizon can now date elements exactly as the lens reader's fence does, from one table. The Python package's `DATE_FIELD` and `date_of` give the same answers.
+
 ## [4.95.0] - 2026-10-27
 
 ### Added

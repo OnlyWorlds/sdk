@@ -117,12 +117,16 @@ const TYPE_ORDER: readonly string[] = [
   'location', 'map', 'marker', 'narrative', 'object', 'phenomenon', 'pin', 'relation', 'species', 'title', 'trait', 'zone',
 ];
 const TYPE_RANK: ReadonlyMap<string, number> = new Map(TYPE_ORDER.map((t, i) => [t, i]));
-/** The date table: each dated type's date field; the other ten types are timeless and never fenced. */
-const DATE_FIELD: Readonly<Record<string, string>> = {
+/**
+ * The lens profile's date table: each dated type's date field, by the type's lowercase name. The other ten
+ * types are timeless and never fenced. The lens reader's fence and window read it, and so can a timeline or a
+ * horizon that must date elements the same way. Frozen.
+ */
+export const DATE_FIELD: Readonly<Record<string, string>> = Object.freeze({
   character: 'birth_date', creature: 'birth_date', institution: 'founding_date', location: 'founding_date',
   collective: 'formation_date', law: 'date', title: 'grant_date', construct: 'start_date', event: 'start_date',
   narrative: 'start_date', relation: 'start_date', zone: 'start_date',
-};
+});
 /** The cut reasons in the profile's order (module-internal; the graph reader counts by them too). */
 export const CUT_REASONS: readonly OwLensCutReason[] = [
   'budget', 'types', 'window', 'undated', 'after_as_of', 'anchor_not_visible', 'not_visible', 'hops_not_served',
@@ -149,6 +153,19 @@ const own = (v: Body, key: string): boolean => Object.prototype.hasOwnProperty.c
 export const valueOf = (v: Body, key: string): unknown => (own(v, key) && v[key] !== undefined ? v[key] : null);
 /** A whole number, or null: a number with no fraction (never a boolean or a string). */
 export const whole = (v: unknown): number | null => (typeof v === 'number' && Number.isInteger(v) ? v : null);
+
+/**
+ * An element's date as the lens profile reads it: the whole number in its type's date field (`DATE_FIELD`),
+ * in the world's own time unit. Null for a timeless type, a body with no known `type`, and a date field that is
+ * absent, null or not a whole number. It reads the body it is given: a known-of stub serves no date, so it
+ * reads null, whatever the element's own date is.
+ */
+export function dateOf(element: object | null | undefined): number | null {
+  if (!isBody(element)) return null;
+  const type = typeof element.type === 'string' ? fold(element.type) : '';
+  if (!own(DATE_FIELD, type)) return null;
+  return whole(valueOf(element, DATE_FIELD[type]));
+}
 
 /** Strings by code point, as the Python package compares them (never UTF-16 units, never a locale). */
 export function byCodePoint(a: string, b: string): number {

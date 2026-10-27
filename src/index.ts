@@ -47,8 +47,8 @@ export { PROPOSED_MARK, proposedMarkOf, handsOnAsProposed } from './review';
 export type { OwProposedMark } from './review';
 // The lens profile (schema-dist profiles/lens.md): a saved way of reading a world, a Construct with
 // supertype Lens whose links are its anchors and whose x_lens is the recipe, and the one resolution every
-// reader agrees on.
-export { isLens, isTemplate, lensesInUse, resolveLens } from './lens';
+// reader agrees on. Its date table, and an element's date as the table reads it.
+export { isLens, isTemplate, lensesInUse, resolveLens, DATE_FIELD, dateOf } from './lens';
 export type { OwLensReader, OwLensWorld, OwLensOptions, OwLensReading, OwLensMail, OwLensCutReason } from './lens';
 // The lens profile's graph section: a reading of a world as nodes and edges, for the same reader.
 export { worldGraph, degreeOf } from './graph';
