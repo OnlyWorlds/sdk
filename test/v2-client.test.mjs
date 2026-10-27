@@ -485,6 +485,54 @@ test('setMyCharacter sends PUT /me/character with the pick and returns the /me b
   await assert.rejects(hidden.client.setMyCharacter('c9'), (e) => e.isCharacterHidden === true && e.isCharacterTaken === false);
 });
 
+test('setMyLenses sends PUT /me/lenses with the ids in order and the PIN, no agent or client header, and returns the /me body', async () => {
+  const me = { world: { id: 'w', name: 'W' }, kind: 'person', role: 'contributor', membership: 'm1', character: null, lenses: ['l2', 'l1'] };
+  const { client, fetchImpl } = makeClient({ status: 200, body: me }, { agent: true, client: 'atlas' });
+  assert.deepEqual(await client.setMyLenses(['l2', 'l1']), me);
+  await client.setMyLenses([]);
+  const [a, b] = fetchImpl.calls;
+  assert.equal(a.init.method, 'PUT');
+  const u = new URL(a.url);
+  assert.equal(u.pathname, '/api/v2/me/lenses');
+  assert.equal(u.search, '');
+  assert.deepEqual(JSON.parse(a.init.body), { lenses: ['l2', 'l1'] });
+  assert.equal(a.init.headers['API-Key'], 'ow_w_test');
+  assert.equal(a.init.headers['API-Pin'], '1234');
+  assert.equal(a.init.headers['Content-Type'], 'application/json');
+  // keel's document declares no header parameter on PUT /me/lenses
+  assert.equal('X-OW-Agent' in a.init.headers, false);
+  assert.equal('X-OW-Client' in a.init.headers, false);
+  assert.deepEqual(JSON.parse(b.init.body), { lenses: [] });
+  await assert.rejects(client.setMyLenses('l1'), (e) => e instanceof TypeError && /list of lens ids/.test(e.message));
+  assert.equal(fetchImpl.calls.length, 2, 'a refused list sends nothing');
+  const acct = makeClient({ status: 200, body: me }, { apiKey: 'ow_a_test' });
+  await assert.rejects(acct.client.setMyLenses(['l1']), (e) => e instanceof TypeError && /world key/.test(e.message));
+  assert.equal(acct.fetchImpl.calls.length, 0);
+});
+
+test('worldLenses sends GET /world/{id}/lenses with resolve and read_as, no PIN on the read, and returns the answer whole', async () => {
+  const answer = { data: [{ id: 'l1', name: 'Harbour watch', element: { id: 'l1', type: 'construct', name: 'Harbour watch' }, template: false, retired: false, x_lens: null, titles: [], chosen: true }], read_as: 'guest' };
+  const { client, fetchImpl } = makeClient({ status: 200, body: answer }, { agent: true, client: 'atlas' });
+  assert.deepEqual(await client.worldLenses('w 1', { resolve: true, readAs: 'guest' }), answer);
+  await client.worldLenses('w1');
+  await client.worldLenses('w1', { resolve: false });
+  const [a, b, c] = fetchImpl.calls;
+  assert.equal(a.init.method, 'GET');
+  const u = new URL(a.url);
+  assert.equal(u.pathname, '/api/v2/world/w%201/lenses');
+  assert.deepEqual(Object.fromEntries(u.searchParams), { resolve: 'true', read_as: 'guest' });
+  assert.equal(a.init.body, undefined);
+  assert.deepEqual(Object.keys(a.init.headers), ['API-Key'], 'a read: the key alone, no PIN, no write header');
+  assert.equal(new URL(b.url).search, '');
+  assert.deepEqual(Object.fromEntries(new URL(c.url).searchParams), { resolve: 'false' });
+  await assert.rejects(client.worldLenses('w1', { resolve: 'yes' }), (e) => e instanceof TypeError && /resolve is true or false/.test(e.message));
+  await assert.rejects(client.worldLenses('w1', { read_as: 'guest' }), (e) => e instanceof TypeError && /unknown parameter 'read_as'/.test(e.message));
+  assert.equal(fetchImpl.calls.length, 3, 'a refused option sends nothing');
+  const acct = makeClient({ status: 200, body: answer }, { apiKey: 'ow_a_test' });
+  await assert.rejects(acct.client.worldLenses('w1'), (e) => e instanceof TypeError && /world key/.test(e.message));
+  assert.equal(acct.fetchImpl.calls.length, 0);
+});
+
 test('listHidden sends GET /world/hidden and returns the rows', async () => {
   const row = { type: 'character', id: 'x', set_at: '2026-10-22T02:00:00Z', set_by: null };
   const { client, fetchImpl } = makeClient({ status: 200, body: { data: [row] } });
@@ -544,6 +592,22 @@ test('draught: compact is sent as true or false and nothing else; absent, nothin
   assert.equal(new URL(fetchImpl.calls[2].url).searchParams.has('compact'), false);
   await assert.rejects(client.draught('c1', { compact: 'yes' }), /compact is true or false/);
   assert.equal(fetchImpl.calls.length, 3, 'a refused compact sends nothing');
+});
+
+test('draught: lens is sent as lens=<id> on GET /character/{id}/context with the key alone, and the frames come back', async () => {
+  const frames = [{ id: 'l1', name: 'Harbour watch', rows: [], cut: {} }, { id: 'l2', skipped: 'retired' }];
+  const { client, fetchImpl } = makeClient({ status: 200, body: { world: { id: 'w' }, character: null, lenses: frames } });
+  const packet = await client.draught('c1', { lens: 'l1', compact: true });
+  assert.deepEqual(packet.lenses, frames);
+  const [a] = fetchImpl.calls;
+  assert.equal(a.init.method, 'GET');
+  const u = new URL(a.url);
+  assert.equal(u.pathname, '/api/v2/character/c1/context');
+  assert.deepEqual(Object.fromEntries(u.searchParams), { compact: 'true', lens: 'l1' });
+  assert.equal(a.init.body, undefined);
+  assert.deepEqual(Object.keys(a.init.headers), ['API-Key']);
+  await assert.rejects(client.draught('c1', { lenses: ['l1'] }), (e) => e instanceof TypeError && /unknown parameter 'lenses'/.test(e.message));
+  assert.equal(fetchImpl.calls.length, 1, 'a misspelt lens sends nothing');
 });
 
 test('draught: room and proposed are sent when named; the published types carry keel\'s thirteen components and rows with the element nested', async () => {

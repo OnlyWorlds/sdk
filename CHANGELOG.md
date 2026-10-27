@@ -5,6 +5,20 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **The server's lens routes.** `setMyLenses(lensIds)`: `PUT /me/lenses`, the lenses this key's holder starts with, lens ids in order (0 to 20, `[]` for none, which is a choice); a world write key with its PIN, answering GET /me's body as `OwMe`; no `X-OW-Agent` or `X-OW-Client`, which the document declares on neither; an account token, or anything but a list, is a TypeError before sending. `worldLenses(worldId, { resolve, readAs })`: `GET /world/{world_id}/lenses`, every lens in the world this key can see with its recipe echoed, the Titles it is the default for and whether this key chose it, `resolve: true` adding each lens's `reading` and `readAs` (the owner only, with `resolve`) reading as another reader; a read, so no PIN; typed `OwWorldLenses` (`data: OwWorldLens[]`, `read_as`), its reading `OwWorldLensReading`; `resolve` is true or false, and an account token is a TypeError before sending.
+- **`draught(characterId, { lens })`**: a lens id, sent as `lens`; the packet then carries `lenses`, one frame with that lens read for this key's own view (`OwDraught.lenses`, each frame an `OwDraughtLens`: `id`, and `name`, `rows`, `cut`, `mail`, `skipped`, `unreadable` as served). With no lens and no policy key but `compact`, keel adds one frame per lens chosen with `setMyLenses`. `lens` beside `depth` or `budget` is keel's 422. The options fence takes the new key; a misspelt one is still a TypeError before sending.
+- **`OwMe.lenses` and `OwMember.lenses`**: the lenses the key's holder, or a roster row, chose, lens ids in order; GET /me and GET /members now serve them.
+
+### Changed
+
+- **`x_served_trimmed` is documented on a lens too**: keel now serves the mark on a Construct, a lens whose hidden anchors were left out, naming those anchor fields, then `notes`. `OwElementBase`'s comment said it rode only a message; the generator's text now names both, and nothing else changes (the SDK never strips the mark from a body it is given, on any type).
+
+### Not added
+
+- `PATCH /account/worlds/{world_id}/members/{member_id}` now takes `lenses`, but the SDK has no method for that route, so none is added here.
+
 ## [4.91.1] - 2026-10-27
 
 ### Changed

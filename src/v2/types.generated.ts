@@ -16,7 +16,7 @@
 // `number | null`. Link fields use bare schema names (no `_ids` suffix). The eight
 // server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
 // changed_via, changed_client), the stub marker `known_of` (present only on a stub), the served-only
-// `x_served_trimmed` (present only on a message whose ids were left out) and the
+// `x_served_trimmed` (present only on a message or a lens whose ids were left out) and the
 // extension index signature live on OwElementBase.
 
 /** Every element carries these. The extension index signature admits namespaced
@@ -24,7 +24,7 @@
  *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in
  *  bodies -- the key determines the world) and the eight server-managed fields are
  *  added, since they ride every wire body and appear in no element YAML; `known_of`
- *  rides only a stub, `x_served_trimmed` only a message whose ids were left out. */
+ *  rides only a stub, `x_served_trimmed` only a message or a lens whose ids were left out. */
 export interface OwElementBase {
   /** Element type slug (server-managed, read-only). */
   type: string;
@@ -58,7 +58,7 @@ export interface OwElementBase {
   hidden?: true;
   /** Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq, and the fields its type lists in PUBLIC_FIELDS with their values; every other field reads unset ("", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf(). */
   known_of?: true;
-  /** Served only, on a message (the message profile, schema-dist `profiles/message.md`): present when ids in `characters` or `narrator` were left out because this reader may not see them, naming those fields (`characters` before `narrator`), never which ids or how many. An empty `characters` with `characters` named here is to someone the reader cannot see, never to everyone; a null `narrator` with `narrator` named is a sender the reader cannot see. Absent when nothing was left out, and always for the keyless public reader. A write that carries it is refused (422 `served_trimmed_not_writable`): never send it back. See hasUnseenRecipients() and senderStatus(). */
+  /** Served only, on a message or a lens, never which ids or how many. On a message (the message profile, schema-dist `profiles/message.md`): present when ids in `characters` or `narrator` were left out because this reader may not see them, naming those fields (`characters` before `narrator`). An empty `characters` with `characters` named here is to someone the reader cannot see, never to everyone; a null `narrator` with `narrator` named is a sender the reader cannot see. On a lens (a Construct with supertype Lens, schema-dist `profiles/lens.md`): present when anchor ids were left out because this reader may not see them, naming those anchor fields in the schema's order, then `notes` when an anchor's note was left out of `x_lens` with it. A lens whose anchor fields are empty and that carries the mark is anchored (it resolves to nothing for this reader), never a filter over the whole world. Absent when nothing was left out, and always for the keyless public reader; on a lens also always for the world's owner, its co-builders and keys the owner minted. A write that carries it is refused (422 `served_trimmed_not_writable`): never send it back. See hasUnseenRecipients(), senderStatus() and resolveLens(). */
   x_served_trimmed?: string[];
   /** Namespaced extension fields (atlas_* / shadow_* / x_*), returned verbatim. */
   [ext: string]: unknown;

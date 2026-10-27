@@ -11,7 +11,7 @@ single-links serialize as `string | null`, multi-links as `string[]`, ints as
 `number | null`, link fields use BARE schema names (no `_ids` suffix), and the eight
 server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
 changed_via, changed_client), the stub marker `known_of` (present only on a stub), the message
-profile's served-only `x_served_trimmed` (present only on a message whose ids were left out), plus an extension
+and lens profiles' served-only `x_served_trimmed` (present only on a message or a lens whose ids were left out), plus an extension
 index signature ride the shared base.
 
 Run:  python codegen/generate_types.py [--schema ../keel/schema]
@@ -107,7 +107,7 @@ __PROVENANCE__
 // `number | null`. Link fields use bare schema names (no `_ids` suffix). The eight
 // server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
 // changed_via, changed_client), the stub marker `known_of` (present only on a stub), the served-only
-// `x_served_trimmed` (present only on a message whose ids were left out) and the
+// `x_served_trimmed` (present only on a message or a lens whose ids were left out) and the
 // extension index signature live on OwElementBase.
 
 __ELEMENT_BASE__
@@ -156,9 +156,9 @@ WIRE_ONLY_BASE_FIELDS = [
     # The hidden mark, shown to the readers who still see the element.
     ("hidden", "Present, and true, only when the world's owner or a co-builder hid this element and this reader still sees it (server-managed, read-only): the owner, a co-builder, a key the owner minted, or the member who made it; to every other reader the element does not exist. Absent otherwise, whatever `fields` asked; on the read, the list, the change feed's upserts and MCP, never in the download, world sync or v1. Sent on a create (a POST, a PUT of a new id, a bulk item that creates), `hidden: true` creates the element hidden, from the owner's keys or a co-builder's; any other key gets 403 `hidden_not_allowed` and nothing is created. On any other write it is ignored: hide and unhide with hide() and unhide().", "true", False),
     ("known_of", "Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq, and the fields its type lists in PUBLIC_FIELDS with their values; every other field reads unset (\"\", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf().", "true", False),
-    # The message profile's served-only mark (keel serves it on a message, a Narrative; every write refuses
-    # it by name). Never stripped from a body this SDK is given, unlike known_of: the refusal is the signal.
-    ("x_served_trimmed", "Served only, on a message (the message profile, schema-dist `profiles/message.md`): present when ids in `characters` or `narrator` were left out because this reader may not see them, naming those fields (`characters` before `narrator`), never which ids or how many. An empty `characters` with `characters` named here is to someone the reader cannot see, never to everyone; a null `narrator` with `narrator` named is a sender the reader cannot see. Absent when nothing was left out, and always for the keyless public reader. A write that carries it is refused (422 `served_trimmed_not_writable`): never send it back. See hasUnseenRecipients() and senderStatus().", "string[]", False),
+    # The message and lens profiles' served-only mark (keel serves it on a message, a Narrative, and on a
+    # lens, a Construct; every write refuses it by name). Never stripped from a body this SDK is given, unlike known_of: the refusal is the signal.
+    ("x_served_trimmed", "Served only, on a message or a lens, never which ids or how many. On a message (the message profile, schema-dist `profiles/message.md`): present when ids in `characters` or `narrator` were left out because this reader may not see them, naming those fields (`characters` before `narrator`). An empty `characters` with `characters` named here is to someone the reader cannot see, never to everyone; a null `narrator` with `narrator` named is a sender the reader cannot see. On a lens (a Construct with supertype Lens, schema-dist `profiles/lens.md`): present when anchor ids were left out because this reader may not see them, naming those anchor fields in the schema's order, then `notes` when an anchor's note was left out of `x_lens` with it. A lens whose anchor fields are empty and that carries the mark is anchored (it resolves to nothing for this reader), never a filter over the whole world. Absent when nothing was left out, and always for the keyless public reader; on a lens also always for the world's owner, its co-builders and keys the owner minted. A write that carries it is refused (422 `served_trimmed_not_writable`): never send it back. See hasUnseenRecipients(), senderStatus() and resolveLens().", "string[]", False),
 ]
 BASE_KEY_TO_WIRE = {
     "Id": "id", "Name": "name", "Description": "description",
@@ -194,7 +194,7 @@ def render_element_base(schema_dir: Path) -> str:
         " *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in",
         " *  bodies -- the key determines the world) and the eight server-managed fields are",
         " *  added, since they ride every wire body and appear in no element YAML; `known_of`",
-        " *  rides only a stub, `x_served_trimmed` only a message whose ids were left out. */",
+        " *  rides only a stub, `x_served_trimmed` only a message or a lens whose ids were left out. */",
         "export interface OwElementBase {",
     ]
     emitted: set[str] = set()

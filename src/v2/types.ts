@@ -666,6 +666,11 @@ export interface OwMe {
   membership: string | null;
   /** The member's Character, or null (null too when it is hidden from this key). */
   character: string | null;
+  /**
+   * The lenses you chose (setMyLenses), lens ids in your order; empty for none, which is a choice.
+   * The draught reads them when you name no lens and no policy.
+   */
+  lenses: string[];
   /** Agent seats only: the agent's name. */
   name?: string;
   /** Who you are here, who answers for you, and the house rules. */
@@ -726,6 +731,11 @@ export interface OwMember {
   status: 'active' | 'removed';
   /** Agent rows only: the agent's name. */
   name?: string;
+  /**
+   * The lenses this row chose, lens ids in its order (the owner row: the owner's own); empty for
+   * none, which is a choice. A lens this key cannot see is left out of what it is shown.
+   */
+  lenses: string[];
   [k: string]: unknown;
 }
 
@@ -892,6 +902,14 @@ export interface OwDraughtPolicy {
    * with `compact` the answer is typed `OwDraughtCompact`.
    */
   compact?: boolean;
+  /**
+   * A lens id (the lens profile: a Construct with supertype Lens): the packet adds `lenses`, one
+   * frame with that lens read for the caller's own view. The lens carries its own reach and limit in
+   * its `x_lens`, so `lens` beside `depth` or `budget` is a 422 (`param` lens); a lens the caller
+   * cannot see, or an id that is no lens, is a 404. Without `lens`, and with no other policy key but
+   * `compact`, the packet adds one frame per lens the caller chose (setMyLenses), in its order.
+   */
+  lens?: string;
 }
 
 /**
@@ -954,6 +972,94 @@ export interface OwDraught {
   proposed?: OwDraughtItem[];
   recent?: Array<{ op: 'upsert' | 'delete'; type: string; id: string; when: string | null; who: string | null; door: string | null; [k: string]: unknown }>;
   roster?: Array<{ id: string | null; kind: string; role: string; character: string | null; status: string; name: string }>;
+  /**
+   * Present only with `lens` (one frame), or, with no lens and no policy key but `compact`, when the
+   * caller chose lenses (one frame each, in its order). Each lens is read for the caller's own view, never past it.
+   */
+  lenses?: OwDraughtLens[];
+}
+
+/** One frame of the draught's `lenses`: one lens read for the caller's own view. */
+export interface OwDraughtLens {
+  id: string;
+  name?: string;
+  /**
+   * What the lens keeps, in the profile's order (its anchors in its link order, then by type in the
+   * schema's order, newest first, then by id), each as its `show` makes it: the body as served (under
+   * `compact` less its empty fields), its first line, or its name; a kept anchor carries its `note`.
+   */
+  rows?: Array<Record<string, unknown>>;
+  /** How many the reading cut, by reason (budget, types, window, undated, after_as_of, hops_not_served; for the owner alone anchor_not_visible and not_visible). */
+  cut?: Record<string, number>;
+  /** With a mail rule: unread and read ids, rows, cut by reason, totals. */
+  mail?: Record<string, unknown>;
+  /** A chosen lens not read: retired, a template, or one the caller can no longer see (deleted or hidden since). It stays chosen. */
+  skipped?: 'retired' | 'template' | 'not_found';
+  /** The `x_lens` key holding a value outside the profile's table: nothing is read. */
+  unreadable?: string;
+}
+
+/** GET /world/{worldId}/lenses (worldLenses): every lens in the world the caller can see. */
+export interface OwWorldLenses {
+  data: OwWorldLens[];
+  /** The reader the owner read as (`readAs`), or null. */
+  read_as: string | null;
+}
+
+/**
+ * One lens of worldLenses: its recipe echoed, the Titles it is the default for and whether the
+ * caller chose it; with `resolve`, its `reading`. The owner also gets `chosen_by` and `health`.
+ */
+export interface OwWorldLens {
+  id: string;
+  name: string;
+  /** The lens element as this caller is served it (an anchor it cannot see left out, with `x_served_trimmed`). */
+  element: OwElement;
+  /** Subtype Template: it reads nothing until copied and pointed. */
+  template: boolean;
+  /** Status retired: no seat starts with it; a seat that chose it keeps it, and the reading skips it. */
+  retired: boolean;
+  /** The lens's `x_lens` with every default the profile names filled in; null for an unreadable lens. */
+  x_lens: {
+    depth: 0 | 1 | 2;
+    types: string[];
+    window: number | null;
+    from: number | null;
+    to: number | null;
+    undated: 'include' | 'exclude';
+    show: 'full' | 'first_line' | 'name';
+    budget: number;
+    mail: 'unread_full_read_titles' | 'all' | 'none';
+    notes: Record<string, string>;
+  } | null;
+  /** Present when `x_lens` holds a value outside the profile's table: the key refused. Nothing is resolved. */
+  unreadable?: string;
+  /** The Titles it is the default for: everyone holding one starts with it. */
+  titles: string[];
+  /** This caller chose it (OwMe's `lenses`). */
+  chosen: boolean;
+  /** The owner only: the memberships that chose it (null for the owner). */
+  chosen_by?: Array<string | null>;
+  /** The owner only: `empty` (it resolves to nothing for the owner), `over_budget` (the owner's reading cuts by budget), `retired_assigned` (retired and still chosen by a seat). */
+  health?: { empty: boolean; over_budget: boolean; retired_assigned: boolean };
+  /** With `resolve`: the reading of the lens for this caller (or the reader `readAs` names). */
+  reading?: OwWorldLensReading;
+}
+
+/** A lens's reading on worldLenses with `resolve`: what it keeps and what it cut, with why. */
+export interface OwWorldLensReading {
+  /** The kept elements in the profile's order, each as `show` makes it; a kept anchor's row carries its `note`. */
+  rows: Array<Record<string, unknown>>;
+  /** How many elements the reading cut, by reason; a reason with none is absent. */
+  cut: Record<string, number>;
+  /** The elements cut for each reason, at most 100 named per reason (`cut` keeps the whole count). */
+  cut_rows: Record<string, Array<{ id: string; type: string; name: string }>>;
+  /** Kept plus cut: "keeps X of the Y it reached". */
+  reached: number;
+  /** Notes on ids that are not anchors of the lens, ignored. */
+  notes_ignored: number;
+  /** With a mail rule: `unread` and `read` (ids), `rows`, `cut` by reason and `totals`. */
+  mail?: Record<string, unknown>;
 }
 
 export interface OwAccountWorld {

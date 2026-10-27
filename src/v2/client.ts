@@ -15,7 +15,7 @@ import type { ElementType } from './types.generated';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
-  OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember,
+  OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwWorldLenses,
   OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
@@ -123,6 +123,48 @@ export class OwV2Client {
     return this.request('PUT', '/me/character', { write: true, body: { character } }) as Promise<OwMe>;
   }
 
+  /**
+   * PUT /me/lenses -- choose the lenses this key's holder starts with: lens ids in order, 0 to 20,
+   * repeats dropped by keel; an empty list is a choice too (the draught then adds no frame). Any write
+   * key of the world, with its PIN, sets its own holder's list: a person member's, an agent seat's, or
+   * on the owner's keys the owner's own; answers GET /me's body. The draught reads the list whenever it
+   * is given no lens and no policy. 404 for a lens this key cannot see; 422 `not_a_lens`,
+   * `lens_is_template` or `lens_hidden` (`param` lenses); 403 for a read key. A lens only narrows what
+   * the holder may already read. A world key's call; an account token is a TypeError before sending.
+   */
+  async setMyLenses(lensIds: string[]): Promise<OwMe> {
+    if (this.keyKind === 'account') {
+      throw new TypeError('setMyLenses needs a world key: an account token is not a member of one world');
+    }
+    if (!Array.isArray(lensIds)) {
+      throw new TypeError('setMyLenses: lensIds is a list of lens ids ([] for none). Nothing was sent.');
+    }
+    return this.request('PUT', '/me/lenses', { body: { lenses: lensIds } }) as Promise<OwMe>;
+  }
+
+  /**
+   * GET /world/{worldId}/lenses -- every lens in the world this key can see, templates included and
+   * marked, each with its recipe echoed (`x_lens`, defaults filled in), the Titles it is the default
+   * for and whether this key chose it. `resolve: true` adds each lens's `reading` for this key: the kept
+   * rows, the cut by reason, the mail part. The owner also gets `chosen_by`, `health` and the two counts
+   * of what a reader cannot see; with `resolve`, the owner may `readAs` another reader (`guest`,
+   * `contributor`, `co-builder`, `public`, or a membership id of this world): 403
+   * `read_as_owner_only` from any other key, 422 without `resolve`. `worldId` is the key's own world
+   * (another is a 404). A world key's call; an account token is a TypeError before sending. Served
+   * `Cache-Control: private, no-store`.
+   */
+  async worldLenses(worldId: string, opts: { resolve?: boolean; readAs?: string } = {}): Promise<OwWorldLenses> {
+    only('worldLenses', opts, ['resolve', 'readAs']);
+    if (this.keyKind === 'account') {
+      throw new TypeError('worldLenses needs a world key: an account token is not a member of one world');
+    }
+    if (opts.resolve !== undefined && typeof opts.resolve !== 'boolean') {
+      throw new TypeError('worldLenses: resolve is true or false. Nothing was sent.');
+    }
+    const query = buildQuery({ resolve: opts.resolve, read_as: opts.readAs });
+    return this.request('GET', `/world/${encodeURIComponent(worldId)}/lenses`, { query }) as Promise<OwWorldLenses>;
+  }
+
   async me(): Promise<OwMe> {
     if (this.keyKind === 'account') {
       throw new TypeError('me needs a world key: an account token is not a member of one world');
@@ -184,13 +226,15 @@ export class OwV2Client {
    * the frame and every null kept, and leaves out each element body's empty fields (`null`, `""`,
    * `[]`, `{}`; `id`, `type` and `name` always stay), answered as `OwDraughtCompact`. A Message
    * without the room mark is placed as any Narrative unless `messages` is named, when it is there
-   * and in no other section; a room-marked Message is in `messages` or nowhere. Served
-   * `Cache-Control: private, no-store`.
+   * and in no other section; a room-marked Message is in `messages` or nowhere. `lens` (a lens id)
+   * adds `lenses`, one frame with that lens read for this key's own view (beside `depth` or `budget`
+   * a 422); with no policy key but `compact`, the packet adds one frame per lens chosen with
+   * setMyLenses. Served `Cache-Control: private, no-store`.
    */
   draught(characterId: string, policy?: OwDraughtPolicy & { compact?: false }): Promise<OwDraught>;
   draught(characterId: string, policy: OwDraughtPolicy): Promise<OwDraughtCompact>;
   async draught(characterId: string, policy: OwDraughtPolicy = {}): Promise<OwDraught | OwDraughtCompact> {
-    only('draught', policy, ['components', 'mode', 'asOf', 'undated', 'since', 'budget', 'depth', 'compact']);
+    only('draught', policy, ['components', 'mode', 'asOf', 'undated', 'since', 'budget', 'depth', 'compact', 'lens']);
     if (policy.compact !== undefined && typeof policy.compact !== 'boolean') {
       throw new TypeError('draught: compact is true or false. Nothing was sent.');
     }
@@ -203,6 +247,7 @@ export class OwV2Client {
       budget: policy.budget,
       depth: policy.depth,
       compact: policy.compact,
+      lens: policy.lens,
     });
     return this.request('GET', `/character/${characterId}/context`, { query }) as Promise<OwDraught | OwDraughtCompact>;
   }
