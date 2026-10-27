@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { ROOM_PAIRS, isLens, isTemplate, lensesInUse, resolveLens } from '../dist/index.js';
+import { ROOM_PAIRS, isLens, isTemplate, lensesInUse, resolveLens, worldGraph } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/lens.fixture.json', import.meta.url));
 const COUNTS = { shape: 6, keys: 23, resolve: 51, invariant: 4, uses: 4, graph: 34 };
@@ -202,6 +202,22 @@ test('the shared edge cases (the Python package runs the same file)', async () =
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
   assert.equal(edges.length, 10);
+});
+
+test('a lens a guest knows only as a stub reads as nothing, by id, as keel reads it; whole, it reads', () => {
+  const world = {
+    elements: [
+      { id: 'L', type: 'construct', name: 'Ada and hers', supertype: 'Lens', characters: ['c1'], x_lens: { depth: 1 } },
+      { id: 'c1', type: 'character', name: 'Ada', friends: ['c2'] },
+      { id: 'c2', type: 'character', name: 'Bo' },
+    ],
+  };
+  const stub = { rung: 'guest', whole: ['c1', 'c2'], known_of: ['L'] };
+  const r = resolveLens(world, 'L', stub);
+  assert.deepEqual([r.kept, r.cut, r.unreadable], [[], {}, null]);
+  assert.deepEqual(worldGraph(world, stub, { lens: 'L' }).nodes, []);
+  const whole = { rung: 'guest', whole: ['L', 'c1', 'c2'], known_of: [] };
+  assert.deepEqual(resolveLens(world, 'L', whole).kept, ['c1', 'c2']);
 });
 
 test('resolveLens refuses what is not a reading: a bad reader, world, lens, as_of or clock is a TypeError', () => {

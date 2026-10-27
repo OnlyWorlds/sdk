@@ -662,7 +662,9 @@ export function readingDate(fn: string, world: Body, opts: Body): { asOf: number
 export function lensReading(r: Reading, lens: object | string, clockV: unknown): { reading: OwLensReading; cutById: ReadonlyMap<string, OwLensCutReason> } {
   const none = { reading: NOTHING(), cutById: new Map<string, OwLensCutReason>() };
   let body: Body | null;
-  if (typeof lens === 'string') body = r.view.has(lens) ? (r.byId.get(lens) as Body) : null;
+  // A lens named by id is read from the body this reader is served: a stub serves no links and no
+  // recipe, so a lens the reader knows only as a stub reads as one it cannot see (keel's find_lens).
+  if (typeof lens === 'string') body = r.view.has(lens) && !r.stubs.has(lens) ? (r.byId.get(lens) as Body) : null;
   else body = lens as Body;
   if (body === null || !isLens(body)) return none;
   const read = readRecipe(body.x_lens);

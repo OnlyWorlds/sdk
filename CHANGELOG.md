@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.93.1] - 2026-10-27
+
+### Fixed
+
+- **A lens a guest knows only as a stub reads as nothing when named by id**, in `resolveLens` and so in `worldGraph`, as keel's own reader answers it. The reader took the stored body whenever the id was in the guest's view, a known-of stub included, so it followed anchors and a recipe the guest is never served: the kept rows stayed inside the guest's view, but which of them the lens kept said something about anchors the guest cannot see. A lens body passed in is read as given, as before.
+
 ## [4.93.0] - 2026-10-27
 
 ### Added
