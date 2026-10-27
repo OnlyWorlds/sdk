@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.96.1] - 2026-10-27
+
+### Fixed
+
+- **The lens and graph readers read the world's now as the API serves it.** `GET /world` names the world's now `time_range_current`, and a world folder names it `time_current`; `resolveLens` and `worldGraph` read only `now` and `time_current`, so a World body passed straight from the API had no now: no fence, and a `window` that cut nothing. They now read `now`, else `time_current`, else `time_range_current`, and `OwLensWorld` types the third. A shared edge case holds it in both packages; the Python package's `resolve_lens` and `world_graph` read the same.
+
 ## [4.96.0] - 2026-10-27
 
 ### Added

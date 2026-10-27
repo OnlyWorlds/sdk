@@ -41,13 +41,15 @@ export interface OwLensWorld {
   members?: readonly OwMessageMember[] | null;
   /** The world's now, in its own time unit: the default `as_of`. */
   now?: number | null;
-  /** The World's own now (its `time_current`), read when `now` is not given. */
+  /** The World's own now as a world folder spells it (`time_current`), read when `now` is not given. */
   time_current?: number | null;
+  /** The World's own now as the API serves it (`GET /world`'s `time_range_current`), read when neither `now` nor `time_current` is given. */
+  time_range_current?: number | null;
 }
 
 /** `resolveLens`'s options. */
 export interface OwLensOptions {
-  /** The reading's date, a whole number in the world's time unit; absent: the world's now (`now`, else `time_current`); none at all: no fence, and the window cuts nothing. */
+  /** The reading's date, a whole number in the world's time unit; absent: the world's now (`now`, else `time_current`, else `time_range_current`); none at all: no fence, and the window cuts nothing. */
   asOf?: number | null;
   /** The reading's wall-clock time for the mail rule's thirty days, a date-time; absent: the machine's time. Never the world's now. */
   clock?: string | null;
@@ -660,7 +662,8 @@ export function resolveLens(world: OwLensWorld, lens: object | string, reader: O
 
 /**
  * The reading's date and wall-clock time from the options, each refused when it is not one (module-internal):
- * `asOf`, else the world's now (the fixture's `now`, else the World's `time_current`). With none of them there
+ * `asOf`, else the world's now (the fixture's `now`, else the World's `time_current` as a folder spells it, else
+ * `time_range_current` as the API serves it). With none of them there
  * is no fence, and the window cuts nothing.
  */
 export function readingDate(fn: string, world: Body, opts: Body): { asOf: number | null; clock: unknown } {
@@ -668,7 +671,7 @@ export function readingDate(fn: string, world: Body, opts: Body): { asOf: number
   if (asOfV !== null && whole(asOfV) === null) throw new TypeError(`${fn}: asOf is a whole number; got ${JSON.stringify(asOfV)}.`);
   const clockV = valueOf(opts, 'clock');
   if (clockV !== null && timeKey(clockV) === null) throw new TypeError(`${fn}: clock is a date-time; got ${JSON.stringify(clockV)}.`);
-  const asOf = asOfV !== null ? (asOfV as number) : (whole((world as Body).now) ?? whole((world as Body).time_current));
+  const asOf = asOfV !== null ? (asOfV as number) : (whole((world as Body).now) ?? whole((world as Body).time_current) ?? whole((world as Body).time_range_current));
   return { asOf, clock: clockV };
 }
 
