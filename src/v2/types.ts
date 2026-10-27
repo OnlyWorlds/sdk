@@ -1223,9 +1223,10 @@ export interface ListParams {
 
 export interface OwClientConfig {
   /**
-   * The key: an ow_w_ (write) or ow_r_ (read) world key, an ow_a_ account token (sent as a Bearer token, for the account routes), or a 10-digit legacy key.
+   * The key: an ow_w_ (write) or ow_r_ (read) world key, an ow_a_ account token (sent as a Bearer token, for the account routes, and with `world` set for that world's reads), or a 10-digit legacy key.
    * Leave it out for a client that holds none, such as a friend with only a link (since 4.30.0): it can call health,
-   * previewJoin, redeemJoin and signInWithPassword, and any other call is a TypeError before anything is sent.
+   * previewJoin, redeemJoin and signInWithPassword (and with `world` set, list, listAll, get and getWorld), and any
+   * other call is a TypeError before anything is sent.
    */
   apiKey?: string;
   /**
@@ -1271,4 +1272,14 @@ export interface OwClientConfig {
    * changes no permission and no door: whether an agent made a write is `agent`'s business.
    */
   client?: string;
+  /**
+   * A world's id, for a client that holds an account token (`ow_a_`) or no key. `list`, `listAll`,
+   * `get` and `getWorld` then read that world, sending `world=<id>`: an account token reads it as
+   * that account's own access there (the owner the whole world, a member its member key's view,
+   * anyone else the public view), and no key reads it as the public does. Read only: on such a
+   * client every other world call is a TypeError before sending; the account calls work as
+   * without it. Given with a world key, or as anything but a non-empty string, it is a TypeError
+   * when the client is constructed.
+   */
+  world?: string;
 }

@@ -871,7 +871,7 @@ test('detectKeyKind classifies all four kinds', () => {
 });
 
 test('account key uses Bearer auth, world key uses API-Key, and API-Pin on a write', async () => {
-  const { client: acct, fetchImpl: af } = makeClient({ status: 200, body: {} }, { apiKey: 'ow_a_tok' });
+  const { client: acct, fetchImpl: af } = makeClient({ status: 200, body: {} }, { apiKey: 'ow_a_tok', world: 'w1' });
   await acct.getWorld();
   assert.equal(af.calls.at(-1).init.headers['Authorization'], 'Bearer ow_a_tok');
 

@@ -37,32 +37,33 @@ function recorder() {
 }
 
 // `pin`: whether a prefixed world key with a PIN sends it. `who`: which clients may call it
-// (`world` for a world key only, `account` for an account token only, `any` for both).
+// (`world` for a world key only, `account` for an account token only, `any` for both: the reads an
+// account token sends with `world` set).
 const CALLS = [
   // reads
   { name: 'list', verb: 'GET', pin: false, who: 'any', run: (c) => c.list('location') },
   { name: 'list (name search)', verb: 'GET', pin: false, who: 'any', run: (c) => c.list('location', { filter: { name__icontains: 'harb' } }) },
   { name: 'get', verb: 'GET', pin: false, who: 'any', run: (c) => c.get('location', EL) },
-  { name: 'changes', verb: 'GET', pin: false, who: 'any', run: (c) => c.changes() },
-  { name: 'changesHead', verb: 'GET', pin: false, who: 'any', run: (c) => c.changesHead() },
-  { name: 'draught', verb: 'GET', pin: false, who: 'any', run: (c) => c.draught(EL) },
-  { name: 'worldProposals', verb: 'GET', pin: false, who: 'any', run: (c) => c.worldProposals() },
-  { name: 'listProposals', verb: 'GET', pin: false, who: 'any', run: (c) => c.listProposals('location', EL) },
+  { name: 'changes', verb: 'GET', pin: false, who: 'world', run: (c) => c.changes() },
+  { name: 'changesHead', verb: 'GET', pin: false, who: 'world', run: (c) => c.changesHead() },
+  { name: 'draught', verb: 'GET', pin: false, who: 'world', run: (c) => c.draught(EL) },
+  { name: 'worldProposals', verb: 'GET', pin: false, who: 'world', run: (c) => c.worldProposals() },
+  { name: 'listProposals', verb: 'GET', pin: false, who: 'world', run: (c) => c.listProposals('location', EL) },
   // the one read keel checks a PIN on
   { name: 'me', verb: 'GET', pin: true, who: 'world', run: (c) => c.me() },
   // writes, each verb
-  { name: 'create', verb: 'POST', pin: true, who: 'any', run: (c) => c.create('location', { name: 'Harbour' }) },
-  { name: 'patch', verb: 'PATCH', pin: true, who: 'any', run: (c) => c.patch('location', EL, { description: 'x' }) },
-  { name: 'upsert', verb: 'PUT', pin: true, who: 'any', run: (c) => c.upsert('location', EL, { name: 'Harbour' }) },
-  { name: 'delete', verb: 'DELETE', pin: true, who: 'any', run: (c) => c.delete('location', EL) },
-  { name: 'adopt', verb: 'POST', pin: true, who: 'any', run: (c) => c.adopt('location', EL, 'owner') },
-  { name: 'hide', verb: 'PUT', pin: true, who: 'any', run: (c) => c.hide('location', EL) },
-  { name: 'unhide', verb: 'DELETE', pin: true, who: 'any', run: (c) => c.unhide('location', EL) },
-  { name: 'propose', verb: 'POST', pin: true, who: 'any', run: (c) => c.propose('location', EL, { fields: { description: 'x' }, evidence: 'seen' }) },
-  { name: 'patchWorld', verb: 'PATCH', pin: true, who: 'any', run: (c) => c.patchWorld({ name: 'W' }) },
+  { name: 'create', verb: 'POST', pin: true, who: 'world', run: (c) => c.create('location', { name: 'Harbour' }) },
+  { name: 'patch', verb: 'PATCH', pin: true, who: 'world', run: (c) => c.patch('location', EL, { description: 'x' }) },
+  { name: 'upsert', verb: 'PUT', pin: true, who: 'world', run: (c) => c.upsert('location', EL, { name: 'Harbour' }) },
+  { name: 'delete', verb: 'DELETE', pin: true, who: 'world', run: (c) => c.delete('location', EL) },
+  { name: 'adopt', verb: 'POST', pin: true, who: 'world', run: (c) => c.adopt('location', EL, 'owner') },
+  { name: 'hide', verb: 'PUT', pin: true, who: 'world', run: (c) => c.hide('location', EL) },
+  { name: 'unhide', verb: 'DELETE', pin: true, who: 'world', run: (c) => c.unhide('location', EL) },
+  { name: 'propose', verb: 'POST', pin: true, who: 'world', run: (c) => c.propose('location', EL, { fields: { description: 'x' }, evidence: 'seen' }) },
+  { name: 'patchWorld', verb: 'PATCH', pin: true, who: 'world', run: (c) => c.patchWorld({ name: 'W' }) },
   { name: 'createSeat', verb: 'POST', pin: true, who: 'account', run: (c) => c.createSeat('w1', { name: 'bot' }) },
   { name: 'createAccountWorld', verb: 'POST', pin: true, who: 'account', run: (c) => c.createAccountWorld({ name: 'W' }) },
-  { name: 'reviewNewElement', verb: 'POST', pin: true, who: 'any', run: (c) => c.reviewNewElement('location', EL, { decision: 'accept' }) },
+  { name: 'reviewNewElement', verb: 'POST', pin: true, who: 'world', run: (c) => c.reviewNewElement('location', EL, { decision: 'accept' }) },
 ];
 
 /** Run every call the client may make; return [{name, verb, method, url, pin}] per request sent. */
@@ -109,7 +110,8 @@ test('API-Pin, ow_r_ key with no PIN: never', async () => {
 });
 
 test('API-Pin, ow_a_ account token: never, even with a PIN configured; Bearer, no API-Key', async () => {
-  const sent = await sweep({ apiKey: 'ow_a_acct', apiPin: '1234' }, 'account');
+  const sent = await sweep({ apiKey: 'ow_a_acct', apiPin: '1234', world: 'w1' }, 'account');
+  assert.ok(sent.some((s) => s.call.name === 'list'));
   assert.ok(sent.some((s) => s.call.name === 'createSeat'));
   assert.ok(sent.some((s) => s.call.name === 'createAccountWorld'));
   for (const { call, headers } of sent) {

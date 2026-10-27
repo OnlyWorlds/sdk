@@ -45,6 +45,8 @@ export class OwV2Client {
   private readonly clientName: string;
   /** The conditional head poll's state, per instance. */
   private readonly headPoll = new HeadPollState();
+  /** The world an account token or a keyless client reads (`world=`); undefined otherwise. */
+  private readonly world: string | undefined;
 
   constructor(config: OwClientConfig = {}) {
     // The constructor's options object refuses an unknown key like every other (4.52.0's rule):
@@ -54,6 +56,7 @@ export class OwV2Client {
     this.apiKey = config.apiKey ?? '';
     this.apiPin = config.apiPin || undefined;
     this.keyKind = config.apiKey ? detectKeyKind(config.apiKey) : 'none';
+    this.world = worldOf(config.world, this.keyKind);
     this.baseUrl = (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, '');
     this.pageSize = config.pageSize ?? DEFAULT_PAGE_SIZE;
     this.changesPageSize = config.changesPageSize ?? DEFAULT_CHANGES_PAGE_SIZE;
@@ -75,9 +78,10 @@ export class OwV2Client {
    * GET /world -- world meta (name, calendar/time fields, public_read).
    * GOTCHA (by server design): world-meta edits do NOT appear in /changes and
    * do not bump change_seq. Poll getWorld().updated_at for meta freshness.
+   * On a client with `world` set (an account token or no key), it reads that world, sending `world=<id>`.
    */
   async getWorld(): Promise<OwWorldMeta> {
-    return this.request('GET', '/world/') as Promise<OwWorldMeta>;
+    return this.request('GET', '/world/', { worldRead: true }) as Promise<OwWorldMeta>;
   }
 
   /**
@@ -139,7 +143,10 @@ export class OwV2Client {
 
   // -- Element CRUD --------------------------------------------------------
 
-  /** GET /{type}/ -- one cursor page. */
+  /**
+   * GET /{type}/ -- one cursor page. On a client with `world` set (an account token or no key), it
+   * reads that world, sending `world=<id>` beside the page's own parameters.
+   */
   async list(type: ElementType | string, params: ListParams = {}): Promise<OwPage> {
     only('list', params, LIST_PARAM_KEYS, LIST_FILTER_HINT);
     const query = buildQuery({
@@ -152,7 +159,7 @@ export class OwV2Client {
       ...params.filter,
       as: params.viewAs,
     });
-    return this.request('GET', `/${type}/`, { query }) as Promise<OwPage>;
+    return this.request('GET', `/${type}/`, { query, worldRead: true }) as Promise<OwPage>;
   }
 
   /**
@@ -194,7 +201,10 @@ export class OwV2Client {
     return this.request('GET', `/character/${characterId}/context`, { query }) as Promise<OwDraught | OwDraughtCompact>;
   }
 
-  /** Cursor-walk every page of a type. Politeness: uses config pageSize. */
+  /**
+   * Cursor-walk every page of a type. Politeness: uses config pageSize. On a client with `world`
+   * set, every page is read from that world, as list() reads it.
+   */
   async *listAll(type: ElementType | string, params: Omit<ListParams, 'cursor'> = {}): AsyncGenerator<OwElement> {
     // Its own list, not list()'s: listAll walks from the first page, so a `cursor` it was handed would be overwritten unread.
     only('listAll', params, LIST_ALL_PARAM_KEYS, LIST_FILTER_HINT);
@@ -208,12 +218,13 @@ export class OwV2Client {
 
   /**
    * GET /{type}/{id}/ -- optional one-level stub expansion / sparse fields, and `viewAs` (the owner reads as
-   * another reader; see ListParams.viewAs).
+   * another reader; see ListParams.viewAs). On a client with `world` set (an account token or no key),
+   * it reads that world, sending `world=<id>`.
    */
   async get(type: ElementType | string, id: string, opts: Pick<ListParams, 'expand' | 'fields' | 'viewAs'> = {}): Promise<OwElement> {
     only('get', opts, ['expand', 'fields', 'viewAs']);
     const query = buildQuery({ expand: opts.expand?.join(','), fields: opts.fields?.join(','), as: opts.viewAs });
-    return this.request('GET', `/${type}/${id}/`, { query }) as Promise<OwElement>;
+    return this.request('GET', `/${type}/${id}/`, { query, worldRead: true }) as Promise<OwElement>;
   }
 
   /**
@@ -1460,21 +1471,44 @@ export class OwV2Client {
       signal?: AbortSignal;
       /** Passed to fetch as given: a browser finishes the request after the page closes. */
       keepalive?: boolean;
+      /**
+       * A GET keel serves an account token, or no key, with `world=<id>` (element list and get, search,
+       * the world GET). On a client with `world` set, `world=<id>` is added to the query. On an
+       * account client every other route but /account, and on a keyless client every other route
+       * that needs a credential, is a TypeError before sending.
+       */
+      worldRead?: boolean;
     } = {},
   ): Promise<T> {
     only('request', opts, REQUEST_OPTION_KEYS);
     if (opts.ifMatch !== undefined && !(Number.isInteger(opts.ifMatch) && opts.ifMatch >= 0)) {
       throw new TypeError(`ifMatch must be a whole number (an element's change_seq), got ${String(opts.ifMatch)}`);
     }
-    if (opts.auth !== false && this.keyKind === 'none') {
-      throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin, redeemJoin and signInWithPassword work`);
+    // The one rule for what an account token or no key may send, read from the request itself.
+    const worldRead = opts.auth !== false && opts.worldRead === true && method.toUpperCase() === 'GET';
+    if (opts.auth !== false && this.keyKind === 'none' && !(worldRead && this.world !== undefined)) {
+      throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin, redeemJoin and signInWithPassword work, and list, listAll, get and getWorld with \`world\` set`);
     }
-    const url = `${this.baseUrl}${path}${opts.query ? `?${opts.query}` : ''}`;
+    if (opts.auth !== false && this.keyKind === 'account' && !ACCOUNT_ROUTE.test(path)) {
+      if (!worldRead) {
+        throw new TypeError(`${method} ${path} needs a world key: an account token sends the /account routes, and with \`world\` set reads a world through list, listAll, get and getWorld only. Nothing was sent.`);
+      }
+      if (this.world === undefined) {
+        throw new TypeError(`${method} ${path}: an account token reads a world only with \`world\` set (new OwV2Client({ apiKey, world })), through list, listAll, get and getWorld. Nothing was sent.`);
+      }
+    }
+    let query = opts.query ?? '';
+    if (worldRead && this.world !== undefined) {
+      const world = `world=${encodeURIComponent(this.world)}`;
+      query = query ? `${query}&${world}` : world;
+    }
+    const url = `${this.baseUrl}${path}${query ? `?${query}` : ''}`;
     const headers: Record<string, string> = {};
     if (opts.auth !== false) {
       if (this.keyKind === 'account') {
         headers['Authorization'] = `Bearer ${this.apiKey}`;
-      } else {
+      } else if (this.keyKind !== 'none') {
+        // A keyless client reaches here only for a world read with `world` set: no credential at all.
         headers['API-Key'] = this.apiKey;
         // The PIN only where keel checks it (ruled 2026-10-22): keel verifies a PIN
         // wherever it is sent (argon2, 64 MiB each), and scripts reading with it OOM-killed staging on
@@ -1819,8 +1853,11 @@ const LIST_FILTER_HINT = 'A wire filter (name, name__icontains, supertype, subty
 /** Every key `request()` reads; the escape hatch refuses any other like the typed methods (4.64.0). */
 const REQUEST_OPTION_KEYS = [
   'query', 'body', 'idempotencyKey', 'auth', 'allowEmpty', 'replayAware', 'write', 'elementWrite',
-  'proposable', 'ifMatch', 'ifNoneMatch', 'onEtag', 'signal', 'keepalive',
+  'proposable', 'ifMatch', 'ifNoneMatch', 'onEtag', 'signal', 'keepalive', 'worldRead',
 ] as const;
+
+/** The account routes: /account and everything under it, which an account token sends with or without `world`. */
+const ACCOUNT_ROUTE = /^\/account(?:[/?]|$)/;
 
 /**
  * Refuse an options object's unknown key before anything is sent. TypeScript refuses it at compile
@@ -1836,7 +1873,19 @@ function only(method: string, obj: object | undefined, keys: readonly string[], 
 }
 
 /** Every key `OwClientConfig` declares; the constructor refuses any other by name. A new option joins this list in the same commit. */
-const CLIENT_CONFIG_KEYS = ['apiKey', 'apiPin', 'baseUrl', 'pageSize', 'changesPageSize', 'fetch', 'agent', 'client'] as const;
+const CLIENT_CONFIG_KEYS = ['apiKey', 'apiPin', 'baseUrl', 'pageSize', 'changesPageSize', 'fetch', 'agent', 'client', 'world'] as const;
+
+/** `world`, checked at construction: a non-empty string, on a client with an account token or no key. */
+function worldOf(value: unknown, keyKind: OwKeyKind): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new TypeError(`OwV2Client: world is a world's id, a non-empty string; got ${JSON.stringify(value) ?? String(value)}. With it, an account token or no key reads that world through list, listAll, get and getWorld.`);
+  }
+  if (keyKind !== 'account' && keyKind !== 'none') {
+    throw new TypeError('OwV2Client: a world key reads its own world; `world` is for an account token or no key, which read the world it names through list, listAll, get and getWorld.');
+  }
+  return value;
+}
 
 /** keel's rule for X-OW-Client, exact here: keel trims and stores null for anything else, this package refuses it. */
 const CLIENT_NAME_RULE = /^[a-z0-9-]{1,32}$/;
