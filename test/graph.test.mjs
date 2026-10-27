@@ -1,25 +1,20 @@
 /**
- * The lens profile's graph section: worldGraph on the shared cases in test/fixtures/graph-edges.json (the
- * same bytes as the Python package's tests/fixtures/graph-edges.json; both suites hold its sha256), answers
- * written by hand, and the section's invariants checked on every answer. Runs against the compiled public
+ * The lens profile's graph section: worldGraph on the graph kind of codegen/schema-dist/profiles/lens.fixture.json
+ * (schema-dist serial 81, vendored with the pin; the MANIFEST holds its sha256, the Python package runs the same
+ * cases), the section's invariants checked on every answer, and the fixture's graph tables read back. Runs against the compiled public
  * bundle (dist).
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { FIELD_SCHEMA, resolveLens, worldGraph } from '../dist/index.js';
 
-const EDGES_FILE = fileURLToPath(new URL('./fixtures/graph-edges.json', import.meta.url));
-const EDGES_SHA256 = 'f114dadebff07167f999ea60bef1245eeaf20d8c8cdcc6d4d388a0be45050f45';
+const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/lens.fixture.json', import.meta.url));
 const KEY = { as_of: 'asOf', map_space: 'mapSpace' };
 
-function loadCases() {
-  const bytes = readFileSync(EDGES_FILE);
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), EDGES_SHA256);
-  return JSON.parse(bytes.toString('utf8'));
-}
+const loadFixture = () => JSON.parse(readFileSync(FIXTURE, 'utf8'));
+const loadCases = () => loadFixture().cases.filter(c => c.kind === 'graph');
 
 /** A case's options as worldGraph takes them (the file writes the Python package's names). */
 const optionsOf = c => Object.fromEntries(Object.entries(c.options ?? {}).map(([k, v]) => [KEY[k] ?? k, v]));
@@ -82,7 +77,7 @@ function invariants(g, c) {
   }
 }
 
-test('the shared graph cases (the Python package runs the same file), each answer held to the invariants', () => {
+test('the fixture\'s graph cases, each answer held to the invariants', () => {
   const cases = loadCases();
   const wrong = [];
   for (const c of cases) {
@@ -109,7 +104,29 @@ test('the shared graph cases (the Python package runs the same file), each answe
   }
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 34);
+  assert.equal(cases.length, 34, `the fixture holds ${cases.length} graph cases, serial 81 has 34`);
+});
+
+test('the fixture\'s graph tables, read back through the reader: flags, owner-only flags, edge reasons, declared links', () => {
+  const doc = loadFixture();
+  assert.deepEqual(doc.graph_flags, ['rooms', 'hidden', 'proposed', 'map_space']);
+  const empty = { elements: [] };
+  for (const f of doc.graph_flags) {
+    const opt = { [KEY[f] ?? f]: true };
+    assert.doesNotThrow(() => worldGraph(empty, { rung: 'owner' }, opt), f);
+    const asked = () => worldGraph(empty, { rung: 'contributor' }, opt);
+    if (doc.owner_only_flags.includes(f)) assert.throws(asked, /owner's alone/, f);
+    else assert.doesNotThrow(asked, f);
+    assert.throws(() => worldGraph(empty, { rung: 'public' }, opt), TypeError, f);
+  }
+  const reasons = new Set(doc.edges_cut_reasons);
+  for (const c of loadCases()) for (const k of Object.keys(c.want.edges_cut ?? {})) assert.ok(reasons.has(k), `${c.name}: ${k}`);
+  for (const f of doc.graph_links) {
+    const g = worldGraph({ elements: [{ id: 'a', type: 'construct', name: 'A', [f]: ['b'] }, { id: 'b', type: 'construct', name: 'B' }] }, { rung: 'owner' });
+    assert.deepEqual(g.edges, [{ source: 'a', field: f, target: 'b', index: 0 }], f);
+  }
+  const other = worldGraph({ elements: [{ id: 'a', type: 'construct', name: 'A', x_other_links: ['b'] }, { id: 'b', type: 'construct', name: 'B' }] }, { rung: 'owner' });
+  assert.deepEqual(other.edges, []);
 });
 
 test('a refused flag is refused before anything is read', () => {
