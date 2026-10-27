@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.92.0] - 2026-10-27
+
 ### Added
 
 - **The server's lens routes.** `setMyLenses(lensIds)`: `PUT /me/lenses`, the lenses this key's holder starts with, lens ids in order (0 to 20, `[]` for none, which is a choice); a world write key with its PIN, answering GET /me's body as `OwMe`; no `X-OW-Agent` or `X-OW-Client`, which the document declares on neither; an account token, or anything but a list, is a TypeError before sending. `worldLenses(worldId, { resolve, readAs })`: `GET /world/{world_id}/lenses`, every lens in the world this key can see with its recipe echoed, the Titles it is the default for and whether this key chose it, `resolve: true` adding each lens's `reading` and `readAs` (the owner only, with `resolve`) reading as another reader; a read, so no PIN; typed `OwWorldLenses` (`data: OwWorldLens[]`, `read_as`), its reading `OwWorldLensReading`; `resolve` is true or false, and an account token is a TypeError before sending.
@@ -13,6 +15,7 @@ earlier history lives in git log only.
 
 ### Changed
 
+- **Schema repinned to schema-dist `v0.33.0-dist.80`** (from dist.79; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'` and no element field moved). Serial 80 writes the lens profile's five rulings into its page and adds four lens cases, 88 in all; `resolveLens` already answers every one, so the reader is unchanged.
 - **`x_served_trimmed` is documented on a lens too**: keel now serves the mark on a Construct, a lens whose hidden anchors were left out, naming those anchor fields, then `notes`. `OwElementBase`'s comment said it rode only a message; the generator's text now names both, and nothing else changes (the SDK never strips the mark from a body it is given, on any type).
 
 ### Not added
