@@ -505,9 +505,31 @@ test('setMyLenses sends PUT /me/lenses with the ids in order and the PIN, no age
   assert.deepEqual(JSON.parse(b.init.body), { lenses: [] });
   await assert.rejects(client.setMyLenses('l1'), (e) => e instanceof TypeError && /list of lens ids/.test(e.message));
   assert.equal(fetchImpl.calls.length, 2, 'a refused list sends nothing');
-  const acct = makeClient({ status: 200, body: me }, { apiKey: 'ow_a_test' });
-  await assert.rejects(acct.client.setMyLenses(['l1']), (e) => e instanceof TypeError && /world key/.test(e.message));
-  assert.equal(acct.fetchImpl.calls.length, 0);
+});
+
+test('setMyLenses on an account token: the Bearer and world=<id> from the client\'s world, no API-Key or PIN; without world a TypeError before sending', async () => {
+  const me = { world: { id: 'w 1', name: 'W' }, kind: 'person', role: 'contributor', membership: 'm1', character: null, lenses: ['l1'] };
+  const acct = makeClient({ status: 200, body: me }, { apiKey: 'ow_a_test', world: 'w 1', agent: true, client: 'atlas' });
+  assert.deepEqual(await acct.client.setMyLenses(['l1']), me);
+  const [a] = acct.fetchImpl.calls;
+  assert.equal(a.init.method, 'PUT');
+  const u = new URL(a.url);
+  assert.equal(u.pathname, '/api/v2/me/lenses');
+  assert.deepEqual(Object.fromEntries(u.searchParams), { world: 'w 1' });
+  assert.deepEqual(JSON.parse(a.init.body), { lenses: ['l1'] });
+  assert.deepEqual(Object.keys(a.init.headers).sort(), ['Authorization', 'Content-Type']);
+  assert.equal(a.init.headers.Authorization, 'Bearer ow_a_test');
+  await assert.rejects(acct.client.setMyLenses('l1'), (e) => e instanceof TypeError && /list of lens ids/.test(e.message));
+  assert.equal(acct.fetchImpl.calls.length, 1, 'a refused list sends nothing');
+  // no world on the client: refused before sending, and the message says to set it
+  const bare = makeClient({ status: 200, body: me }, { apiKey: 'ow_a_test' });
+  await assert.rejects(bare.client.setMyLenses(['l1']), (e) => e instanceof TypeError
+    && /names the world it sends to with `world`: set it/.test(e.message) && /Nothing was sent/.test(e.message));
+  assert.equal(bare.fetchImpl.calls.length, 0);
+  // a keyless client with world set holds no credential: refused as every other write
+  const keyless = makeClient({ status: 200, body: me }, { apiKey: undefined, apiPin: undefined, world: 'w1' });
+  await assert.rejects(keyless.client.setMyLenses(['l1']), (e) => e instanceof TypeError && /needs a key/.test(e.message));
+  assert.equal(keyless.fetchImpl.calls.length, 0);
 });
 
 test('worldLenses sends GET /world/{id}/lenses with resolve and read_as, no PIN on the read, and returns the answer whole', async () => {
@@ -528,8 +550,60 @@ test('worldLenses sends GET /world/{id}/lenses with resolve and read_as, no PIN 
   await assert.rejects(client.worldLenses('w1', { resolve: 'yes' }), (e) => e instanceof TypeError && /resolve is true or false/.test(e.message));
   await assert.rejects(client.worldLenses('w1', { read_as: 'guest' }), (e) => e instanceof TypeError && /unknown parameter 'read_as'/.test(e.message));
   assert.equal(fetchImpl.calls.length, 3, 'a refused option sends nothing');
-  const acct = makeClient({ status: 200, body: answer }, { apiKey: 'ow_a_test' });
-  await assert.rejects(acct.client.worldLenses('w1'), (e) => e instanceof TypeError && /world key/.test(e.message));
+});
+
+test('worldLenses on an account token: the Bearer alone, the world in the path, no world= with or without the client\'s world', async () => {
+  const answer = { data: [] };
+  for (const cfg of [{ apiKey: 'ow_a_test' }, { apiKey: 'ow_a_test', world: 'other' }]) {
+    const acct = makeClient({ status: 200, body: answer }, cfg);
+    assert.deepEqual(await acct.client.worldLenses('w 1', { resolve: true }), answer);
+    const [a] = acct.fetchImpl.calls;
+    assert.equal(a.init.method, 'GET');
+    const u = new URL(a.url);
+    assert.equal(u.pathname, '/api/v2/world/w%201/lenses');
+    assert.deepEqual(Object.fromEntries(u.searchParams), { resolve: 'true' }, JSON.stringify(cfg));
+    assert.deepEqual(Object.keys(a.init.headers), ['Authorization'], 'the Bearer alone');
+    assert.equal(a.init.headers.Authorization, 'Bearer ow_a_test');
+  }
+});
+
+test('setMemberLenses sends PATCH /account/worlds/{id}/members/{id} with { lenses } alone and the Bearer; refuses a world key and a non-list before sending', async () => {
+  const row = { id: 'm1', username: null, role: 'guest', kind: 'agent', lenses: ['l2', 'l1'], x_served_trimmed: ['lenses'] };
+  const acct = makeClient({ status: 200, body: row }, { apiKey: 'ow_a_test', agent: true, client: 'atlas' });
+  assert.deepEqual(await acct.client.setMemberLenses('w 1', 'm/1', ['l2', 'l1']), row);
+  await acct.client.setMemberLenses('w1', 'owner', []);
+  const [a, b] = acct.fetchImpl.calls;
+  assert.equal(a.init.method, 'PATCH');
+  const u = new URL(a.url);
+  assert.equal(u.pathname, '/api/v2/account/worlds/w%201/members/m%2F1');
+  assert.equal(u.search, '');
+  assert.equal(a.init.body, JSON.stringify({ lenses: ['l2', 'l1'] }), 'exactly { lenses }');
+  assert.deepEqual(Object.keys(a.init.headers).sort(), ['Authorization', 'Content-Type'], 'the Bearer, no key, PIN, agent or client header');
+  assert.equal(a.init.headers.Authorization, 'Bearer ow_a_test');
+  assert.equal(new URL(b.url).pathname, '/api/v2/account/worlds/w1/members/owner');
+  assert.equal(b.init.body, JSON.stringify({ lenses: [] }));
+  for (const bad of ['l1', null, undefined, { 0: 'l1' }]) {
+    await assert.rejects(acct.client.setMemberLenses('w1', 'm1', bad),
+      (e) => e instanceof TypeError && /setMemberLenses: lensIds is a list of lens ids/.test(e.message) && /Nothing was sent/.test(e.message), String(bad));
+  }
+  assert.equal(acct.fetchImpl.calls.length, 2, 'a refused list sends nothing');
+  for (const apiKey of ['ow_w_test', 'ow_r_test', '0123456789']) {
+    const world = makeClient({ status: 200, body: row }, { apiKey });
+    await assert.rejects(world.client.setMemberLenses('w1', 'm1', ['l1']),
+      (e) => e instanceof TypeError && /setMemberLenses needs an account token \(ow_a_\)/.test(e.message), apiKey);
+    assert.equal(world.fetchImpl.calls.length, 0, `${apiKey}: nothing sent`);
+  }
+  const keyless = makeClient({ status: 200, body: row }, { apiKey: undefined, apiPin: undefined });
+  await assert.rejects(keyless.client.setMemberLenses('w1', 'm1', ['l1']), TypeError);
+  assert.equal(keyless.fetchImpl.calls.length, 0);
+});
+
+test('request(): accountToken is \'path\' or \'world\', anything else a TypeError before sending', async () => {
+  const acct = makeClient({ status: 200, body: {} }, { apiKey: 'ow_a_test', world: 'w1' });
+  for (const bad of [true, 'query', 1]) {
+    await assert.rejects(acct.client.request('GET', '/world/w1/lenses', { accountToken: bad }),
+      (e) => e instanceof TypeError && /accountToken is 'path' or 'world'/.test(e.message), String(bad));
+  }
   assert.equal(acct.fetchImpl.calls.length, 0);
 });
 

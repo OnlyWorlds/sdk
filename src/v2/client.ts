@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwWorldLenses,
-  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountMember, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
   OwWorldProposalList, OwReviewInput, OwReviewed, OwCreateAccountWorldInput, OwCreatedAccountWorld,
@@ -130,16 +130,15 @@ export class OwV2Client {
    * on the owner's keys the owner's own; answers GET /me's body. The draught reads the list whenever it
    * is given no lens and no policy. 404 for a lens this key cannot see; 422 `not_a_lens`,
    * `lens_is_template` or `lens_hidden` (`param` lenses); 403 for a read key. A lens only narrows what
-   * the holder may already read. A world key's call; an account token is a TypeError before sending.
+   * the holder may already read. An account token sets your own list in the world the client's
+   * `world` names (`world=<id>`, the Bearer token, no PIN); without `world` set it is a TypeError
+   * before sending. A world key sends no `world`: the key names its world.
    */
   async setMyLenses(lensIds: string[]): Promise<OwMe> {
-    if (this.keyKind === 'account') {
-      throw new TypeError('setMyLenses needs a world key: an account token is not a member of one world');
-    }
     if (!Array.isArray(lensIds)) {
       throw new TypeError('setMyLenses: lensIds is a list of lens ids ([] for none). Nothing was sent.');
     }
-    return this.request('PUT', '/me/lenses', { body: { lenses: lensIds } }) as Promise<OwMe>;
+    return this.request('PUT', '/me/lenses', { accountToken: 'world', body: { lenses: lensIds } }) as Promise<OwMe>;
   }
 
   /**
@@ -150,19 +149,17 @@ export class OwV2Client {
    * of what a reader cannot see; with `resolve`, the owner may `readAs` another reader (`guest`,
    * `contributor`, `co-builder`, `public`, or a membership id of this world): 403
    * `read_as_owner_only` from any other key, 422 without `resolve`. `worldId` is the key's own world
-   * (another is a 404). A world key's call; an account token is a TypeError before sending. Served
+   * (another is a 404). An account token reads the world `worldId` names, as its owner or as its
+   * member there: the Bearer token alone, no `world=` (the client's `world` is not needed). Served
    * `Cache-Control: private, no-store`.
    */
   async worldLenses(worldId: string, opts: { resolve?: boolean; readAs?: string } = {}): Promise<OwWorldLenses> {
     only('worldLenses', opts, ['resolve', 'readAs']);
-    if (this.keyKind === 'account') {
-      throw new TypeError('worldLenses needs a world key: an account token is not a member of one world');
-    }
     if (opts.resolve !== undefined && typeof opts.resolve !== 'boolean') {
       throw new TypeError('worldLenses: resolve is true or false. Nothing was sent.');
     }
     const query = buildQuery({ resolve: opts.resolve, read_as: opts.readAs });
-    return this.request('GET', `/world/${encodeURIComponent(worldId)}/lenses`, { query }) as Promise<OwWorldLenses>;
+    return this.request('GET', `/world/${encodeURIComponent(worldId)}/lenses`, { query, accountToken: 'path' }) as Promise<OwWorldLenses>;
   }
 
   async me(): Promise<OwMe> {
@@ -1136,6 +1133,35 @@ export class OwV2Client {
     await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/seats/${encodeURIComponent(seatId)}`);
   }
 
+  /**
+   * PATCH /account/worlds/{worldId}/members/{memberId} with `lenses` alone -- set the lenses a row
+   * starts with: lens ids in order, 0 to 20, repeats dropped by keel; an empty list is a choice too.
+   * A member sets its own row (any role), an agent's or a player's seat it answers for (its sponsor),
+   * or any seat as a co-builder; the owner sets any seat, and its own list with `'owner'` as
+   * `memberId`. Any other row is a 404; the owner naming a person's row is a 422 (a person sets its
+   * own, with setMyLenses). Each id must be a lens of this world that you and the row's holder can
+   * both see: one either cannot see is the same 404, a Construct that is no lens 422 `not_a_lens`, a
+   * template 422 `lens_is_template`, a hidden lens 422 `lens_hidden` (`param` lenses); a lens already
+   * in the row's list is kept, hidden or not. A lens in the list that you cannot see stays at its
+   * place, outside the 20, and the answer's `lenses` is the list as you are shown it, with
+   * `x_served_trimmed` naming `lenses` when one was kept. keel's description gives the answer as
+   * `{id, role, kind, lenses}`, `id` null for the owner's own list. The body is `{ lenses }` and
+   * nothing else: a role, Character or sponsor change is not sent here. Needs the client's `ow_a_` token.
+   */
+  async setMemberLenses(worldId: string, memberId: string, lensIds: string[]): Promise<OwAccountMember> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('setMemberLenses needs an account token (ow_a_): a world key sets its own holder\'s list with setMyLenses');
+    }
+    if (!Array.isArray(lensIds)) {
+      throw new TypeError('setMemberLenses: lensIds is a list of lens ids ([] for none). Nothing was sent.');
+    }
+    return this.request(
+      'PATCH',
+      `/account/worlds/${encodeURIComponent(worldId)}/members/${encodeURIComponent(memberId)}`,
+      { body: { lenses: lensIds } },
+    ) as Promise<OwAccountMember>;
+  }
+
   // -- The hidden mark ------------------------------------------
 
   /**
@@ -1541,27 +1567,42 @@ export class OwV2Client {
        * that needs a credential, is a TypeError before sending.
        */
       worldRead?: boolean;
+      /**
+       * A route keel's document declares the account token on beside the world key (worldLenses,
+       * setMyLenses): an account client sends it with its Bearer token. `'path'`: the path names the
+       * world, and nothing is added. `'world'`: the world is named with `world=<id>`, added from the
+       * client's `world`, and an account client without `world` set is a TypeError before sending.
+       * A world key sends as without it; a keyless client is still refused.
+       */
+      accountToken?: 'path' | 'world';
     } = {},
   ): Promise<T> {
     only('request', opts, REQUEST_OPTION_KEYS);
     if (opts.ifMatch !== undefined && !(Number.isInteger(opts.ifMatch) && opts.ifMatch >= 0)) {
       throw new TypeError(`ifMatch must be a whole number (an element's change_seq), got ${String(opts.ifMatch)}`);
     }
+    if (opts.accountToken !== undefined && opts.accountToken !== 'path' && opts.accountToken !== 'world') {
+      throw new TypeError(`accountToken is 'path' or 'world', got ${JSON.stringify(opts.accountToken) ?? String(opts.accountToken)}. Nothing was sent.`);
+    }
     // The one rule for what an account token or no key may send, read from the request itself.
     const worldRead = opts.auth !== false && opts.worldRead === true && method.toUpperCase() === 'GET';
+    const accountToken = opts.auth !== false && this.keyKind === 'account' ? opts.accountToken : undefined;
     if (opts.auth !== false && this.keyKind === 'none' && !(worldRead && this.world !== undefined)) {
       throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin, redeemJoin and signInWithPassword work, and list, listAll, get and getWorld with \`world\` set`);
     }
     if (opts.auth !== false && this.keyKind === 'account' && !ACCOUNT_ROUTE.test(path)) {
-      if (!worldRead) {
-        throw new TypeError(`${method} ${path} needs a world key: an account token sends the /account routes, and with \`world\` set reads a world through list, listAll, get and getWorld only. Nothing was sent.`);
+      if (!worldRead && accountToken === undefined) {
+        throw new TypeError(`${method} ${path} needs a world key: an account token sends the /account routes, worldLenses and setMyLenses, and with \`world\` set reads a world through list, listAll, get and getWorld only. Nothing was sent.`);
       }
-      if (this.world === undefined) {
+      if (worldRead && this.world === undefined) {
         throw new TypeError(`${method} ${path}: an account token reads a world only with \`world\` set (new OwV2Client({ apiKey, world })), through list, listAll, get and getWorld. Nothing was sent.`);
+      }
+      if (accountToken === 'world' && this.world === undefined) {
+        throw new TypeError(`${method} ${path}: an account token names the world it sends to with \`world\`: set it (new OwV2Client({ apiKey, world })). Nothing was sent.`);
       }
     }
     let query = opts.query ?? '';
-    if (worldRead && this.world !== undefined) {
+    if ((worldRead || accountToken === 'world') && this.world !== undefined) {
       const world = `world=${encodeURIComponent(this.world)}`;
       query = query ? `${query}&${world}` : world;
     }
@@ -1922,6 +1963,7 @@ const LIST_FILTER_HINT = 'A wire filter (name, name__icontains, supertype, subty
 const REQUEST_OPTION_KEYS = [
   'query', 'body', 'idempotencyKey', 'auth', 'allowEmpty', 'replayAware', 'write', 'elementWrite',
   'proposable', 'ifMatch', 'ifNoneMatch', 'onEtag', 'signal', 'keepalive', 'worldRead',
+  'accountToken',
 ] as const;
 
 /** The account routes: /account and everything under it, which an account token sends with or without `world`. */

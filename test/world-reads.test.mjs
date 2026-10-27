@@ -270,8 +270,10 @@ test('request(), the escape hatch, on an account client: the rule is the request
 });
 
 // Every method of the client, by what it does on an account client with `world` set:
-// `read` sends world= and the Bearer, `account` sends the Bearer to an /account route, `open` sends no
-// credential, `local` sends nothing at all, `refused` is a TypeError before fetch is called.
+// `read` sends world= and the Bearer (the four reads, and setMyLenses, the one write that names its
+// world so), `path` sends the Bearer to a world route whose path names the world, without world=,
+// `account` sends the Bearer to an /account route, `open` sends no credential, `local` sends nothing
+// at all, `refused` is a TypeError before fetch is called.
 const storage = () => { const m = new Map(); return { get: (k) => m.get(k) ?? null, set: (k, v) => m.set(k, v), remove: (k) => m.delete(k) }; };
 const BYTES = new Uint8Array([1, 2, 3]);
 const METHODS = {
@@ -279,8 +281,8 @@ const METHODS = {
   getWorld: ['read', (c) => c.getWorld()],
   patchWorld: ['refused', (c) => c.patchWorld({ name: 'W' })],
   setMyCharacter: ['refused', (c) => c.setMyCharacter(null)],
-  setMyLenses: ['refused', (c) => c.setMyLenses([])],
-  worldLenses: ['refused', (c) => c.worldLenses(W)],
+  setMyLenses: ['read', (c) => c.setMyLenses([])],
+  worldLenses: ['path', (c) => c.worldLenses(W)],
   me: ['refused', (c) => c.me()],
   members: ['refused', (c) => c.members()],
   list: ['read', (c) => c.list('location')],
@@ -318,6 +320,7 @@ const METHODS = {
   listSeats: ['account', (c) => c.listSeats(W)],
   rekeySeat: ['account', (c) => c.rekeySeat(W, 's1')],
   removeSeat: ['account', (c) => c.removeSeat(W, 's1')],
+  setMemberLenses: ['account', (c) => c.setMemberLenses(W, 'owner', [])],
   hide: ['refused', (c) => c.hide('location', EL)],
   unhide: ['refused', (c) => c.unhide('location', EL)],
   listHidden: ['refused', (c) => c.listHidden()],
@@ -377,6 +380,9 @@ test('every client method on an account client with world set: it sends (an /acc
       assert.equal(headers.Authorization, 'Bearer ow_a_acct', `${name}: the Bearer`);
       if (kind === 'account') {
         assert.match(u.pathname, /^\/api\/v2\/account(\/|$)/, name);
+        assert.equal(u.searchParams.has('world'), false, `${name}: no world=`);
+      } else if (kind === 'path') {
+        assert.ok(u.pathname.includes(`/${W}/`), `${name}: the world in the path`);
         assert.equal(u.searchParams.has('world'), false, `${name}: no world=`);
       } else {
         assert.equal(u.searchParams.get('world'), W, `${name}: world=`);

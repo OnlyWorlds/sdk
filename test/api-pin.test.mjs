@@ -38,7 +38,7 @@ function recorder() {
 
 // `pin`: whether a prefixed world key with a PIN sends it. `who`: which clients may call it
 // (`world` for a world key only, `account` for an account token only, `any` for both: the reads an
-// account token sends with `world` set).
+// account token sends with `world` set, and the two lens routes it also sends).
 const CALLS = [
   // reads
   { name: 'list', verb: 'GET', pin: false, who: 'any', run: (c) => c.list('location') },
@@ -49,7 +49,7 @@ const CALLS = [
   { name: 'draught', verb: 'GET', pin: false, who: 'world', run: (c) => c.draught(EL) },
   { name: 'worldProposals', verb: 'GET', pin: false, who: 'world', run: (c) => c.worldProposals() },
   { name: 'listProposals', verb: 'GET', pin: false, who: 'world', run: (c) => c.listProposals('location', EL) },
-  { name: 'worldLenses', verb: 'GET', pin: false, who: 'world', run: (c) => c.worldLenses('w1', { resolve: true }) },
+  { name: 'worldLenses', verb: 'GET', pin: false, who: 'any', run: (c) => c.worldLenses('w1', { resolve: true }) },
   { name: 'draught (lens)', verb: 'GET', pin: false, who: 'world', run: (c) => c.draught(EL, { lens: EL }) },
   // the one read keel checks a PIN on
   { name: 'me', verb: 'GET', pin: true, who: 'world', run: (c) => c.me() },
@@ -63,8 +63,9 @@ const CALLS = [
   { name: 'unhide', verb: 'DELETE', pin: true, who: 'world', run: (c) => c.unhide('location', EL) },
   { name: 'propose', verb: 'POST', pin: true, who: 'world', run: (c) => c.propose('location', EL, { fields: { description: 'x' }, evidence: 'seen' }) },
   { name: 'patchWorld', verb: 'PATCH', pin: true, who: 'world', run: (c) => c.patchWorld({ name: 'W' }) },
-  { name: 'setMyLenses', verb: 'PUT', pin: true, who: 'world', run: (c) => c.setMyLenses([EL]) },
+  { name: 'setMyLenses', verb: 'PUT', pin: true, who: 'any', run: (c) => c.setMyLenses([EL]) },
   { name: 'createSeat', verb: 'POST', pin: true, who: 'account', run: (c) => c.createSeat('w1', { name: 'bot' }) },
+  { name: 'setMemberLenses', verb: 'PATCH', pin: true, who: 'account', run: (c) => c.setMemberLenses('w1', 'owner', [EL]) },
   { name: 'createAccountWorld', verb: 'POST', pin: true, who: 'account', run: (c) => c.createAccountWorld({ name: 'W' }) },
   { name: 'reviewNewElement', verb: 'POST', pin: true, who: 'world', run: (c) => c.reviewNewElement('location', EL, { decision: 'accept' }) },
 ];

@@ -75,6 +75,11 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   for (`my_seats`, since 4.82.0: `{ id, kind, name, character }`, agent seats first), and the
   world's Charter with up to five skill Objects: an agent reads `charter` first. `client.members()` is the roster's rows. An
   account token is a TypeError.
+- Lenses chosen (a world key, or an account token): `worldLenses(worldId, { resolve })` lists the
+  world's lenses; `setMyLenses(lensIds)` sets the ones you start with (an account token needs the
+  client's `world`). With an account token, `setMemberLenses(worldId, memberId, lensIds)` sets a
+  row's list: your own, a seat you answer for, or the owner's own with `'owner'`; it returns an
+  `OwAccountMember`.
 - Signing in (no key needed): `new OwV2Client().signInWithPassword({ email, password,
   tokenName })` (or `username`) mints an `ow_a_` account token named for the device and ends
   the sign-in session; only the token comes back. Refusals: `OwSignInError` with `reason`

@@ -1138,6 +1138,46 @@ export interface OwSeat {
   [k: string]: unknown;
 }
 
+/**
+ * A member's row as the account routes answer it (keel's `AccountMember`): setMemberLenses returns
+ * it. `id`, `username` and `role` are required by the schema; the rest may be absent or null.
+ */
+export interface OwAccountMember {
+  /** The membership; DELETE or PATCH it by this id. */
+  id: string;
+  /** The member's username; null for an agent seat. */
+  username: string | null;
+  /** co_builder, contributor or guest. */
+  role: OwMemberRole;
+  /** ISO 8601, UTC; or null. */
+  joined_at?: string | null;
+  /** ISO 8601, UTC; or null. */
+  last_active?: string | null;
+  /** The Character this row plays, or null. One Character can be on two rows: a member's own, and the seat of their AI made with character mine. */
+  roster_character?: string | null;
+  /** `agent` on an agent seat's row, `player` on a player seat's (no account, read only, a guest); absent on a person's. */
+  kind?: string | null;
+  /** An agent seat's own name. */
+  agent_name?: string | null;
+  /** A player seat's own name. */
+  name?: string | null;
+  /** An agent seat from an email invite: the address you typed, never which account it matched; else empty. Cleared when you hand the seat to a member (sponsor on PATCH). */
+  for_email?: string | null;
+  /** An agent seat's sponsor, the person who answers for it: their username when they are you or a member of this world; null for a seat from an email invite (the account behind an address stays hidden) or a sponsor who has left. */
+  sponsor?: string | null;
+  /** An agent seat only: true when the owner gave this seat its Character, or its sponsor could change it; then the seat may change, never delete, that Character. False says only that no such grant is held: a co-builder seat changes everything, and any seat changes what it made. Absent on a person's row. */
+  may_change_character?: boolean | null;
+  /** An agent's or a player's seat: the lenses it chose, lens ids in its order; empty for none, which is a choice. The draught reads them for the seat. Absent on a person's row (a person sets its own with setMyLenses). */
+  lenses?: string[] | null;
+  /**
+   * Served only, never written: present only on the answer to `lenses` sent alone, when `lenses`
+   * was served with a lens left out, one you cannot see, which stays in the list where it stands;
+   * then it names `lenses`.
+   */
+  x_served_trimmed?: 'lenses'[] | null;
+  [k: string]: unknown;
+}
+
 /** POST /account/worlds/{id}/seats's answer: the seat, its key and secret, shown in this answer only. */
 export interface OwSeatCreated {
   world: { id: string; name: string; [k: string]: unknown };
@@ -1396,10 +1436,11 @@ export interface OwClientConfig {
    * A world's id, for a client that holds an account token (`ow_a_`) or no key. `list`, `listAll`,
    * `get` and `getWorld` then read that world, sending `world=<id>`: an account token reads it as
    * that account's own access there (the owner the whole world, a member its member key's view,
-   * anyone else the public view), and no key reads it as the public does. Read only: on such a
-   * client every other world call is a TypeError before sending; the account calls work as
-   * without it. Given with a world key, or as anything but a non-empty string, it is a TypeError
-   * when the client is constructed.
+   * anyone else the public view), and no key reads it as the public does. An account token also
+   * sets its own lenses there with `setMyLenses` (`world=<id>`), the one write it names. On such a
+   * client every other world call is a TypeError before sending; the account calls and
+   * `worldLenses` (the world in its path) work as without it. Given with a world key, or as
+   * anything but a non-empty string, it is a TypeError when the client is constructed.
    */
   world?: string;
 }
