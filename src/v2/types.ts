@@ -1009,6 +1009,8 @@ export interface OwMintedKey {
   revoked: boolean;
   key: string;
   member?: Record<string, unknown>;
+  /** True when minted with `keep: true`: no revoke of the token that minted it takes it (a sign-out keeps it). */
+  kept?: boolean;
 }
 
 export interface OwSeat {

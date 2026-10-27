@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.90.0] - 2026-10-27
+
+### Added
+
+- **`mintWorldKey(worldId, { keep: true })`**: the key is kept across a sign-out, so revoking the token that minted it leaves it live, for a tool that stores a key on the device; disconnecting the tool, or a replayed sign-in code, still takes it. `OwMintedKey.kept` says so. Without `keep`, revoking a token revokes the keys it minted unless the tool holds another live token of its own; a token made by hand, or one of a tool that asks each time, never takes its keys. A `keep` that is not true or false is a TypeError before anything is sent.
+
 ## [4.89.1] - 2026-10-27
 
 ### Fixed

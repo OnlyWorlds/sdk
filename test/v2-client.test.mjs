@@ -511,6 +511,13 @@ test('listAccountWorlds and mintWorldKey need an account token and send the docu
   assert.deepEqual(JSON.parse(bf.calls[0].init.body), { scope: 'read', name: 'parlor' });
   await b.mintWorldKey('w1');
   assert.deepEqual(JSON.parse(bf.calls[1].init.body), {});
+  // keep: sent as given, true or false; absent when not given; anything else refused before sending.
+  await b.mintWorldKey('w1', { scope: 'read', keep: true });
+  assert.deepEqual(JSON.parse(bf.calls[2].init.body), { scope: 'read', keep: true });
+  await b.mintWorldKey('w1', { keep: false });
+  assert.deepEqual(JSON.parse(bf.calls[3].init.body), { keep: false });
+  await assert.rejects(b.mintWorldKey('w1', { keep: 'yes' }), (e) => e instanceof TypeError && /keep is true or false/.test(e.message));
+  assert.equal(bf.calls.length, 4, 'the refused keep sent nothing');
 });
 
 test('draught sends the seven policy keys to /character/{id}/context; list sends ids and created_by', async () => {
