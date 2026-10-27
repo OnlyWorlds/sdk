@@ -50,6 +50,9 @@ export type { OwProposedMark } from './review';
 // reader agrees on.
 export { isLens, isTemplate, lensesInUse, resolveLens } from './lens';
 export type { OwLensReader, OwLensWorld, OwLensOptions, OwLensReading, OwLensMail, OwLensCutReason } from './lens';
+// The lens profile's graph section: a reading of a world as nodes and edges, for the same reader.
+export { worldGraph } from './graph';
+export type { OwGraphOptions, OwGraphMark, OwGraphCutReason, OwGraphNode, OwGraphEdge, OwWorldGraph } from './graph';
 // The names profile (schema-dist profiles/names.md): a world's own words for the types, x_names on the World.
 export { typeWord } from './names';
 export type { OwNamesMap, OwWordPair } from './names';

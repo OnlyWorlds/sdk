@@ -18,7 +18,7 @@ import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
   preparePhoto, parseDate, resolveCalendar, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
   isToEveryone, hasUnseenRecipients,
-  elementAddress, resolveLens,
+  elementAddress, resolveLens, worldGraph,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
 
@@ -101,6 +101,7 @@ const FENCED = {
   // The address is data with a closed set of keys: a misspelt `world` would write an address inside a world.
   'elementAddress#0': () => elementAddress({ form: 'text', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f', ...U }),
   'resolveLens#3': () => resolveLens({ elements: [] }, { type: 'construct', supertype: 'Lens', name: 'L' }, { rung: 'owner' }, U),
+  'worldGraph#2': () => worldGraph({ elements: [] }, { rung: 'owner' }, U),
 };
 
 /** The object parameters that are not options: data a caller hands over, by nature open or required. */
@@ -127,6 +128,8 @@ Object.assign(DATA, {
   'draughtText#0': 'a draught body, as draught() returns it',
   'resolveLens#0': 'the world snapshot: its elements, hidden ids and members',
   'resolveLens#2': 'the reader: its rung, Character and slice',
+  'worldGraph#0': 'the world snapshot, as resolveLens takes it',
+  'worldGraph#1': 'the reader, as resolveLens takes it',
 });
 
 /** Run a call that may throw, return a promise, or return an iterator; hand back what it threw. */
@@ -167,6 +170,7 @@ test('the fenced calls work without the unknown key: a refusal is the key, not t
   assert.equal(readWorldFile(writeWorldFile([worldJson], 'w'), { maxBytes: 1e6 }).worldId, 'w');
   assert.equal(new OwSignInError('failed', 'm', { status: 500 }).status, 500);
   assert.deepEqual(resolveLens({ elements: [] }, { type: 'construct', supertype: 'Lens', name: 'L' }, { rung: 'owner' }, { asOf: 1, clock: '2026-10-27T12:00:00Z' }).cut, {});
+  assert.deepEqual(worldGraph({ elements: [] }, { rung: 'owner' }, { lens: null, asOf: 1, clock: '2026-10-27T12:00:00Z', rooms: true, hidden: true, proposed: true, mapSpace: true }).nodes, []);
 });
 
 test('every exported object parameter is fenced or named as data (a static read of src/index.ts with the TypeScript checker)', () => {

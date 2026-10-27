@@ -407,6 +407,15 @@ if (r.unreadable) console.warn(`x_lens.${r.unreadable} is outside the profile's 
 
 The world holds the elements as the owner is served them; the reader's `rung` (`owner`, `contributor`, `guest` with its `whole` and `known_of` ids, `public`) decides what it sees, and an owner reading `as` another reader keeps the owner's two counts (`anchor_not_visible`, `not_visible`), which no other reader ever carries. The profile: [`profiles/lens.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/lens.md).
 
+`worldGraph(world, reader, options)` reads the same snapshot, for the same reader, as nodes and edges: `nodes` (`{ id, type, name, family, icon }`, by id), `edges` (`{ source, field, target, index }`, one per link, by source, field and index), `edgesCut` (links to elements that are not nodes, by reason) and `cut`. Room elements, hidden and proposed ones and map space are out unless `rooms`, `hidden`, `proposed` or `mapSpace` brings them back (`hidden` and `proposed` are the owner's alone, and a public reader takes no flag); with `{ lens }` the nodes are exactly what the lens kept.
+
+```typescript
+import { worldGraph } from '@onlyworlds/sdk';
+
+const g = worldGraph({ elements }, { rung: 'owner' }, { rooms: true });
+g.nodes; g.edges; g.edgesCut; // e.g. { map_space: 2, hidden: 1 }
+```
+
 ### A world's own words for the types
 
 A world may carry `x_names` on the World: its own word for a type (Character shown as *Employee* in a work world), and a finer word for a supertype inside one. `typeWord(world, type, { supertype, many })` returns that word, or `null` for the standard's name. `world` is a `getWorld()` body (keel serves `x_` keys on the World) or a folder's `world.json`. The API, the folder, the schema and every id keep the standard's names; the word is for display only.

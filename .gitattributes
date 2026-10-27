@@ -4,3 +4,5 @@ test/fixtures/draught-text/** -text
 test/fixtures/message-edges.json -text
 # The lens reader's shared edge cases, the same bytes as the Python package's copy (both tests hold its sha256).
 test/fixtures/lens-edges.json -text
+# The graph reader's shared edge cases, the same bytes as the Python package's copy (both tests hold its sha256).
+test/fixtures/graph-edges.json -text

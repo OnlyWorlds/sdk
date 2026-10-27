@@ -123,17 +123,19 @@ const DATE_FIELD: Readonly<Record<string, string>> = {
   collective: 'formation_date', law: 'date', title: 'grant_date', construct: 'start_date', event: 'start_date',
   narrative: 'start_date', relation: 'start_date', zone: 'start_date',
 };
-const CUT_REASONS: readonly OwLensCutReason[] = [
+/** The cut reasons in the profile's order (module-internal; the graph reader counts by them too). */
+export const CUT_REASONS: readonly OwLensCutReason[] = [
   'budget', 'types', 'window', 'undated', 'after_as_of', 'anchor_not_visible', 'not_visible', 'hops_not_served',
 ];
-const OWNER_ONLY: ReadonlySet<string> = new Set(['anchor_not_visible', 'not_visible']);
+/** The reasons only the owner is told (module-internal). */
+export const OWNER_ONLY: ReadonlySet<string> = new Set(['anchor_not_visible', 'not_visible']);
 const ROOM_KEYS: ReadonlySet<string> = new Set(ROOM_PAIRS.map(p => `${fold(p.type)}/${fold(p.supertype)}`));
 const MAIL_SECONDS = 30 * 86400;
 /** What a known-of stub serves beside its type's public fields (never a link, never a date). */
 const STUB_FIELDS: readonly string[] = ['id', 'type', 'name', 'description', 'supertype', 'subtype', 'image_url', 'created_at', 'updated_at'];
 
-/** Each type's link fields in the schema's order, and whether each is a list. */
-const LINK_FIELDS: ReadonlyMap<string, ReadonlyArray<readonly [string, boolean]>> = new Map(
+/** Each type's link fields in the schema's order, and whether each is a list (module-internal). */
+export const LINK_FIELDS: ReadonlyMap<string, ReadonlyArray<readonly [string, boolean]>> = new Map(
   Object.entries(FIELD_SCHEMA as Record<string, Record<string, { type: string }>>).map(([type, fields]) => [
     type,
     Object.entries(fields)
@@ -142,14 +144,14 @@ const LINK_FIELDS: ReadonlyMap<string, ReadonlyArray<readonly [string, boolean]>
   ]),
 );
 
-const isBody = (v: unknown): v is Body => typeof v === 'object' && v !== null && !Array.isArray(v);
+export const isBody = (v: unknown): v is Body => typeof v === 'object' && v !== null && !Array.isArray(v);
 const own = (v: Body, key: string): boolean => Object.prototype.hasOwnProperty.call(v, key);
-const valueOf = (v: Body, key: string): unknown => (own(v, key) && v[key] !== undefined ? v[key] : null);
+export const valueOf = (v: Body, key: string): unknown => (own(v, key) && v[key] !== undefined ? v[key] : null);
 /** A whole number, or null: a number with no fraction (never a boolean or a string). */
-const whole = (v: unknown): number | null => (typeof v === 'number' && Number.isInteger(v) ? v : null);
+export const whole = (v: unknown): number | null => (typeof v === 'number' && Number.isInteger(v) ? v : null);
 
 /** Strings by code point, as the Python package compares them (never UTF-16 units, never a locale). */
-function byCodePoint(a: string, b: string): number {
+export function byCodePoint(a: string, b: string): number {
   const x = Array.from(a);
   const y = Array.from(b);
   const n = Math.min(x.length, y.length);
@@ -257,14 +259,20 @@ function readRecipe(raw: unknown): { recipe: Recipe } | { bad: string } {
   };
 }
 
-/** One reading's world: every element by id, what this reader sees, and the bodies it is served. */
-class Reading {
+/** One reading's world: every element by id, what this reader sees, and the bodies it is served (module-internal). */
+export class Reading {
   readonly byId = new Map<string, Body>();
   readonly typeOf = new Map<string, string>();
   readonly order: string[] = [];
   readonly view = new Set<string>();
   readonly stubs = new Set<string>();
   readonly room = new Set<string>();
+  /** The ids under the hidden mark: the world's `hidden` list and each element's own `hidden`. */
+  readonly hidden = new Set<string>();
+  /** The ids written as proposed, which no reader's view holds. */
+  readonly proposed = new Set<string>();
+  /** The rung whose view is read: the reader's own, or on an owner the rung of the reader it reads `as`. */
+  readonly seenRung: OwLensReader['rung'];
   readonly owner: boolean;
   readonly character: string | null;
   readonly members: readonly OwMessageMember[] | null;
@@ -274,7 +282,7 @@ class Reading {
   private readonly inFull = new Map<string, string[]>();
 
   constructor(world: Body, reader: OwLensReader, asOf: number | null) {
-    const hidden = new Set<string>();
+    const hidden = this.hidden;
     if (Array.isArray(world.hidden)) for (const id of world.hidden) if (typeof id === 'string') hidden.add(id);
     for (const el of world.elements as unknown[]) {
       if (!isBody(el) || typeof el.id !== 'string' || el.id === '' || this.byId.has(el.id)) continue;
@@ -288,13 +296,17 @@ class Reading {
     }
     this.owner = reader.rung === 'owner';
     const seen = this.owner && reader.as != null ? reader.as : reader;
+    this.seenRung = seen.rung;
     this.character = typeof seen.character === 'string' && seen.character !== '' ? seen.character : null;
     const listed = (v: unknown): Set<string> => new Set(Array.isArray(v) ? v.filter((i): i is string => typeof i === 'string') : []);
     const wholeIds = listed(seen.whole);
     const knownOf = listed(seen.known_of);
     for (const id of this.order) {
       const el = this.byId.get(id) as Body;
-      if (handsOnAsProposed(el)) continue;
+      if (handsOnAsProposed(el)) {
+        this.proposed.add(id);
+        continue;
+      }
       let sees: boolean;
       switch (seen.rung) {
         case 'owner': sees = true; break;
@@ -588,7 +600,8 @@ function mailPart(r: Reading, mode: Mail, budget: number, clock: [number, number
 
 const NOTHING = (): OwLensReading => ({ kept: [], rows: [], cut: {}, notesIgnored: 0, mail: null, unreadable: null });
 
-function checkReader(reader: unknown, where: string): asserts reader is OwLensReader {
+/** Refuse a reader that is not an object with one of the four rungs (module-internal). */
+export function checkReader(reader: unknown, where: string): asserts reader is OwLensReader {
   if (!isBody(reader) || !['owner', 'contributor', 'guest', 'public'].includes(reader.rung as string)) {
     throw new TypeError(`${where}: a reader is an object whose rung is owner, contributor, guest or public; got ${JSON.stringify(reader) ?? String(reader)}.`);
   }
@@ -623,23 +636,38 @@ export function resolveLens(world: OwLensWorld, lens: object | string, reader: O
     throw new TypeError('resolveLens: world is an object with an elements list.');
   }
   checkReader(reader, 'resolveLens: reader');
-  const asOfV = valueOf(opts, 'asOf');
-  if (asOfV !== null && whole(asOfV) === null) throw new TypeError(`resolveLens: asOf is a whole number; got ${JSON.stringify(asOfV)}.`);
-  const clockV = valueOf(opts, 'clock');
-  if (clockV !== null && timeKey(clockV) === null) throw new TypeError(`resolveLens: clock is a date-time; got ${JSON.stringify(clockV)}.`);
+  const { asOf, clock } = readingDate('resolveLens', world as Body, opts);
   if (typeof lens !== 'string' && !isBody(lens)) throw new TypeError('resolveLens: lens is a lens body or its id.');
+  return lensReading(new Reading(world as Body, reader, asOf), lens, clock).reading;
+}
 
-  // The reading's date: asOf, else the world's now (the fixture's `now`, else the World's `time_current`).
-  // With none of them there is no fence, and the window cuts nothing.
+/**
+ * The reading's date and wall-clock time from the options, each refused when it is not one (module-internal):
+ * `asOf`, else the world's now (the fixture's `now`, else the World's `time_current`). With none of them there
+ * is no fence, and the window cuts nothing.
+ */
+export function readingDate(fn: string, world: Body, opts: Body): { asOf: number | null; clock: unknown } {
+  const asOfV = valueOf(opts, 'asOf');
+  if (asOfV !== null && whole(asOfV) === null) throw new TypeError(`${fn}: asOf is a whole number; got ${JSON.stringify(asOfV)}.`);
+  const clockV = valueOf(opts, 'clock');
+  if (clockV !== null && timeKey(clockV) === null) throw new TypeError(`${fn}: clock is a date-time; got ${JSON.stringify(clockV)}.`);
   const asOf = asOfV !== null ? (asOfV as number) : (whole((world as Body).now) ?? whole((world as Body).time_current));
-  const r = new Reading(world as Body, reader, asOf);
+  return { asOf, clock: clockV };
+}
+
+/**
+ * A lens read over one reading's world (module-internal): the reading `resolveLens` answers, and the reason
+ * each element it left out was cut, by id, before the counts drop the owner's two.
+ */
+export function lensReading(r: Reading, lens: object | string, clockV: unknown): { reading: OwLensReading; cutById: ReadonlyMap<string, OwLensCutReason> } {
+  const none = { reading: NOTHING(), cutById: new Map<string, OwLensCutReason>() };
   let body: Body | null;
   if (typeof lens === 'string') body = r.view.has(lens) ? (r.byId.get(lens) as Body) : null;
   else body = lens as Body;
-  if (body === null || !isLens(body)) return NOTHING();
+  if (body === null || !isLens(body)) return none;
   const read = readRecipe(body.x_lens);
-  if (!('recipe' in read)) return { ...NOTHING(), unreadable: read.bad };
-  if (isTemplate(body)) return NOTHING();
+  if (!('recipe' in read)) return { ...none, reading: { ...NOTHING(), unreadable: read.bad } };
+  if (isTemplate(body)) return none;
   const recipe = read.recipe;
 
   const visited = new Set<string>();
@@ -670,5 +698,5 @@ export function resolveLens(world: OwLensWorld, lens: object | string, reader: O
   }
   const { anchors } = anchorsOf(body, r);
   const notesIgnored = Object.keys(recipe.notes).filter(k => !anchors.includes(k)).length;
-  return { kept: keep.map(e => e.id), rows: keep.map(e => e.row), cut: counts, notesIgnored, mail, unreadable: null };
+  return { reading: { kept: keep.map(e => e.id), rows: keep.map(e => e.row), cut: counts, notesIgnored, mail, unreadable: null }, cutById: cut };
 }
