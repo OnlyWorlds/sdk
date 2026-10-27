@@ -41,13 +41,15 @@ export interface OwLensWorld {
   members?: readonly OwMessageMember[] | null;
   /** The world's now, in its own time unit: the default `as_of`. */
   now?: number | null;
+  /** The World's own now (its `time_current`), read when `now` is not given. */
+  time_current?: number | null;
 }
 
 /** `resolveLens`'s options. */
 export interface OwLensOptions {
-  /** The reading's date, a whole number in the world's time unit; absent: the world's `now`. */
+  /** The reading's date, a whole number in the world's time unit; absent: the world's now (`now`, else `time_current`); none at all: no fence, and the window cuts nothing. */
   asOf?: number | null;
-  /** The reading's time for the mail rule, a date-time; absent: now. */
+  /** The reading's wall-clock time for the mail rule's thirty days, a date-time; absent: the machine's time. Never the world's now. */
   clock?: string | null;
 }
 const LENS_OPTION_KEYS = ['asOf', 'clock'] as const;
@@ -627,7 +629,9 @@ export function resolveLens(world: OwLensWorld, lens: object | string, reader: O
   if (clockV !== null && timeKey(clockV) === null) throw new TypeError(`resolveLens: clock is a date-time; got ${JSON.stringify(clockV)}.`);
   if (typeof lens !== 'string' && !isBody(lens)) throw new TypeError('resolveLens: lens is a lens body or its id.');
 
-  const asOf = asOfV !== null ? (asOfV as number) : whole((world as Body).now);
+  // The reading's date: asOf, else the world's now (the fixture's `now`, else the World's `time_current`).
+  // With none of them there is no fence, and the window cuts nothing.
+  const asOf = asOfV !== null ? (asOfV as number) : (whole((world as Body).now) ?? whole((world as Body).time_current));
   const r = new Reading(world as Body, reader, asOf);
   let body: Body | null;
   if (typeof lens === 'string') body = r.view.has(lens) ? (r.byId.get(lens) as Body) : null;

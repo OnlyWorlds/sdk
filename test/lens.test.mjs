@@ -173,12 +173,13 @@ test('the fixture\'s tables, read back through the reader: pair, anchor fields, 
   assert.deepEqual(hop.kept, [id(1), id(2)]);
 });
 
-// The shared edge cases: inputs the fixture leaves open (a stub's links, the window's edge, a to after
+// The shared edge cases: inputs the fixture leaves open (a stub's links, the window's edge, the World's
+// time_current as its now, no window without a now, a to after
 // as_of, the fence on anchors, the members list in the mail rule, a message not repeated among the kept,
 // the thirty days' edge, ties by id by code point), the same file byte for byte as the Python package's
 // tests/fixtures/lens-edges.json (both suites hold its sha256), answers written by hand.
 const EDGES_FILE = fileURLToPath(new URL('./fixtures/lens-edges.json', import.meta.url));
-const EDGES_SHA256 = '79d1fd0de778b574eed82745e9b5fc013ad788b5ec4c73daec9125081febaa28';
+const EDGES_SHA256 = 'ee28a59302c6dd055bc9bfeac2f950233eb97e5eade67b3a3a2efbc53e560187';
 
 test('the shared edge cases (the Python package runs the same file)', async () => {
   const { createHash } = await import('node:crypto');
@@ -199,7 +200,7 @@ test('the shared edge cases (the Python package runs the same file)', async () =
   }
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
-  assert.equal(edges.length, 8);
+  assert.equal(edges.length, 10);
 });
 
 test('resolveLens refuses what is not a reading: a bad reader, world, lens, as_of or clock is a TypeError', () => {
