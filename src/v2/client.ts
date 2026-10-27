@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwWorldLenses,
-  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwAccountMember, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
   OwWorldProposalList, OwReviewInput, OwReviewed, OwCreateAccountWorldInput, OwCreatedAccountWorld,
@@ -1144,11 +1144,11 @@ export class OwV2Client {
    * template 422 `lens_is_template`, a hidden lens 422 `lens_hidden` (`param` lenses); a lens already
    * in the row's list is kept, hidden or not. A lens in the list that you cannot see stays at its
    * place, outside the 20, and the answer's `lenses` is the list as you are shown it, with
-   * `x_served_trimmed` naming `lenses` when one was kept. keel's description gives the answer as
-   * `{id, role, kind, lenses}`, `id` null for the owner's own list. The body is `{ lenses }` and
+   * `x_served_trimmed` naming `lenses` when one was kept. The answer is `{id, role, kind, lenses}`
+   * (keel's `MemberLenses`), `id` null and `role` and `kind` `owner` for the owner's own list. The body is `{ lenses }` and
    * nothing else: a role, Character or sponsor change is not sent here. Needs the client's `ow_a_` token.
    */
-  async setMemberLenses(worldId: string, memberId: string, lensIds: string[]): Promise<OwAccountMember> {
+  async setMemberLenses(worldId: string, memberId: string, lensIds: string[]): Promise<OwMemberLenses> {
     if (this.keyKind !== 'account') {
       throw new TypeError('setMemberLenses needs an account token (ow_a_): a world key sets its own holder\'s list with setMyLenses');
     }
@@ -1159,7 +1159,7 @@ export class OwV2Client {
       'PATCH',
       `/account/worlds/${encodeURIComponent(worldId)}/members/${encodeURIComponent(memberId)}`,
       { body: { lenses: lensIds } },
-    ) as Promise<OwAccountMember>;
+    ) as Promise<OwMemberLenses>;
   }
 
   // -- The hidden mark ------------------------------------------

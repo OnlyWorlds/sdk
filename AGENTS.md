@@ -79,7 +79,7 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   world's lenses; `setMyLenses(lensIds)` sets the ones you start with (an account token needs the
   client's `world`). With an account token, `setMemberLenses(worldId, memberId, lensIds)` sets a
   row's list: your own, a seat you answer for, or the owner's own with `'owner'`; it returns an
-  `OwAccountMember`.
+  `OwMemberLenses` (`{ id, role, kind, lenses }`, `id` null for the owner's own).
 - Signing in (no key needed): `new OwV2Client().signInWithPassword({ email, password,
   tokenName })` (or `username`) mints an `ow_a_` account token named for the device and ends
   the sign-in session; only the token comes back. Refusals: `OwSignInError` with `reason`

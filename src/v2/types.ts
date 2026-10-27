@@ -1139,42 +1139,23 @@ export interface OwSeat {
 }
 
 /**
- * A member's row as the account routes answer it (keel's `AccountMember`): setMemberLenses returns
- * it. `id`, `username` and `role` are required by the schema; the rest may be absent or null.
+ * setMemberLenses's answer (keel's `MemberLenses`): the row whose lenses were set, as you are shown it.
+ * Not the roster row: only these keys come back.
  */
-export interface OwAccountMember {
-  /** The membership; DELETE or PATCH it by this id. */
-  id: string;
-  /** The member's username; null for an agent seat. */
-  username: string | null;
-  /** co_builder, contributor or guest. */
+export interface OwMemberLenses {
+  /** The membership; null for the owner's own list (`'owner'` as the member id). */
+  id: string | null;
+  /** The row's role; `owner` for the owner's own list. */
   role: OwMemberRole;
-  /** ISO 8601, UTC; or null. */
-  joined_at?: string | null;
-  /** ISO 8601, UTC; or null. */
-  last_active?: string | null;
-  /** The Character this row plays, or null. One Character can be on two rows: a member's own, and the seat of their AI made with character mine. */
-  roster_character?: string | null;
-  /** `agent` on an agent seat's row, `player` on a player seat's (no account, read only, a guest); absent on a person's. */
-  kind?: string | null;
-  /** An agent seat's own name. */
-  agent_name?: string | null;
-  /** A player seat's own name. */
-  name?: string | null;
-  /** An agent seat from an email invite: the address you typed, never which account it matched; else empty. Cleared when you hand the seat to a member (sponsor on PATCH). */
-  for_email?: string | null;
-  /** An agent seat's sponsor, the person who answers for it: their username when they are you or a member of this world; null for a seat from an email invite (the account behind an address stays hidden) or a sponsor who has left. */
-  sponsor?: string | null;
-  /** An agent seat only: true when the owner gave this seat its Character, or its sponsor could change it; then the seat may change, never delete, that Character. False says only that no such grant is held: a co-builder seat changes everything, and any seat changes what it made. Absent on a person's row. */
-  may_change_character?: boolean | null;
-  /** An agent's or a player's seat: the lenses it chose, lens ids in its order; empty for none, which is a choice. The draught reads them for the seat. Absent on a person's row (a person sets its own with setMyLenses). */
-  lenses?: string[] | null;
+  /** `person`, `agent` or `player`; `owner` for the owner's own list. */
+  kind: string;
+  /** The row's lenses, lens ids in its order, as you are shown it; empty for none, which is a choice. */
+  lenses: string[];
   /**
-   * Served only, never written: present only on the answer to `lenses` sent alone, when `lenses`
-   * was served with a lens left out, one you cannot see, which stays in the list where it stands;
-   * then it names `lenses`.
+   * Served only, never written: present only when the list keeps a lens you cannot see, which stays
+   * in the list where it stands and is left out of `lenses`; then it names `lenses`.
    */
-  x_served_trimmed?: 'lenses'[] | null;
+  x_served_trimmed?: 'lenses'[];
   [k: string]: unknown;
 }
 

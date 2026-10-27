@@ -8,7 +8,7 @@ earlier history lives in git log only.
 ### Added
 
 - **`setMemberLenses(worldId, memberId, lensIds)`**: `PATCH /account/worlds/{world_id}/members/{member_id}` with `{ lenses }` alone, the lenses a row starts with, lens ids in order (0 to 20, `[]` for none, which is a choice). An account token's call: a member sets its own row, a seat it answers for, or any seat as a co-builder; the owner any seat, and its own list with `'owner'` as `memberId`. Nothing but `lenses` is sent. A world key, or anything but a list, is a TypeError before sending. keel's codes are the 404 for a lens you or the row's holder cannot see, 422 `not_a_lens`, `lens_is_template` and `lens_hidden`, and 422 when the owner names a person's row.
-- **`OwAccountMember`**: keel's `AccountMember` row, which `setMemberLenses` returns: `id`, `username` and `role`, and the optional `joined_at`, `last_active`, `roster_character`, `kind`, `agent_name`, `name`, `for_email`, `sponsor`, `may_change_character`, `lenses`, and `x_served_trimmed`, the served-only mark naming `lenses` when the list keeps a lens you cannot see.
+- **`OwMemberLenses`**: what `setMemberLenses` returns, keel's `MemberLenses`: `id` (null for the owner's own list), `role`, `kind` (`owner` for the owner's own list), `lenses` as you are shown it, and `x_served_trimmed`, the served-only mark naming `lenses` when the list keeps a lens you cannot see.
 
 ### Changed
 
