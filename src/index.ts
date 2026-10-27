@@ -37,7 +37,7 @@ export { ROOM_PAIRS, isRoomElement } from './room';
 // The message profile (schema-dist profiles/message.md): a message between a world's members, to whom
 // it is addressed, whether its sender is proved, a reader's read mark and unread list, a thread
 // (MESSAGE_PAIR generated from the vendored dist)
-export { MESSAGE_PAIR, isMessage, recipientsOf, isAddressedTo, isToEveryone, isSentBy, senderStatus, readMarkOf, unreadFor, threadOf } from './message';
+export { MESSAGE_PAIR, isMessage, recipientsOf, isAddressedTo, isToEveryone, hasUnseenRecipients, isSentBy, senderStatus, readMarkOf, unreadFor, threadOf } from './message';
 export type { OwSender, OwSenderStatus, OwMessageMember } from './message';
 // The review profile (schema-dist profiles/review.md): an element written as proposed, as a reader that
 // shows a world shows the mark, and as a reader that hands a world on leaves it out.

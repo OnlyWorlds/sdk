@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  MESSAGE_PAIR, ROOM_PAIRS, isMessage, recipientsOf, isAddressedTo, isToEveryone, isSentBy, senderStatus, readMarkOf, unreadFor, threadOf,
+  MESSAGE_PAIR, ROOM_PAIRS, isMessage, recipientsOf, isAddressedTo, isToEveryone, hasUnseenRecipients, isSentBy, senderStatus, readMarkOf, unreadFor, threadOf,
 } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/message.fixture.json', import.meta.url));
@@ -162,6 +162,24 @@ test('recipients keep their order and a malformed list is not everyone (the Pyth
   for (const characters of [ADA, [''], [5], [ADA]]) assert.equal(isToEveryone({ characters }), false, JSON.stringify(characters));
   for (const m of [{}, { characters: null }, { characters: [] }]) assert.equal(isToEveryone(m), true, JSON.stringify(m));
   assert.equal(isToEveryone(null), false);
+});
+
+test('a list the server trimmed (keel #746) is never everyone, and says someone unseen is addressed', () => {
+  const ADA = 'a1';
+  const trimmed = (characters, mark = ['characters']) => ({ characters, x_served_trimmed: mark });
+  // every recipient hidden: keel serves an empty list with the mark, which must not read as everyone
+  assert.equal(isToEveryone(trimmed([])), false);
+  assert.equal(hasUnseenRecipients(trimmed([])), true);
+  assert.equal(isAddressedTo(trimmed([]), ADA), false);
+  // some hidden: the reader's own id is still read as written
+  assert.equal(hasUnseenRecipients(trimmed([ADA])), true);
+  assert.equal(isAddressedTo(trimmed([ADA]), ADA), true);
+  // only the sender trimmed: the addressing is whole
+  assert.equal(hasUnseenRecipients(trimmed([], ['narrator'])), false);
+  assert.equal(isToEveryone(trimmed([], ['narrator'])), true);
+  for (const m of [{}, { characters: [] }, { x_served_trimmed: 'characters' }, { x_served_trimmed: null }, null]) {
+    assert.equal(hasUnseenRecipients(m), false, JSON.stringify(m));
+  }
 });
 
 test('the newest read mark wins wherever it stands in the list (the fixture lists it first)', () => {

@@ -116,12 +116,25 @@ export function isAddressedTo(message: object | null | undefined, characterId: s
 /**
  * True when the message is addressed to every member: its `characters` is absent, null or `[]`.
  * A list that names no valid id (`['']`) or a value that is not a list is addressed to nobody,
- * so it is false here, though `recipientsOf` gives `[]` for both.
+ * so it is false here, though `recipientsOf` gives `[]` for both. A list the server trimmed for
+ * this reader (`x_served_trimmed` names `characters`) is never everyone, even when it arrives empty:
+ * see `hasUnseenRecipients`.
  */
 export function isToEveryone(message: object | null | undefined): boolean {
-  if (!isBody(message)) return false;
+  if (!isBody(message) || hasUnseenRecipients(message)) return false;
   const list = message.characters;
   return list === undefined || list === null || (Array.isArray(list) && list.length === 0);
+}
+
+/**
+ * True when the message is addressed to someone this reader cannot see: the server served it with
+ * `characters` trimmed (its `x_served_trimmed` list names `characters`), whatever is left in the
+ * list. It says that such a recipient exists, never who or how many.
+ */
+export function hasUnseenRecipients(message: object | null | undefined): boolean {
+  if (!isBody(message)) return false;
+  const mark = message.x_served_trimmed;
+  return Array.isArray(mark) && mark.includes('characters');
 }
 
 /**
