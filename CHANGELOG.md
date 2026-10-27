@@ -12,6 +12,7 @@ earlier history lives in git log only.
 ### Changed
 
 - **The `client` option's words name every call that sends `X-OW-Client`**: the element writes, and also `propose`, `acceptProposal` and `reviewNewElement`, which sent it already; the words had named only the element writes.
+- **`worldLenses`' words follow the server's wider `read_as`**: a co-builder, or the account that sponsors an agent's or a player's seat, may read a lens as that seat by its membership id, judged by the narrower view. The call already sent `readAs` as given; only the words moved.
 
 ## [4.97.1] - 2026-10-28
 

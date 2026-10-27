@@ -147,8 +147,11 @@ export class OwV2Client {
    * for and whether this key chose it. `resolve: true` adds each lens's `reading` for this key: the kept
    * rows, the cut by reason, the mail part. The owner also gets `chosen_by`, `health` and the two counts
    * of what a reader cannot see; with `resolve`, the owner may `readAs` another reader (`guest`,
-   * `contributor`, `co-builder`, `public`, or a membership id of this world): 403
-   * `read_as_owner_only` from any other key, 422 without `resolve`. `worldId` is the key's own world
+   * `contributor`, `co-builder`, `public`, or a membership id of this world). A co-builder, or the
+   * account that sponsors an agent's or a player's seat, may `readAs` that seat by its membership id;
+   * that reading is judged by the narrower view: the seat's rows within the caller's own view, and
+   * what the caller cannot see counted under `not_visible`, never named. 403 `read_as_owner_only`
+   * from any other key, 422 without `resolve`. `worldId` is the key's own world
    * (another is a 404). An account token reads the world `worldId` names, as its owner or as its
    * member there: the Bearer token alone, no `world=` (the client's `world` is not needed). Served
    * `Cache-Control: private, no-store`.
