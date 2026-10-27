@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { FIELD_SCHEMA, resolveLens, worldGraph } from '../dist/index.js';
 
 const EDGES_FILE = fileURLToPath(new URL('./fixtures/graph-edges.json', import.meta.url));
-const EDGES_SHA256 = '14a4c008fb99f8046417c70ff4497ab1a1563496cfc7b6959c0740de411bf334';
+const EDGES_SHA256 = 'f114dadebff07167f999ea60bef1245eeaf20d8c8cdcc6d4d388a0be45050f45';
 const KEY = { as_of: 'asOf', map_space: 'mapSpace' };
 
 function loadCases() {
@@ -109,7 +109,7 @@ test('the shared graph cases (the Python package runs the same file), each answe
   }
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 32);
+  assert.equal(cases.length, 34);
 });
 
 test('a refused flag is refused before anything is read', () => {
