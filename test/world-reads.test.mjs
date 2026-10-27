@@ -152,6 +152,55 @@ test('world= with no other query param: the default limit still goes, and an id 
   assert.equal(new URL(f.calls[1].url).searchParams.get('limit'), '100');
 });
 
+test('a caller\'s signal reaches fetch on list, every page of listAll, get and getWorld, and never the query', async () => {
+  const signal = new AbortController().signal;
+  const pages = [
+    { data: [{ id: 'a' }], has_more: true, next_cursor: 'c2' },
+    { data: [{ id: 'b' }], has_more: false, next_cursor: null },
+  ];
+  const f = recorder(pages);
+  const c = new OwV2Client({ world: W, fetch: f.fetch });
+  for await (const _ of c.listAll('character', { signal })) { /* empty */ }
+  await c.list('character', { signal });
+  await c.get('character', EL, { signal });
+  await c.getWorld({ signal });
+  assert.equal(f.calls.length, 5);
+  for (const call of f.calls) {
+    assert.equal(call.init.signal, signal, call.url);
+    assert.equal(new URL(call.url).searchParams.has('signal'), false, call.url);
+  }
+  const g = recorder();
+  await new OwV2Client({ world: W, fetch: g.fetch }).getWorld();
+  assert.equal('signal' in g.calls[0].init, false, 'no signal given, none sent');
+  await assert.rejects(async () => new OwV2Client({ world: W, fetch: g.fetch }).getWorld({ signl: signal }), /signl/);
+});
+
+test('listAll stops with an OwNetworkError when a page hands back the cursor it was sent', async () => {
+  const pages = [
+    { data: [{ id: 'a' }], has_more: true, next_cursor: 'c2' },
+    { data: [{ id: 'b' }], has_more: true, next_cursor: 'c2' },
+    // Only a walk that ignores the repeat reaches this: it ends there, so the test fails rather than hangs.
+    { data: [{ id: 'z' }], has_more: false, next_cursor: null },
+  ];
+  const f = recorder(pages);
+  const c = new OwV2Client({ world: W, fetch: f.fetch });
+  const ids = [];
+  await assert.rejects(async () => { for await (const el of c.listAll('character')) ids.push(el.id); },
+    (err) => err.name === 'OwNetworkError' && /answered the cursor it was sent/.test(err.message));
+  assert.deepEqual(ids, ['a', 'b'], 'what was read is kept by the caller');
+  assert.equal(f.calls.length, 2, 'the page is not read a third time');
+});
+
+test('getWorld keeps a keyless read\'s counts, and patchWorld never sends them back', async () => {
+  const world = { id: W, name: 'Moppetopia', counts: { total: 151, types: { character: 40 } } };
+  const f = recorder([world]);
+  const got = await new OwV2Client({ world: W, fetch: f.fetch }).getWorld();
+  assert.deepEqual(got.counts, { total: 151, types: { character: 40 } });
+  const h = recorder([world]);
+  await new OwV2Client({ apiKey: 'ow_w_key', apiPin: '1234', fetch: h.fetch }).patchWorld(got);
+  assert.equal('counts' in JSON.parse(h.calls[0].init.body), false);
+});
+
 test('listAll keeps world= on every page of the cursor walk', async () => {
   const pages = [
     { data: [{ id: 'a' }], has_more: true, next_cursor: 'c2' },

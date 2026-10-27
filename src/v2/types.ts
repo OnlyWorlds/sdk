@@ -90,6 +90,12 @@ export interface OwWorldMeta {
    * top level as an element's are (the first is `x_names`, the names profile: see `typeWord`).
    * patchWorld sends them as given; `null` removes one; 64 KB in all, else a 422 `param: extensions`.
    */
+  /**
+   * Read only, on a keyless read alone (the public reader, `world` with no key): how many elements
+   * the public reads, in all and per type, counted as it reads them, hidden elements left out.
+   * Absent with a key. Never sent back: patchWorld strips it.
+   */
+  counts?: { total: number; types: Record<string, number> };
   [extension: `x_${string}`]: unknown;
   [extension: `atlas_${string}`]: unknown;
   [extension: `shadow_${string}`]: unknown;
@@ -1219,6 +1225,12 @@ export interface ListParams {
    * then keel answers 422 (an unknown parameter).
    */
   viewAs?: string;
+  /**
+   * Passed to fetch as given: aborting it rejects with an OwNetworkError. On `listAll` it covers
+   * the whole walk, every page. Not a query parameter. A time limit per request goes in the
+   * client's own `fetch`.
+   */
+  signal?: AbortSignal;
 }
 
 export interface OwClientConfig {

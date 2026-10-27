@@ -78,10 +78,12 @@ export class OwV2Client {
    * GET /world -- world meta (name, calendar/time fields, public_read).
    * GOTCHA (by server design): world-meta edits do NOT appear in /changes and
    * do not bump change_seq. Poll getWorld().updated_at for meta freshness.
-   * On a client with `world` set (an account token or no key), it reads that world, sending `world=<id>`.
+   * On a client with `world` set (an account token or no key), it reads that world, sending `world=<id>`;
+   * a keyless read carries `counts`. `signal` is passed to fetch as given.
    */
-  async getWorld(): Promise<OwWorldMeta> {
-    return this.request('GET', '/world/', { worldRead: true }) as Promise<OwWorldMeta>;
+  async getWorld(opts: { signal?: AbortSignal } = {}): Promise<OwWorldMeta> {
+    only('getWorld', opts, ['signal']);
+    return this.request('GET', '/world/', { worldRead: true, ...withSignal(opts.signal) }) as Promise<OwWorldMeta>;
   }
 
   /**
@@ -163,7 +165,7 @@ export class OwV2Client {
       ...params.filter,
       as: params.viewAs,
     });
-    return this.request('GET', `/${type}/`, { query, worldRead: true }) as Promise<OwPage>;
+    return this.request('GET', `/${type}/`, { query, worldRead: true, ...withSignal(params.signal) }) as Promise<OwPage>;
   }
 
   /**
@@ -216,7 +218,12 @@ export class OwV2Client {
     do {
       const page = await this.list(type, { ...params, cursor });
       for (const el of page.data) yield el;
-      cursor = page.has_more && page.next_cursor ? page.next_cursor : undefined;
+      const next = page.has_more && page.next_cursor ? page.next_cursor : undefined;
+      if (next !== undefined && next === cursor) {
+        // A page that hands back the cursor it was asked with would be read again forever.
+        throw new OwNetworkError(`listAll: GET /${type}/ answered the cursor it was sent, with more to come; the walk stopped rather than read the same page again`, null);
+      }
+      cursor = next;
     } while (cursor);
   }
 
@@ -225,10 +232,10 @@ export class OwV2Client {
    * another reader; see ListParams.viewAs). On a client with `world` set (an account token or no key),
    * it reads that world, sending `world=<id>`.
    */
-  async get(type: ElementType | string, id: string, opts: Pick<ListParams, 'expand' | 'fields' | 'viewAs'> = {}): Promise<OwElement> {
-    only('get', opts, ['expand', 'fields', 'viewAs']);
+  async get(type: ElementType | string, id: string, opts: Pick<ListParams, 'expand' | 'fields' | 'viewAs' | 'signal'> = {}): Promise<OwElement> {
+    only('get', opts, ['expand', 'fields', 'viewAs', 'signal']);
     const query = buildQuery({ expand: opts.expand?.join(','), fields: opts.fields?.join(','), as: opts.viewAs });
-    return this.request('GET', `/${type}/${id}/`, { query, worldRead: true }) as Promise<OwElement>;
+    return this.request('GET', `/${type}/${id}/`, { query, worldRead: true, ...withSignal(opts.signal) }) as Promise<OwElement>;
   }
 
   /**
@@ -1849,7 +1856,12 @@ function objectKey(keyOrUrl: string): string {
 }
 
 /** Every top-level key `list()` reads; a plain-JS caller's unknown key is refused by name, never dropped (W11, 2026-10-22). */
-const LIST_PARAM_KEYS: readonly (keyof ListParams)[] = ['limit', 'cursor', 'ids', 'createdBy', 'expand', 'fields', 'filter', 'viewAs'];
+const LIST_PARAM_KEYS: readonly (keyof ListParams)[] = ['limit', 'cursor', 'ids', 'createdBy', 'expand', 'fields', 'filter', 'viewAs', 'signal'];
+
+/** A caller's AbortSignal as request()'s option, or nothing when none was given. */
+function withSignal(signal: AbortSignal | undefined): { signal?: AbortSignal } {
+  return signal === undefined ? {} : { signal };
+}
 /** listAll's: list()'s without `cursor`, which the walk sets itself. */
 const LIST_ALL_PARAM_KEYS: readonly (keyof ListParams)[] = LIST_PARAM_KEYS.filter(k => k !== 'cursor');
 const LIST_FILTER_HINT = 'A wire filter (name, name__icontains, supertype, subtype, characters) goes under filter: { ... }.';

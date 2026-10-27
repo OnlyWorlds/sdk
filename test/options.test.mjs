@@ -44,6 +44,7 @@ const drain = async (gen) => { for await (const _ of gen) { /* never */ } };
 const FENCED = {
   // The client (4.51.0 to 4.53.0), through only(): "name: unknown parameter 'k'. ... Nothing was sent."
   'new OwV2Client#0': () => new OwV2Client({ apiKey: 'ow_w_test', fetch: fetchImpl, ...U }),
+  'OwV2Client.getWorld#0': () => world.getWorld(U),
   'OwV2Client.list#1': () => world.list('character', U),
   'OwV2Client.listAll#1': () => drain(world.listAll('character', U)),
   'OwV2Client.draught#1': () => world.draught('x', U),
