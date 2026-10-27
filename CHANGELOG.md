@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.94.0] - 2026-10-27
+
 ### Added
 
 - **`setMemberLenses(worldId, memberId, lensIds)`**: `PATCH /account/worlds/{world_id}/members/{member_id}` with `{ lenses }` alone, the lenses a row starts with, lens ids in order (0 to 20, `[]` for none, which is a choice). An account token's call: a member sets its own row, a seat it answers for, or any seat as a co-builder; the owner any seat, and its own list with `'owner'` as `memberId`. Nothing but `lenses` is sent. A world key, or anything but a list, is a TypeError before sending. keel's codes are the 404 for a lens you or the row's holder cannot see, 422 `not_a_lens`, `lens_is_template` and `lens_hidden`, and 422 when the owner names a person's row.
