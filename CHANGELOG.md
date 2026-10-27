@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.91.1] - 2026-10-27
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.79`** (from dist.78; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'` and no element field moved). Serial 79 adds four message cases (a Note is addressed to nobody, never in a thread and never unread, even when its `characters` names the reader; any hidden mark leaves a Note out, not only `true`), 85 in all; the message readers already answer every one, so no reader changed. `noteOf` still returns the Note's id.
+
 ## [4.91.0] - 2026-10-27
 
 ### Added
