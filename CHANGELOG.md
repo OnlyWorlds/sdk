@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.88.0] - 2026-10-27
+
 ### Added
 
 - **`world`, a constructor option: an account token, or no key, reads the world it names.** `new OwV2Client({ apiKey: 'ow_a_…', world: id })` sends `world=<id>` (URL-encoded, beside the call's own parameters, on every page of `listAll`) with the Bearer and no API-Key or PIN on `list`, `listAll`, `get` and `getWorld`, and keel answers as that account's own access in the world: the owner reads it whole, a member as its member key reads, any other account as the public reads (a world not open to the public is a 404). `new OwV2Client({ world: id })` with no key sends the same four reads with no credential at all, keel's public reader. The account calls (`/account` routes, sign-in, key and link management) work on the same client as before. Refused with a TypeError before anything is sent: `world` with a world key (`ow_w_`, `ow_r_`, a seat's key, a 10-digit key) or as anything but a non-empty string, at construction; on an account client, every call that needs a world key (element writes, hide, the change feed, the draught, files, images, proposals, `me`, `members`), which keel answered with a 401 before; on an account client without `world`, the four reads; and `world` inside a `list` or `listAll` filter, on any client. The rule sits in `request()`, read from the request: an /account route, or a GET marked `worldRead` (a new `request()` option, which adds `world=` on such a client). A client with no key and no `world` refuses as before, and its message now names the four reads.
