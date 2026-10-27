@@ -1,2 +1,4 @@
 # The draughtText fixture is held byte for byte (MANIFEST.json, and the Python package vendors it).
 test/fixtures/draught-text/** -text
+# The message readers' shared edge cases, the same bytes as the Python package's copy (both tests hold its sha256).
+test/fixtures/message-edges.json -text

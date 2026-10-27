@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.75
-//         commit          889fa3b492e01428d6723ae169b1f8013bf7f2d7
-//         MANIFEST sha256 6f0150dfa47849453676c5c6a33ab43bdf3c3791dd0b3b42b56f4b138cb80e82
-//         canonical 00.33.00, dist serial 75, published 2026-10-26
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.76
+//         commit          afe869681638eef312fe9309c6e0aec8729bc2f2
+//         MANIFEST sha256 4f8e04035bdc8a5f3c233ef01646ab921f78cd220b7799619a497e958f5a4b34
+//         canonical 00.33.00, dist serial 76, published 2026-10-27
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -15,7 +15,8 @@
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
 // `number | null`. Link fields use bare schema names (no `_ids` suffix). The eight
 // server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
-// changed_via, changed_client), the stub marker `known_of` (present only on a stub) and the
+// changed_via, changed_client), the stub marker `known_of` (present only on a stub), the served-only
+// `x_served_trimmed` (present only on a message whose ids were left out) and the
 // extension index signature live on OwElementBase.
 
 /** Every element carries these. The extension index signature admits namespaced
@@ -23,7 +24,7 @@
  *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in
  *  bodies -- the key determines the world) and the eight server-managed fields are
  *  added, since they ride every wire body and appear in no element YAML; `known_of`
- *  rides only a stub. */
+ *  rides only a stub, `x_served_trimmed` only a message whose ids were left out. */
 export interface OwElementBase {
   /** Element type slug (server-managed, read-only). */
   type: string;
@@ -57,6 +58,8 @@ export interface OwElementBase {
   hidden?: true;
   /** Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq, and the fields its type lists in PUBLIC_FIELDS with their values; every other field reads unset ("", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf(). */
   known_of?: true;
+  /** Served only, on a message (the message profile, schema-dist `profiles/message.md`): present when ids in `characters` or `narrator` were left out because this reader may not see them, naming those fields (`characters` before `narrator`), never which ids or how many. An empty `characters` with `characters` named here is to someone the reader cannot see, never to everyone; a null `narrator` with `narrator` named is a sender the reader cannot see. Absent when nothing was left out, and always for the keyless public reader. A write that carries it is refused (422 `served_trimmed_not_writable`): never send it back. See hasUnseenRecipients() and senderStatus(). */
+  x_served_trimmed?: string[];
   /** Namespaced extension fields (atlas_* / shadow_* / x_*), returned verbatim. */
   [ext: string]: unknown;
 }
@@ -362,6 +365,12 @@ export const MESSAGE_PAIR: { readonly type: ElementType; readonly supertype: str
 export const MESSAGE_READ_MARK = {
   type: 'relation', supertype: 'Read', readerField: 'actor', messagesField: 'narratives',
 } as const;
+
+/** The message profile's Note: a member's own line in the world, never a message (addressed to
+ *  nobody, never unread, in no thread), a Narrative with this supertype, matched as MESSAGE_PAIR
+ *  is. Match with isNote. Source: `profiles/message.fixture.json`'s `note_pair`, checked against the
+ *  page at codegen. */
+export const NOTE_PAIR: { readonly type: ElementType; readonly supertype: string } = { type: 'narrative', supertype: 'Note' };
 
 
 // ---------------------------------------------------------------------------

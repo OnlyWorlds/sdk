@@ -10,7 +10,8 @@ of these YAMLs. TypeScript shapes are pinned to the v2 wire, not to Django colum
 single-links serialize as `string | null`, multi-links as `string[]`, ints as
 `number | null`, link fields use BARE schema names (no `_ids` suffix), and the eight
 server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
-changed_via, changed_client), the stub marker `known_of` (present only on a stub), plus an extension
+changed_via, changed_client), the stub marker `known_of` (present only on a stub), the message
+profile's served-only `x_served_trimmed` (present only on a message whose ids were left out), plus an extension
 index signature ride the shared base.
 
 Run:  python codegen/generate_types.py [--schema ../keel/schema]
@@ -105,7 +106,8 @@ __PROVENANCE__
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
 // `number | null`. Link fields use bare schema names (no `_ids` suffix). The eight
 // server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
-// changed_via, changed_client), the stub marker `known_of` (present only on a stub) and the
+// changed_via, changed_client), the stub marker `known_of` (present only on a stub), the served-only
+// `x_served_trimmed` (present only on a message whose ids were left out) and the
 // extension index signature live on OwElementBase.
 
 __ELEMENT_BASE__
@@ -154,6 +156,9 @@ WIRE_ONLY_BASE_FIELDS = [
     # The hidden mark, shown to the readers who still see the element.
     ("hidden", "Present, and true, only when the world's owner or a co-builder hid this element and this reader still sees it (server-managed, read-only): the owner, a co-builder, a key the owner minted, or the member who made it; to every other reader the element does not exist. Absent otherwise, whatever `fields` asked; on the read, the list, the change feed's upserts and MCP, never in the download, world sync or v1. Sent on a create (a POST, a PUT of a new id, a bulk item that creates), `hidden: true` creates the element hidden, from the owner's keys or a co-builder's; any other key gets 403 `hidden_not_allowed` and nothing is created. On any other write it is ignored: hide and unhide with hide() and unhide().", "true", False),
     ("known_of", "Present, and true, only on a stub (server-managed, read-only): an element a guest or player reaches only through its own Character's sheet. A stub keeps id, type, name, description, supertype, subtype, image_url, created_at, updated_at and change_seq, and the fields its type lists in PUBLIC_FIELDS with their values; every other field reads unset (\"\", null, []), created_by/changed_by/changed_via null, no extension fields, and its files are 404. Its empties are not values and not a deletion: never write a stub back. Absent: the element is whole. See isKnownOf().", "true", False),
+    # The message profile's served-only mark (keel serves it on a message, a Narrative; every write refuses
+    # it by name). Never stripped from a body this SDK is given, unlike known_of: the refusal is the signal.
+    ("x_served_trimmed", "Served only, on a message (the message profile, schema-dist `profiles/message.md`): present when ids in `characters` or `narrator` were left out because this reader may not see them, naming those fields (`characters` before `narrator`), never which ids or how many. An empty `characters` with `characters` named here is to someone the reader cannot see, never to everyone; a null `narrator` with `narrator` named is a sender the reader cannot see. Absent when nothing was left out, and always for the keyless public reader. A write that carries it is refused (422 `served_trimmed_not_writable`): never send it back. See hasUnseenRecipients() and senderStatus().", "string[]", False),
 ]
 BASE_KEY_TO_WIRE = {
     "Id": "id", "Name": "name", "Description": "description",
@@ -189,7 +194,7 @@ def render_element_base(schema_dir: Path) -> str:
         " *  Derived from base_properties.yaml: `World` is dropped (the API rejects it in",
         " *  bodies -- the key determines the world) and the eight server-managed fields are",
         " *  added, since they ride every wire body and appear in no element YAML; `known_of`",
-        " *  rides only a stub. */",
+        " *  rides only a stub, `x_served_trimmed` only a message whose ids were left out. */",
         "export interface OwElementBase {",
     ]
     emitted: set[str] = set()
@@ -876,12 +881,13 @@ def render_review_label(label: str) -> str:
 
 
 def load_message_profile(schema_dir: Path, pairs: list[tuple[str, str]],
-                         all_fields: dict[str, list[dict]]) -> tuple[tuple[str, str], dict[str, str]]:
+                         all_fields: dict[str, list[dict]]) -> tuple[tuple[str, str], dict[str, str], tuple[str, str]]:
     """The message profile (schema-dist serial 72 on, `profiles/message.md`): the pair a message is,
-    and the read mark's pair and fields. From the fixture's `pair` and `read_mark`, checked against
-    the page's own words (the pair, the mark's supertype), against the room profile's pairs (the page
-    calls the message pair a line in the room), and against the walk's fields for the mark's two links.
-    No fallback: a tree without the profile exits 1 rather than emitting a pair nobody ruled."""
+    the read mark's pair and fields, and (serial 76 on) the Note's pair. From the fixture's `pair`,
+    `read_mark` and `note_pair`, checked against the page's own words (the pair, the mark's supertype,
+    the Note's supertype), against the room profile's pairs (the page calls the message pair a line in
+    the room), and against the walk's fields for the mark's two links. No fallback: a tree without the
+    profile exits 1 rather than emitting a pair nobody ruled."""
     profiles = schema_dir.parent / "profiles"
     fixture_path, page_path = profiles / "message.fixture.json", profiles / "message.md"
     if not fixture_path.is_file() or not page_path.is_file():
@@ -891,14 +897,16 @@ def load_message_profile(schema_dir: Path, pairs: list[tuple[str, str]],
         )
     fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
     page = page_path.read_text(encoding="utf-8")
-    pair, mark = fixture.get("pair"), fixture.get("read_mark")
-    if not (isinstance(pair, dict) and set(pair) == {"type", "supertype"}
-            and all(isinstance(pair[k], str) and pair[k] for k in pair)):
-        raise SystemExit(f"{fixture_path}: `pair` is {pair!r}, expected {{type, supertype}} strings.")
+    pair, mark, note = fixture.get("pair"), fixture.get("read_mark"), fixture.get("note_pair")
+    for key, p in (("pair", pair), ("note_pair", note)):
+        if not (isinstance(p, dict) and set(p) == {"type", "supertype"}
+                and all(isinstance(p[k], str) and p[k] for k in p)):
+            raise SystemExit(f"{fixture_path}: `{key}` is {p!r}, expected {{type, supertype}} strings.")
     keys = {"type", "supertype", "name", "reader_field", "messages_field"}
     if not (isinstance(mark, dict) and set(mark) == keys and all(isinstance(mark[k], str) and mark[k] for k in keys)):
         raise SystemExit(f"{fixture_path}: `read_mark` is {mark!r}, expected the strings {sorted(keys)}.")
-    for t, s in ((pair["type"], pair["supertype"]), (mark["type"], mark["supertype"])):
+    for t, s in ((pair["type"], pair["supertype"]), (mark["type"], mark["supertype"]),
+                 (note["type"], note["supertype"])):
         if t not in ELEMENT_TYPES:
             raise SystemExit(f"{fixture_path}: {t!r} is not an element type.")
         if s != s.strip() or "'" in s or "\\" in s:
@@ -910,6 +918,9 @@ def load_message_profile(schema_dir: Path, pairs: list[tuple[str, str]],
     if f"supertype `{mark['supertype']}`" not in page or f"`{mark['reader_field']}`" not in page \
             or f"`{mark['messages_field']}`" not in page:
         raise SystemExit(f"message.md does not name the fixture's read mark {mark!r}. Route it to the schema-dist owner.")
+    if f"a Narrative with supertype `{note['supertype']}`" not in page:
+        raise SystemExit(f"message.md does not name the fixture's note_pair supertype `{note['supertype']}`. "
+                         "Route it to the schema-dist owner.")
     if (pair["type"].lower(), pair["supertype"].lower()) not in [(t.lower(), s.lower()) for t, s in pairs]:
         raise SystemExit(f"the message pair {pair!r} is not one of the room profile's pairs {pairs!r}, and "
                          "message.md says it is. Route it to the schema-dist owner.")
@@ -917,10 +928,10 @@ def load_message_profile(schema_dir: Path, pairs: list[tuple[str, str]],
     stray = [mark[k] for k in ("reader_field", "messages_field") if mark[k] not in names]
     if stray:
         raise SystemExit(f"{fixture_path}: the read mark's fields {stray} are not fields of {mark['type']}.")
-    return (pair["type"], pair["supertype"]), mark
+    return (pair["type"], pair["supertype"]), mark, (note["type"], note["supertype"])
 
 
-def render_message_profile(pair: tuple[str, str], mark: dict[str, str]) -> str:
+def render_message_profile(pair: tuple[str, str], mark: dict[str, str], note: tuple[str, str]) -> str:
     lines = [
         "/** The message profile's pair (schema-dist `profiles/message.md`, a convention on the 22 types,",
         " *  never a change to the standard): a message between a world's members is a Narrative with this",
@@ -937,6 +948,13 @@ def render_message_profile(pair: tuple[str, str], mark: dict[str, str]) -> str:
         f"  type: '{mark['type']}', supertype: '{mark['supertype']}', "
         f"readerField: '{mark['reader_field']}', messagesField: '{mark['messages_field']}',",
         "} as const;",
+        "",
+        "/** The message profile's Note: a member's own line in the world, never a message (addressed to",
+        " *  nobody, never unread, in no thread), a Narrative with this supertype, matched as MESSAGE_PAIR",
+        " *  is. Match with isNote. Source: `profiles/message.fixture.json`'s `note_pair`, checked against the",
+        " *  page at codegen. */",
+        f"export const NOTE_PAIR: {{ readonly type: ElementType; readonly supertype: string }} = "
+        f"{{ type: '{note[0]}', supertype: '{note[1]}' }};",
         "",
     ]
     return "\n".join(lines)

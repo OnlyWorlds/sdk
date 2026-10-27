@@ -1,7 +1,7 @@
 /**
- * The message profile (schema-dist profiles/message.md, serial 75): MESSAGE_PAIR against the
- * fixture's pair, and the readers (isMessage, isAddressedTo, senderStatus, readMarkOf, unreadFor,
- * threadOf) on every conformance case in codegen/schema-dist/profiles/message.fixture.json,
+ * The message profile (schema-dist profiles/message.md, serial 76): MESSAGE_PAIR and NOTE_PAIR against
+ * the fixture's pairs, and the readers (isMessage, isAddressedTo, hasUnseenRecipients, isToEveryone,
+ * isSentBy, senderStatus, editedBy, readMarkOf, unreadFor, threadOf, noteOf) on every conformance case in codegen/schema-dist/profiles/message.fixture.json,
  * vendored with the distribution. Runs against the compiled public bundle (dist).
  */
 import { test } from 'node:test';
@@ -9,11 +9,12 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  MESSAGE_PAIR, ROOM_PAIRS, isMessage, recipientsOf, isAddressedTo, isToEveryone, hasUnseenRecipients, isSentBy, senderStatus, readMarkOf, unreadFor, threadOf,
+  MESSAGE_PAIR, NOTE_PAIR, ROOM_PAIRS, isMessage, isNote, recipientsOf, isAddressedTo, isToEveryone, hasUnseenRecipients, isSentBy,
+  senderStatus, editedBy, readMarkOf, unreadFor, threadOf, noteOf,
 } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/message.fixture.json', import.meta.url));
-const COUNTS = { pair: 9, addressed: 9, sent_by: 3, sender: 10, unread: 12, mark: 9, thread: 3 };
+const COUNTS = { pair: 10, addressed: 10, sent_by: 3, sender: 14, unread: 15, mark: 10, thread: 3, unseen: 3, everyone: 3, edited: 4, note: 6 };
 
 function loadFixture() {
   assert.ok(existsSync(FIXTURE), `no message fixture at ${FIXTURE}`);
@@ -30,6 +31,12 @@ function answer(c, doc) {
   switch (c.kind) {
     case 'pair': return { is_message: isMessage(c.element) };
     case 'addressed': return { addressed: isAddressedTo(c.message, c.character) };
+    // A case without keyless has a credential.
+    case 'unseen': return { addressed: isAddressedTo(c.message, c.character), unseen_recipients: hasUnseenRecipients(c.message) };
+    case 'everyone': return {
+      to_everyone: isToEveryone(c.message, { keyless: c.keyless }),
+      unseen_recipients: hasUnseenRecipients(c.message, { keyless: c.keyless }),
+    };
     // Sent by X is the claim: narrator, which senderStatus hands back as `claimed`.
     case 'sent_by': return { sent_by: isSentBy(c.message, c.character) };
     case 'sender': {
@@ -41,19 +48,29 @@ function answer(c, doc) {
     case 'mark': return { mark: readMarkOf(c.relations, c.reader, members)?.id ?? null };
     case 'unread': return { unread: ids(unreadFor(c.messages, c.reader, c.read_mark, members)) };
     case 'thread': return { thread: ids(threadOf(c.messages, c.root)) };
+    case 'edited': {
+      const e = editedBy(c.message, members);
+      return { edited: e.edited, edited_by: e.by };
+    }
+    case 'note': return { line: noteOf(c.notes, c.character, members) };
     default: throw new Error(`a case of unknown kind ${c.kind}`);
   }
 }
 
 const EXPECTED_KEYS = {
   pair: ['is_message'], addressed: ['addressed'], sent_by: ['sent_by'], sender: ['status', 'claimed', 'written_by'],
-  mark: ['mark'], unread: ['unread'], thread: ['thread'],
+  mark: ['mark'], unread: ['unread'], thread: ['thread'], unseen: ['addressed', 'unseen_recipients'],
+  everyone: ['to_everyone', 'unseen_recipients'], edited: ['edited', 'edited_by'], note: ['line'],
 };
 
 test('MESSAGE_PAIR is the fixture\'s pair, and one of the room profile\'s pairs', () => {
   const doc = loadFixture();
   assert.deepEqual({ ...MESSAGE_PAIR }, doc.pair);
   assert.ok(ROOM_PAIRS.some(p => p.type === MESSAGE_PAIR.type && p.supertype === MESSAGE_PAIR.supertype));
+  assert.deepEqual({ ...NOTE_PAIR }, doc.note_pair);
+  assert.equal(isNote({ type: ' Narrative ', supertype: 'NOTE' }), true);
+  assert.equal(isNote({ type: 'narrative', supertype: 'Notes' }), false);
+  assert.equal(isNote({ type: 'narrative', supertype: 'Message' }), false);
   assert.deepEqual(
     { type: doc.read_mark.type, supertype: doc.read_mark.supertype, reader: doc.read_mark.reader_field, messages: doc.read_mark.messages_field },
     { type: 'relation', supertype: 'Read', reader: 'actor', messages: 'narratives' },
@@ -67,7 +84,8 @@ test('the message readers answer every case of the message fixture', (t) => {
   const counts = {};
   for (const c of cases) {
     counts[c.kind] = (counts[c.kind] ?? 0) + 1;
-    const want = Object.fromEntries(EXPECTED_KEYS[c.kind].filter(k => k in c).map(k => [k, c[k]]));
+    // A kind this replay does not know is a disagreement, never skipped.
+    const want = Object.fromEntries((EXPECTED_KEYS[c.kind] ?? ['a reader for this kind']).filter(k => k in c || !EXPECTED_KEYS[c.kind]).map(k => [k, c[k]]));
     let got;
     try {
       got = answer(c, doc);
@@ -82,7 +100,7 @@ test('the message readers answer every case of the message fixture', (t) => {
   }
   t.diagnostic(`the message fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 55, `the fixture holds ${cases.length} cases, serial 75 has 55`);
+  assert.equal(cases.length, 81, `the fixture holds ${cases.length} cases, serial 76 has 81`);
   assert.deepEqual(counts, COUNTS);
 });
 
@@ -105,8 +123,8 @@ test('the documented calls compile against the built types: bodies and member ro
     const dist = fileURLToPath(new URL('../dist/index.js', import.meta.url)).replace(/\\/g, '/');
     const file = join(dir, 'use.ts');
     writeFileSync(file, [
-      `import { OwV2Client, MESSAGE_PAIR, isMessage, recipientsOf, isAddressedTo, senderStatus, readMarkOf, unreadFor, threadOf,`,
-      `  type OwMember, type OwSender, type OwElement } from '${dist}';`,
+      `import { OwV2Client, MESSAGE_PAIR, NOTE_PAIR, isMessage, isNote, recipientsOf, isAddressedTo, senderStatus, editedBy, readMarkOf, unreadFor, threadOf, noteOf,`,
+      `  type OwMember, type OwSender, type OwEdited, type OwElement } from '${dist}';`,
       'declare const c: OwV2Client;',
       'export async function use(me: string): Promise<void> {',
       "  const messages: OwElement[] = (await c.list('narrative', { filter: { supertype: MESSAGE_PAIR.supertype } })).data.filter(isMessage);",
@@ -119,6 +137,11 @@ test('the documented calls compile against the built types: bodies and member ro
       '  const from: OwSender = senderStatus(messages[0], members);',
       '  senderStatus(messages[0], null);',
       '  const to: string[] = recipientsOf(messages[0]);',
+      '  const edit: OwEdited = editedBy(messages[0], members);',
+      "  const notes: OwElement[] = (await c.list('narrative', { filter: { supertype: NOTE_PAIR.supertype } })).data.filter(isNote);",
+      '  const line: string | null = noteOf(notes, me, members);',
+      '  const trimmed: string[] | undefined = messages[0].x_served_trimmed;',
+      '  void edit; void line; void trimmed;',
       "  const one = { id: 'm', type: 'narrative' as const, name: 'Hi', supertype: 'Message', narrator: me, characters: [] };",
       '  const mine: boolean = isAddressedTo(one, me) && isMessage(one);',
       "  readMarkOf([{ id: 'r', type: 'relation', supertype: 'Read', actor: me, narratives: [] }], me, [{ id: null, character: me }]);",
@@ -164,7 +187,7 @@ test('recipients keep their order and a malformed list is not everyone (the Pyth
   assert.equal(isToEveryone(null), false);
 });
 
-test('a list the server trimmed (keel #746) is never everyone, and says someone unseen is addressed', () => {
+test('a list the server trimmed is never everyone, and says someone unseen is addressed', () => {
   const ADA = 'a1';
   const trimmed = (characters, mark = ['characters']) => ({ characters, x_served_trimmed: mark });
   // every recipient hidden: keel serves an empty list with the mark, which must not read as everyone
@@ -257,4 +280,46 @@ test('unreadFor on the wire proves the reader\'s own messages only through the m
   assert.deepEqual(ids(unreadFor([msg('u', MARA, { created_by: undefined })], MARA, null)), []);
   // An empty id reads nothing, though the message is to everyone.
   assert.deepEqual(ids(unreadFor([msg('e', '', {})], '', null, doc.members)), []);
+});
+
+// The shared edge cases: inputs the fixture leaves open, the same file byte for byte as the Python
+// package's tests/fixtures/message-edges.json (both suites hold its sha256), answers written by hand.
+const EDGES_FILE = fileURLToPath(new URL('./fixtures/message-edges.json', import.meta.url));
+const EDGES_SHA256 = '83a1d2d5c447bb4b95b13133f81300d458c2b30aa24e3396750f235f44ef94b8';
+
+function edgeAnswer(e) {
+  switch (e.reader) {
+    case 'recipients': return recipientsOf(e.message);
+    case 'addressed': return isAddressedTo(e.message, e.character);
+    case 'everyone': return isToEveryone(e.message, { keyless: e.keyless });
+    case 'unseen': return hasUnseenRecipients(e.message, { keyless: e.keyless });
+    case 'unread': return ids(unreadFor(e.messages, e.reader_id, null, e.members));
+    case 'thread': return ids(threadOf(e.messages, e.root));
+    case 'edited': return editedBy(e.message, e.members);
+    case 'note': return noteOf(e.notes, e.character, e.members);
+    default: throw new Error(`an edge of unknown reader ${e.reader}`);
+  }
+}
+
+test('the shared edge cases: Notes on every reader, the created_at rule, the edit, the line (the Python package runs the same file)', async () => {
+  const { createHash } = await import('node:crypto');
+  const bytes = readFileSync(EDGES_FILE);
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), EDGES_SHA256);
+  const edges = JSON.parse(bytes.toString('utf8'));
+  const wrong = [];
+  for (const e of edges) {
+    let got;
+    try { got = edgeAnswer(e); } catch (err) { got = { threw: String(err) }; }
+    try { assert.deepEqual(got, e.want); } catch { wrong.push(`${e.name}: gave ${JSON.stringify(got)}, want ${JSON.stringify(e.want)}`); }
+  }
+  assert.deepEqual(wrong, []);
+  assert.equal(edges.length, 26);
+});
+
+test('keyless is an options object with a boolean: a bare true or a string is a TypeError, never read as false', () => {
+  assert.throws(() => isToEveryone({ characters: [] }, true), TypeError);
+  assert.throws(() => hasUnseenRecipients({ characters: [] }, true), TypeError);
+  assert.throws(() => isToEveryone({ characters: [] }, { keyless: 'yes' }), TypeError);
+  assert.equal(isToEveryone({ characters: [] }, null), true);
+  assert.equal(isToEveryone({ characters: [] }, {}), true);
 });
