@@ -9,10 +9,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { resolveLens, worldGraph } from '../dist/index.js';
+import { FIELD_SCHEMA, resolveLens, worldGraph } from '../dist/index.js';
 
 const EDGES_FILE = fileURLToPath(new URL('./fixtures/graph-edges.json', import.meta.url));
-const EDGES_SHA256 = 'ce8eca146b22dcabcb89d7850b3d6e3ea92f875f32689ad577d9a5da77eaa795';
+const EDGES_SHA256 = '14a4c008fb99f8046417c70ff4497ab1a1563496cfc7b6959c0740de411bf334';
 const KEY = { as_of: 'asOf', map_space: 'mapSpace' };
 
 function loadCases() {
@@ -55,6 +55,30 @@ function invariants(g, c) {
     const r = resolveLens(c.world, opts.lens, c.reader, { asOf: opts.asOf, clock: opts.clock });
     assert.deepEqual([...ids].sort(), [...r.kept].sort(), `${c.name}: a lens's graph has exactly the lens's kept as its nodes`);
     assert.deepEqual(g.cut, r.cut, `${c.name}: the lens's cut rides along unchanged`);
+    assert.equal(g.unreadable, r.unreadable, `${c.name}: unreadable is the lens reading's`);
+    // Every link from a kept node to an element in the world is an edge or counted, read as the owner (the
+    // same view, the owner's counts); less the links the view leaves out, so is every link of the reader's own.
+    const ownerView = c.reader.rung === 'owner' ? c.reader : { rung: 'owner', as: c.reader };
+    const go = worldGraph(c.world, ownerView, { lens: opts.lens, asOf: opts.asOf, clock: opts.clock });
+    const inWorld = new Set(c.world.elements.map(el => el.id));
+    const linked = v => (typeof v === 'string' && inWorld.has(v) ? 1 : 0);
+    let links = 0;
+    for (const n of go.nodes) {
+      if (n.known_of) continue;
+      const el = c.world.elements.find(x => x.id === n.id);
+      for (const [field, f] of Object.entries(FIELD_SCHEMA[n.type])) {
+        if (f.type === 'single_link') links += linked(el[field]);
+        if (f.type === 'multi_link' && Array.isArray(el[field])) for (const t of el[field]) links += linked(t);
+      }
+      for (const field of ['x_lens_leads_to', 'x_spine_depends_on']) if (Array.isArray(el[field])) for (const t of el[field]) links += linked(t);
+    }
+    const unseen = ['not_visible', 'anchor_not_visible'];
+    const sum = (counts, keep) => Object.entries(counts).filter(([k]) => keep(k)).reduce((a, [, v]) => a + v, 0);
+    assert.equal(go.edges.length + sum(go.edgesCut, () => true), links, `${c.name}: every link from a kept node is an edge or counted`);
+    const inView = links - sum(go.edgesCut, k => unseen.includes(k));
+    assert.equal(g.edges.length + sum(g.edgesCut, k => !unseen.includes(k)), inView, `${c.name}: every link from a kept node to an element the reader sees is an edge or counted`);
+  } else {
+    assert.equal(g.unreadable, null, `${c.name}: unreadable is null without a lens`);
   }
 }
 
@@ -77,7 +101,7 @@ test('the shared graph cases (the Python package runs the same file), each answe
     try {
       const g = worldGraph(c.world, c.reader, opts);
       invariants(g, c);
-      got = { nodes: g.nodes, edges: g.edges, edges_cut: g.edgesCut, cut: g.cut };
+      got = { nodes: g.nodes, edges: g.edges, edges_cut: g.edgesCut, cut: g.cut, unreadable: g.unreadable };
     } catch (err) {
       got = { threw: String(err) };
     }
@@ -85,7 +109,7 @@ test('the shared graph cases (the Python package runs the same file), each answe
   }
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 26);
+  assert.equal(cases.length, 32);
 });
 
 test('a refused flag is refused before anything is read', () => {
@@ -110,5 +134,5 @@ test('worldGraph refuses what is not a reading: an unknown option, a flag that i
   assert.throws(() => worldGraph({ elements: [] }, { rung: 'owner' }, { lens: 3 }), TypeError);
   assert.throws(() => worldGraph({ elements: [] }, { rung: 'owner' }, { asOf: 1.5 }), TypeError);
   assert.throws(() => worldGraph({ elements: [] }, { rung: 'owner' }, true), TypeError);
-  assert.deepEqual(worldGraph({ elements: [] }, { rung: 'public' }, { rooms: false, mapSpace: null }), { nodes: [], edges: [], edgesCut: {}, cut: {} });
+  assert.deepEqual(worldGraph({ elements: [] }, { rung: 'public' }, { rooms: false, mapSpace: null }), { nodes: [], edges: [], edgesCut: {}, cut: {}, unreadable: null });
 });

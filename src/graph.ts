@@ -34,8 +34,13 @@ const GRAPH_OPTION_KEYS = ['lens', 'asOf', 'clock', 'rooms', 'hidden', 'proposed
 /** Why a node that is out by default is in. */
 export type OwGraphMark = 'room' | 'hidden' | 'proposed';
 
-/** Why an element is not a node, or an edge was left out: the lens's closed list and the graph's own four. */
-export type OwGraphCutReason = OwLensCutReason | 'room' | 'hidden' | 'proposed' | 'map_space';
+/**
+ * Why an element is not a node, or an edge was left out: the lens's closed list, then the graph's own, in
+ * this order: `room`, `hidden`, `proposed`, `map_space`, `outside_lens`. `outside_lens` (a link to an
+ * element the reader sees that the lens neither kept nor cut) is only ever an edge's reason, and only with a
+ * lens; it is never in a lens's cut.
+ */
+export type OwGraphCutReason = OwLensCutReason | 'room' | 'hidden' | 'proposed' | 'map_space' | 'outside_lens';
 
 /** One element of the graph. */
 export interface OwGraphNode {
@@ -68,16 +73,18 @@ export interface OwWorldGraph {
   nodes: OwGraphNode[];
   /** The edges, by source id, then field name (both in code point order), then index. */
   edges: OwGraphEdge[];
-  /** The links left out because their target is not a node, counted by the target's reason. A reason with no count is absent; a reader that is not the owner never carries `anchor_not_visible`, `not_visible`, `hidden` or `proposed`. */
+  /** The links left out because their target is not a node, counted by the target's reason, in the reasons' one order. A reason with no count is absent; a reader that is not the owner never carries `anchor_not_visible`, `not_visible`, `hidden` or `proposed`, and every reader carries `outside_lens`. */
   edgesCut: Partial<Record<OwGraphCutReason, number>>;
   /** With a lens, the lens's own cut, unchanged. Without one, the elements out by default, counted by reason (`room`, `hidden` and `proposed` for the owner only, `map_space`). */
   cut: Partial<Record<OwGraphCutReason, number>>;
+  /** With a lens whose `x_lens` the lens reader cannot read, the key it names (as `resolveLens`'s `unreadable`), and the graph is empty. Null otherwise, and always null without a lens. */
+  unreadable: string | null;
 }
 
 /** The extension fields a published profile declares a link, each a list of ids: the lens profile's and the spine profile's. */
 const DECLARED_LINKS: readonly string[] = ['x_lens_leads_to', 'x_spine_depends_on'];
 const MAP_SPACE: ReadonlySet<string> = new Set(['map', 'pin', 'marker', 'zone']);
-const GRAPH_REASONS: readonly OwGraphCutReason[] = [...CUT_REASONS, 'room', 'hidden', 'proposed', 'map_space'];
+const GRAPH_REASONS: readonly OwGraphCutReason[] = [...CUT_REASONS, 'room', 'hidden', 'proposed', 'map_space', 'outside_lens'];
 const GRAPH_OWNER_ONLY: ReadonlySet<string> = new Set([...OWNER_ONLY, 'hidden', 'proposed']);
 
 type Body = Record<string, unknown>;
@@ -97,14 +104,16 @@ function flag(opts: Body, key: string): boolean {
  * `world` and `reader` are what `resolveLens` takes. Without `options.lens` the nodes are every element
  * the reader sees less what is out by default: room elements, hidden ones, proposed ones and map space
  * (Map, Pin, Marker, Zone), each brought back by its flag and then marked. With a lens the nodes are
- * exactly the lens's `kept`, its cut rides along unchanged, and a flag adds nothing.
+ * exactly the lens's `kept`, its cut rides along unchanged, and a flag adds nothing. A lens whose `x_lens`
+ * cannot be read gives an empty graph with `unreadable` naming the key, as `resolveLens` does.
  *
  * Each schema link field, and each extension field a profile declares a link (`x_lens_leads_to`,
  * `x_spine_depends_on`), gives one edge per target that is a node, with the target's place in the list as
  * the reader is served it; a link held on both ends is two edges. A guest's known-of element has no edges
- * out. A link to an element that is not a node is counted in `edgesCut` by that element's reason
- * (`not_visible` for one the reader does not see); a link to an id that is not in the world is left out
- * and not counted.
+ * out. A link to an element that is not a node is counted in `edgesCut` by that element's reason: the
+ * lens's cut reason, else, with a lens, `outside_lens` for one the reader sees that the lens neither kept
+ * nor cut (counted for every rung); one of the four kinds without a lens; and `not_visible` for one the
+ * reader does not see. A link to an id that is not in the world is left out and not counted.
  *
  * `hidden` or `proposed` from a reader that is not the owner, or any flag from a public reader, is refused
  * by name before anything is read. An owner reading `as` another reader is judged by that reader's rung.
@@ -151,11 +160,13 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
   const nodeIds = new Set<string>();
   let cut: Partial<Record<OwGraphCutReason, number>>;
   let reasonOf: (id: string) => OwGraphCutReason | null;
+  let unreadable: string | null = null;
   if (lens !== null) {
     const { reading, cutById } = lensReading(r, lens as object | string, clock);
     for (const id of reading.kept) nodeIds.add(id);
     cut = { ...reading.cut };
-    reasonOf = id => cutById.get(id) ?? (r.view.has(id) ? null : 'not_visible');
+    unreadable = reading.unreadable;
+    reasonOf = id => cutById.get(id) ?? (r.view.has(id) ? 'outside_lens' : 'not_visible');
   } else {
     const outBy = (id: string): OwGraphCutReason | null => kinds(id).find(k => !flags[k]) ?? null;
     const counts = new Map<OwGraphCutReason, number>();
@@ -216,7 +227,7 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
     }
   }
   edges.sort((a, b) => byCodePoint(a.source, b.source) || byCodePoint(a.field, b.field) || a.index - b.index);
-  return { nodes, edges, edgesCut: tally(cutEdges, r.owner), cut };
+  return { nodes, edges, edgesCut: tally(cutEdges, r.owner), cut, unreadable };
 }
 
 /** Counts in the reasons' one order, a reason with no count left out, and the owner's reasons kept for the owner. */
