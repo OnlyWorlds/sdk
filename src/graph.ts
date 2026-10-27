@@ -240,3 +240,24 @@ function tally(counts: ReadonlyMap<OwGraphCutReason, number>, owner: boolean): P
   }
   return out;
 }
+
+/**
+ * Each node's degree in a graph `worldGraph` answered: the number of its edges, in or out, each edge counted
+ * once for every node it touches (a mirror pair is two edges, so each end counts 2; a link to itself counts
+ * once). Every node is a key, 0 included, in the graph's node order. Edges join nodes only, so the count is
+ * the reader's: what the reading left out (hidden, room, proposed, map space, past a lens) is never counted.
+ * This is "most linked" for a finder: rank by it, highest first. A graph that is not one is a TypeError.
+ */
+export function degreeOf(graph: OwWorldGraph): Record<string, number> {
+  if (!isBody(graph) || !Array.isArray((graph as Body).nodes) || !Array.isArray((graph as Body).edges)) {
+    throw new TypeError('degreeOf: graph is what worldGraph answers, an object with nodes and edges lists.');
+  }
+  // A Map, not an object, while counting: an id such as `constructor` is no inherited key here.
+  const count = new Map<string, number>(graph.nodes.map((n) => [n.id, 0]));
+  const add = (id: string) => { const n = count.get(id); if (n !== undefined) count.set(id, n + 1); };
+  for (const e of graph.edges) {
+    add(e.source);
+    if (e.target !== e.source) add(e.target);
+  }
+  return Object.fromEntries(count);
+}

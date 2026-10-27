@@ -195,7 +195,8 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   as nodes and edges: room, hidden and proposed elements and map space are out unless a flag brings
   each back (`hidden` and `proposed` the owner's alone, none for a public reader; a refused flag
   throws), with `{ lens }` the nodes are exactly the lens's `kept`, and `edgesCut` counts by reason
-  every link it leaves out, `outside_lens` for one the lens never reached.
+  every link it leaves out, `outside_lens` for one the lens never reached. `degreeOf(graph)` (since
+  4.95.0) is each node's count of edges, in or out: rank by it for "most linked".
 - A world may name its types in its own words (`x_names` on the World: Character shown as
   Employee): `typeWord(world, type, { supertype, many })` gives that word or `null` (use the
   standard's name). Print it as written; use it for what a person reads (headings, counts,

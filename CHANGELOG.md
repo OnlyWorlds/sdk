@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.95.0] - 2026-10-27
+
+### Added
+
+- **`degreeOf(graph)`**: each node's degree in a graph the graph reader answered: its edges in or out, each counted once for every node it touches (a mirror pair counts 2 at each end, a link to itself once), every node a key with 0 included, in the graph's node order. It is "most linked" as a finder ranks it: the reader's own count, since what the reading left out has no edge. The Python package's `degree_of` gives the same answer on the same graph.
+
 ## [4.94.0] - 2026-10-27
 
 ### Added

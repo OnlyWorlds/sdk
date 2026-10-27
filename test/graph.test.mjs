@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { FIELD_SCHEMA, resolveLens, worldGraph } from '../dist/index.js';
+import { FIELD_SCHEMA, degreeOf, resolveLens, worldGraph } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/lens.fixture.json', import.meta.url));
 const KEY = { as_of: 'asOf', map_space: 'mapSpace' };
@@ -152,4 +152,41 @@ test('worldGraph refuses what is not a reading: an unknown option, a flag that i
   assert.throws(() => worldGraph({ elements: [] }, { rung: 'owner' }, { asOf: 1.5 }), TypeError);
   assert.throws(() => worldGraph({ elements: [] }, { rung: 'owner' }, true), TypeError);
   assert.deepEqual(worldGraph({ elements: [] }, { rung: 'public' }, { rooms: false, mapSpace: null }), { nodes: [], edges: [], edgesCut: {}, cut: {}, unreadable: null });
+});
+
+test('degreeOf: the edges of each node, in or out, a mirror pair two, a link to itself once, every node a key', () => {
+  const world = {
+    elements: [
+      { id: 'c1', type: 'character', name: 'Ada', friends: ['c2', 'c1'] },
+      { id: 'c2', type: 'character', name: 'Bo', friends: ['c1'] },
+      { id: 'r1', type: 'relation', name: 'Pact', characters: ['c1', 'c2', 'c3'] },
+      { id: 'c3', type: 'character', name: 'Cy' },
+      { id: 'o1', type: 'object', name: 'Lamp' },
+      { id: 'constructor', type: 'object', name: 'An id like an inherited key' },
+      { id: '__proto__', type: 'character', name: 'Another', objects: ['constructor'] },
+    ],
+  };
+  const g = worldGraph(world, { rung: 'owner' });
+  const d = degreeOf(g);
+  assert.deepEqual(Object.keys(d), g.nodes.map((n) => n.id));
+  assert.equal(d.c1, 4); // c1->c2, c2->c1, c1->c1 once, r1->c1
+  assert.equal(d.c2, 3);
+  assert.equal(d.r1, 3);
+  assert.equal(d.c3, 1);
+  assert.equal(d.o1, 0);
+  assert.equal(Object.getOwnPropertyDescriptor(d, 'constructor').value, 1);
+  assert.equal(Object.getOwnPropertyDescriptor(d, '__proto__').value, 1);
+  assert.throws(() => degreeOf({ nodes: [] }), TypeError);
+  assert.throws(() => degreeOf(null), TypeError);
+});
+
+test('degreeOf on every fixture graph case equals a direct count of its edges', () => {
+  for (const c of loadCases()) {
+    if (!c.want.nodes) continue;
+    const d = degreeOf({ nodes: c.want.nodes, edges: c.want.edges });
+    for (const n of c.want.nodes) {
+      const direct = c.want.edges.filter((e) => e.source === n.id || e.target === n.id).length;
+      assert.equal(d[n.id], direct, `${c.name}: ${n.id}`);
+    }
+  }
 });
