@@ -6,11 +6,22 @@
 
 import { MESSAGE_PAIR, MESSAGE_READ_MARK } from './v2/types.generated';
 import { fold } from './room';
+import { refuseUnknownOptions } from './options';
 
 export { MESSAGE_PAIR };
 
-/** What `senderStatus` answers: proved, contradicted, or a claim nobody can check. */
-export type OwSenderStatus = 'verified' | 'mismatch' | 'unverifiable';
+/** What `senderStatus` answers: proved, contradicted, a claim nobody can check, or a sender hidden from this reader. */
+export type OwSenderStatus = 'verified' | 'mismatch' | 'unverifiable' | 'unseen';
+
+/**
+ * The addressing readers' one option. `keyless`: the body was read with no credential (the keyless
+ * public reader), which leaves hidden recipients out and never carries `x_served_trimmed`, so an
+ * empty list cannot be told from one trimmed for the reader. False by default.
+ */
+export interface OwAddressingOptions {
+  keyless?: boolean;
+}
+const ADDRESSING_KEYS = ['keyless'] as const;
 
 /** `senderStatus`'s answer. */
 export interface OwSender {
@@ -118,10 +129,12 @@ export function isAddressedTo(message: object | null | undefined, characterId: s
  * A list that names no valid id (`['']`) or a value that is not a list is addressed to nobody,
  * so it is false here, though `recipientsOf` gives `[]` for both. A list the server trimmed for
  * this reader (`x_served_trimmed` names `characters`) is never everyone, even when it arrives empty:
- * see `hasUnseenRecipients`.
+ * see `hasUnseenRecipients`. A body read keyless is never to everyone (`{ keyless: true }`): it
+ * carries no mark, so an empty list may hold someone the reader cannot see.
  */
-export function isToEveryone(message: object | null | undefined): boolean {
-  if (!isBody(message) || hasUnseenRecipients(message)) return false;
+export function isToEveryone(message: object | null | undefined, options?: OwAddressingOptions): boolean {
+  refuseUnknownOptions('isToEveryone', options, ADDRESSING_KEYS);
+  if (!isBody(message) || options?.keyless === true || hasUnseenRecipients(message) === true) return false;
   const list = message.characters;
   return list === undefined || list === null || (Array.isArray(list) && list.length === 0);
 }
@@ -129,10 +142,13 @@ export function isToEveryone(message: object | null | undefined): boolean {
 /**
  * True when the message is addressed to someone this reader cannot see: the server served it with
  * `characters` trimmed (its `x_served_trimmed` list names `characters`), whatever is left in the
- * list. It says that such a recipient exists, never who or how many.
+ * list. It says that such a recipient exists, never who or how many. Null for a body read keyless
+ * (`{ keyless: true }`): it carries no mark, so the reader cannot say either way.
  */
-export function hasUnseenRecipients(message: object | null | undefined): boolean {
+export function hasUnseenRecipients(message: object | null | undefined, options?: OwAddressingOptions): boolean | null {
+  refuseUnknownOptions('hasUnseenRecipients', options, ADDRESSING_KEYS);
   if (!isBody(message)) return false;
+  if (options?.keyless === true) return null;
   const mark = message.x_served_trimmed;
   return Array.isArray(mark) && mark.includes('characters');
 }
@@ -154,7 +170,9 @@ export function isSentBy(message: object | null | undefined, characterId: string
  * `writtenBy`; show "claims to be from <claimed>, written by <writtenBy>'s key", never the plain
  * sender. `unverifiable`: no narrator (show "from nobody"), no `created_by` key at all (a folder,
  * an export), no members list (pass null), the author not on it, or its row naming no Character;
- * show "claims to be from <claimed>". Never give an unverified sender the verified look.
+ * show "claims to be from <claimed>". `unseen`: the sender is hidden from this reader (the server
+ * trimmed `narrator`, its `x_served_trimmed` names it); show "from someone you cannot see", never
+ * "from nobody". Never give an unverified sender the verified look.
  */
 export function senderStatus(
   message: object | null | undefined,
@@ -162,6 +180,8 @@ export function senderStatus(
 ): OwSender {
   const narrator = isBody(message) ? message.narrator : undefined;
   const claimed = typeof narrator === 'string' && narrator !== '' ? narrator : null;
+  const mark = isBody(message) ? message.x_served_trimmed : undefined;
+  if (claimed === null && Array.isArray(mark) && mark.includes('narrator')) return { status: 'unseen', claimed, writtenBy: null };
   if (claimed === null || !isBody(message)) return { status: 'unverifiable', claimed, writtenBy: null };
   const hand = handOf(message, members);
   if (hand === undefined) return { status: 'unverifiable', claimed, writtenBy: null };

@@ -180,6 +180,16 @@ test('a list the server trimmed (keel #746) is never everyone, and says someone 
   for (const m of [{}, { characters: [] }, { x_served_trimmed: 'characters' }, { x_served_trimmed: null }, null]) {
     assert.equal(hasUnseenRecipients(m), false, JSON.stringify(m));
   }
+  // a body read keyless carries no mark: never asserted to everyone, and the unseen answer is unknown
+  for (const m of [{}, { characters: [] }, { characters: null }]) {
+    assert.equal(isToEveryone(m, { keyless: true }), false, JSON.stringify(m));
+    assert.equal(hasUnseenRecipients(m, { keyless: true }), null, JSON.stringify(m));
+    assert.equal(isToEveryone(m, { keyless: false }), true, JSON.stringify(m));
+  }
+  // the sender trimmed: unseen, never "from nobody"; a null narrator without the mark stays unverifiable
+  assert.deepEqual(senderStatus({ narrator: null, x_served_trimmed: ['narrator'] }, []), { status: 'unseen', claimed: null, writtenBy: null });
+  assert.equal(senderStatus({ narrator: null, x_served_trimmed: ['characters'] }, []).status, 'unverifiable');
+  assert.equal(senderStatus({ narrator: null }, []).status, 'unverifiable');
 });
 
 test('the newest read mark wins wherever it stands in the list (the fixture lists it first)', () => {

@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
   preparePhoto, parseDate, resolveCalendar, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
+  isToEveryone, hasUnseenRecipients,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
 
@@ -93,6 +94,8 @@ const FENCED = {
   'lookupWorld#2': () => lookupWorld(index, 'Eknomos', U),
   'renderElement#2': () => renderElement(elements[0], index, U),
   'buildAskContext#2': () => buildAskContext(elements, index, U),
+  'isToEveryone#1': () => isToEveryone({ characters: [] }, U),
+  'hasUnseenRecipients#1': () => hasUnseenRecipients({ characters: [] }, U),
 };
 
 /** The object parameters that are not options: data a caller hands over, by nature open or required. */
