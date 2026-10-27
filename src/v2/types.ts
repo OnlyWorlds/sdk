@@ -1415,7 +1415,8 @@ export interface OwClientConfig {
   agent?: boolean;
   /**
    * This client's own name, sent as `X-OW-Client` on every element write (create, upsert, patch,
-   * delete, editLinks, bulk, adopt) and on no read. keel stores it on the element as
+   * delete, editLinks, bulk, adopt), on propose, acceptProposal and reviewNewElement, and on no
+   * read. keel stores it on the element as
    * `changed_client`, and on a /changes delete as `deleted_client`, so a reader can tell which tool
    * made a change: `'atlas'`, `'lantern'`, your app's name. Default `'sdk'`.
    *

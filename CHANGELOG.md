@@ -9,6 +9,10 @@ earlier history lives in git log only.
 
 - **`outDegreeOf(graph)`**: each node's out-degree in a graph the graph reader answered, the number of distinct nodes its own link fields point at: a target listed in two fields counts once, a link to itself does not count, and a mirror pair counts 1 at each end. Every node is a key, 0 included. Beside `degreeOf` ("most linked"), it says how far an element reaches out. Held to a direct count on every graph case of the lens profile's fixture.
 
+### Changed
+
+- **The `client` option's words name every call that sends `X-OW-Client`**: the element writes, and also `propose`, `acceptProposal` and `reviewNewElement`, which sent it already; the words had named only the element writes.
+
 ## [4.97.1] - 2026-10-28
 
 ### Fixed
