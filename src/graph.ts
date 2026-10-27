@@ -261,3 +261,23 @@ export function degreeOf(graph: OwWorldGraph): Record<string, number> {
   }
   return Object.fromEntries(count);
 }
+
+/**
+ * Each node's out-degree in a graph `worldGraph` answered: the number of distinct nodes its own link fields
+ * point at. A target listed in two fields counts once, a link to itself does not count, and a mirror pair
+ * (A lists B, B lists A) counts 1 at each end, since each counts its own list. Every node is a key, 0
+ * included, in the graph's node order. Like `degreeOf`, the count is the reader's: what the reading left out
+ * is never counted. This is how far an element reaches out, apart from how often it is named. A graph that
+ * is not one is a TypeError.
+ */
+export function outDegreeOf(graph: OwWorldGraph): Record<string, number> {
+  if (!isBody(graph) || !Array.isArray((graph as Body).nodes) || !Array.isArray((graph as Body).edges)) {
+    throw new TypeError('outDegreeOf: graph is what worldGraph answers, an object with nodes and edges lists.');
+  }
+  // A Map, not an object, while counting: an id such as `constructor` is no inherited key here.
+  const targets = new Map<string, Set<string>>(graph.nodes.map((n) => [n.id, new Set<string>()]));
+  for (const e of graph.edges) {
+    if (e.target !== e.source) targets.get(e.source)?.add(e.target);
+  }
+  return Object.fromEntries([...targets].map(([id, t]) => [id, t.size]));
+}

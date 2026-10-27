@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { FIELD_SCHEMA, degreeOf, resolveLens, worldGraph } from '../dist/index.js';
+import { FIELD_SCHEMA, degreeOf, outDegreeOf, resolveLens, worldGraph } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/lens.fixture.json', import.meta.url));
 const KEY = { as_of: 'asOf', map_space: 'mapSpace' };
@@ -178,6 +178,46 @@ test('degreeOf: the edges of each node, in or out, a mirror pair two, a link to 
   assert.equal(Object.getOwnPropertyDescriptor(d, '__proto__').value, 1);
   assert.throws(() => degreeOf({ nodes: [] }), TypeError);
   assert.throws(() => degreeOf(null), TypeError);
+});
+
+test('outDegreeOf: distinct targets of its own links, two fields to one target once, a link to itself none, a mirror pair 1 each', () => {
+  const world = {
+    elements: [
+      { id: 'c1', type: 'character', name: 'Ada', friends: ['c2', 'c1'], rivals: ['c2'] },
+      { id: 'c2', type: 'character', name: 'Bo', friends: ['c1'] },
+      { id: 'r1', type: 'relation', name: 'Pact', characters: ['c1', 'c2', 'c3'] },
+      { id: 'c3', type: 'character', name: 'Cy' },
+      { id: 'o1', type: 'object', name: 'Lamp' },
+      { id: 'constructor', type: 'object', name: 'An id like an inherited key' },
+      { id: '__proto__', type: 'character', name: 'Another', objects: ['constructor'] },
+    ],
+  };
+  const g = worldGraph(world, { rung: 'owner' });
+  const d = outDegreeOf(g);
+  assert.deepEqual(Object.keys(d), g.nodes.map((n) => n.id));
+  assert.equal(d.c1, 1); // friends and rivals both name c2: once; c1 itself: none
+  assert.equal(d.c2, 1); // the mirror of c1's c2
+  assert.equal(d.r1, 3);
+  assert.equal(d.c3, 0);
+  assert.equal(d.o1, 0);
+  assert.equal(Object.getOwnPropertyDescriptor(d, 'constructor').value, 0);
+  assert.equal(Object.getOwnPropertyDescriptor(d, '__proto__').value, 1);
+  assert.throws(() => outDegreeOf({ nodes: [] }), TypeError);
+  assert.throws(() => outDegreeOf(null), TypeError);
+});
+
+test('outDegreeOf on every fixture graph case equals a direct count of distinct targets', () => {
+  let cases = 0;
+  for (const c of loadCases()) {
+    if (!c.want.nodes) continue;
+    cases++;
+    const d = outDegreeOf({ nodes: c.want.nodes, edges: c.want.edges });
+    for (const n of c.want.nodes) {
+      const direct = new Set(c.want.edges.filter((e) => e.source === n.id && e.target !== n.id).map((e) => e.target)).size;
+      assert.equal(d[n.id], direct, `${c.name}: ${n.id}`);
+    }
+  }
+  assert.ok(cases > 0, 'no fixture graph case was read');
 });
 
 test('degreeOf on every fixture graph case equals a direct count of its edges', () => {
