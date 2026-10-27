@@ -82,6 +82,18 @@ test('a world key: the four reads send its API-Key and no world=, as before', as
   }
 });
 
+test('`world` in a list filter is a TypeError before sending, on every kind of client, and in listAll', async () => {
+  for (const cfg of [{ apiKey: 'ow_a_acct', world: W }, { world: W }, { apiKey: 'ow_r_key' }]) {
+    const f = recorder();
+    const c = new OwV2Client({ ...cfg, fetch: f.fetch });
+    await assert.rejects(async () => c.list('location', { filter: { world: W } }),
+      (err) => err instanceof TypeError && /`world` is not a filter/.test(err.message));
+    await assert.rejects(async () => { for await (const _ of c.listAll('location', { filter: { world: W } })) { /* empty */ } },
+      (err) => err instanceof TypeError && /`world` is not a filter/.test(err.message));
+    assert.equal(f.calls.length, 0, 'nothing sent');
+  }
+});
+
 test('an account token without world: the four reads are a TypeError naming `world`, before sending', async () => {
   for (const read of READS) {
     const f = recorder();

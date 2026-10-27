@@ -149,6 +149,10 @@ export class OwV2Client {
    */
   async list(type: ElementType | string, params: ListParams = {}): Promise<OwPage> {
     only('list', params, LIST_PARAM_KEYS, LIST_FILTER_HINT);
+    if (params.filter && Object.prototype.hasOwnProperty.call(params.filter, 'world')) {
+      // `world` is the client's, set at construction: in a filter it would go out twice, or to a world key that 422s it.
+      throw new TypeError('list: `world` is not a filter; an account token or no key names its world with the client option (new OwV2Client({ world })). Nothing was sent.');
+    }
     const query = buildQuery({
       limit: params.limit ?? this.pageSize,
       cursor: params.cursor,
