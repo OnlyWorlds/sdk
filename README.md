@@ -406,6 +406,20 @@ const label = typeWord(world, el.type, { supertype: el.supertype }) ?? el.type;
 
 The word is printed as written, never re-cased; folder names are never translated. The profile: [`profiles/names.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/names.md) in the schema distribution, with its 23-case fixture, which is this function's test.
 
+### Addresses
+
+An element has one address in three spellings: the site's `https://www.onlyworlds.com/w/<world id>/<type>/<id>`, `ow://<type>/<id>` inside a world, and `ow://<world id>/<type>/<id>` across worlds. A world by itself is `https://www.onlyworlds.com/w/<world id>` or `ow://<world id>`. Any of them may carry a moment, `@<step>` on the world's time line, and a lens, `?lens=<id>`.
+
+```typescript
+import { elementAddress, parseOwLink, OwAddressError } from '@onlyworlds/sdk';
+
+const link = elementAddress({ form: 'human', world: worldId, type: 'character', id: el.id });
+const r = parseOwLink(text); // { form, world, worldIsSlug, type, id, lens, moment, canonical }
+// a refusal throws OwAddressError: err.reason is the profile's name ('bad_id', 'uppercase', ...)
+```
+
+A field that holds an address is text: never fetch or resolve it on the server, and show one wording ("private or missing") for a world you cannot read and an element that is not there. `parseOwLink` reads one string whole; finding a link inside other text is yours. The profile: [`profiles/address.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/address.md), with its 133-case fixture, which is these functions' test.
+
 ## Tokens
 
 The account's token rating, which some OnlyWorlds tools use. `getStatus()` and `getEncryptionInfo()` are what keel still serves under `/tokens/`; `consume()`, `getAccessKey()` and the two session revokes are deprecated (keel answers 404) and leave in 5.0. To read the token rating, prefer `account.allowance()` above.

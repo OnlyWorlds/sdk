@@ -185,6 +185,11 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   standard's name). Print it as written; use it for what a person reads (headings, counts,
   labels), never for folder names, ids or API calls. For a reader who needs both: "Employees
   (Character)".
+- To name an element in text or a link, write its address with `elementAddress({ form, world,
+  type, id, lens?, moment? })`: `ow://<type>/<id>` in a text field of the same world,
+  `ow://<world id>/<type>/<id>` for another world's, the site's address for a person. Read one
+  with `parseOwLink(text)`; a refusal throws `OwAddressError` with the profile's `reason`. An
+  address in a field is text: never fetch it to show what it names.
 - A string holding an unpaired surrogate (text cut mid-emoji) is a 422 naming the field.
   Slice strings by code point, not by UTF-16 unit.
 - Colour carries the element's FAMILY (`elementColor(type, mode)`); the icon

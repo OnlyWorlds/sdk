@@ -48,6 +48,10 @@ export type { OwProposedMark } from './review';
 // The names profile (schema-dist profiles/names.md): a world's own words for the types, x_names on the World.
 export { typeWord } from './names';
 export type { OwNamesMap, OwWordPair } from './names';
+// The address profile (schema-dist profiles/address.md): an element's three spellings (the site's address
+// and the two ow:// text forms) and a world's own, with an optional moment and lens, written and read.
+export { elementAddress, parseOwLink, OwAddressError } from './address';
+export type { OwAddress, OwAddressReading, OwAddressForm, OwAddressReason } from './address';
 
 // Canonical element colour palette (families generated from schema; hexes CVD-validated)
 export { ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf, elementColor } from './v2';

@@ -18,6 +18,7 @@ import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
   preparePhoto, parseDate, resolveCalendar, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
   isToEveryone, hasUnseenRecipients,
+  elementAddress,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
 
@@ -96,6 +97,8 @@ const FENCED = {
   'buildAskContext#2': () => buildAskContext(elements, index, U),
   'isToEveryone#1': () => isToEveryone({ characters: [] }, U),
   'hasUnseenRecipients#1': () => hasUnseenRecipients({ characters: [] }, U),
+  // The address is data with a closed set of keys: a misspelt `world` would write an address inside a world.
+  'elementAddress#0': () => elementAddress({ form: 'text', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f', ...U }),
 };
 
 /** The object parameters that are not options: data a caller hands over, by nature open or required. */
