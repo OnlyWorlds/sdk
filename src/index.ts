@@ -45,6 +45,11 @@ export type { OwSender, OwSenderStatus, OwEdited, OwMessageMember } from './mess
 // shows a world shows the mark, and as a reader that hands a world on leaves it out.
 export { PROPOSED_MARK, proposedMarkOf, handsOnAsProposed } from './review';
 export type { OwProposedMark } from './review';
+// The lens profile (schema-dist profiles/lens.md): a saved way of reading a world, a Construct with
+// supertype Lens whose links are its anchors and whose x_lens is the recipe, and the one resolution every
+// reader agrees on.
+export { isLens, isTemplate, lensesInUse, resolveLens } from './lens';
+export type { OwLensReader, OwLensWorld, OwLensOptions, OwLensReading, OwLensMail, OwLensCutReason } from './lens';
 // The names profile (schema-dist profiles/names.md): a world's own words for the types, x_names on the World.
 export { typeWord } from './names';
 export type { OwNamesMap, OwWordPair } from './names';

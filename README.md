@@ -392,6 +392,21 @@ const line = noteOf(notes, me, members); // the id of my newest own-hand Note, o
 
 Both lists are in `created_at` order, equal times keep the order of the list given, and a `created_at` that is not an RFC 3339 date-time (or one with no zone, read as UTC) comes after every one that is. A Note (a Narrative with supertype `Note`) is a member's own line, never a message: the readers never address it, list it as unread or put it in a thread. A message the reader sent is not unread for them, but on the wire only a verified sender counts: pass `members` to `unreadFor`, or every message claiming to be from the reader stays unread. A world folder carries no `created_by`, so there `narrator` is trusted and `members` can be left out. The profile: [`profiles/message.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/message.md) in the schema distribution.
 
+### Lenses
+
+A lens is a saved way of reading a world: a Construct with supertype `Lens` (`isLens(el)`) whose links are its anchors and whose `x_lens` is the recipe (`depth`, `types`, `window` or `from` and `to`, `undated`, `show`, `budget`, `mail`, `notes`). `resolveLens(world, lens, reader)` resolves it for one reader over a world snapshot, the same answer as the Python package's `resolve_lens`: the kept ids and their rows in the profile's order, the cut counted by reason, and the mail part when the lens names a mail rule. A template (`isTemplate(el)`, subtype `Template`) resolves to nothing; `lensesInUse(membership, character.x_lens_uses)` gives the lenses a seat reads (the membership's choice wins).
+
+```typescript
+import { isLens, resolveLens } from '@onlyworlds/sdk';
+
+const lens = elements.find(isLens);
+const r = resolveLens({ elements, members, now: 1200 }, lens, { rung: 'contributor', character: me }, { asOf: 1194 });
+r.kept; r.rows; r.cut; // ids in order, rows as show makes them, e.g. { budget: 3, after_as_of: 1 }
+if (r.unreadable) console.warn(`x_lens.${r.unreadable} is outside the profile's table`);
+```
+
+The world holds the elements as the owner is served them; the reader's `rung` (`owner`, `contributor`, `guest` with its `whole` and `known_of` ids, `public`) decides what it sees, and an owner reading `as` another reader keeps the owner's two counts (`anchor_not_visible`, `not_visible`), which no other reader ever carries. The profile: [`profiles/lens.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/lens.md).
+
 ### A world's own words for the types
 
 A world may carry `x_names` on the World: its own word for a type (Character shown as *Employee* in a work world), and a finer word for a supertype inside one. `typeWord(world, type, { supertype, many })` returns that word, or `null` for the standard's name. `world` is a `getWorld()` body (keel serves `x_` keys on the World) or a folder's `world.json`. The API, the folder, the schema and every id keep the standard's names; the word is for display only.

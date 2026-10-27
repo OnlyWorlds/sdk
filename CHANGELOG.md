@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **The lens profile's reader** (schema-dist `v0.33.0-dist.78`, `profiles/lens.md`; the schema repinned from dist.77, the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'` and no element field moved). `isLens(element)`: a Construct with supertype `Lens`, trimmed and case-blind, the whole word; `isTemplate(element)`: a lens with subtype `Template`, which resolves to nothing. `resolveLens(world, lens, reader, { asOf, clock })` returns `OwLensReading` (`kept`, `rows`, `cut` by reason, `notesIgnored`, `mail`, `unreadable`): the profile's ten rules over a world snapshot, pure, for one reader (`OwLensReader`: `owner`, `contributor`, `guest` with `whole` and `known_of`, `public`, and an owner reading `as` another). A value outside the profile's table names the key in `unreadable` and resolves nothing. The mail rule reads the message profile's own readers. `lensesInUse(membership, xLensUses)`: the membership's choice wins over a Character's `x_lens_uses`. The fixture's 84 cases run as `test/lens.test.mjs`, beside eight shared edge cases (`test/fixtures/lens-edges.json`, the same bytes as the Python package's) for what the fixture leaves open; the answers equal the Python package's `resolve_lens` on thousands of random worlds.
+
 ## [4.90.0] - 2026-10-27
 
 ### Added

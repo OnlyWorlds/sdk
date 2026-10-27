@@ -118,8 +118,8 @@ function daysFromCivil(y: number, m: number, d: number): number {
   return era * 146097 + doe - 719468;
 }
 
-/** A time as [whole seconds since the epoch, microseconds], so microseconds still order; null when unreadable. */
-function timeKey(value: unknown): [number, number] | null {
+/** A time as [whole seconds since the epoch, microseconds], so microseconds still order; null when unreadable. Module-internal (the lens reader orders by it too): not in the package's exports. */
+export function timeKey(value: unknown): [number, number] | null {
   if (typeof value !== 'string') return null;
   const m = DATE_TIME.exec(value);
   if (m === null) return null;
@@ -135,7 +135,8 @@ function timeKey(value: unknown): [number, number] | null {
   return [seconds, Number(((m[7] ?? '') + '000000').slice(0, 6))];
 }
 
-const compareKeys = (a: [number, number], b: [number, number]): number => a[0] - b[0] || a[1] - b[1];
+/** Module-internal: not in the package's exports. */
+export const compareKeys = (a: [number, number], b: [number, number]): number => a[0] - b[0] || a[1] - b[1];
 
 /** By `created_at`; equal times keep the input's order (the server's list order); unreadable times last, in the input's order. Never by id. */
 function inCreatedOrder<T extends object>(items: readonly T[]): T[] {
