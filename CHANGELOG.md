@@ -12,6 +12,8 @@ earlier history lives in git log only.
 - **`signal` on `list`, `listAll`, `get` and `getWorld`**: an AbortSignal passed to fetch as given; on `listAll` it covers every page of the walk. A time limit per request goes in the client's own `fetch`.
 - **`counts` on `OwWorldMeta`**: a keyless world read's count of what the public reads, in all and per type (`{ total, types }`), absent with a key; `patchWorld` never sends it back.
 
+- **`isRateLimited` and `isServedTrimmedNotWritable` on `OwApiError`**: a 429 `too_many_requests` (over the request budget; wait `retryAfter`), told from a daily allowance's `quota_exceeded`; and a 422 `served_trimmed_not_writable`, a write that carried the mark keel serves on a body it trimmed for its reader. The mark is left in an echoed body on purpose: the refusal is the signal.
+
 ### Fixed
 
 - **`listAll` stops when a page hands back the cursor it was sent** with more to come, with an `OwNetworkError`, instead of reading the same page forever. What it yielded before stays with the caller.

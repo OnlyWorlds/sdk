@@ -262,6 +262,23 @@ export class OwApiError extends Error {
   }
 
   /**
+   * Over the request budget (429 `too_many_requests`): 300 a minute per key or account token, 60 per
+   * address with neither. Wait `retryAfter` seconds. Not a daily allowance (isQuotaExceeded).
+   */
+  get isRateLimited(): boolean {
+    return this.status === 429 && this.code === 'too_many_requests';
+  }
+
+  /**
+   * A write carried `x_served_trimmed`, the mark keel serves on a body it trimmed for this reader
+   * (422 `served_trimmed_not_writable`): the body was read with ids left out. Nothing was written.
+   * Drop the mark and send the write again; keel keeps the ids this key cannot see.
+   */
+  get isServedTrimmedNotWritable(): boolean {
+    return this.status === 422 && this.code === 'served_trimmed_not_writable';
+  }
+
+  /**
    * createFileTicket / uploadFile: the file is over the 25 MB a file may be (413
    * `file_too_large`, `param` size); the message gives both sizes. Nothing was
    * issued. Not the upload host's 413 `too_large` (bytes past a ticket's `max_bytes`).

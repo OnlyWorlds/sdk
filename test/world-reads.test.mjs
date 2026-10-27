@@ -382,3 +382,28 @@ test('every client method on an account client with world set: it sends (an /acc
     }
   }
 });
+
+function failing(status, code, headers = {}) {
+  return async () => ({
+    ok: false, status, headers: new Headers(headers),
+    async text() { return JSON.stringify({ error: { type: 'x', code, message: code } }); },
+    async json() { return { error: { type: 'x', code, message: code } }; },
+  });
+}
+
+test('a keyless read over its budget is isRateLimited with Retry-After in seconds, and not isQuotaExceeded', async () => {
+  const c = new OwV2Client({ world: W, fetch: failing(429, 'too_many_requests', { 'Retry-After': '12' }) });
+  await assert.rejects(c.list('character'),
+    (e) => e.name === 'OwApiError' && e.isRateLimited && e.retryAfter === 12 && !e.isQuotaExceeded);
+  const q = new OwV2Client({ world: W, fetch: failing(429, 'quota_exceeded') });
+  await assert.rejects(q.list('character'), (e) => e.isQuotaExceeded && !e.isRateLimited);
+});
+
+test('a write carrying x_served_trimmed is isServedTrimmedNotWritable, and the client sent the mark as given', async () => {
+  const calls = [];
+  const fail = failing(422, 'served_trimmed_not_writable');
+  const c = new OwV2Client({ apiKey: 'ow_w_key', apiPin: '1234', fetch: async (url, init) => { calls.push(init); return fail(); } });
+  await assert.rejects(c.patch('narrative', EL, { characters: [], x_served_trimmed: ['characters'] }),
+    (e) => e.name === 'OwApiError' && e.isServedTrimmedNotWritable && !e.isNotAuthor);
+  assert.deepEqual(JSON.parse(calls[0].body).x_served_trimmed, ['characters'], 'the mark is left in, keel refuses it by name');
+});
