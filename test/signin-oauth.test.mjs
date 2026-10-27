@@ -62,7 +62,7 @@ test('completeSignIn trades the code once with the five body keys and no credent
   const calls = [];
   const client = new OwV2Client({ fetch: fetchStub(200, { token: 'ow_a_new', token_id: 't1', token_type: 'bearer', account: { id: 'u1', username: 'ann' } }, calls) });
   const got = await client.completeSignIn({ clientId: 'atlas', storage, url: `https://atlas.onlyworlds.com/signin/callback?code=c1&state=${state}` });
-  assert.deepEqual(got, { token: 'ow_a_new', tokenId: 't1', tokenType: 'bearer', account: { id: 'u1', username: 'ann' }, resume: { open: 'w1' } });
+  assert.deepEqual(got, { token: 'ow_a_new', tokenId: 't1', expiresAt: null, tokenType: 'bearer', account: { id: 'u1', username: 'ann' }, resume: { open: 'w1' } });
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, `${BASE}/auth/token`);
   assert.equal(calls[0].init.method, 'POST');
@@ -83,6 +83,18 @@ test('completeSignIn gives tokenId null when the server sends no token_id (an ol
     const client = new OwV2Client({ fetch: fetchStub(200, answer, []) });
     const got = await client.completeSignIn({ clientId: 'atlas', storage, url: `https://atlas.onlyworlds.com/signin/callback?code=c1&state=${state}` });
     assert.equal(got.tokenId, null);
+  }
+});
+
+test('completeSignIn carries expires_at as expiresAt, as served; absent, empty or not a string is null', async () => {
+  for (const [served, want] of [['2026-11-03T18:00:00Z', '2026-11-03T18:00:00Z'], [null, null], [undefined, null], ['', null], [7, null]]) {
+    const storage = memory();
+    const state = await begun(storage);
+    const answer = { token: 'ow_a_new', token_id: 't1', token_type: 'bearer', account: { id: 'u1', username: 'ann' } };
+    if (served !== undefined) answer.expires_at = served;
+    const client = new OwV2Client({ fetch: fetchStub(200, answer, []) });
+    const got = await client.completeSignIn({ clientId: 'atlas', storage, url: `https://atlas.onlyworlds.com/signin/callback?code=c1&state=${state}` });
+    assert.equal(got.expiresAt, want);
   }
 });
 
