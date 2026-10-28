@@ -667,10 +667,14 @@ export interface OwMe {
   /** The member's Character, or null (null too when it is hidden from this key). */
   character: string | null;
   /**
-   * The lenses you chose (setMyLenses), lens ids in your order; empty for none, which is a choice.
-   * The draught reads them when you name no lens and no policy.
+   * The lenses you start with, lens ids in order: the ones you chose (setMyLenses), or, when you
+   * chose none, the lenses whose `titles` name a Title your Character holds (`lenses_from` says
+   * which; the owner's are always its own choice). The draught reads them when you name no lens
+   * and no policy.
    */
   lenses: string[];
+  /** Where `lenses` comes from: `chosen` (your own list, empty for none) or `titles` (you chose none, and your Character's Titles bring these). Saving a list makes it your choice. */
+  lenses_from: 'chosen' | 'titles';
   /** Agent seats only: the agent's name. */
   name?: string;
   /** Who you are here, who answers for you, and the house rules. */
@@ -732,10 +736,14 @@ export interface OwMember {
   /** Agent rows only: the agent's name. */
   name?: string;
   /**
-   * The lenses this row chose, lens ids in its order (the owner row: the owner's own); empty for
-   * none, which is a choice. A lens this key cannot see is left out of what it is shown.
+   * The lenses this row starts with, lens ids in order: the ones it chose, or, for a live seat that
+   * chose none, the lenses whose `titles` name a Title its Character holds (`lenses_from` says
+   * which). The owner row: the owner's own choice, never a Title's. A lens this key cannot see is
+   * left out of what it is shown.
    */
   lenses: string[];
+  /** Where `lenses` comes from: `chosen` (the row's own list, empty for none) or `titles` (it chose none, and its Character's Titles bring these). */
+  lenses_from: 'chosen' | 'titles';
   [k: string]: unknown;
 }
 
@@ -1036,10 +1044,14 @@ export interface OwWorldLens {
   unreadable?: string;
   /** The Titles it is the default for: everyone holding one starts with it. */
   titles: string[];
-  /** This caller chose it (OwMe's `lenses`). */
+  /** This caller chose it (OwMe's `lenses`, with `lenses_from` `chosen`). */
   chosen: boolean;
+  /** This caller chose no lenses and starts with this one through a Title its Character holds (OwMe's `lenses`, with `lenses_from` `titles`). Never with `chosen`. */
+  from_titles: boolean;
   /** The owner only: the memberships that chose it (null for the owner). */
   chosen_by?: Array<string | null>;
+  /** The owner only: the seats that start with it through a Title, apart from `chosen_by`: each live membership that chose no lenses and whose Character holds a Title it names, with those Titles, in the members' order. */
+  title_seats?: Array<{ member: string; titles: string[] }>;
   /** The owner only: `empty` (it resolves to nothing for the owner), `over_budget` (the owner's reading cuts by budget), `retired_assigned` (retired and still chosen by a seat). */
   health?: { empty: boolean; over_budget: boolean; retired_assigned: boolean };
   /** With `resolve`: the reading of the lens for this caller (or the reader `readAs` names). */

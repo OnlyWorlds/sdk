@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.97.0] - 2026-10-28
+
+### Added
+
+- **Where a seat's lenses come from.** `OwMe` and `OwMember` carry `lenses_from`, `chosen` (the row's own list, empty for none) or `titles` (it chose none, and its Character's Titles bring these); `lenses` is then the lenses whose `titles` name a Title the Character holds. The owner's list is always its own choice. On `OwWorldLens`, `from_titles` says the caller starts with the lens through a Title (never with `chosen`), and the owner gets `title_seats`: each seat that starts with it through a Title, with those Titles, in the members' order. The API serves all three since 2026-10-28.
+
+### Fixed
+
+- **An umbrella lens no longer enters a child lens the reader knows only as a stub.** Since 4.93.1 a lens named by id reads as nothing when the reader is served it only as a known-of stub; as an umbrella's child, the same stub was still entered and its stored anchors read, so a guest's reading kept elements reached through links it was never served. Such a child is now an anchor the reader cannot see (`anchor_not_visible`, counted for the owner only), as the API reads it. Two shared edge cases hold it, the same file as the Python package's.
+
 ## [4.96.1] - 2026-10-27
 
 ### Fixed

@@ -513,10 +513,15 @@ interface Resolved {
   cut: Map<string, OwLensCutReason>;
 }
 
-/** The anchors and the umbrella's children of a lens, in its link order. */
-function anchorsOf(lens: Body, r: Reading): { anchors: string[]; children: string[]; anchored: boolean } {
+/**
+ * The anchors and the umbrella's children of a lens, in its link order. A child is a lens in `constructs`
+ * the reader sees whole; one it knows only as a stub serves no recipe and no links, so it is an anchor
+ * the reader cannot see (`unseen`), never entered (keel's `_anchors`).
+ */
+function anchorsOf(lens: Body, r: Reading): { anchors: string[]; children: string[]; unseen: Set<string>; anchored: boolean } {
   const anchors: string[] = [];
   const children: string[] = [];
+  const unseen = new Set<string>();
   const seen = new Set<string>();
   for (const field of ANCHOR_FIELDS) {
     const v = valueOf(lens, field);
@@ -524,13 +529,16 @@ function anchorsOf(lens: Body, r: Reading): { anchors: string[]; children: strin
     for (const id of v) {
       if (typeof id !== 'string' || id === '' || seen.has(id)) continue;
       seen.add(id);
-      if (field === 'constructs' && r.view.has(id) && isLens(r.byId.get(id) as Body)) children.push(id);
-      else anchors.push(id);
+      if (field === 'constructs' && r.view.has(id) && isLens(r.byId.get(id) as Body)) {
+        if (!r.stubs.has(id)) { children.push(id); continue; }
+        unseen.add(id);
+      }
+      anchors.push(id);
     }
   }
   const mark = lens.x_served_trimmed;
   const trimmed = Array.isArray(mark) && mark.some(f => typeof f === 'string' && ANCHOR_FIELDS.includes(f));
-  return { anchors, children, anchored: seen.size > 0 || trimmed };
+  return { anchors, children, unseen, anchored: seen.size > 0 || trimmed };
 }
 
 /** One lens by its own recipe, its children entered once each through the shared visited set. */
@@ -539,14 +547,14 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
   const addCut = (id: string, why: OwLensCutReason): void => {
     if (!cut.has(id)) cut.set(id, why);
   };
-  const { anchors, children, anchored } = anchorsOf(lens, r);
+  const { anchors, children, unseen, anchored } = anchorsOf(lens, r);
   const anchorSet = new Set(anchors);
   const childSet = new Set(children);
   const list: string[] = [];
   const frontier: string[] = [];
   for (const id of anchors) {
     if (visited.has(id) || !r.byId.has(id)) continue;
-    if (!r.view.has(id)) {
+    if (!r.view.has(id) || unseen.has(id)) {
       addCut(id, 'anchor_not_visible');
       continue;
     }
