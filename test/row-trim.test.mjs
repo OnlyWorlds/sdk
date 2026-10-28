@@ -14,13 +14,13 @@ import { fileURLToPath } from 'node:url';
 import { resolveLens } from '../dist/index.js';
 
 const FILE = fileURLToPath(new URL('./fixtures/row-trim-cases.json', import.meta.url));
-const SHA256 = '4a637a74b85da50ba5a6e967756b67530defa7633cf47ff427c9fc64c53878a6';
+const SHA256 = 'a03998723cc2c717831785374e84fd6ac7e503f98d92a3218be5ec733c0168da';
 const bytes = readFileSync(FILE);
-const { cases } = JSON.parse(bytes.toString('utf8'));
+const cases = JSON.parse(bytes.toString('utf8'));
 
 test('the row-trim cases are the shared bytes', () => {
   assert.equal(createHash('sha256').update(bytes).digest('hex'), SHA256);
-  assert.equal(cases.length, 14);
+  assert.equal(cases.length, 20);
 });
 
 for (const c of cases) {

@@ -23,7 +23,7 @@ earlier history lives in git log only.
 
 ### Fixed
 
-- **4.99.0 handed hidden elements' ids to a reader below the owner, in the notes of a lens kept as an element.** A lens a hop reaches is kept as an element, and its row carried `x_lens.notes` whole, so a contributor, a guest or the public got the ids of hidden anchors and other hidden elements as note keys, with the notes' text. The row now keeps a note only for an anchor it is served or another element the reader sees; for a contributor or a guest, `notes` joins `x_served_trimmed` when an anchor's note went with its anchor. Fourteen row cases hold these readings.
+- **4.99.0 handed hidden elements' ids to a reader below the owner, in the notes of a lens kept as an element.** A lens a hop reaches is kept as an element, and its row carried `x_lens.notes` whole, so a contributor, a guest or the public got the ids of hidden anchors and other hidden elements as note keys, with the notes' text. The row now keeps a note only for an anchor it is served or another element the reader sees; for a contributor or a guest, `notes` joins `x_served_trimmed` when an anchor's note went with its anchor. Twenty row cases hold these readings, the same file as the Python package's.
 
 ## [4.99.0] - 2026-10-28
 
