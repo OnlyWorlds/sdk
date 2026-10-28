@@ -125,7 +125,10 @@ export class OwV2Client {
 
   /**
    * PUT /me/lenses -- choose the lenses this key's holder starts with: lens ids in order, 0 to 20,
-   * repeats dropped by keel; an empty list is a choice too (the draught then adds no frame). Any write
+   * repeats dropped by keel; an empty list is a choice too (the draught then adds no frame), and keeps
+   * a seat off its Titles' lenses. `null` goes back to never chosen: a seat playing a Character then
+   * starts with its Titles' lenses (`lenses_from` says where a list comes from); on the owner's own
+   * keys `null` is the empty list. Any write
    * key of the world, with its PIN, sets its own holder's list: a person member's, an agent seat's, or
    * on the owner's keys the owner's own; answers GET /me's body. The draught reads the list whenever it
    * is given no lens and no policy. 404 for a lens this key cannot see; 422 `not_a_lens`,
@@ -134,9 +137,9 @@ export class OwV2Client {
    * `world` names (`world=<id>`, the Bearer token, no PIN); without `world` set it is a TypeError
    * before sending. A world key sends no `world`: the key names its world.
    */
-  async setMyLenses(lensIds: string[]): Promise<OwMe> {
-    if (!Array.isArray(lensIds)) {
-      throw new TypeError('setMyLenses: lensIds is a list of lens ids ([] for none). Nothing was sent.');
+  async setMyLenses(lensIds: string[] | null): Promise<OwMe> {
+    if (lensIds !== null && !Array.isArray(lensIds)) {
+      throw new TypeError('setMyLenses: lensIds is a list of lens ids ([] for none, null for never chosen). Nothing was sent.');
     }
     return this.request('PUT', '/me/lenses', { accountToken: 'world', body: { lenses: lensIds } }) as Promise<OwMe>;
   }
@@ -1138,7 +1141,9 @@ export class OwV2Client {
 
   /**
    * PATCH /account/worlds/{worldId}/members/{memberId} with `lenses` alone -- set the lenses a row
-   * starts with: lens ids in order, 0 to 20, repeats dropped by keel; an empty list is a choice too.
+   * starts with: lens ids in order, 0 to 20, repeats dropped by keel; an empty list is a choice too,
+   * and keeps a seat off its Titles' lenses, while `null` puts the row back to never chosen (a seat
+   * playing a Character then starts with its Titles' lenses; for `'owner'`, `null` is the empty list).
    * A member sets its own row (any role), an agent's or a player's seat it answers for (its sponsor),
    * or any seat as a co-builder; the owner sets any seat, and its own list with `'owner'` as
    * `memberId`. Any other row is a 404; the owner naming a person's row is a 422 (a person sets its
@@ -1151,12 +1156,12 @@ export class OwV2Client {
    * (keel's `MemberLenses`), `id` null and `role` and `kind` `owner` for the owner's own list. The body is `{ lenses }` and
    * nothing else: a role, Character or sponsor change is not sent here. Needs the client's `ow_a_` token.
    */
-  async setMemberLenses(worldId: string, memberId: string, lensIds: string[]): Promise<OwMemberLenses> {
+  async setMemberLenses(worldId: string, memberId: string, lensIds: string[] | null): Promise<OwMemberLenses> {
     if (this.keyKind !== 'account') {
       throw new TypeError('setMemberLenses needs an account token (ow_a_): a world key sets its own holder\'s list with setMyLenses');
     }
-    if (!Array.isArray(lensIds)) {
-      throw new TypeError('setMemberLenses: lensIds is a list of lens ids ([] for none). Nothing was sent.');
+    if (lensIds !== null && !Array.isArray(lensIds)) {
+      throw new TypeError('setMemberLenses: lensIds is a list of lens ids ([] for none, null for never chosen). Nothing was sent.');
     }
     return this.request(
       'PATCH',

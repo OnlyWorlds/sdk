@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **`setMyLenses(null)` and `setMemberLenses(world, member, null)`**: `null` puts a lens list back to never chosen, so a seat playing a Character starts with its Titles' lenses again, while an empty list now keeps a seat off them (the API tells the two apart from this release on). On the owner's own list `null` is the empty list. Anything that is neither a list nor `null` is still refused before sending.
+
 ## [4.98.0] - 2026-10-28
 
 ### Added

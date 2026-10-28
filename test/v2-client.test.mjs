@@ -503,8 +503,13 @@ test('setMyLenses sends PUT /me/lenses with the ids in order and the PIN, no age
   assert.equal('X-OW-Agent' in a.init.headers, false);
   assert.equal('X-OW-Client' in a.init.headers, false);
   assert.deepEqual(JSON.parse(b.init.body), { lenses: [] });
-  await assert.rejects(client.setMyLenses('l1'), (e) => e instanceof TypeError && /list of lens ids/.test(e.message));
-  assert.equal(fetchImpl.calls.length, 2, 'a refused list sends nothing');
+  // null puts the list back to never chosen (keel's opt-out: [] keeps a seat off its Titles' lenses)
+  await client.setMyLenses(null);
+  assert.equal(fetchImpl.calls[2].init.body, JSON.stringify({ lenses: null }));
+  for (const bad of ['l1', undefined, { 0: 'l1' }]) {
+    await assert.rejects(client.setMyLenses(bad), (e) => e instanceof TypeError && /list of lens ids/.test(e.message), String(bad));
+  }
+  assert.equal(fetchImpl.calls.length, 3, 'a refused list sends nothing');
 });
 
 test('setMyLenses on an account token: the Bearer and world=<id> from the client\'s world, no API-Key or PIN; without world a TypeError before sending', async () => {
@@ -582,11 +587,13 @@ test('setMemberLenses sends PATCH /account/worlds/{id}/members/{id} with { lense
   assert.equal(a.init.headers.Authorization, 'Bearer ow_a_test');
   assert.equal(new URL(b.url).pathname, '/api/v2/account/worlds/w1/members/owner');
   assert.equal(b.init.body, JSON.stringify({ lenses: [] }));
-  for (const bad of ['l1', null, undefined, { 0: 'l1' }]) {
+  await acct.client.setMemberLenses('w1', 'm1', null);
+  assert.equal(acct.fetchImpl.calls[2].init.body, JSON.stringify({ lenses: null }), 'null: back to never chosen');
+  for (const bad of ['l1', undefined, { 0: 'l1' }]) {
     await assert.rejects(acct.client.setMemberLenses('w1', 'm1', bad),
       (e) => e instanceof TypeError && /setMemberLenses: lensIds is a list of lens ids/.test(e.message) && /Nothing was sent/.test(e.message), String(bad));
   }
-  assert.equal(acct.fetchImpl.calls.length, 2, 'a refused list sends nothing');
+  assert.equal(acct.fetchImpl.calls.length, 3, 'a refused list sends nothing');
   for (const apiKey of ['ow_w_test', 'ow_r_test', '0123456789']) {
     const world = makeClient({ status: 200, body: row }, { apiKey });
     await assert.rejects(world.client.setMemberLenses('w1', 'm1', ['l1']),
