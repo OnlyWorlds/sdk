@@ -1,4 +1,4 @@
-// The room profile (schema-dist profiles/room.md, serial 45): which elements a parlor puts in
+// The room profile (schema-dist profiles/room.md, serial 45; the mark by presence since serial 83): which elements a parlor puts in
 // a world, told apart by type and supertype together with the mark x_room_of. ROOM_PAIRS and
 // ROOM_MARK are generated from the vendored dist; this file holds only the matcher, so a tool
 // that keeps its own copy of the pairs can drop it for these exports.
@@ -39,9 +39,21 @@ export function trimWhiteSpace(text: string): string {
 export const fold = (text: string): string => simpleCaseFold(trimWhiteSpace(text));
 
 /**
+ * A mark read by presence (room.md and charter.md, serial 83): it counts when its value is not null; a
+ * string counts only when something is left after the White_Space trim, and any other value (a number, an
+ * object) counts as present. The value is never compared. Module-internal.
+ */
+function hasMark(el: Record<string, unknown>, field: string): boolean {
+  const mark = Object.prototype.hasOwnProperty.call(el, field) ? el[field] : undefined;
+  if (mark === undefined || mark === null) return false;
+  return typeof mark !== 'string' || trimWhiteSpace(mark) !== '';
+}
+
+/**
  * True when the element is a room element: its type and supertype, each trimmed and compared
- * without regard to case, match one of ROOM_PAIRS, AND it carries the mark `x_room_of` as a
- * non-empty string (the id of the world or the sitting the room belongs to). Both, always:
+ * without regard to case, match one of ROOM_PAIRS, AND it carries the mark `x_room_of` (the id of
+ * the world or the sitting the room belongs to), read by presence: any value but null, a string only
+ * when something is left after trimming, the value never compared. Both, always:
  * a pair without the mark is lore (a novel's letters are Narratives with supertype Message),
  * and a mark without a pair is not a room element (a malformed mark: report it, never hide it).
  * The pair match is the whole word: a Narrative with supertype `Messages` is lore. The charter
@@ -59,11 +71,10 @@ export const fold = (text: string): string => simpleCaseFold(trimWhiteSpace(text
  * package's `is_room_element`.
  */
 export function isRoomElement(
-  el: { type?: string; supertype?: string | null; x_room_of?: string | null },
+  el: { type?: string; supertype?: string | null; x_room_of?: unknown },
 ): boolean {
-  if (el == null || typeof el.type !== 'string' || typeof el.supertype !== 'string') return false;
-  const mark: unknown = el[ROOM_MARK];
-  if (typeof mark !== 'string' || mark === '') return false;
+  if (el == null || typeof el !== 'object' || typeof el.type !== 'string' || typeof el.supertype !== 'string') return false;
+  if (!hasMark(el as Record<string, unknown>, ROOM_MARK)) return false;
   const type = fold(el.type);
   const supertype = fold(el.supertype);
   return ROOM_PAIRS.some(p => fold(p.type) === type && fold(p.supertype) === supertype);
@@ -83,9 +94,7 @@ export function readingAidKey(element: unknown): string | null {
   if (typeof el.type !== 'string' || typeof el.supertype !== 'string') return null;
   const key = `${fold(el.type)}/${fold(el.supertype)}`;
   if (!READING_AID_KEYS.has(key)) return null;
-  const mark = Object.prototype.hasOwnProperty.call(el, READING_AID_MARK) ? el[READING_AID_MARK] : undefined;
-  if (mark === undefined || mark === null || (typeof mark === 'string' && trimWhiteSpace(mark) === '')) return null;
-  return key;
+  return hasMark(el, READING_AID_MARK) ? key : null;
 }
 
 /**

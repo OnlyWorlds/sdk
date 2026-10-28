@@ -36,7 +36,7 @@ test('isRoomElement answers every case of the room fixture', (t) => {
   }
   t.diagnostic(`the room fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 28, `the fixture holds ${cases.length} cases, serial 71 has 28`);
+  assert.equal(cases.length, 32, `the fixture holds ${cases.length} cases, serial 83 has 32`);
 });
 
 test('isRoomElement: an element without a string type, supertype or mark is not in the room', () => {
@@ -44,7 +44,25 @@ test('isRoomElement: an element without a string type, supertype or mark is not 
   assert.equal(isRoomElement({ type: 'narrative', x_room_of: WORLD }), false);
   assert.equal(isRoomElement({ supertype: 'Message', x_room_of: WORLD }), false);
   assert.equal(isRoomElement({ type: 'narrative', supertype: '   ', x_room_of: WORLD }), false);
-  assert.equal(isRoomElement({ type: 'narrative', supertype: 'Message', x_room_of: 7 }), false);
+  assert.equal(isRoomElement({ type: 'narrative', supertype: 'Message' }), false);
+  assert.equal(isRoomElement({ type: 'narrative', supertype: 'Message', x_room_of: null }), false);
+});
+
+test('isRoomElement reads the mark by presence, never by its value (room.md, serial 83)', () => {
+  const NBSP = String.fromCodePoint(0xa0);
+  const msg = (mark) => ({ type: 'narrative', supertype: 'Message', x_room_of: mark });
+  // Any value but null counts: a number, an object, a list, false, a world id that is not this one.
+  assert.equal(isRoomElement(msg(7)), true);
+  assert.equal(isRoomElement(msg(0)), true);
+  assert.equal(isRoomElement(msg(false)), true);
+  assert.equal(isRoomElement(msg({})), true);
+  assert.equal(isRoomElement(msg([])), true);
+  assert.equal(isRoomElement(msg(`  ${WORLD}  `)), true);
+  // A string counts only when something is left after the White_Space trim.
+  assert.equal(isRoomElement(msg('')), false);
+  assert.equal(isRoomElement(msg(` ${NBSP}\t`)), false);
+  assert.equal(isRoomElement(msg(String.fromCodePoint(0x1f))), true);
+  assert.equal(isRoomElement(msg(String.fromCodePoint(0xfeff))), true);
 });
 
 test('isRoomElement folds case by Unicode simple case folding, as the Python package does', () => {
