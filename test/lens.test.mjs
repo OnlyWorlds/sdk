@@ -215,6 +215,115 @@ test('the shared edge cases (the Python package runs the same file)', async () =
   assert.equal(edges.length, 15);
 });
 
+// The reading aids and changed_within on the public calls (the Python package holds the same cases).
+const AIDS = {
+  elements: [
+    { id: 'desk', type: 'institution', name: 'The Desk', constructs: ['domain', 'guide'] },
+    { id: 'rules', type: 'law', name: 'House Rules', supertype: 'Charter', author: 'desk', x_charter_of: 'w1' },
+    { id: 'charter', type: 'law', name: 'Harbour Charter', supertype: ' charter ', author: 'desk' },
+    { id: 'domain', type: 'construct', name: 'Reporting', supertype: 'Domain', x_charter_of: 'w1' },
+    { id: 'guide', type: 'construct', name: 'How we work', supertype: 'GUIDE', x_charter_of: 'w1', objects: ['ledger'] },
+    { id: 'ledger', type: 'object', name: 'Ledger' },
+  ],
+};
+const lensOn = (anchors, x_lens) => ({ id: 'L', type: 'construct', name: 'L', supertype: 'Lens', ...anchors, ...(x_lens ? { x_lens } : {}) });
+
+test('isCharterElement: the pair and the mark, both; a blank string mark is no mark, any other value is one', () => {
+  assert.equal(isCharterElement(AIDS.elements[1]), true);
+  assert.equal(isCharterElement(AIDS.elements[2]), false); // the pair without the mark: lore
+  assert.equal(isCharterElement(AIDS.elements[3]), true);
+  assert.equal(isCharterElement(AIDS.elements[4]), true); // GUIDE, folded
+  assert.equal(isCharterElement({ type: 'law', supertype: 'Charters', x_charter_of: 'w1' }), false); // the whole word
+  assert.equal(isCharterElement({ type: 'object', supertype: 'Charter', x_charter_of: 'w1' }), false);
+  assert.equal(isCharterElement({ type: 'law', supertype: 'Charter', x_charter_of: '' }), false);
+  assert.equal(isCharterElement({ type: 'law', supertype: 'Charter', x_charter_of: ' 　' }), false);
+  assert.equal(isCharterElement({ type: 'law', supertype: 'Charter', x_charter_of: null }), false);
+  assert.equal(isCharterElement({ type: 'law', supertype: 'Charter', x_charter_of: 7 }), true);
+  assert.equal(isCharterElement({ type: 'law', supertype: 'Charter', x_room_of: 'w1' }), false); // the room's mark is not this one
+  assert.equal(isCharterElement(null), false);
+});
+
+test('an unmarked Charter is lore: a hop keeps it like any Law, and types `law` keeps it', () => {
+  const plain = resolveLens(AIDS, lensOn({ institutions: ['desk'] }), OWNER);
+  assert.deepEqual(plain.kept, ['desk', 'charter']);
+  assert.deepEqual(plain.cut, { types: 3 });
+  const laws = resolveLens(AIDS, lensOn({ institutions: ['desk'] }, { types: ['law'] }), OWNER);
+  assert.deepEqual(laws.kept, ['desk', 'charter']);
+  assert.deepEqual(laws.cut, { types: 3 });
+});
+
+test('a marked Domain a hop reaches is cut as types unless types names construct/domain', () => {
+  const none = resolveLens(AIDS, lensOn({ institutions: ['desk'] }, { types: ['construct'] }), OWNER);
+  assert.deepEqual(none.kept, ['desk']);
+  assert.deepEqual(none.cut, { types: 4 }); // the three aids, and the lore Charter, a Law
+  const named = resolveLens(AIDS, lensOn({ institutions: ['desk'] }, { types: [' Construct/Domain '] }), OWNER);
+  assert.deepEqual(named.kept, ['desk', 'domain']);
+  assert.deepEqual(named.cut, { types: 3 });
+  // A hop does not continue out of an aid whose pair is not named: the Ledger, behind the Guide, is never reached.
+  const deep = resolveLens(AIDS, lensOn({ institutions: ['desk'] }, { depth: 2 }), OWNER);
+  assert.deepEqual(deep.cut, { types: 3 });
+  const through = resolveLens(AIDS, lensOn({ institutions: ['desk'] }, { depth: 2, types: ['construct/guide', 'institution'] }), OWNER);
+  assert.deepEqual(through.cut, { types: 3, hops_not_served: 1 });
+  // In an unlensed graph the aids are out, whatever flag is asked; a lens naming the pair keeps them as nodes.
+  const g = worldGraph(AIDS, OWNER, { rooms: true, hidden: true, proposed: true, mapSpace: true });
+  assert.deepEqual(g.nodes.map(n => n.id), ['charter', 'desk', 'ledger']);
+  assert.deepEqual(g.cut, { reading_aid: 3 });
+  assert.deepEqual(g.edgesCut, { reading_aid: 2 }); // the Desk's links to the Domain and the Guide
+  assert.deepEqual(g.edges, [{ source: 'charter', field: 'author', target: 'desk', index: 0 }]);
+  const lensed = worldGraph(AIDS, OWNER, { lens: lensOn({ institutions: ['desk'] }, { types: ['construct/domain', 'institution'] }) });
+  assert.deepEqual(lensed.nodes.map(n => [n.id, n.marks]), [['desk', undefined], ['domain', undefined]]);
+});
+
+test('an anchor that is a marked Guide is kept and followed, whatever types says', () => {
+  const r = resolveLens(AIDS, lensOn({ constructs: ['guide'] }, { types: ['object', 'institution'] }), OWNER);
+  assert.deepEqual(r.kept, ['guide', 'desk', 'ledger']);
+  assert.deepEqual(r.cut, {});
+  const public_ = resolveLens(AIDS, lensOn({ constructs: ['guide'] }), { rung: 'public' });
+  assert.deepEqual(public_.kept, ['guide', 'desk', 'ledger']); // an aid is no room element: a public reader sees it
+});
+
+test('changed_within: an element exactly that many days old is kept, a second older is stale; never an anchor', () => {
+  const clock = '2026-10-27T12:00:00Z';
+  const world = {
+    elements: [
+      { id: 'a', type: 'institution', name: 'Anchor', updated_at: '2020-01-01T00:00:00Z', objects: ['edge', 'past', 'none', 'bad'] },
+      { id: 'edge', type: 'object', name: 'Seven days', updated_at: '2026-10-20T12:00:00Z' },
+      { id: 'past', type: 'object', name: 'Seven days and a second', updated_at: '2026-10-20T11:59:59Z' },
+      { id: 'none', type: 'object', name: 'No time' },
+      { id: 'bad', type: 'object', name: 'Unreadable', updated_at: 'yesterday' },
+    ],
+  };
+  const r = resolveLens(world, lensOn({ institutions: ['a'] }, { changed_within: 7 }), OWNER, { clock });
+  assert.deepEqual(r.kept, ['a', 'edge', 'bad', 'none']); // no readable time: never cut, sorted last
+  assert.deepEqual(r.cut, { stale: 1 });
+  // An offset is read: 13:00+01:00 is the same instant as the edge.
+  world.elements[2].updated_at = '2026-10-20T13:00:00+01:00';
+  assert.deepEqual(resolveLens(world, lensOn({ institutions: ['a'] }, { changed_within: 7 }), OWNER, { clock }).cut, {});
+  // A filter is cut too, after the fence, types and the window.
+  const f = resolveLens(world, lensOn({}, { types: ['object'], changed_within: 1 }), OWNER, { clock });
+  assert.deepEqual([f.kept, f.cut], [['bad', 'none'], { stale: 2 }]);
+  for (const bad of [0, -1, 1.5, '7', true, [7]]) {
+    assert.equal(resolveLens(world, lensOn({ institutions: ['a'] }, { changed_within: bad }), OWNER).unreadable, 'changed_within', String(bad));
+  }
+  assert.equal(resolveLens(world, lensOn({ institutions: ['a'] }, { changed_within: null }), OWNER, { clock }).unreadable, null);
+});
+
+test('changed_within reads a folder element by the newer of its two sync stamps', () => {
+  const clock = '2026-10-27T12:00:00Z';
+  const at = (stamps) => ({ elements: [
+    { id: 'a', type: 'institution', name: 'Anchor', objects: ['o'] },
+    { id: 'o', type: 'object', name: 'Folder copy', ...stamps },
+  ] });
+  const lens = lensOn({ institutions: ['a'] }, { changed_within: 7 });
+  const kept = (stamps) => resolveLens(at(stamps), lens, OWNER, { clock }).kept.includes('o');
+  assert.equal(kept({ server_updated_at: '2026-09-01T00:00:00Z', local_updated_at: '2026-10-26T00:00:00Z' }), true);
+  assert.equal(kept({ server_updated_at: '2026-10-26T00:00:00Z', local_updated_at: '2026-09-01T00:00:00Z' }), true);
+  assert.equal(kept({ server_updated_at: '2026-09-01T00:00:00Z', local_updated_at: '2026-09-02T00:00:00Z' }), false);
+  // A folder stamp, where one reads, wins over updated_at; an unreadable one is no stamp.
+  assert.equal(kept({ updated_at: '2026-10-26T00:00:00Z', local_updated_at: '2026-09-02T00:00:00Z' }), false);
+  assert.equal(kept({ updated_at: '2026-10-26T00:00:00Z', local_updated_at: 'soon' }), true);
+});
+
 test('a lens a guest knows only as a stub reads as nothing, by id, as keel reads it; whole, it reads', () => {
   const world = {
     elements: [
