@@ -69,11 +69,14 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - Allowance (since 4.21.0, account token): `account.allowance()` reads the daily AI allowance
   without spending: `{ token_rating, tokens_used_today, tokens_remaining, resets_at }`.
 - Who am I (since 4.22.0, a world key): `client.me()` is `{ world, scope, kind, role,
-  membership, character, front_door }` (`membership` is what `created_by` holds for what you
+  membership, character, front_door, reading_aids }` (`membership` is what `created_by` holds for what you
   create; null for the owner); `front_door` (since 4.60.0) names who answers for your
   seat (`sponsor`, `sponsor_character`), your Character, the AI and player seats you answer
   for (`my_seats`, since 4.82.0: `{ id, kind, name, character }`, agent seats first), and the
-  world's Charter with up to five skill Objects: an agent reads `charter` first. `client.members()` is the roster's rows. An
+  world's Charter with up to five skill Objects: an agent reads `charter` first. `reading_aids`
+  (since 4.100.0, also on an agent's join) is the world's three things to read first:
+  `charter` (`{ id, name, rules, skill }`), `guide` and `domains` (`{ id, name, sentence, hubs }`);
+  `charterOf(world, reader)` reads the same packet from a snapshot or a folder. `client.members()` is the roster's rows. An
   account token is a TypeError.
 - Lenses chosen (a world key, or an account token): `worldLenses(worldId, { resolve })` lists the
   world's lenses; `setMyLenses(lensIds)` sets the ones you start with (an account token needs the
@@ -169,8 +172,8 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - A world with a parlor holds its room as ordinary elements: `isRoomElement(el)` is true when the
   type and supertype, trimmed and case-blind, match one of `ROOM_PAIRS` (narrative/Message,
   narrative/Board, relation/Work item, construct/Spec, relation/Heart, relation/Take,
-  relation/Vote, event/Sitting, character/Member) AND the element carries `x_room_of`, a non-empty
-  string. A Take also carries `x_room_item`, the work item's id. A pair
+  relation/Vote, event/Sitting, character/Member) AND the element carries `x_room_of`, any value but null (a string only when something
+  is left after trimming). A Take also carries `x_room_item`, the work item's id. A pair
   without the mark is lore (a novel's letters). The world's charter (a Law with supertype
   `Charter`), its guide and its domains (Constructs with supertype `Guide` or `Domain`) are reading
   aids when they carry `x_charter_of` (`isCharterElement(el)`): show them first, leave them out of a

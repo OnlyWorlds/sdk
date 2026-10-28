@@ -173,7 +173,7 @@ await account.revokeWorldLink(worldId, made.id);
 Once in, a world key can ask who it is and who else is there (since 4.22.0):
 
 ```typescript
-const me = await client.me();           // { world, scope, kind, role, membership, character, front_door }: front_door.charter is the house rules, read first
+const me = await client.me();           // { world, scope, kind, role, membership, character, front_door, reading_aids }: reading_aids.charter is the house rules, read first
 const roster = await client.members();  // [{ id, kind, role, character, status }], the owner's id is null
 ```
 
@@ -362,7 +362,7 @@ The four colour families (agents, world, abstract, temporal) are checked for col
 
 ### The room
 
-A parlor (a chat room on a world) keeps its lines, board entries, work items, specs, hearts, votes, sittings and member cards in the world as ordinary elements, told apart by type and supertype and marked with `x_room_of` (the id of the world or sitting the room belongs to). `ROOM_PAIRS` is the room profile's list of those pairs, and `isRoomElement(el)` is true when an element matches one (type and supertype trimmed, case-blind, the whole word) and carries the mark. A pair without the mark is lore: a novel's letters are Narratives with supertype Message.
+A parlor (a chat room on a world) keeps its lines, board entries, work items, specs, hearts, votes, sittings and member cards in the world as ordinary elements, told apart by type and supertype and marked with `x_room_of` (the id of the world or sitting the room belongs to). `ROOM_PAIRS` is the room profile's list of those pairs, and `isRoomElement(el)` is true when an element matches one (type and supertype trimmed, case-blind, the whole word) and carries the mark (read by presence since 4.100.0: any value but null, a string only when something is left after trimming). A pair without the mark is lore: a novel's letters are Narratives with supertype Message.
 
 ```typescript
 import { isRoomElement } from '@onlyworlds/sdk';
@@ -371,6 +371,8 @@ const lore = elements.filter(el => !isRoomElement(el)); // a lore view, unless t
 ```
 
 The world's charter (a Law with supertype `Charter`), its guide and its domains (Constructs with supertype `Guide` or `Domain`) are reading aids when they carry the mark `x_charter_of`, the id of the world they belong to: `isCharterElement(el)` is true for one (pair and mark, matched as `isRoomElement` matches). A tool's front door shows them first and a lore view leaves them out; the pair without the mark is lore (a kingdom's Charter in a novel's world). A reading aid is not a room element.
+
+`charterOf(world, reader)` (since 4.100.0) reads the three as one reader sees a world snapshot, the packet keel serves as `reading_aids` beside `front_door` on `me()` and an agent's join: `charter` (`{ id, name, rules, skill }`, the newest marked Charter; `skill` the Objects its text names, at most five), `guide` (`{ id, name }`), and `domains` (`{ id, name, sentence, hubs }`, in the Guide's order, then by name). `domainsOf(world, reader)` is the list alone, and `CHARTER_PAIRS` the three pairs. The reader is a lens reader (below); the public reads nothing of a world unless it carries `open: true`. The profile: [`profiles/charter.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/charter.md).
 
 A lore view (a list, a count, search, a graph, a link picker, a story's context) leaves room elements out unless the person asks to see them; the room's own views show them whole, and a tool that writes the world writes them like any element. A Law with supertype `Charter` is lore on purpose. The profile: [`profiles/room.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/room.md) in the schema distribution.
 
@@ -407,7 +409,7 @@ r.kept; r.rows; r.cut; // ids in order, rows as show makes them, e.g. { budget: 
 if (r.unreadable) console.warn(`x_lens.${r.unreadable} is outside the profile's table`);
 ```
 
-The world holds the elements as the owner is served them; the reader's `rung` (`owner`, `contributor`, `guest` with its `whole` and `known_of` ids, `public`) decides what it sees, and an owner reading `as` another reader keeps the owner's two counts (`anchor_not_visible`, `not_visible`), which no other reader ever carries. The profile: [`profiles/lens.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/lens.md).
+The world holds the elements as the owner is served them; the reader's `rung` (`owner`, `contributor`, `guest` with its `whole` and `known_of` ids, `public`) decides what it sees, and an owner reading `as` another reader keeps the owner's two counts (`anchor_not_visible`, `not_visible`), which no other reader ever carries. A row is the body as the reader is served it: below the owner, every link holds only ids the reader sees (a Pin's pair aimed elsewhere reads `""` and null), and `x_served_trimmed` names a Message's trimmed `characters` or `narrator` and a lens's trimmed anchors, never for the public; the owner's rows are the bodies as stored. The profile: [`profiles/lens.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/lens.md).
 
 `DATE_FIELD` is the profile's date table (each dated type's date field; the ten timeless types are not in it), and `dateOf(el)` is an element's date as that table reads it: the whole number in its type's date field, else null. A timeline or a horizon dates elements exactly as the lens reader's fence does.
 

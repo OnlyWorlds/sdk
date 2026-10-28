@@ -5,6 +5,26 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.100.0] - 2026-10-28
+
+### Added
+
+- **`charterOf(world, reader)` and `domainsOf(world, reader)`**: the charter profile's reader, the world's three reading aids as one reader sees a world snapshot. `charter` is the newest marked Charter it sees (newest by `created_at` compared as instants, none sorting as the oldest, then the higher id), `{ id, name, rules, skill }`: `rules` its `x_checks_rules` as stored (`[]` when none), `skill` the ids its description names by any `ow://` form, a site address or a bare id, lowercase, each once in the order written, kept when it is an Object of this world the reader sees, the first five of those kept, as the API's `charter_skill` reads it. `guide` is the newest marked Guide the same way, `{ id, name }`. `domains` is every marked Domain the reader sees, `{ id, name, sentence, hubs }`, in the order the Guide's `constructs` names them as the reader is served the Guide (a Domain named twice keeps its first place), then by folded name and id; `sentence` is the description to its first line break, trimmed, and `hubs` the distinct `{ type, id }` its links name that the reader sees, in the schema's field order, never itself, none for a Domain known only as a stub. The reader is a lens reader; the public rung reads nothing of a world that is not `open`. `domainsOf` is the list alone. Every case of the distribution's charter fixture is its own test.
+- **`CHARTER_PAIRS`**: the charter profile's three pairs (`law`/`Charter`, `construct`/`Guide`, `construct`/`Domain`), each with the aid it is, generated from the distribution's charter fixture and checked against the page and the lens fixture's pairs.
+- **`reading_aids` on `OwMe` and `OwAgentJoined`**: `me()` and an agent's `redeemJoin` answer carry the same packet beside `front_door`, typed `OwReadingAids` (`OwReadingAidsCharter`, `OwReadingAidsGuide`, `OwReadingAidsDomain`, `OwReadingAidsHub`), as the API's document declares it.
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.83`** (from dist.82; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'` and no element field moved). Serial 83 adds the charter profile and its fixture, writes the room and charter marks' presence rule, and adds fifteen lens cases; the lens fixture holds 147 cases (71 resolve, 37 graph), the room fixture 32, every one passing.
+- **`isRoomElement` reads `x_room_of` by presence**: the mark counts when its value is not null, a string only when something is left after trimming White_Space, any other value (a number, an object) as present, the value never compared. It wanted a non-empty string before, so a number read as no mark and a mark of spaces as one. `isCharterElement` already read `x_charter_of` this way.
+- **An umbrella lens's children keep their own budget and mail rule**: each child keeps at most its own `budget` (the rest counted `budget`) and its own mail rule takes its messages out of the child's kept, uncounted, before the union takes the umbrella's mail rule and budget. The rows are made once, from the union, by the umbrella's `show`, and a child's `notes` never reach a row. The union drops an element only by its id, so a sibling lens a child's hop reaches stays kept.
+- **Nothing is hopped out of what the fence cuts**: an element cut `after_as_of`, an anchor among them, is not hopped out of. The second hop's `hops_not_served` count leaves out a room element or a reading aid whose pair `types` does not name.
+- **Lens rows below the owner come as the API serves that reader.** A link to an element the reader cannot see was already left out, and still is. What moves: `x_served_trimmed` is no longer added for the public rung, and on a Message it names only `characters` and `narrator`, in that order (it named every trimmed link field, `objects` and `locations` too). A Pin aimed at an element the reader cannot see reads `element_type` `""` and `element_id` null (the type stayed), and so does one whose `element_type` is not its element's type; an id of the wrong type for its link field is left out. The owner reading as itself gets the bodies as stored (an id outside its view, a missing or proposed one, was dropped). A public reader has no mail part.
+
+### Fixed
+
+- **4.99.0 handed hidden elements' ids to a reader below the owner, in the notes of a lens kept as an element.** A lens a hop reaches is kept as an element, and its row carried `x_lens.notes` whole, so a contributor, a guest or the public got the ids of hidden anchors and other hidden elements as note keys, with the notes' text. The row now keeps a note only for an anchor it is served or another element the reader sees; for a contributor or a guest, `notes` joins `x_served_trimmed` when an anchor's note went with its anchor. Fourteen row cases hold these readings.
+
 ## [4.99.0] - 2026-10-28
 
 ### Added
