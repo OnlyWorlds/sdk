@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Lens rows below the public rung keep what the API serves about proposed elements, and no row carries a stored `x_served_trimmed`.** A proposed element (`x_review_proposed` anything but absent or null) is still in no reader's view: never a row, never hopped through. But a contributor or a guest that sees one is served the links to it, and a lens's note keyed to it, where `resolveLens` left both out; the public rung still drops them, unmarked. A body that carries `x_served_trimmed` as stored is served without it: the owner's rows lose it, and below the owner the mark names only what this reading trimmed (it was merged into the stored one). Eight more row cases hold these readings, 28 in all, the same file as the Python package's.
+
 ## [4.100.0] - 2026-10-28
 
 ### Added

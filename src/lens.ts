@@ -19,7 +19,8 @@ export interface OwLensReader {
   /**
    * `owner` (the whole world), `contributor` (the world less the hidden), `guest` (exactly the ids in
    * `whole`, and those in `known_of` as stubs) or `public` (the world less the hidden and the room
-   * elements). A proposed element is in no reader's view.
+   * elements). A proposed element is in no reader's view, but below the public rung a served body keeps
+   * a link to one the rung sees, and a lens's note keyed to it.
    */
   rung: 'owner' | 'contributor' | 'guest' | 'public';
   /** The reader's Character, for the mail rule; null or absent: no Character, no mail. */
@@ -312,6 +313,8 @@ export class Reading {
   readonly hidden = new Set<string>();
   /** The ids written as proposed, which no reader's view holds. */
   readonly proposed = new Set<string>();
+  /** The ids a body this reader is served may link to: the view, and the proposed elements its rung sees (keel's `scoped` leaves them out for the public rung alone). */
+  readonly linkable = new Set<string>();
   /** The rung whose view is read: the reader's own, or on an owner the rung of the reader it reads `as`. */
   readonly seenRung: OwLensReader['rung'];
   readonly owner: boolean;
@@ -349,18 +352,17 @@ export class Reading {
     const knownOf = listed(seen.known_of);
     for (const id of this.order) {
       const el = this.byId.get(id) as Body;
-      if (handsOnAsProposed(el)) {
-        this.proposed.add(id);
-        continue;
-      }
+      const proposed = handsOnAsProposed(el);
+      if (proposed) this.proposed.add(id);
       let sees: boolean;
       switch (seen.rung) {
         case 'owner': sees = true; break;
         case 'contributor': sees = !hidden.has(id); break;
-        case 'public': sees = !hidden.has(id) && !this.room.has(id); break;
-        default: sees = wholeIds.has(id) || knownOf.has(id); if (!wholeIds.has(id) && knownOf.has(id)) this.stubs.add(id);
+        case 'public': sees = !hidden.has(id) && !this.room.has(id) && !proposed; break;
+        default: sees = wholeIds.has(id) || knownOf.has(id); if (!proposed && !wholeIds.has(id) && knownOf.has(id)) this.stubs.add(id);
       }
-      if (sees) this.view.add(id);
+      if (sees) this.linkable.add(id);
+      if (sees && !proposed) this.view.add(id);
     }
     this.members = Array.isArray(world.members) ? (world.members as OwMessageMember[]) : null;
     this.asOf = asOf;
@@ -411,6 +413,7 @@ export class Reading {
       b.known_of = true;
     } else {
       b = copy(el);
+      delete b.x_served_trimmed; // keel serves only the mark it adds, never a stored one
       if (!this.stored) this.trim(type, b);
     }
     this.served.set(id, b);
@@ -428,7 +431,7 @@ export class Reading {
    */
   private trim(type: string, b: Body): void {
     const sees = (t: unknown, target: string): boolean =>
-      typeof t === 'string' && this.view.has(t) && (target === 'any' || this.typeOf.get(t) === target);
+      typeof t === 'string' && this.linkable.has(t) && (target === 'any' || this.typeOf.get(t) === target);
     const schema = (FIELD_SCHEMA as Record<string, Record<string, { type: string; target?: string }>>)[type] ?? {};
     const isLensBody = isLens(b);
     const anchorsBefore = isLensBody ? new Set(ANCHOR_FIELDS.flatMap(f => (Array.isArray(b[f]) ? (b[f] as unknown[]) : []))) : null;
@@ -460,7 +463,7 @@ export class Reading {
       const served = new Set(ANCHOR_FIELDS.flatMap(f => (Array.isArray(b[f]) ? (b[f] as unknown[]) : [])));
       const kept: Body = {};
       for (const k of Object.keys(notes)) {
-        if (served.has(k) || (!anchorsBefore.has(k) && this.view.has(k))) kept[k] = notes[k];
+        if (served.has(k) || (!anchorsBefore.has(k) && this.linkable.has(k))) kept[k] = notes[k];
         else if (anchorsBefore.has(k)) notesGone = true;
       }
       if (Object.keys(kept).length !== Object.keys(notes).length) b.x_lens = { ...b.x_lens, notes: kept };
@@ -468,10 +471,7 @@ export class Reading {
     if (this.seenRung === 'public') return;
     const named = isMessage(b) ? MESSAGE_ADDRESSING.filter(f => trimmed.includes(f))
       : isLensBody ? [...ANCHOR_FIELDS.filter(f => trimmed.includes(f)), ...(notesGone ? ['notes'] : [])] : [];
-    if (named.length === 0) return;
-    const mark = Array.isArray(b.x_served_trimmed) ? (b.x_served_trimmed as unknown[]).slice() : [];
-    for (const f of named) if (!mark.includes(f)) mark.push(f);
-    b.x_served_trimmed = mark;
+    if (named.length > 0) b.x_served_trimmed = named;
   }
 
   /**
