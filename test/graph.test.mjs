@@ -1,6 +1,6 @@
 /**
  * The lens profile's graph section: worldGraph on the graph kind of codegen/schema-dist/profiles/lens.fixture.json
- * (schema-dist serial 81, vendored with the pin; the MANIFEST holds its sha256, the Python package runs the same
+ * (schema-dist serial 82, vendored with the pin; the MANIFEST holds its sha256, the Python package runs the same
  * cases), the section's invariants checked on every answer, and the fixture's graph tables read back. Runs against the compiled public
  * bundle (dist).
  */
@@ -104,7 +104,7 @@ test('the fixture\'s graph cases, each answer held to the invariants', () => {
   }
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 34, `the fixture holds ${cases.length} graph cases, serial 81 has 34`);
+  assert.equal(cases.length, 37, `the fixture holds ${cases.length} graph cases, serial 82 has 37`);
 });
 
 test('the fixture\'s graph tables, read back through the reader: flags, owner-only flags, edge reasons, declared links', () => {

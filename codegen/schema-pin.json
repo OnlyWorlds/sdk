@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.81",
-  "commit": "3a757879f163fb52b5320042ceffa4bba3f06078",
-  "manifest_sha256": "8a8c4412ccee14e04471f194c3563c317188149b1045232735c19d00e8c1728f",
+  "tag": "v0.33.0-dist.82",
+  "commit": "c19e402c009f7887743ba59b9db8b9b757a099fd",
+  "manifest_sha256": "22b718e781df1f8469378e18475db9f034dfde68c220bd4c85364643e5496799",
   "canonical_version": "00.33.00",
-  "dist_serial": 81,
-  "published": "2026-10-27",
-  "pinned_at": "2026-10-27",
+  "dist_serial": 82,
+  "published": "2026-10-28",
+  "pinned_at": "2026-10-28",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.81",
+      "manifest_sha256": "8a8c4412ccee14e04471f194c3563c317188149b1045232735c19d00e8c1728f",
+      "note": "superseded by v0.33.0-dist.82 (the lens profile's reading aids, the charter, its guide and its domains, by the pair and the mark x_charter_of; changed_within, counted stale; a lens served only as a stub reads as not there; the fixture's lens cases, 132)"
+    },
     {
       "tag": "v0.33.0-dist.80",
       "manifest_sha256": "535f0ad756df24118725757b0fc187a1881576338519add520232404ce8a1813",

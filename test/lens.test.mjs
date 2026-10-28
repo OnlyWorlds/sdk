@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { ROOM_PAIRS, isLens, isTemplate, lensesInUse, resolveLens, worldGraph } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/lens.fixture.json', import.meta.url));
-const COUNTS = { shape: 6, keys: 23, resolve: 51, invariant: 4, uses: 4, graph: 34 };
+const COUNTS = { shape: 6, keys: 23, resolve: 58, invariant: 4, uses: 4, graph: 37 };
 
 function loadFixture() {
   assert.ok(existsSync(FIXTURE), `no lens fixture at ${FIXTURE}`);
@@ -122,7 +122,7 @@ test('the lens readers answer every case of the lens fixture', (t) => {
   t.diagnostic(`the lens fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   for (const line of wrong) t.diagnostic(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 122, `the fixture holds ${cases.length} cases, serial 81 has 122`);
+  assert.equal(cases.length, 132, `the fixture holds ${cases.length} cases, serial 82 has 132`);
   assert.deepEqual(counts, COUNTS);
 });
 
