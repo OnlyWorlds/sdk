@@ -5,10 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.98.0] - 2026-10-28
+
 ### Added
 
 - **The reading aids, and `isCharterElement(element)`**: the world's charter (a Law with supertype `Charter`), its guide and its domains (Constructs with supertype `Guide` or `Domain`) are reading aids when they carry the mark `x_charter_of`, the id of the world they belong to. `isCharterElement` is true for one: the pair, trimmed and case-blind as `isRoomElement` matches, AND the mark, present and not null (a string mark only when something is left after trimming). The pair without the mark is lore, a Law like any other. `resolveLens` keeps an aid a hop reaches only when `types` names its pair (`law/charter`, `construct/guide`, `construct/domain`, now legal `types` words), cuts it as `types` otherwise, and never hops on out of it unless the pair is named; an aid the lens names as an anchor is kept and followed like any anchor. `worldGraph` leaves the aids out of an unlensed graph, counted `reading_aid` in `cut` and `edgesCut`, and no flag brings them back; a lens that names the pair keeps them as nodes. The pairs and the mark are generated from the distribution's lens fixture.
 - **`changed_within` in `x_lens`**: a whole number of days from 1. What a hop or a filter reaches is cut, counted `stale`, when it last changed longer ago than that many days before the reading's `clock` (an element exactly that many days old is kept); an anchor never is. The time read is `updated_at`, or for a folder element the newer of `server_updated_at` and `local_updated_at`; an element with no readable time is never cut. The cut's order is the fence, `types`, the window, `changed_within`, the budget. Any other value makes the lens unreadable as `changed_within`. `OwLensCutReason` gains `stale`, `OwGraphCutReason` gains `reading_aid`.
+- **`OwWorldLens.x_lens.changed_within`**: the lens route's recipe echo carries the key, a whole number of days or null, as the API serves it since serial 82.
 - **`outDegreeOf(graph)`**: each node's out-degree in a graph the graph reader answered, the number of distinct nodes its own link fields point at: a target listed in two fields counts once, a link to itself does not count, and a mirror pair counts 1 at each end. Every node is a key, 0 included. Beside `degreeOf` ("most linked"), it says how far an element reaches out. Held to a direct count on every graph case of the lens profile's fixture.
 
 ### Changed

@@ -1035,6 +1035,8 @@ export interface OwWorldLens {
     from: number | null;
     to: number | null;
     undated: 'include' | 'exclude';
+    /** Days: what a hop or a filter reaches that last changed longer ago than this, by the reading's clock, is cut as `stale`; null for no such cut. */
+    changed_within: number | null;
     show: 'full' | 'first_line' | 'name';
     budget: number;
     mail: 'unread_full_read_titles' | 'all' | 'none';
