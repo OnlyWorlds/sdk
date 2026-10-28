@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.101.0] - 2026-10-28
+
 ### Added
 
 - **`readingAidOf(element)`**: which reading aid an element's type and supertype make it, `'charter'`, `'guide'` or `'domain'` (from `CHARTER_PAIRS`, trimmed and compared without regard to case, the whole word), else `null`. It ignores the mark `x_charter_of`, so a tool can offer the right mark on an unmarked element; whether an element is a reading aid, the pair and the mark, is still `isCharterElement`.
