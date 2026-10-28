@@ -1,0 +1,1722 @@
+{
+  "what": "Rows a non-owner reader is served by resolveLens / resolve_lens: in every link field only the ids that reader can see, as keel serves bodies (elements/visibility.py redact, elements/serialize.py x_served_trimmed). Each case: a world (elements as the owner is served them, hidden: true on the hidden, now), a lens id, a reader, and the rows it must get, in order. The npm and Python packages hold the same bytes.",
+  "cases": [
+    {
+      "name": "public-a-room-a-relation-and-a-domain-keep-no-hidden-id",
+      "note": "The planted case: a room linking a hidden Object, a Relation naming a hidden Character, a Domain naming a hidden hub. The public row drops each id it cannot see (a missing id too) and carries no x_served_trimmed.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000904",
+            "type": "object",
+            "name": "Brass Lamp"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000905",
+            "type": "location",
+            "name": "The engine room",
+            "description": "Build and coordination.\nHolds the ledger.",
+            "parent_location": "019a7f00-0000-7000-8000-000000000906",
+            "buildings": [
+              "019a7f00-0000-7000-8000-000000000903",
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "founders": [
+              "019a7f00-0000-7000-8000-000000000902",
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000999"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000906",
+            "type": "location",
+            "name": "The ship",
+            "description": "A small ship."
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000907",
+            "type": "relation",
+            "name": "Ada's ward",
+            "description": "Kept close.",
+            "actor": "019a7f00-0000-7000-8000-000000000902",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000908",
+            "type": "construct",
+            "name": "Engineering",
+            "supertype": "Domain",
+            "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+            "description": "The build.",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000903"
+            ],
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000909",
+            "type": "construct",
+            "name": "Engine watch",
+            "supertype": "Lens",
+            "subtype": "",
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "relations": [
+              "019a7f00-0000-7000-8000-000000000907"
+            ],
+            "constructs": [
+              "019a7f00-0000-7000-8000-000000000908"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "show": "full"
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000909",
+      "reader": {
+        "rung": "public"
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000905",
+          "type": "location",
+          "name": "The engine room",
+          "description": "Build and coordination.\nHolds the ledger.",
+          "parent_location": "019a7f00-0000-7000-8000-000000000906",
+          "buildings": [
+            "019a7f00-0000-7000-8000-000000000904"
+          ],
+          "founders": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ]
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000907",
+          "type": "relation",
+          "name": "Ada's ward",
+          "description": "Kept close.",
+          "actor": null,
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ]
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000908",
+          "type": "construct",
+          "name": "Engineering",
+          "supertype": "Domain",
+          "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+          "description": "The build.",
+          "characters": [],
+          "objects": [],
+          "locations": [
+            "019a7f00-0000-7000-8000-000000000905"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "contributor-the-same-rows-no-mark-on-a-plain-element",
+      "note": "A contributor is served the same bodies: x_served_trimmed is a Message's and a lens's, never a room's, a Relation's or a Domain's.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000904",
+            "type": "object",
+            "name": "Brass Lamp"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000905",
+            "type": "location",
+            "name": "The engine room",
+            "description": "Build and coordination.\nHolds the ledger.",
+            "parent_location": "019a7f00-0000-7000-8000-000000000906",
+            "buildings": [
+              "019a7f00-0000-7000-8000-000000000903",
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "founders": [
+              "019a7f00-0000-7000-8000-000000000902",
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000999"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000906",
+            "type": "location",
+            "name": "The ship",
+            "description": "A small ship."
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000907",
+            "type": "relation",
+            "name": "Ada's ward",
+            "description": "Kept close.",
+            "actor": "019a7f00-0000-7000-8000-000000000902",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000908",
+            "type": "construct",
+            "name": "Engineering",
+            "supertype": "Domain",
+            "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+            "description": "The build.",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000903"
+            ],
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000909",
+            "type": "construct",
+            "name": "Engine watch",
+            "supertype": "Lens",
+            "subtype": "",
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "relations": [
+              "019a7f00-0000-7000-8000-000000000907"
+            ],
+            "constructs": [
+              "019a7f00-0000-7000-8000-000000000908"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "show": "full"
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000909",
+      "reader": {
+        "rung": "contributor"
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000905",
+          "type": "location",
+          "name": "The engine room",
+          "description": "Build and coordination.\nHolds the ledger.",
+          "parent_location": "019a7f00-0000-7000-8000-000000000906",
+          "buildings": [
+            "019a7f00-0000-7000-8000-000000000904"
+          ],
+          "founders": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ]
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000907",
+          "type": "relation",
+          "name": "Ada's ward",
+          "description": "Kept close.",
+          "actor": null,
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ]
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000908",
+          "type": "construct",
+          "name": "Engineering",
+          "supertype": "Domain",
+          "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+          "description": "The build.",
+          "characters": [],
+          "objects": [],
+          "locations": [
+            "019a7f00-0000-7000-8000-000000000905"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "owner-as-public-gets-the-public-rows",
+      "note": "The owner reading as the public reader gets that reader's rows.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000904",
+            "type": "object",
+            "name": "Brass Lamp"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000905",
+            "type": "location",
+            "name": "The engine room",
+            "description": "Build and coordination.\nHolds the ledger.",
+            "parent_location": "019a7f00-0000-7000-8000-000000000906",
+            "buildings": [
+              "019a7f00-0000-7000-8000-000000000903",
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "founders": [
+              "019a7f00-0000-7000-8000-000000000902",
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000999"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000906",
+            "type": "location",
+            "name": "The ship",
+            "description": "A small ship."
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000907",
+            "type": "relation",
+            "name": "Ada's ward",
+            "description": "Kept close.",
+            "actor": "019a7f00-0000-7000-8000-000000000902",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000908",
+            "type": "construct",
+            "name": "Engineering",
+            "supertype": "Domain",
+            "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+            "description": "The build.",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000903"
+            ],
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000909",
+            "type": "construct",
+            "name": "Engine watch",
+            "supertype": "Lens",
+            "subtype": "",
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "relations": [
+              "019a7f00-0000-7000-8000-000000000907"
+            ],
+            "constructs": [
+              "019a7f00-0000-7000-8000-000000000908"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "show": "full"
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000909",
+      "reader": {
+        "rung": "owner",
+        "as": {
+          "rung": "public"
+        }
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000905",
+          "type": "location",
+          "name": "The engine room",
+          "description": "Build and coordination.\nHolds the ledger.",
+          "parent_location": "019a7f00-0000-7000-8000-000000000906",
+          "buildings": [
+            "019a7f00-0000-7000-8000-000000000904"
+          ],
+          "founders": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ]
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000907",
+          "type": "relation",
+          "name": "Ada's ward",
+          "description": "Kept close.",
+          "actor": null,
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ]
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000908",
+          "type": "construct",
+          "name": "Engineering",
+          "supertype": "Domain",
+          "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+          "description": "The build.",
+          "characters": [],
+          "objects": [],
+          "locations": [
+            "019a7f00-0000-7000-8000-000000000905"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "owner-rows-untouched",
+      "note": "The owner's rows are the bodies as stored: the hidden ids and the missing one stay.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000904",
+            "type": "object",
+            "name": "Brass Lamp"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000905",
+            "type": "location",
+            "name": "The engine room",
+            "description": "Build and coordination.\nHolds the ledger.",
+            "parent_location": "019a7f00-0000-7000-8000-000000000906",
+            "buildings": [
+              "019a7f00-0000-7000-8000-000000000903",
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "founders": [
+              "019a7f00-0000-7000-8000-000000000902",
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000999"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000906",
+            "type": "location",
+            "name": "The ship",
+            "description": "A small ship."
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000907",
+            "type": "relation",
+            "name": "Ada's ward",
+            "description": "Kept close.",
+            "actor": "019a7f00-0000-7000-8000-000000000902",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000908",
+            "type": "construct",
+            "name": "Engineering",
+            "supertype": "Domain",
+            "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+            "description": "The build.",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000903"
+            ],
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000909",
+            "type": "construct",
+            "name": "Engine watch",
+            "supertype": "Lens",
+            "subtype": "",
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "relations": [
+              "019a7f00-0000-7000-8000-000000000907"
+            ],
+            "constructs": [
+              "019a7f00-0000-7000-8000-000000000908"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "show": "full"
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000909",
+      "reader": {
+        "rung": "owner"
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000905",
+          "type": "location",
+          "name": "The engine room",
+          "description": "Build and coordination.\nHolds the ledger.",
+          "parent_location": "019a7f00-0000-7000-8000-000000000906",
+          "buildings": [
+            "019a7f00-0000-7000-8000-000000000903",
+            "019a7f00-0000-7000-8000-000000000904"
+          ],
+          "founders": [
+            "019a7f00-0000-7000-8000-000000000902",
+            "019a7f00-0000-7000-8000-000000000901",
+            "019a7f00-0000-7000-8000-000000000999"
+          ]
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000907",
+          "type": "relation",
+          "name": "Ada's ward",
+          "description": "Kept close.",
+          "actor": "019a7f00-0000-7000-8000-000000000902",
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000901",
+            "019a7f00-0000-7000-8000-000000000902"
+          ]
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000908",
+          "type": "construct",
+          "name": "Engineering",
+          "supertype": "Domain",
+          "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+          "description": "The build.",
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000902"
+          ],
+          "objects": [
+            "019a7f00-0000-7000-8000-000000000903"
+          ],
+          "locations": [
+            "019a7f00-0000-7000-8000-000000000905"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "guest-a-stub-in-its-view-stays-linked",
+      "note": "A guest keeps a link to what it knows of (the ship, a stub) and loses every other id outside its slice.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000904",
+            "type": "object",
+            "name": "Brass Lamp"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000905",
+            "type": "location",
+            "name": "The engine room",
+            "description": "Build and coordination.\nHolds the ledger.",
+            "parent_location": "019a7f00-0000-7000-8000-000000000906",
+            "buildings": [
+              "019a7f00-0000-7000-8000-000000000903",
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "founders": [
+              "019a7f00-0000-7000-8000-000000000902",
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000999"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000906",
+            "type": "location",
+            "name": "The ship",
+            "description": "A small ship."
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000907",
+            "type": "relation",
+            "name": "Ada's ward",
+            "description": "Kept close.",
+            "actor": "019a7f00-0000-7000-8000-000000000902",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000908",
+            "type": "construct",
+            "name": "Engineering",
+            "supertype": "Domain",
+            "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+            "description": "The build.",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000903"
+            ],
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000909",
+            "type": "construct",
+            "name": "Engine watch",
+            "supertype": "Lens",
+            "subtype": "",
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "relations": [
+              "019a7f00-0000-7000-8000-000000000907"
+            ],
+            "constructs": [
+              "019a7f00-0000-7000-8000-000000000908"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "show": "full"
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000909",
+      "reader": {
+        "rung": "guest",
+        "character": "019a7f00-0000-7000-8000-000000000901",
+        "whole": [
+          "019a7f00-0000-7000-8000-000000000901",
+          "019a7f00-0000-7000-8000-000000000904",
+          "019a7f00-0000-7000-8000-000000000905",
+          "019a7f00-0000-7000-8000-000000000907",
+          "019a7f00-0000-7000-8000-000000000908",
+          "019a7f00-0000-7000-8000-000000000909"
+        ],
+        "known_of": [
+          "019a7f00-0000-7000-8000-000000000906"
+        ]
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000905",
+          "type": "location",
+          "name": "The engine room",
+          "description": "Build and coordination.\nHolds the ledger.",
+          "parent_location": "019a7f00-0000-7000-8000-000000000906",
+          "buildings": [
+            "019a7f00-0000-7000-8000-000000000904"
+          ],
+          "founders": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ]
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000907",
+          "type": "relation",
+          "name": "Ada's ward",
+          "description": "Kept close.",
+          "actor": null,
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ]
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000908",
+          "type": "construct",
+          "name": "Engineering",
+          "supertype": "Domain",
+          "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+          "description": "The build.",
+          "characters": [],
+          "objects": [],
+          "locations": [
+            "019a7f00-0000-7000-8000-000000000905"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "contributor-a-message-names-its-addressing-only",
+      "note": "A Message below co-builder: characters and narrator named in x_served_trimmed, in that order; objects trimmed and not named.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000905",
+            "type": "location",
+            "name": "The engine room",
+            "description": "Build and coordination.\nHolds the ledger.",
+            "parent_location": "019a7f00-0000-7000-8000-000000000906",
+            "buildings": [
+              "019a7f00-0000-7000-8000-000000000903",
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "founders": [
+              "019a7f00-0000-7000-8000-000000000902",
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000999"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000910",
+            "type": "narrative",
+            "name": "A letter",
+            "supertype": "Message",
+            "description": "Sealed.",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "narrator": "019a7f00-0000-7000-8000-000000000902",
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000903"
+            ],
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "created_at": "2026-10-20T12:00:00Z"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000911",
+            "type": "construct",
+            "name": "Letters",
+            "supertype": "Lens",
+            "subtype": "",
+            "narratives": [
+              "019a7f00-0000-7000-8000-000000000910"
+            ],
+            "x_lens": {
+              "depth": 0
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000911",
+      "reader": {
+        "rung": "contributor"
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000910",
+          "type": "narrative",
+          "name": "A letter",
+          "supertype": "Message",
+          "description": "Sealed.",
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ],
+          "narrator": null,
+          "objects": [],
+          "locations": [
+            "019a7f00-0000-7000-8000-000000000905"
+          ],
+          "created_at": "2026-10-20T12:00:00Z",
+          "x_served_trimmed": [
+            "characters",
+            "narrator"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public-a-message-is-trimmed-with-no-mark",
+      "note": "The public rung is never marked.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000905",
+            "type": "location",
+            "name": "The engine room",
+            "description": "Build and coordination.\nHolds the ledger.",
+            "parent_location": "019a7f00-0000-7000-8000-000000000906",
+            "buildings": [
+              "019a7f00-0000-7000-8000-000000000903",
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "founders": [
+              "019a7f00-0000-7000-8000-000000000902",
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000999"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000910",
+            "type": "narrative",
+            "name": "A letter",
+            "supertype": "Message",
+            "description": "Sealed.",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "narrator": "019a7f00-0000-7000-8000-000000000902",
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000903"
+            ],
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "created_at": "2026-10-20T12:00:00Z"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000911",
+            "type": "construct",
+            "name": "Letters",
+            "supertype": "Lens",
+            "subtype": "",
+            "narratives": [
+              "019a7f00-0000-7000-8000-000000000910"
+            ],
+            "x_lens": {
+              "depth": 0
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000911",
+      "reader": {
+        "rung": "public"
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000910",
+          "type": "narrative",
+          "name": "A letter",
+          "supertype": "Message",
+          "description": "Sealed.",
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ],
+          "narrator": null,
+          "objects": [],
+          "locations": [
+            "019a7f00-0000-7000-8000-000000000905"
+          ],
+          "created_at": "2026-10-20T12:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "guest-a-message-outside-its-slice-trimmed-and-marked",
+      "note": "A guest is below co-builder: the mark as for a contributor; the room outside its slice is left out unnamed.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000905",
+            "type": "location",
+            "name": "The engine room",
+            "description": "Build and coordination.\nHolds the ledger.",
+            "parent_location": "019a7f00-0000-7000-8000-000000000906",
+            "buildings": [
+              "019a7f00-0000-7000-8000-000000000903",
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "founders": [
+              "019a7f00-0000-7000-8000-000000000902",
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000999"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000910",
+            "type": "narrative",
+            "name": "A letter",
+            "supertype": "Message",
+            "description": "Sealed.",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "narrator": "019a7f00-0000-7000-8000-000000000902",
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000903"
+            ],
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "created_at": "2026-10-20T12:00:00Z"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000911",
+            "type": "construct",
+            "name": "Letters",
+            "supertype": "Lens",
+            "subtype": "",
+            "narratives": [
+              "019a7f00-0000-7000-8000-000000000910"
+            ],
+            "x_lens": {
+              "depth": 0
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000911",
+      "reader": {
+        "rung": "guest",
+        "character": "019a7f00-0000-7000-8000-000000000901",
+        "whole": [
+          "019a7f00-0000-7000-8000-000000000901",
+          "019a7f00-0000-7000-8000-000000000910",
+          "019a7f00-0000-7000-8000-000000000911"
+        ]
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000910",
+          "type": "narrative",
+          "name": "A letter",
+          "supertype": "Message",
+          "description": "Sealed.",
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ],
+          "narrator": null,
+          "objects": [],
+          "locations": [],
+          "created_at": "2026-10-20T12:00:00Z",
+          "x_served_trimmed": [
+            "characters",
+            "narrator"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "contributor-a-lens-kept-as-an-element-its-anchors-and-notes-trimmed",
+      "note": "A lens a hop reaches is kept as an element: its hidden anchor goes, the anchor's note with it, and a note keyed to a hidden non-anchor; the mark names the anchor field and notes.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000904",
+            "type": "object",
+            "name": "Brass Lamp"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000912",
+            "type": "construct",
+            "name": "Household",
+            "supertype": "Lens",
+            "subtype": "",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "notes": {
+                "019a7f00-0000-7000-8000-000000000901": "The ward.",
+                "019a7f00-0000-7000-8000-000000000902": "The heir.",
+                "019a7f00-0000-7000-8000-000000000904": "The lamp.",
+                "019a7f00-0000-7000-8000-000000000903": "The ledger."
+              }
+            }
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000913",
+            "type": "construct",
+            "name": "Ada watch",
+            "supertype": "Lens",
+            "subtype": "",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901"
+            ],
+            "x_lens": {
+              "depth": 1
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000913",
+      "reader": {
+        "rung": "contributor"
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000901",
+          "type": "character",
+          "name": "Ada Venn"
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000912",
+          "type": "construct",
+          "name": "Household",
+          "supertype": "Lens",
+          "subtype": "",
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ],
+          "objects": [
+            "019a7f00-0000-7000-8000-000000000904"
+          ],
+          "x_lens": {
+            "depth": 0,
+            "notes": {
+              "019a7f00-0000-7000-8000-000000000901": "The ward.",
+              "019a7f00-0000-7000-8000-000000000904": "The lamp."
+            }
+          },
+          "x_served_trimmed": [
+            "characters",
+            "notes"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public-a-lens-kept-as-an-element-trimmed-with-no-mark",
+      "note": "The same for the public rung, with no mark.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000904",
+            "type": "object",
+            "name": "Brass Lamp"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000912",
+            "type": "construct",
+            "name": "Household",
+            "supertype": "Lens",
+            "subtype": "",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "notes": {
+                "019a7f00-0000-7000-8000-000000000901": "The ward.",
+                "019a7f00-0000-7000-8000-000000000902": "The heir.",
+                "019a7f00-0000-7000-8000-000000000904": "The lamp.",
+                "019a7f00-0000-7000-8000-000000000903": "The ledger."
+              }
+            }
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000913",
+            "type": "construct",
+            "name": "Ada watch",
+            "supertype": "Lens",
+            "subtype": "",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901"
+            ],
+            "x_lens": {
+              "depth": 1
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000913",
+      "reader": {
+        "rung": "public"
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000901",
+          "type": "character",
+          "name": "Ada Venn"
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000912",
+          "type": "construct",
+          "name": "Household",
+          "supertype": "Lens",
+          "subtype": "",
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000901"
+          ],
+          "objects": [
+            "019a7f00-0000-7000-8000-000000000904"
+          ],
+          "x_lens": {
+            "depth": 0,
+            "notes": {
+              "019a7f00-0000-7000-8000-000000000901": "The ward.",
+              "019a7f00-0000-7000-8000-000000000904": "The lamp."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "owner-a-lens-kept-as-an-element-untouched",
+      "note": "The owner's row of the same lens is the body as stored.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000904",
+            "type": "object",
+            "name": "Brass Lamp"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000912",
+            "type": "construct",
+            "name": "Household",
+            "supertype": "Lens",
+            "subtype": "",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "notes": {
+                "019a7f00-0000-7000-8000-000000000901": "The ward.",
+                "019a7f00-0000-7000-8000-000000000902": "The heir.",
+                "019a7f00-0000-7000-8000-000000000904": "The lamp.",
+                "019a7f00-0000-7000-8000-000000000903": "The ledger."
+              }
+            }
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000913",
+            "type": "construct",
+            "name": "Ada watch",
+            "supertype": "Lens",
+            "subtype": "",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901"
+            ],
+            "x_lens": {
+              "depth": 1
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000913",
+      "reader": {
+        "rung": "owner"
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000901",
+          "type": "character",
+          "name": "Ada Venn"
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000912",
+          "type": "construct",
+          "name": "Household",
+          "supertype": "Lens",
+          "subtype": "",
+          "characters": [
+            "019a7f00-0000-7000-8000-000000000901",
+            "019a7f00-0000-7000-8000-000000000902"
+          ],
+          "objects": [
+            "019a7f00-0000-7000-8000-000000000904"
+          ],
+          "x_lens": {
+            "depth": 0,
+            "notes": {
+              "019a7f00-0000-7000-8000-000000000901": "The ward.",
+              "019a7f00-0000-7000-8000-000000000902": "The heir.",
+              "019a7f00-0000-7000-8000-000000000904": "The lamp.",
+              "019a7f00-0000-7000-8000-000000000903": "The ledger."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "public-a-generic-pair-aimed-at-the-unseen-reads-empty",
+      "note": "A Pin on a hidden Character, and one whose element_type is not its element's type, each read as type \"\" and id null; the Pin on Ada stays.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000918",
+            "type": "map",
+            "name": "Deck plan"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000914",
+            "type": "pin",
+            "name": "Pin on the heir",
+            "map": "019a7f00-0000-7000-8000-000000000918",
+            "element_type": "character",
+            "element_id": "019a7f00-0000-7000-8000-000000000902"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000915",
+            "type": "pin",
+            "name": "Pin on Ada",
+            "map": "019a7f00-0000-7000-8000-000000000918",
+            "element_type": "character",
+            "element_id": "019a7f00-0000-7000-8000-000000000901"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000916",
+            "type": "pin",
+            "name": "Pin named the wrong type",
+            "map": "019a7f00-0000-7000-8000-000000000918",
+            "element_type": "object",
+            "element_id": "019a7f00-0000-7000-8000-000000000901"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000917",
+            "type": "construct",
+            "name": "Every pin",
+            "supertype": "Lens",
+            "subtype": "",
+            "x_lens": {
+              "types": [
+                "pin"
+              ]
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000917",
+      "reader": {
+        "rung": "public"
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000914",
+          "type": "pin",
+          "name": "Pin on the heir",
+          "map": "019a7f00-0000-7000-8000-000000000918",
+          "element_type": "",
+          "element_id": null
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000915",
+          "type": "pin",
+          "name": "Pin on Ada",
+          "map": "019a7f00-0000-7000-8000-000000000918",
+          "element_type": "character",
+          "element_id": "019a7f00-0000-7000-8000-000000000901"
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000916",
+          "type": "pin",
+          "name": "Pin named the wrong type",
+          "map": "019a7f00-0000-7000-8000-000000000918",
+          "element_type": "",
+          "element_id": null
+        }
+      ]
+    },
+    {
+      "name": "public-first-line-and-name-rows-carry-no-link",
+      "note": "first_line is id, type, name and the description to its first line break; name is id, type and name.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000904",
+            "type": "object",
+            "name": "Brass Lamp"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000905",
+            "type": "location",
+            "name": "The engine room",
+            "description": "Build and coordination.\nHolds the ledger.",
+            "parent_location": "019a7f00-0000-7000-8000-000000000906",
+            "buildings": [
+              "019a7f00-0000-7000-8000-000000000903",
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "founders": [
+              "019a7f00-0000-7000-8000-000000000902",
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000999"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000906",
+            "type": "location",
+            "name": "The ship",
+            "description": "A small ship."
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000907",
+            "type": "relation",
+            "name": "Ada's ward",
+            "description": "Kept close.",
+            "actor": "019a7f00-0000-7000-8000-000000000902",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000908",
+            "type": "construct",
+            "name": "Engineering",
+            "supertype": "Domain",
+            "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+            "description": "The build.",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000903"
+            ],
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000919",
+            "type": "construct",
+            "name": "Engine lines",
+            "supertype": "Lens",
+            "subtype": "",
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "relations": [
+              "019a7f00-0000-7000-8000-000000000907"
+            ],
+            "constructs": [
+              "019a7f00-0000-7000-8000-000000000908"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "show": "first_line"
+            }
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000920",
+            "type": "construct",
+            "name": "Engine names",
+            "supertype": "Lens",
+            "subtype": "",
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "relations": [
+              "019a7f00-0000-7000-8000-000000000907"
+            ],
+            "constructs": [
+              "019a7f00-0000-7000-8000-000000000908"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "show": "name"
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000919",
+      "reader": {
+        "rung": "public"
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000905",
+          "type": "location",
+          "name": "The engine room",
+          "description": "Build and coordination."
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000907",
+          "type": "relation",
+          "name": "Ada's ward",
+          "description": "Kept close."
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000908",
+          "type": "construct",
+          "name": "Engineering",
+          "description": "The build."
+        }
+      ]
+    },
+    {
+      "name": "public-name-rows-carry-no-link",
+      "note": "name rows: id, type and name.",
+      "world": {
+        "elements": [
+          {
+            "id": "019a7f00-0000-7000-8000-000000000901",
+            "type": "character",
+            "name": "Ada Venn"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000902",
+            "type": "character",
+            "name": "Secret Heir",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000903",
+            "type": "object",
+            "name": "Vault Ledger",
+            "hidden": true
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000904",
+            "type": "object",
+            "name": "Brass Lamp"
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000905",
+            "type": "location",
+            "name": "The engine room",
+            "description": "Build and coordination.\nHolds the ledger.",
+            "parent_location": "019a7f00-0000-7000-8000-000000000906",
+            "buildings": [
+              "019a7f00-0000-7000-8000-000000000903",
+              "019a7f00-0000-7000-8000-000000000904"
+            ],
+            "founders": [
+              "019a7f00-0000-7000-8000-000000000902",
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000999"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000906",
+            "type": "location",
+            "name": "The ship",
+            "description": "A small ship."
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000907",
+            "type": "relation",
+            "name": "Ada's ward",
+            "description": "Kept close.",
+            "actor": "019a7f00-0000-7000-8000-000000000902",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000901",
+              "019a7f00-0000-7000-8000-000000000902"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000908",
+            "type": "construct",
+            "name": "Engineering",
+            "supertype": "Domain",
+            "x_charter_of": "019a7f00-0000-7000-8000-00000000f900",
+            "description": "The build.",
+            "characters": [
+              "019a7f00-0000-7000-8000-000000000902"
+            ],
+            "objects": [
+              "019a7f00-0000-7000-8000-000000000903"
+            ],
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ]
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000919",
+            "type": "construct",
+            "name": "Engine lines",
+            "supertype": "Lens",
+            "subtype": "",
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "relations": [
+              "019a7f00-0000-7000-8000-000000000907"
+            ],
+            "constructs": [
+              "019a7f00-0000-7000-8000-000000000908"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "show": "first_line"
+            }
+          },
+          {
+            "id": "019a7f00-0000-7000-8000-000000000920",
+            "type": "construct",
+            "name": "Engine names",
+            "supertype": "Lens",
+            "subtype": "",
+            "locations": [
+              "019a7f00-0000-7000-8000-000000000905"
+            ],
+            "relations": [
+              "019a7f00-0000-7000-8000-000000000907"
+            ],
+            "constructs": [
+              "019a7f00-0000-7000-8000-000000000908"
+            ],
+            "x_lens": {
+              "depth": 0,
+              "show": "name"
+            }
+          }
+        ],
+        "now": 100
+      },
+      "lens": "019a7f00-0000-7000-8000-000000000920",
+      "reader": {
+        "rung": "public"
+      },
+      "want_rows": [
+        {
+          "id": "019a7f00-0000-7000-8000-000000000905",
+          "type": "location",
+          "name": "The engine room"
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000907",
+          "type": "relation",
+          "name": "Ada's ward"
+        },
+        {
+          "id": "019a7f00-0000-7000-8000-000000000908",
+          "type": "construct",
+          "name": "Engineering"
+        }
+      ]
+    }
+  ]
+}
