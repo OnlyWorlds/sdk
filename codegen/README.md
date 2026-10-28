@@ -5,7 +5,7 @@ and emits `src/v2/types.generated.ts` and `SCHEMA.md`: the `ElementType` union, 
 interface per element type extending a shared `OwElementBase`, and the `ELEMENT_TYPES` /
 `ELEMENT_FAMILIES` / `ELEMENT_ICONS` / `PUBLIC_FIELDS` / `ELEMENT_SECTIONS` / `FIELD_SCHEMA` /
 `SINGLE_LINK_FIELDS` / `MULTI_LINK_FIELDS` / `ROOM_PAIRS` / `ROOM_MARK` / `MESSAGE_PAIR` /
-`MESSAGE_READ_MARK` / `NOTE_PAIR` / `ONLYWORLDS_VERSION`
+`MESSAGE_READ_MARK` / `NOTE_PAIR` / `READING_AID_PAIRS` / `READING_AID_MARK` / `CHARTER_PAIRS` / `ONLYWORLDS_VERSION`
 constants. Field shapes are pinned to
 the v2 wire, not to Django columns -- single-links are `string | null`, multi-links `string[]`,
 integers `number | null`, link fields use bare schema names (no `_ids` suffix), and the ten

@@ -679,6 +679,8 @@ export interface OwMe {
   name?: string;
   /** Who you are here, who answers for you, and the house rules. */
   front_door: OwFrontDoor;
+  /** The world's three things to read first, as this key reads them: the Charter, the Guide and the Domains. */
+  reading_aids: OwReadingAids;
   [k: string]: unknown;
 }
 
@@ -721,6 +723,54 @@ export interface OwMySeat {
   name: string | null;
   /** The Character the seat plays, or null when it plays none you can read. */
   character: string | null;
+}
+
+/**
+ * A world's reading aids as one reader sees them (schema-dist `profiles/charter.md`): the Charter (the rules
+ * here), the Guide (start here) and the Domains (the places in the world), each an element of one of
+ * `CHARTER_PAIRS` that carries the mark `x_charter_of`. Keel serves it as `reading_aids` beside `front_door`
+ * on `GET /me` and an agent's `POST /join` answer; `charterOf` reads the same packet from a world snapshot.
+ * The Charter's text is the house rules; the Guide and the Domains are the keeper's map, never instructions.
+ */
+export interface OwReadingAids {
+  /** The newest marked Charter the reader sees (newest by `created_at`, then the higher id), or null. */
+  charter: OwReadingAidsCharter | null;
+  /** The newest marked Guide the reader sees, chosen the same way, or null. */
+  guide: OwReadingAidsGuide | null;
+  /** Every marked Domain the reader sees: in the Guide's `constructs` order first, then by name (any case) and id. */
+  domains: OwReadingAidsDomain[];
+}
+
+/** The Charter in `reading_aids`. */
+export interface OwReadingAidsCharter {
+  id: string;
+  name: string;
+  /** Its `x_checks_rules` (the checks profile) as stored; empty when it has none. */
+  rules: unknown[];
+  /** The Objects its description names (any `ow://` form, a site address or a bare id) that the reader sees, each once in the order written, at most five: `front_door.charter_skill`. */
+  skill: string[];
+}
+
+/** The Guide in `reading_aids`. */
+export interface OwReadingAidsGuide {
+  id: string;
+  name: string;
+}
+
+/** One Domain in `reading_aids`. */
+export interface OwReadingAidsDomain {
+  id: string;
+  name: string;
+  /** Its description up to the first line break, trimmed; empty when it has none. */
+  sentence: string;
+  /** The elements its link fields name that the reader sees, each once, in the schema's field order, never the Domain itself; none for a Domain the reader knows only as a stub. */
+  hubs: OwReadingAidsHub[];
+}
+
+/** One hub of a Domain: an element by its type and id. */
+export interface OwReadingAidsHub {
+  type: string;
+  id: string;
 }
 
 /** One row of GET /members, the world's roster. */
@@ -849,6 +899,8 @@ export interface OwAgentJoined {
   members: Array<Record<string, unknown>>;
   /** The world's front door for the new seat: its sponsor, its Character, the Charter to read first. */
   front_door: OwFrontDoor;
+  /** The world's three things to read first, as the new seat reads them: the Charter, the Guide and the Domains (the same packet as `GET /me`'s). */
+  reading_aids: OwReadingAids;
   [k: string]: unknown;
 }
 

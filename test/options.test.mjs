@@ -132,6 +132,10 @@ Object.assign(DATA, {
   'worldGraph#1': 'the reader, as resolveLens takes it',
   'degreeOf#0': 'the graph worldGraph answered',
   'outDegreeOf#0': 'the graph worldGraph answered',
+  'charterOf#0': 'the world snapshot, as resolveLens takes it, and whether it is open',
+  'charterOf#1': 'the reader, as resolveLens takes it',
+  'domainsOf#0': 'the world snapshot, as charterOf takes it',
+  'domainsOf#1': 'the reader, as charterOf takes it',
 });
 
 /** Run a call that may throw, return a promise, or return an iterator; hand back what it threw. */

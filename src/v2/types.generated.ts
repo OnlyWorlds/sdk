@@ -361,6 +361,18 @@ export const READING_AID_PAIRS: ReadonlyArray<{ readonly type: ElementType; read
  *  `reading_aid_mark.field`, checked against lens.md and room.md at codegen. Module-internal. */
 export const READING_AID_MARK = 'x_charter_of' as const;
 
+/** The charter profile's three pairs (schema-dist `profiles/charter.md`): the Charter (the rules here), the
+ *  Guide (start here) and the Domains (the places in the world), each with the aid it is. An element is a
+ *  reading aid when its type and supertype, each trimmed and compared without regard to case, match one
+ *  of these AND it carries the mark `x_charter_of`, read by presence: match with isCharterElement, read
+ *  the packet with charterOf. Source: `profiles/charter.fixture.json`'s `pairs`, checked against the
+ *  page's table and the lens fixture's reading_aid_pairs. */
+export const CHARTER_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly supertype: string; readonly aid: 'charter' | 'guide' | 'domain' }> = [
+  { type: 'law', supertype: 'Charter', aid: 'charter' },
+  { type: 'construct', supertype: 'Guide', aid: 'guide' },
+  { type: 'construct', supertype: 'Domain', aid: 'domain' },
+];
+
 /** The review profile's label (schema-dist `profiles/review.md`, rule 1): the words a reader that
  *  hands a world on (a context for an AI, a pack, a share) puts on each proposed element it keeps,
  *  one whose `x_review_proposed` is anything but absent or null (a doubt, rule 4, included).

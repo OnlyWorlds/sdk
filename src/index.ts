@@ -23,7 +23,7 @@ export type {
   OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta, OwWorldPublicPage,
   OwWorldOrigin, OwWorldSource, OwWorldProducer,
   OwFileKind, OwFileAddedBy, OwFileRow, OwWorldFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
-  OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwFrontDoor, OwMySeat, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwDraughtComponent, OwDraughtItem, OwDraughtLens, OwWorldLenses, OwWorldLens, OwWorldLensReading, OwJoined, OwAgentJoined, OwPlayerJoined, OwSignedIn,
+  OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwFrontDoor, OwMySeat, OwReadingAids, OwReadingAidsCharter, OwReadingAidsGuide, OwReadingAidsDomain, OwReadingAidsHub, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwDraughtComponent, OwDraughtItem, OwDraughtLens, OwWorldLenses, OwWorldLens, OwWorldLensReading, OwJoined, OwAgentJoined, OwPlayerJoined, OwSignedIn,
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
   OwWriteDoor, OwChangeUpsert, OwChangeDelete, OwDeleteReason, OwHiddenRow, OwResyncReason,
   OwProposal, OwProposalState, OwProposalList, OwProposed, OwProposalAccepted, OwProposalConflict, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
@@ -35,6 +35,10 @@ export type {
 // matcher a lore view uses to leave them out (ROOM_PAIRS generated from the vendored dist); and the reading
 // aids' matcher (the charter, its guide, its domains: the pair and the mark x_charter_of)
 export { ROOM_PAIRS, isRoomElement, isCharterElement } from './room';
+// The charter profile (schema-dist profiles/charter.md): a world's reading aids, the Charter, the Guide and the
+// Domains, as one reader sees them (CHARTER_PAIRS generated from the vendored dist)
+export { CHARTER_PAIRS, charterOf, domainsOf } from './charter';
+export type { OwCharterWorld } from './charter';
 // The message profile (schema-dist profiles/message.md): a message between a world's members, to whom
 // it is addressed, whether its sender is proved, who edited it, a reader's read mark and unread list, a
 // thread, and a Character's Note, which is not a message (MESSAGE_PAIR and NOTE_PAIR generated from the

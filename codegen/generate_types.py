@@ -899,6 +899,62 @@ def render_reading_aids(pairs: list[tuple[str, str]], mark: str) -> str:
     return "\n".join(lines)
 
 
+CHARTER_AIDS = ("charter", "guide", "domain")
+
+
+def load_charter_pairs(schema_dir: Path, aid_pairs: list[tuple[str, str]], aid_mark: str) -> list[tuple[str, str, str]]:
+    """The charter profile's three pairs (schema-dist serial 83 on, `profiles/charter.md`), each with the aid it
+    is (`charter`, `guide`, `domain`), as the page's table writes them. Emitted from `charter.fixture.json`'s
+    `pairs`; each must be a row of charter.md's table, the fixture's mark must be the lens fixture's
+    `reading_aid_mark`, and the pairs, folded, must be READING_AID_PAIRS in its order, or this exits 1: two
+    lists of the aids that disagree are routed to the schema-dist owner, never picked between."""
+    profiles = schema_dir.parent / "profiles"
+    fixture_path, page_path = profiles / "charter.fixture.json", profiles / "charter.md"
+    if not fixture_path.is_file() or not page_path.is_file():
+        raise SystemExit(f"CHARTER_PAIRS comes only from the distribution's {fixture_path.name} and "
+                         f"{page_path.name} (serial 83 on); this tree lacks one.")
+    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+    raw = fixture.get("pairs")
+    if not isinstance(raw, list) or not all(isinstance(p, dict) and isinstance(p.get("type"), str)
+                                           and isinstance(p.get("supertype"), str) and p.get("aid") in CHARTER_AIDS
+                                           for p in raw):
+        raise SystemExit(f"{fixture_path}: `pairs` is {raw!r}, expected a list of {{type, supertype, aid}} "
+                         f"with aid one of {CHARTER_AIDS}.")
+    pairs = [(p["type"], p["supertype"], p["aid"]) for p in raw]
+    if sorted(a for _, _, a in pairs) != sorted(CHARTER_AIDS):
+        raise SystemExit(f"{fixture_path}: the pairs name the aids {[a for _, _, a in pairs]}, not each of {CHARTER_AIDS} once.")
+    if any(s != s.strip() or not s or "'" in s or "\\" in s for _, s, _ in pairs):
+        raise SystemExit(f"{fixture_path}: a pair's supertype is empty, carries edge spaces, or a quote or "
+                         f"backslash this emitter does not escape: {pairs!r}.")
+    if [(t.lower(), s.lower()) for t, s, _ in pairs] != [(t.lower(), s.lower()) for t, s in aid_pairs]:
+        raise SystemExit(f"{fixture_path}: the pairs {pairs!r} are not the lens fixture's reading_aid_pairs "
+                         f"{aid_pairs!r} in its order. Route it to the schema-dist owner; never pick one.")
+    mark = (fixture.get("mark") or {}).get("field")
+    if mark != aid_mark:
+        raise SystemExit(f"{fixture_path}: `mark.field` is {mark!r}, the lens fixture's reading_aid_mark is {aid_mark!r}.")
+    page = page_path.read_text(encoding="utf-8")
+    missing = [f"| `{t}` | `{s}` |" for t, s, _ in pairs if f"| `{t}` | `{s}` |" not in page]
+    if missing:
+        raise SystemExit(f"charter.md's table has no row {missing}. Route it to the schema-dist owner; never pick one.")
+    return pairs
+
+
+def render_charter_pairs(pairs: list[tuple[str, str, str]]) -> str:
+    lines = [
+        "/** The charter profile's three pairs (schema-dist `profiles/charter.md`): the Charter (the rules here), the",
+        " *  Guide (start here) and the Domains (the places in the world), each with the aid it is. An element is a",
+        " *  reading aid when its type and supertype, each trimmed and compared without regard to case, match one",
+        " *  of these AND it carries the mark `x_charter_of`, read by presence: match with isCharterElement, read",
+        " *  the packet with charterOf. Source: `profiles/charter.fixture.json`'s `pairs`, checked against the",
+        " *  page's table and the lens fixture's reading_aid_pairs. */",
+        "export const CHARTER_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly supertype: string; "
+        "readonly aid: 'charter' | 'guide' | 'domain' }> = [",
+    ]
+    lines += [f"  {{ type: '{t}', supertype: '{s}', aid: '{a}' }}," for t, s, a in pairs]
+    lines += ["];", ""]
+    return "\n".join(lines)
+
+
 REVIEW_LABEL = re.compile(r'labels each one it keeps \*\*"([^"]+)"\*\*')
 
 
@@ -1082,7 +1138,9 @@ def main() -> None:
     parts.append(render_maps(all_fields, families, icons, sections, public))
     room_pairs = load_room_pairs(schema_dir)
     parts.append(render_room_pairs(room_pairs, load_room_mark(schema_dir)))
-    parts.append(render_reading_aids(*load_reading_aids(schema_dir)))
+    aid_pairs, aid_mark = load_reading_aids(schema_dir)
+    parts.append(render_reading_aids(aid_pairs, aid_mark))
+    parts.append(render_charter_pairs(load_charter_pairs(schema_dir, aid_pairs, aid_mark)))
     parts.append(render_review_label(load_review_label(schema_dir)))
     parts.append(render_message_profile(*load_message_profile(schema_dir, room_pairs, all_fields)))
     parts.append(render_field_schema(all_fields, sections, required_sets))
