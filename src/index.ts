@@ -33,8 +33,9 @@ export type {
 
 // The room profile (schema-dist profiles/room.md): the pairs a parlor puts in a world, and the
 // matcher a lore view uses to leave them out (ROOM_PAIRS generated from the vendored dist); and the reading
-// aids' matcher (the charter, its guide, its domains: the pair and the mark x_charter_of)
-export { ROOM_PAIRS, isRoomElement, isCharterElement } from './room';
+// aids' matcher (the charter, its guide, its domains: the pair and the mark x_charter_of), and which aid a
+// pair alone makes an element (readingAidOf, the mark ignored)
+export { ROOM_PAIRS, isRoomElement, isCharterElement, readingAidOf } from './room';
 // The charter profile (schema-dist profiles/charter.md): a world's reading aids, the Charter, the Guide and the
 // Domains, as one reader sees them (CHARTER_PAIRS generated from the vendored dist)
 export { CHARTER_PAIRS, charterOf, domainsOf } from './charter';

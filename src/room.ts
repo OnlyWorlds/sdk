@@ -3,7 +3,7 @@
 // ROOM_MARK are generated from the vendored dist; this file holds only the matcher, so a tool
 // that keeps its own copy of the pairs can drop it for these exports.
 
-import { READING_AID_MARK, READING_AID_PAIRS, ROOM_MARK, ROOM_PAIRS } from './v2/types.generated';
+import { CHARTER_PAIRS, READING_AID_MARK, READING_AID_PAIRS, ROOM_MARK, ROOM_PAIRS } from './v2/types.generated';
 import { simpleCaseFold } from './world-file';
 
 export { ROOM_PAIRS };
@@ -114,4 +114,27 @@ export function readingAidKey(element: unknown): string | null {
  */
 export function isCharterElement(element: object | null | undefined): boolean {
   return readingAidKey(element) !== null;
+}
+
+/** CHARTER_PAIRS by their folded pair word (`law/charter` to `charter`). Module-internal. */
+const AID_BY_KEY: ReadonlyMap<string, 'charter' | 'guide' | 'domain'> = new Map(
+  CHARTER_PAIRS.map(p => [`${fold(p.type)}/${fold(p.supertype)}`, p.aid]),
+);
+
+/**
+ * Which reading aid the element's pair makes it (schema-dist profiles/charter.md): `'charter'` for a `law`
+ * with supertype `Charter`, `'guide'` for a `construct` with supertype `Guide`, `'domain'` for a `construct`
+ * with supertype `Domain`, the type and supertype each trimmed and compared without regard to case, the whole
+ * word, as `isCharterElement` matches them; null for any other pair, for an element without a string type
+ * and supertype, and for anything that is not an object.
+ *
+ * It reads the pair only and ignores the mark `x_charter_of`: an unmarked Charter answers `'charter'`, which
+ * is what a tool offering to mark an element needs. Whether the element IS a reading aid (the pair and the
+ * mark) is `isCharterElement`.
+ */
+export function readingAidOf(element: unknown): 'charter' | 'guide' | 'domain' | null {
+  if (element === null || typeof element !== 'object' || Array.isArray(element)) return null;
+  const el = element as Record<string, unknown>;
+  if (typeof el.type !== 'string' || typeof el.supertype !== 'string') return null;
+  return AID_BY_KEY.get(`${fold(el.type)}/${fold(el.supertype)}`) ?? null;
 }

@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { CHARTER_PAIRS, FIELD_SCHEMA, charterOf, domainsOf, isCharterElement } from '../dist/index.js';
+import { CHARTER_PAIRS, FIELD_SCHEMA, charterOf, domainsOf, isCharterElement, readingAidOf } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/charter.fixture.json', import.meta.url));
 assert.ok(existsSync(FIXTURE), `no charter fixture at ${FIXTURE}`);
@@ -71,6 +71,24 @@ test('charterOf: a Guide the reader knows only as a stub names it, and orders no
 test('charterOf refuses a world without an elements list and a reader without a rung', () => {
   assert.throws(() => charterOf({}, { rung: 'owner' }), TypeError);
   assert.throws(() => charterOf({ elements: [] }, { rung: 'keeper' }), TypeError);
+});
+
+test('readingAidOf: each of the fixture\'s pairs to its aid, folded, the whole word, the mark never read', () => {
+  assert.equal(doc.pairs.length, 3);
+  for (const p of doc.pairs) assert.equal(readingAidOf({ type: p.type, supertype: p.supertype }), p.aid, `${p.type}/${p.supertype}`);
+  assert.equal(readingAidOf({ type: 'law', supertype: ' charter ' }), 'charter');
+  assert.equal(readingAidOf({ type: 'LAW', supertype: 'CHARTER　' }), 'charter');
+  assert.equal(readingAidOf({ type: 'law', supertype: 'Guide' }), null);
+  assert.equal(readingAidOf({ type: 'law', supertype: 'Charters' }), null);
+  assert.equal(readingAidOf({ type: 'object', supertype: 'Domain' }), null);
+  // Unmarked, so lore to isCharterElement, and still the pair of a charter.
+  const unmarked = { type: 'law', supertype: 'Charter' };
+  assert.equal(isCharterElement(unmarked), false);
+  assert.equal(readingAidOf(unmarked), 'charter');
+  assert.equal(readingAidOf({ ...unmarked, x_charter_of: null }), 'charter');
+  for (const bad of [null, undefined, 'law/charter', 7, ['law', 'Charter'], { type: 'law' }, { type: 'law', supertype: null }, { supertype: 'Charter' }]) {
+    assert.equal(readingAidOf(bad), null, JSON.stringify(bad));
+  }
 });
 
 test('charterOf: the owner reading as the public reads a closed world as the public does, nothing', () => {
