@@ -177,10 +177,11 @@ test('the fixture\'s tables, read back through the reader: pair, anchor fields, 
 // The shared edge cases: inputs the fixture leaves open (a stub's links, the window's edge, the World's
 // time_current as its now, no window without a now, a to after
 // as_of, the fence on anchors, the members list in the mail rule, a message not repeated among the kept,
-// the thirty days' edge, ties by id by code point, an umbrella's child a guest knows only as a stub), the same file byte for byte as the Python package's
+// the thirty days' edge, ties by id by code point, an umbrella's child a guest knows only as a stub, a stub
+// Message kept out of the mail part), the same file byte for byte as the Python package's
 // tests/fixtures/lens-edges.json (both suites hold its sha256), answers written by hand.
 const EDGES_FILE = fileURLToPath(new URL('./fixtures/lens-edges.json', import.meta.url));
-const EDGES_SHA256 = '68cbdb16afa7498e432e86f0e1124cd1403c2a1c15e137996092a6ef88e94682';
+const EDGES_SHA256 = 'adb4e2badfcadaa52eb3b740479aec649ee283ab84edb45f2c9f648af1242b04';
 
 test('the shared edge cases (the Python package runs the same file)', async () => {
   const { createHash } = await import('node:crypto');
@@ -201,7 +202,7 @@ test('the shared edge cases (the Python package runs the same file)', async () =
   }
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
-  assert.equal(edges.length, 13);
+  assert.equal(edges.length, 14);
 });
 
 test('a lens a guest knows only as a stub reads as nothing, by id, as keel reads it; whole, it reads', () => {

@@ -600,7 +600,8 @@ function mailPart(r: Reading, mode: Mail, budget: number, clock: [number, number
   const empty: OwLensMail = { unread: [], read: [], rows: [], cut: {}, totals: { unread: 0, read: 0 } };
   if (r.character === null) return empty;
   const inView = r.order.filter(id => r.view.has(id));
-  const messages = inView.map(id => r.body(id)).filter(b => isMessage(b));
+  // Whole bodies only: a known-of stub serves no `characters`, so its recipients are unknown, never everyone (keel's `_mail`).
+  const messages = inView.filter(id => !r.stubs.has(id)).map(id => r.body(id)).filter(b => isMessage(b));
   const relations = inView.filter(id => r.typeOf.get(id) === 'relation').map(id => r.body(id));
   const mark = readMarkOf(relations, r.character, r.members);
   const mine = unreadFor(messages, r.character, null, r.members);

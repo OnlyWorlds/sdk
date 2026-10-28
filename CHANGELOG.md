@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.97.1] - 2026-10-28
+
+### Fixed
+
+- **A lens's mail part no longer reads a known-of stub as a message to everyone.** A stub never serves `characters`, and the message profile reads a Message with no recipients as addressed to everyone, so a guest's mail part listed every Message it knew only as a stub, unread. The mail part now reads whole bodies only, as the API reads it. A shared edge case holds it, the same file as the Python package's.
+
 ## [4.97.0] - 2026-10-28
 
 ### Added
