@@ -1,4 +1,4 @@
-// The lens profile (schema-dist profiles/lens.md, serial 82): a saved way of reading a world. A lens
+// The lens profile (schema-dist profiles/lens.md, serial 83): a saved way of reading a world. A lens
 // is a Construct with supertype Lens; its links are its anchors, and `x_lens` is the recipe (how far,
 // which types, how far back, how recently changed, how much). `resolveLens` is the one resolution every
 // reader agrees on, a pure function over a world snapshot; the fixture, profiles/lens.fixture.json, is
@@ -554,8 +554,11 @@ export class Reading {
 }
 
 interface Resolved {
-  list: { id: string; row: Record<string, unknown> }[];
+  /** The kept ids, the lens's own and then each child's, each once, after its mail rule and its budget. */
+  list: string[];
   cut: Map<string, OwLensCutReason>;
+  /** The lens's own mail part, when it names a mail rule (a child's is its own and goes nowhere). */
+  mail: OwLensMail | null;
 }
 
 /**
@@ -590,7 +593,9 @@ function anchorsOf(lens: Body, r: Reading): { anchors: string[]; children: strin
  * One lens by its own recipe, its children entered once each through the shared visited set. An anchor is
  * kept and followed whatever `types`, `window` and `changed_within` say (a reading aid too; a room element is
  * kept and not followed); what a hop or a filter reaches is cut by the fence, then `types`, then the window,
- * then `changed_within`, against `wall`, the reading's wall clock.
+ * then `changed_within`, against `wall`, the reading's wall clock. Nothing is hopped out of what the fence cuts
+ * `after_as_of`. Each child's kept list joins this one's by id alone (rule 3), after the child's own mail rule
+ * and budget; then this lens's mail rule takes its messages out and its budget caps the union.
  */
 function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>, wall: [number, number]): Resolved {
   const cut = new Map<string, OwLensCutReason>();
@@ -599,8 +604,7 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
   };
   const { anchors, children, unseen, anchored } = anchorsOf(lens, r);
   const anchorSet = new Set(anchors);
-  const childSet = new Set(children);
-  const list: string[] = [];
+  let list: string[] = [];
   const frontier: string[] = [];
   for (const id of anchors) {
     if (visited.has(id) || !r.byId.has(id)) continue;
@@ -608,8 +612,8 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
       addCut(id, 'anchor_not_visible');
       continue;
     }
-    frontier.push(id);
     const why = r.fenceCut(id, recipe);
+    if (why !== 'after_as_of') frontier.push(id);
     if (why !== null) addCut(id, why);
     else list.push(id);
   }
@@ -624,16 +628,20 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
     const selected = r.order.filter(id => r.view.has(id) && !visited.has(id) && r.kept(id, recipe));
     list.push(...r.sort(selected.filter(passes)));
   } else if (recipe.depth >= 1) {
-    const excluded = (id: string): boolean => anchorSet.has(id) || childSet.has(id) || visited.has(id);
+    // A child the umbrella enters is not excluded from its own hop: what a hop reaches is kept as an element (keel's `known`).
+    const excluded = (id: string): boolean => anchorSet.has(id) || visited.has(id);
     const { reached: hop, edges } = r.reach(frontier, excluded);
     list.push(...r.sort([...hop].filter(passes)));
     if (r.owner) for (const id of r.unseen(frontier, edges, excluded)) addCut(id, 'not_visible');
     if (recipe.depth === 2) {
-      const stops = (id: string): boolean => r.stopsAt(id, recipe);
-      for (const id of r.reach(hop, id => excluded(id) || hop.has(id), stops).reached) addCut(id, 'hops_not_served');
+      const stops = (id: string): boolean => r.stopsAt(id, recipe) || r.fenceCut(id, recipe) === 'after_as_of';
+      // The second hop's count leaves out a room element or a reading aid whose pair `types` does not name (rule 4 stops it).
+      for (const id of r.reach(hop, id => excluded(id) || hop.has(id), stops).reached) {
+        if ((r.room.has(id) || r.aid.has(id)) && !r.kept(id, recipe)) continue;
+        addCut(id, 'hops_not_served');
+      }
     }
   }
-  const out: { id: string; row: Record<string, unknown> }[] = list.map(id => ({ id, row: r.row(id, recipe.show, anchorSet.has(id) ? recipe.notes : null) }));
   for (const child of children) {
     if (visited.has(child)) continue;
     visited.add(child);
@@ -641,10 +649,20 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
     const read = readRecipe(body.x_lens);
     if (!('recipe' in read) || isTemplate(body)) continue;
     const sub = resolveOne(body, read.recipe, r, visited, wall);
-    out.push(...sub.list);
+    // The union drops an element only by its id, never because it was entered.
+    const have = new Set(list);
+    list.push(...sub.list.filter(id => !have.has(id)));
     for (const [id, why] of sub.cut) addCut(id, why);
   }
-  return { list: out, cut };
+  const mail = recipe.mail === 'none' ? null : mailPart(r, recipe.mail, recipe.budget, wall);
+  if (mail !== null) {
+    const inMail = new Set([...mail.unread, ...mail.read]);
+    list = list.filter(id => !inMail.has(id));
+  }
+  for (const id of list.slice(recipe.budget)) cut.set(id, 'budget');
+  list = list.slice(0, recipe.budget);
+  for (const id of list) cut.delete(id);
+  return { list, cut, mail };
 }
 
 /** The mail rule (the message profile's readers over the reader's view). */
@@ -700,7 +718,7 @@ export function checkReader(reader: unknown, where: string): asserts reader is O
  *
  * The rules, in short: visibility first (a hidden or proposed element is not there to hop through; a
  * known-of stub is kept as served and nothing hops out of it); a hop reaches both ways, and on through
- * a Relation to its parties; an umbrella enters each child lens once; a hop never crosses a room
+ * a Relation to its parties; an umbrella enters each child lens once, each child keeping its own budget and mail rule, the rows made by the umbrella's `show`; a hop never crosses a room
  * element; a reading aid (the charter, its guide, a domain: `isCharterElement`) a hop reaches is kept, and
  * hopped on from, only when `types` names its pair, while one the lens names as an anchor is kept and
  * followed; anchors first in link order, then by type in the schema's order, newest first, then by id;
@@ -760,21 +778,10 @@ export function lensReading(r: Reading, lens: object | string, clockV: unknown):
   const wall = timeKey(clockV ?? new Date().toISOString()) as [number, number];
   const visited = new Set<string>();
   if (typeof body.id === 'string') visited.add(body.id);
-  const resolved = resolveOne(body, recipe, r, visited, wall);
-  const mail = recipe.mail === 'none' ? null : mailPart(r, recipe.mail, recipe.budget, wall);
-  const inMail = new Set(mail === null ? [] : [...mail.unread, ...mail.read]);
-
-  const seen = new Set<string>();
-  const union = resolved.list.filter(e => {
-    if (seen.has(e.id) || visited.has(e.id) || inMail.has(e.id)) return false;
-    seen.add(e.id);
-    return true;
-  });
-  const keep = union.slice(0, recipe.budget);
-  const cut = resolved.cut;
-  for (const e of union.slice(recipe.budget)) cut.set(e.id, 'budget');
-  for (const e of keep) cut.delete(e.id);
-  for (const id of visited) cut.delete(id);
+  const { list: keep, cut, mail } = resolveOne(body, recipe, r, visited, wall);
+  const { anchors } = anchorsOf(body, r);
+  // The rows are made once, from the union, by this lens's `show`; a note captions only this lens's own anchors.
+  const rows = keep.map(id => r.row(id, recipe.show, anchors.includes(id) ? recipe.notes : null));
   const counts: Partial<Record<OwLensCutReason, number>> = {};
   for (const why of CUT_REASONS) {
     if (OWNER_ONLY.has(why) && !r.owner) continue;
@@ -782,9 +789,8 @@ export function lensReading(r: Reading, lens: object | string, clockV: unknown):
     for (const w of cut.values()) if (w === why) n++;
     if (n > 0) counts[why] = n;
   }
-  const { anchors } = anchorsOf(body, r);
   // A note on an id that is not an anchor is counted only where the reader sees that id: a note keyed to an
   // element it cannot see, or to no element, is no note of its, and counting it would tell a guest it exists.
   const notesIgnored = Object.keys(recipe.notes).filter(k => !anchors.includes(k) && r.view.has(k)).length;
-  return { reading: { kept: keep.map(e => e.id), rows: keep.map(e => e.row), cut: counts, notesIgnored, mail, unreadable: null }, cutById: cut };
+  return { reading: { kept: keep, rows, cut: counts, notesIgnored, mail, unreadable: null }, cutById: cut };
 }
