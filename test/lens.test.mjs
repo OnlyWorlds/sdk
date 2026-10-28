@@ -122,7 +122,7 @@ test('the lens readers answer every case of the lens fixture', (t) => {
   t.diagnostic(`the lens fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   for (const line of wrong) t.diagnostic(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 151, `the fixture holds ${cases.length} cases, serial 84 has 151`);
+  assert.equal(cases.length, 151, `the fixture holds ${cases.length} cases, serial 85 has 151`);
   assert.deepEqual(counts, COUNTS);
 });
 

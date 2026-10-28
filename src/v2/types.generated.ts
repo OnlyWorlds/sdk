@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.84
-//         commit          47b2be36ad9a067f08a7bb21274f8a87b6ba2274
-//         MANIFEST sha256 04aa87e61ea4925bab58ae12646333b663829bfa80f1e3931c4055bd44900ec9
-//         canonical 00.33.00, dist serial 84, published 2026-10-28
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.85
+//         commit          dc4be3ee6cbb8ee8e45527c374fe2648d990113c
+//         MANIFEST sha256 31e953dac2ba77cbc0d65b71de2ac3520d50d9df760156df95359c155c0c57ed
+//         canonical 00.33.00, dist serial 85, published 2026-10-28
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -34,9 +34,9 @@ export interface OwElementBase {
   name: string;
   /** Any kind of details about the element. */
   description?: string;
-  /** The top level category to which the element belongs. */
+  /** The top level classification of the element within its category. */
   supertype?: string;
-  /** The sub level category through which the element is further classified. */
+  /** The sub level classification through which the element is further sorted within its category. */
   subtype?: string;
   /** URL to an image representing the element. */
   image_url?: string;
@@ -1755,9 +1755,9 @@ export interface TitleV2 extends OwElementBase {
   authority?: string;
   /** Conditions or qualifications for receiving or holding the title */
   eligibility?: string;
-  /** Date on which the title was granted, defined in world TIME units */
+  /** Date on which the title was created or first granted, defined in world TIME units; a holder's own span is a Relation, not this field */
   grant_date: number | null;
-  /** Date on which the title ended or was revoked, defined in world TIME units */
+  /** Date on which the title ended or was abolished, defined in world TIME units; a holder's own span is a Relation, not this field */
   revoke_date: number | null;
   /** Current state or general condition of the title */
   status?: string;

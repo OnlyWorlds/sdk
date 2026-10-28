@@ -712,7 +712,7 @@ export interface OwFrontDoor {
    * a seat made from a link for an email address is never listed.
    */
   my_seats: OwMySeat[];
-  /** The world's Charter: the newest Law with supertype Charter made by the owner or a co-builder, or null. Every member may read it. */
+  /** The world's Charter: the newest marked Charter Law (a Law with supertype Charter carrying the mark `x_charter_of`), or null. Every member may read it. */
   charter: string | null;
   /** The Objects the Charter's description names (by `ow://` link or id), in the order written, at most five; empty when none. */
   charter_skill: string[];

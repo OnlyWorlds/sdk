@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.33.0-dist.84** — canonical schema **00.33.00**, published 2026-10-28.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.33.0-dist.85** — canonical schema **00.33.00**, published 2026-10-28.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -559,8 +559,8 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 
 - `authority` (text) — Rights or powers granted by the title
 - `eligibility` (text) — Conditions or qualifications for receiving or holding the title
-- `grant_date` (integer) — Date on which the title was granted, defined in world TIME units
-- `revoke_date` (integer) — Date on which the title ended or was revoked, defined in world TIME units
+- `grant_date` (integer) — Date on which the title was created or first granted, defined in world TIME units; a holder's own span is a Relation, not this field
+- `revoke_date` (integer) — Date on which the title ended or was abolished, defined in world TIME units; a holder's own span is a Relation, not this field
 - `issuer` (single link → institution) — Institution that formally created or granted the title
 - `body` (single link → institution) — Institution in which the title functions or holds relevance
 - `superior_title` (single link → title) — Another title that has authority over this one
