@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.101.1] - 2026-10-28
+
 ### Changed
 
 - **Schema repinned to schema-dist `v0.33.0-dist.85`** (from dist.84; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'` and no type, field or constant moved). Four generated descriptions follow the standard: `supertype` and `subtype` are a classification within the element's category, and a Title's `grant_date` and `revoke_date` are the title's own dates, a holder's span being a Relation; `OwFrontDoor.charter` now says the Charter is the newest marked Charter Law, as the charter and checks profiles select it; no fixture case changed, and every reader replays as before.
