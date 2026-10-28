@@ -140,6 +140,8 @@ export const OWNER_ONLY: ReadonlySet<string> = new Set(['anchor_not_visible', 'n
 const ROOM_KEYS: ReadonlySet<string> = new Set(ROOM_PAIRS.map(p => `${fold(p.type)}/${fold(p.supertype)}`));
 const MAIL_SECONDS = 30 * 86400;
 /** What a known-of stub serves beside its type's public fields (never a link, never a date). */
+/** A Message's addressing, the fields keel names in `x_served_trimmed` when it trims one (`SERVED_TRIMMED_FIELDS`). */
+const MESSAGE_ADDRESSING: readonly string[] = ['characters', 'narrator'];
 const STUB_FIELDS: readonly string[] = ['id', 'type', 'name', 'description', 'supertype', 'subtype', 'image_url', 'created_at', 'updated_at'];
 
 /** Each type's link fields in the schema's order, and whether each is a list (module-internal). */
@@ -313,6 +315,8 @@ export class Reading {
   /** The rung whose view is read: the reader's own, or on an owner the rung of the reader it reads `as`. */
   readonly seenRung: OwLensReader['rung'];
   readonly owner: boolean;
+  /** True when the view read is the owner's own: its rows are the bodies as stored, nothing trimmed (keel serves the owner untouched). */
+  readonly stored: boolean;
   readonly character: string | null;
   readonly members: readonly OwMessageMember[] | null;
   readonly asOf: number | null;
@@ -338,6 +342,7 @@ export class Reading {
     this.owner = reader.rung === 'owner';
     const seen = this.owner && reader.as != null ? reader.as : reader;
     this.seenRung = seen.rung;
+    this.stored = seen.rung === 'owner';
     this.character = typeof seen.character === 'string' && seen.character !== '' ? seen.character : null;
     const listed = (v: unknown): Set<string> => new Set(Array.isArray(v) ? v.filter((i): i is string => typeof i === 'string') : []);
     const wholeIds = listed(seen.whole);
@@ -392,7 +397,7 @@ export class Reading {
     return this.fullLinks(id).filter(t => this.view.has(t));
   }
 
-  /** The body this reader is served: a stub for a known-of element, the links outside the view left out (and named in `x_served_trimmed` on a message or a lens). */
+  /** The body this reader is served: a stub for a known-of element; the owner's own view the body as stored; any other reader's with the links it cannot see left out (`trim`). */
   body(id: string): Body {
     let b = this.served.get(id);
     if (b !== undefined) return b;
@@ -406,28 +411,67 @@ export class Reading {
       b.known_of = true;
     } else {
       b = copy(el);
-      const trimmed: string[] = [];
-      for (const [field, many] of LINK_FIELDS.get(type) ?? []) {
-        if (!own(b, field)) continue;
-        const v = b[field];
-        if (many) {
-          if (!Array.isArray(v)) continue;
-          const kept = v.filter((t): t is string => typeof t === 'string' && this.view.has(t));
-          if (v.some(t => typeof t === 'string' && !this.view.has(t))) trimmed.push(field);
-          b[field] = kept;
-        } else if (typeof v === 'string' && !this.view.has(v)) {
-          b[field] = null;
-          trimmed.push(field);
-        }
-      }
-      if (trimmed.length > 0 && (isMessage(b) || isLens(b))) {
-        const mark = Array.isArray(b.x_served_trimmed) ? (b.x_served_trimmed as unknown[]).slice() : [];
-        for (const f of trimmed) if (!mark.includes(f)) mark.push(f);
-        b.x_served_trimmed = mark;
-      }
+      if (!this.stored) this.trim(type, b);
     }
     this.served.set(id, b);
     return b;
+  }
+
+  /**
+   * A whole body as a reader below the owner is served it, as keel's `redact` and `serialize` serve it: every
+   * link id the reader cannot see (or that names an element of another type than the field's) left out, a
+   * single link to null, a generic pair (a Pin's `element_type` and `element_id`) to the empty pair, `""` and
+   * null; a lens's `x_lens.notes` keeps the entries keyed to an anchor it is served or another element it
+   * sees. `x_served_trimmed` names what was trimmed only where keel adds it: a Message's `characters` and
+   * `narrator`, a lens's anchor fields and `notes` (when an anchor's note went with it), for a contributor
+   * or a guest, never the public rung.
+   */
+  private trim(type: string, b: Body): void {
+    const sees = (t: unknown, target: string): boolean =>
+      typeof t === 'string' && this.view.has(t) && (target === 'any' || this.typeOf.get(t) === target);
+    const schema = (FIELD_SCHEMA as Record<string, Record<string, { type: string; target?: string }>>)[type] ?? {};
+    const isLensBody = isLens(b);
+    const anchorsBefore = isLensBody ? new Set(ANCHOR_FIELDS.flatMap(f => (Array.isArray(b[f]) ? (b[f] as unknown[]) : []))) : null;
+    const trimmed: string[] = [];
+    for (const [field, many] of LINK_FIELDS.get(type) ?? []) {
+      if (!own(b, field)) continue;
+      const v = b[field];
+      const target = schema[field]?.target ?? 'any';
+      if (many) {
+        if (!Array.isArray(v) || v.length === 0) continue;
+        const kept = v.filter(t => sees(t, target));
+        if (kept.length !== v.length) trimmed.push(field);
+        b[field] = kept;
+      } else if (target === 'any' && field.endsWith('_id')) {
+        // A generic pair: its type half names the type the id must be, as keel's redact reads it.
+        const typeField = `${field.slice(0, -3)}_type`;
+        if (typeof v !== 'string' || v === '' || sees(v, typeof b[typeField] === 'string' ? (b[typeField] as string) : '')) continue;
+        if (own(b, typeField)) b[typeField] = '';
+        b[field] = null;
+        trimmed.push(field);
+      } else if (typeof v === 'string' && v !== '' && !sees(v, target)) {
+        b[field] = null;
+        trimmed.push(field);
+      }
+    }
+    let notesGone = false;
+    if (anchorsBefore !== null && isBody(b.x_lens) && isBody(b.x_lens.notes)) {
+      const notes = b.x_lens.notes;
+      const served = new Set(ANCHOR_FIELDS.flatMap(f => (Array.isArray(b[f]) ? (b[f] as unknown[]) : [])));
+      const kept: Body = {};
+      for (const k of Object.keys(notes)) {
+        if (served.has(k) || (!anchorsBefore.has(k) && this.view.has(k))) kept[k] = notes[k];
+        else if (anchorsBefore.has(k)) notesGone = true;
+      }
+      if (Object.keys(kept).length !== Object.keys(notes).length) b.x_lens = { ...b.x_lens, notes: kept };
+    }
+    if (this.seenRung === 'public') return;
+    const named = isMessage(b) ? MESSAGE_ADDRESSING.filter(f => trimmed.includes(f))
+      : isLensBody ? [...ANCHOR_FIELDS.filter(f => trimmed.includes(f)), ...(notesGone ? ['notes'] : [])] : [];
+    if (named.length === 0) return;
+    const mark = Array.isArray(b.x_served_trimmed) ? (b.x_served_trimmed as unknown[]).slice() : [];
+    for (const f of named) if (!mark.includes(f)) mark.push(f);
+    b.x_served_trimmed = mark;
   }
 
   /**
@@ -668,7 +712,9 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
 /** The mail rule (the message profile's readers over the reader's view). */
 function mailPart(r: Reading, mode: Mail, budget: number, clock: [number, number]): OwLensMail {
   const empty: OwLensMail = { unread: [], read: [], rows: [], cut: {}, totals: { unread: 0, read: 0 } };
-  if (r.character === null) return empty;
+  // The public rung has no Character (keel's public reader carries none), and its bodies carry no x_served_trimmed to
+  // tell a trimmed recipient list from one to everyone.
+  if (r.character === null || r.seenRung === 'public') return empty;
   const inView = r.order.filter(id => r.view.has(id));
   // Whole bodies only: a known-of stub serves no `characters`, so its recipients are unknown, never everyone (keel's `_mail`).
   const messages = inView.filter(id => !r.stubs.has(id)).map(id => r.body(id)).filter(b => isMessage(b));
