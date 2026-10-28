@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.100.2] - 2026-10-28
+
+### Fixed
+
+- **`x_served_trimmed` on `OwMe` and `OwMember`**: `me()` and `members()` answers carry it, typed `'lenses'[]`, when `lenses` was served with a lens left out that this key cannot see. The API has served it since the lens routes; the types now say so, as `OwMemberLenses` already did. Saving the list you were shown keeps that lens where it stands.
+
 ## [4.100.1] - 2026-10-28
 
 ### Fixed

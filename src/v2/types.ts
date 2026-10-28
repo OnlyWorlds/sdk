@@ -675,6 +675,11 @@ export interface OwMe {
   lenses: string[];
   /** Where `lenses` comes from: `chosen` (your own list, empty for none) or `titles` (you chose none, and your Character's Titles bring these). Saving a list makes it your choice. */
   lenses_from: 'chosen' | 'titles';
+  /**
+   * Served only, never written: present only when `lenses` was served with a lens left out, one this
+   * key cannot see; then it names `lenses`. Saving the list you were shown keeps that lens where it stands.
+   */
+  x_served_trimmed?: 'lenses'[];
   /** Agent seats only: the agent's name. */
   name?: string;
   /** Who you are here, who answers for you, and the house rules. */
@@ -794,6 +799,11 @@ export interface OwMember {
   lenses: string[];
   /** Where `lenses` comes from: `chosen` (the row's own list, empty for none) or `titles` (it chose none, and its Character's Titles bring these). */
   lenses_from: 'chosen' | 'titles';
+  /**
+   * Served only, never written: present only when `lenses` was served with a lens left out, one this
+   * key cannot see; then it names `lenses`. Saving the list you were shown keeps that lens where it stands.
+   */
+  x_served_trimmed?: 'lenses'[];
   [k: string]: unknown;
 }
 
