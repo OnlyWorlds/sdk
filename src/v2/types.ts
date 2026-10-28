@@ -92,7 +92,7 @@ export interface OwWorldMeta {
    */
   /**
    * Read only: how many elements this reader may read, in all and per type, counted as it reads
-   * them, for every key and token (keel PR 289, 2026-10-27; before it, the keyless read alone).
+   * them, for every key and token (since 2026-10-27; before it, the keyless read alone).
    * Never sent back: patchWorld strips it.
    */
   counts?: { total: number; types: Record<string, number> };

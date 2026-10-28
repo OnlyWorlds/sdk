@@ -180,7 +180,7 @@
     {
       "tag": "v0.32.1-dist.27",
       "manifest_sha256": "0d6564666eda5041947ad2fb74a396c016b03d36ef38d013d2745d27171e6f9a",
-      "note": "superseded by v0.32.1-dist.28 (same canonical 00.32.01; presentation.json gains types.<type>.public, the fields the platform shows on a known-of element, keel PR 117, and _meta.public; no schema file moved)"
+      "note": "superseded by v0.32.1-dist.28 (same canonical 00.32.01; presentation.json gains types.<type>.public, the fields the platform shows on a known-of element, and _meta.public; no schema file moved)"
     },
     {
       "tag": "v0.32.1-dist.26",
