@@ -345,6 +345,22 @@ export const ROOM_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly su
  *  `profiles/room.fixture.json`'s `mark.field`, checked against room.md at codegen. */
 export const ROOM_MARK = 'x_room_of' as const;
 
+/** The reading aids (schema-dist `profiles/lens.md` rule 4 and `profiles/room.md`): the charter, its
+ *  guide and its domains, which every tool's front door shows first and a lore view leaves out. An
+ *  element is one when its type and supertype, each trimmed and compared without regard to case, match
+ *  one of these AND it carries the mark READING_AID_MARK; the pair without the mark is lore (a kingdom's
+ *  Charter in a novel's world). Module-internal: match with isCharterElement. Source:
+ *  `profiles/lens.fixture.json`'s `reading_aid_pairs`, as it writes them, checked against the pages. */
+export const READING_AID_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly supertype: string }> = [
+  { type: 'law', supertype: 'charter' },
+  { type: 'construct', supertype: 'guide' },
+  { type: 'construct', supertype: 'domain' },
+];
+
+/** The reading aids' mark: the id of the world the aid belongs to. Source: `profiles/lens.fixture.json`'s
+ *  `reading_aid_mark.field`, checked against lens.md and room.md at codegen. Module-internal. */
+export const READING_AID_MARK = 'x_charter_of' as const;
+
 /** The review profile's label (schema-dist `profiles/review.md`, rule 1): the words a reader that
  *  hands a world on (a context for an AI, a pack, a share) puts on each proposed element it keeps,
  *  one whose `x_review_proposed` is anything but absent or null (a doubt, rule 4, included).

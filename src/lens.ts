@@ -1,14 +1,14 @@
-// The lens profile (schema-dist profiles/lens.md, serial 78): a saved way of reading a world. A lens
+// The lens profile (schema-dist profiles/lens.md, serial 82): a saved way of reading a world. A lens
 // is a Construct with supertype Lens; its links are its anchors, and `x_lens` is the recipe (how far,
-// which types, how far back, how much). `resolveLens` is the one resolution every reader agrees on, a
-// pure function over a world snapshot; the fixture, profiles/lens.fixture.json, is this file's own
-// test. The pair is matched by the room profile's trim and fold (room.ts), room elements by its
-// matcher, proposed elements by the review profile's hand-on rule (review.ts), and the mail rule by
-// the message profile's readers (message.ts), never a second copy. The Python package's
-// `resolve_lens` gives the same answers, byte for byte, on the same input.
+// which types, how far back, how recently changed, how much). `resolveLens` is the one resolution every
+// reader agrees on, a pure function over a world snapshot; the fixture, profiles/lens.fixture.json, is
+// this file's own test. The pair is matched by the room profile's trim and fold (room.ts), room
+// elements and reading aids by its matchers, proposed elements by the review profile's hand-on rule
+// (review.ts), and the mail rule by the message profile's readers (message.ts), never a second copy.
+// The Python package's `resolve_lens` gives the same answers, byte for byte, on the same input.
 
 import { FIELD_SCHEMA, PUBLIC_FIELDS } from './v2/types.generated';
-import { ROOM_PAIRS, fold, isRoomElement } from './room';
+import { READING_AID_KEYS, ROOM_PAIRS, fold, isRoomElement, readingAidKey } from './room';
 import { handsOnAsProposed } from './review';
 import { compareKeys, isMessage, readMarkOf, timeKey, unreadFor } from './message';
 import type { OwMessageMember } from './message';
@@ -51,14 +51,14 @@ export interface OwLensWorld {
 export interface OwLensOptions {
   /** The reading's date, a whole number in the world's time unit; absent: the world's now (`now`, else `time_current`, else `time_range_current`); none at all: no fence, and the window cuts nothing. */
   asOf?: number | null;
-  /** The reading's wall-clock time for the mail rule's thirty days, a date-time; absent: the machine's time. Never the world's now. */
+  /** The reading's wall-clock time, a date-time, for the mail rule's thirty days and `changed_within`; absent: the machine's time. Never the world's now. */
   clock?: string | null;
 }
 const LENS_OPTION_KEYS = ['asOf', 'clock'] as const;
 
 /** Why an element was left out: the profile's one closed list. */
 export type OwLensCutReason =
-  | 'budget' | 'types' | 'window' | 'undated' | 'after_as_of' | 'anchor_not_visible' | 'not_visible' | 'hops_not_served';
+  | 'budget' | 'types' | 'window' | 'stale' | 'undated' | 'after_as_of' | 'anchor_not_visible' | 'not_visible' | 'hops_not_served';
 
 /** The mail rule's part of a reading. */
 export interface OwLensMail {
@@ -82,7 +82,7 @@ export interface OwLensReading {
   rows: Record<string, unknown>[];
   /** The cut, counted by reason; a reason with no count is absent, and a reader that is not the owner never carries the owner's two. */
   cut: Partial<Record<OwLensCutReason, number>>;
-  /** Notes on ids that are not anchors of the lens read. */
+  /** Notes on ids that are not anchors of the lens read, counted only where the reader sees the id. */
   notesIgnored: number;
   /** The mail part, when the lens names a mail rule; null otherwise. */
   mail: OwLensMail | null;
@@ -96,12 +96,14 @@ type Mail = 'unread_full_read_titles' | 'all' | 'none';
 
 interface Recipe {
   depth: number;
-  /** Folded type slugs and room pairs; null: any type, and no room element. */
+  /** Folded type slugs, room pairs and reading aids' pairs; null: any type, and no room element or reading aid. */
   types: Set<string> | null;
   window: number | null;
   from: number | null;
   to: number | null;
   undated: 'include' | 'exclude';
+  /** Days back from the reading's wall clock; null: no cut by when an element changed. */
+  changedWithin: number | null;
   show: Show;
   budget: number;
   mail: Mail;
@@ -131,7 +133,7 @@ export const DATE_FIELD: Readonly<Record<string, string>> = Object.freeze({
 });
 /** The cut reasons in the profile's order (module-internal; the graph reader counts by them too). */
 export const CUT_REASONS: readonly OwLensCutReason[] = [
-  'budget', 'types', 'window', 'undated', 'after_as_of', 'anchor_not_visible', 'not_visible', 'hops_not_served',
+  'budget', 'types', 'window', 'stale', 'undated', 'after_as_of', 'anchor_not_visible', 'not_visible', 'hops_not_served',
 ];
 /** The reasons only the owner is told (module-internal). */
 export const OWNER_ONLY: ReadonlySet<string> = new Set(['anchor_not_visible', 'not_visible']);
@@ -167,6 +169,18 @@ export function dateOf(element: object | null | undefined): number | null {
   const type = typeof element.type === 'string' ? fold(element.type) : '';
   if (!own(DATE_FIELD, type)) return null;
   return whole(valueOf(element, DATE_FIELD[type]));
+}
+
+/**
+ * When an element last changed, as `changed_within` reads it: the newer of a folder element's
+ * `server_updated_at` and `local_updated_at` where either reads as a time, else its `updated_at`; null when none
+ * reads as one.
+ */
+function changedAt(el: Body): [number, number] | null {
+  const stamps = [timeKey(valueOf(el, 'server_updated_at')), timeKey(valueOf(el, 'local_updated_at'))]
+    .filter((k): k is [number, number] => k !== null);
+  if (stamps.length === 0) return timeKey(valueOf(el, 'updated_at'));
+  return stamps.reduce((a, b) => (compareKeys(a, b) >= 0 ? a : b));
 }
 
 /** Strings by code point, as the Python package compares them (never UTF-16 units, never a locale). */
@@ -241,7 +255,7 @@ function readRecipe(raw: unknown): { recipe: Recipe } | { bad: string } {
     for (const word of typesV) {
       if (typeof word !== 'string') return { bad: 'types' };
       const w = fold(word);
-      if (!(w.includes('/') ? ROOM_KEYS.has(w) : TYPE_RANK.has(w))) return { bad: 'types' };
+      if (!(w.includes('/') ? ROOM_KEYS.has(w) || READING_AID_KEYS.has(w) : TYPE_RANK.has(w))) return { bad: 'types' };
       set.add(w);
     }
     types = set.size > 0 ? set : null;
@@ -257,6 +271,9 @@ function readRecipe(raw: unknown): { recipe: Recipe } | { bad: string } {
   if (toV !== null && (to === null || from === null || to <= from)) return { bad: 'to' };
   const undatedV = valueOf(x, 'undated');
   if (undatedV !== null && undatedV !== 'include' && undatedV !== 'exclude') return { bad: 'undated' };
+  const changedV = valueOf(x, 'changed_within');
+  const changedWithin = changedV === null ? null : whole(changedV);
+  if (changedV !== null && (changedWithin === null || changedWithin < 1)) return { bad: 'changed_within' };
   const showV = valueOf(x, 'show');
   if (showV !== null && showV !== 'full' && showV !== 'first_line' && showV !== 'name') return { bad: 'show' };
   const budgetV = valueOf(x, 'budget');
@@ -270,6 +287,7 @@ function readRecipe(raw: unknown): { recipe: Recipe } | { bad: string } {
     recipe: {
       depth, types, window, from, to,
       undated: (undatedV ?? 'include') as Recipe['undated'],
+      changedWithin,
       show: (showV ?? 'full') as Show,
       budget,
       mail: (mailV ?? 'none') as Mail,
@@ -286,6 +304,8 @@ export class Reading {
   readonly view = new Set<string>();
   readonly stubs = new Set<string>();
   readonly room = new Set<string>();
+  /** The reading aids (the charter, its guide, its domains: the pair and the mark), each id to its pair word. */
+  readonly aid = new Map<string, string>();
   /** The ids under the hidden mark: the world's `hidden` list and each element's own `hidden`. */
   readonly hidden = new Set<string>();
   /** The ids written as proposed, which no reader's view holds. */
@@ -312,6 +332,8 @@ export class Reading {
       this.order.push(el.id);
       if (el.hidden !== undefined && el.hidden !== null && el.hidden !== false) hidden.add(el.id);
       if (isRoomElement(el as { type?: string })) this.room.add(el.id);
+      const aid = readingAidKey(el);
+      if (aid !== null) this.aid.set(el.id, aid);
     }
     this.owner = reader.rung === 'owner';
     const seen = this.owner && reader.as != null ? reader.as : reader;
@@ -408,11 +430,14 @@ export class Reading {
     return b;
   }
 
-  /** One hop from each element of `from`, both ways, and on through each Relation it lands on to that Relation's parties. */
-  reach(from: Iterable<string>, excluded: (id: string) => boolean): { reached: Set<string>; edges: string[] } {
+  /**
+   * One hop from each element of `from`, both ways, and on through each Relation it lands on to that Relation's
+   * parties. Nothing hops out of a stub or a room element, nor out of an element `stops` names.
+   */
+  reach(from: Iterable<string>, excluded: (id: string) => boolean, stops?: (id: string) => boolean): { reached: Set<string>; edges: string[] } {
     const landed = new Set<string>();
     for (const f of from) {
-      if (this.stubs.has(f) || this.room.has(f)) continue;
+      if (this.stubs.has(f) || this.room.has(f) || (stops !== undefined && stops(f))) continue;
       for (const t of [...this.links(f), ...(this.inView.get(f) ?? [])]) if (!excluded(t)) landed.add(t);
     }
     const reached = new Set(landed);
@@ -468,13 +493,33 @@ export class Reading {
     return null;
   }
 
-  /** Whether `types` keeps the element: a room element only when its pair is named, any other by its type (or any type when `types` is empty). */
+  /**
+   * `changed_within`: changed longer ago than that many days before the reading's wall clock. The time read is the
+   * element's `updated_at`, or for a folder element (one carrying `server_updated_at` or `local_updated_at`) the
+   * newer of those two; an element with no readable time is never cut.
+   */
+  staleCut(id: string, recipe: Recipe, wall: [number, number]): OwLensCutReason | null {
+    if (recipe.changedWithin === null) return null;
+    const at = changedAt(this.byId.get(id) as Body);
+    if (at === null) return null;
+    return compareKeys(at, [wall[0] - recipe.changedWithin * 86400, wall[1]]) < 0 ? 'stale' : null;
+  }
+
+  /** Whether `types` keeps the element: a room element or a reading aid only when its pair is named, any other by its type (or any type when `types` is empty). */
   kept(id: string, recipe: Recipe): boolean {
     if (this.room.has(id)) {
       const el = this.byId.get(id) as Body;
       return recipe.types !== null && recipe.types.has(`${fold(el.type as string)}/${fold(el.supertype as string)}`);
     }
+    const aid = this.aid.get(id);
+    if (aid !== undefined) return recipe.types !== null && recipe.types.has(aid);
     return recipe.types === null || recipe.types.has(this.typeOf.get(id) as string);
+  }
+
+  /** Rule 4: a reading aid a hop reached is not hopped out of unless `types` names its pair. */
+  stopsAt(id: string, recipe: Recipe): boolean {
+    const aid = this.aid.get(id);
+    return aid !== undefined && !(recipe.types !== null && recipe.types.has(aid));
   }
 
   /** Rule 5's order past the anchors: the schema's type order, newest `updated_at` first (an unreadable time last), then by id. */
@@ -541,8 +586,13 @@ function anchorsOf(lens: Body, r: Reading): { anchors: string[]; children: strin
   return { anchors, children, unseen, anchored: seen.size > 0 || trimmed };
 }
 
-/** One lens by its own recipe, its children entered once each through the shared visited set. */
-function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>): Resolved {
+/**
+ * One lens by its own recipe, its children entered once each through the shared visited set. An anchor is
+ * kept and followed whatever `types`, `window` and `changed_within` say (a reading aid too; a room element is
+ * kept and not followed); what a hop or a filter reaches is cut by the fence, then `types`, then the window,
+ * then `changed_within`, against `wall`, the reading's wall clock.
+ */
+function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>, wall: [number, number]): Resolved {
   const cut = new Map<string, OwLensCutReason>();
   const addCut = (id: string, why: OwLensCutReason): void => {
     if (!cut.has(id)) cut.set(id, why);
@@ -564,7 +614,8 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
     else list.push(id);
   }
   const passes = (id: string): boolean => {
-    const why = r.fenceCut(id, recipe) ?? (r.kept(id, recipe) ? null : 'types') ?? r.windowCut(id, recipe);
+    const why = r.fenceCut(id, recipe) ?? (r.kept(id, recipe) ? null : 'types') ?? r.windowCut(id, recipe)
+      ?? r.staleCut(id, recipe, wall);
     if (why !== null) addCut(id, why);
     return why === null;
   };
@@ -578,7 +629,8 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
     list.push(...r.sort([...hop].filter(passes)));
     if (r.owner) for (const id of r.unseen(frontier, edges, excluded)) addCut(id, 'not_visible');
     if (recipe.depth === 2) {
-      for (const id of r.reach(hop, id => excluded(id) || hop.has(id)).reached) addCut(id, 'hops_not_served');
+      const stops = (id: string): boolean => r.stopsAt(id, recipe);
+      for (const id of r.reach(hop, id => excluded(id) || hop.has(id), stops).reached) addCut(id, 'hops_not_served');
     }
   }
   const out: { id: string; row: Record<string, unknown> }[] = list.map(id => ({ id, row: r.row(id, recipe.show, anchorSet.has(id) ? recipe.notes : null) }));
@@ -588,7 +640,7 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
     const body = r.byId.get(child) as Body;
     const read = readRecipe(body.x_lens);
     if (!('recipe' in read) || isTemplate(body)) continue;
-    const sub = resolveOne(body, read.recipe, r, visited);
+    const sub = resolveOne(body, read.recipe, r, visited, wall);
     out.push(...sub.list);
     for (const [id, why] of sub.cut) addCut(id, why);
   }
@@ -649,10 +701,13 @@ export function checkReader(reader: unknown, where: string): asserts reader is O
  * The rules, in short: visibility first (a hidden or proposed element is not there to hop through; a
  * known-of stub is kept as served and nothing hops out of it); a hop reaches both ways, and on through
  * a Relation to its parties; an umbrella enters each child lens once; a hop never crosses a room
- * element; anchors first in link order, then by type in the schema's order, newest first, then by id;
+ * element; a reading aid (the charter, its guide, a domain: `isCharterElement`) a hop reaches is kept, and
+ * hopped on from, only when `types` names its pair, while one the lens names as an anchor is kept and
+ * followed; anchors first in link order, then by type in the schema's order, newest first, then by id;
  * an anchor the reader cannot see is skipped; a template resolves to nothing; the fence is `as_of` on
- * each element's own date. A value outside the profile's table makes the lens unreadable: `unreadable`
- * names the key and nothing is resolved.
+ * each element's own date; `changed_within` cuts what a hop or a filter reaches that changed longer ago
+ * than that many days before `clock` (`stale`), never an anchor. A value outside the profile's table makes
+ * the lens unreadable: `unreadable` names the key and nothing is resolved.
  */
 export function resolveLens(world: OwLensWorld, lens: object | string, reader: OwLensReader, options?: OwLensOptions): OwLensReading {
   if (options !== undefined && options !== null && !isBody(options)) {
@@ -701,12 +756,12 @@ export function lensReading(r: Reading, lens: object | string, clockV: unknown):
   if (isTemplate(body)) return none;
   const recipe = read.recipe;
 
+  // The reading's wall clock, read once: the mail rule's thirty days and `changed_within` both measure from it.
+  const wall = timeKey(clockV ?? new Date().toISOString()) as [number, number];
   const visited = new Set<string>();
   if (typeof body.id === 'string') visited.add(body.id);
-  const resolved = resolveOne(body, recipe, r, visited);
-  const mail = recipe.mail === 'none'
-    ? null
-    : mailPart(r, recipe.mail, recipe.budget, timeKey(clockV ?? new Date().toISOString()) as [number, number]);
+  const resolved = resolveOne(body, recipe, r, visited, wall);
+  const mail = recipe.mail === 'none' ? null : mailPart(r, recipe.mail, recipe.budget, wall);
   const inMail = new Set(mail === null ? [] : [...mail.unread, ...mail.read]);
 
   const seen = new Set<string>();
@@ -728,6 +783,8 @@ export function lensReading(r: Reading, lens: object | string, clockV: unknown):
     if (n > 0) counts[why] = n;
   }
   const { anchors } = anchorsOf(body, r);
-  const notesIgnored = Object.keys(recipe.notes).filter(k => !anchors.includes(k)).length;
+  // A note on an id that is not an anchor is counted only where the reader sees that id: a note keyed to an
+  // element it cannot see, or to no element, is no note of its, and counting it would tell a guest it exists.
+  const notesIgnored = Object.keys(recipe.notes).filter(k => !anchors.includes(k) && r.view.has(k)).length;
   return { reading: { kept: keep.map(e => e.id), rows: keep.map(e => e.row), cut: counts, notesIgnored, mail, unreadable: null }, cutById: cut };
 }

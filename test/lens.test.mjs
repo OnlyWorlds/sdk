@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { ROOM_PAIRS, isLens, isTemplate, lensesInUse, resolveLens, worldGraph } from '../dist/index.js';
+import { ROOM_PAIRS, isCharterElement, isLens, isTemplate, lensesInUse, resolveLens, worldGraph } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/lens.fixture.json', import.meta.url));
 const COUNTS = { shape: 6, keys: 23, resolve: 58, invariant: 4, uses: 4, graph: 37 };
@@ -160,7 +160,17 @@ test('the fixture\'s tables, read back through the reader: pair, anchor fields, 
   for (const pair of doc.room_pairs) {
     assert.equal(resolveLens({ elements: [] }, { ...LENS, x_lens: { types: [pair.toUpperCase()] } }, OWNER).unreadable, null, pair);
   }
-  assert.deepEqual(doc.cut_reasons, ['budget', 'types', 'window', 'undated', 'after_as_of', 'anchor_not_visible', 'not_visible', 'hops_not_served']);
+  // The reading aids: each pair word is a legal `types` word, and an element of the pair is an aid only with the mark.
+  assert.deepEqual(doc.reading_aid_pairs, ['law/charter', 'construct/guide', 'construct/domain']);
+  assert.equal(doc.reading_aid_mark.field, 'x_charter_of');
+  for (const pair of doc.reading_aid_pairs) {
+    assert.equal(resolveLens({ elements: [] }, { ...LENS, x_lens: { types: [` ${pair.toUpperCase()} `] } }, OWNER).unreadable, null, pair);
+    const [type, supertype] = pair.split('/');
+    const el = { id: id(500), type, name: pair, supertype: supertype.toUpperCase() };
+    assert.equal(isCharterElement(el), false, `${pair} without the mark`);
+    assert.equal(isCharterElement({ ...el, [doc.reading_aid_mark.field]: 'w1' }), true, `${pair} with the mark`);
+  }
+  assert.deepEqual(doc.cut_reasons, ['budget', 'types', 'window', 'stale', 'undated', 'after_as_of', 'anchor_not_visible', 'not_visible', 'hops_not_served']);
   assert.deepEqual(doc.owner_only_reasons, ['anchor_not_visible', 'not_visible']);
   // Defaults: depth 1, budget 50, undated include, show full, mail none, thirty days of mail.
   assert.deepEqual(doc.defaults, { depth: 1, budget: 50, undated: 'include', show: 'full', mail: 'none', mail_days: 30 });
@@ -181,7 +191,7 @@ test('the fixture\'s tables, read back through the reader: pair, anchor fields, 
 // Message kept out of the mail part), the same file byte for byte as the Python package's
 // tests/fixtures/lens-edges.json (both suites hold its sha256), answers written by hand.
 const EDGES_FILE = fileURLToPath(new URL('./fixtures/lens-edges.json', import.meta.url));
-const EDGES_SHA256 = 'adb4e2badfcadaa52eb3b740479aec649ee283ab84edb45f2c9f648af1242b04';
+const EDGES_SHA256 = '4cb440cde85da877e2b5ba7129dd34be90a1e0bb109eefb56f0cae040a19b080';
 
 test('the shared edge cases (the Python package runs the same file)', async () => {
   const { createHash } = await import('node:crypto');
@@ -202,7 +212,7 @@ test('the shared edge cases (the Python package runs the same file)', async () =
   }
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
-  assert.equal(edges.length, 14);
+  assert.equal(edges.length, 15);
 });
 
 test('a lens a guest knows only as a stub reads as nothing, by id, as keel reads it; whole, it reads', () => {

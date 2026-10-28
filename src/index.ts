@@ -32,8 +32,9 @@ export type {
 } from './v2';
 
 // The room profile (schema-dist profiles/room.md): the pairs a parlor puts in a world, and the
-// matcher a lore view uses to leave them out (ROOM_PAIRS generated from the vendored dist)
-export { ROOM_PAIRS, isRoomElement } from './room';
+// matcher a lore view uses to leave them out (ROOM_PAIRS generated from the vendored dist); and the reading
+// aids' matcher (the charter, its guide, its domains: the pair and the mark x_charter_of)
+export { ROOM_PAIRS, isRoomElement, isCharterElement } from './room';
 // The message profile (schema-dist profiles/message.md): a message between a world's members, to whom
 // it is addressed, whether its sender is proved, who edited it, a reader's read mark and unread list, a
 // thread, and a Character's Note, which is not a message (MESSAGE_PAIR and NOTE_PAIR generated from the

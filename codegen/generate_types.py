@@ -840,6 +840,65 @@ def render_room_pairs(pairs: list[tuple[str, str]], mark: str) -> str:
     return "\n".join(lines)
 
 
+def load_reading_aids(schema_dir: Path) -> tuple[list[tuple[str, str]], str]:
+    """The reading aids (schema-dist serial 82 on, `profiles/lens.md` rule 4 and `profiles/room.md`): the
+    charter, its guide and its domains, each a type-and-supertype pair, and the mark that tells one from
+    lore. Emitted from the lens fixture's `reading_aid_pairs` (each word `type/supertype`) and
+    `reading_aid_mark.field`; each pair and the mark must be named on lens.md, and the mark on room.md, or
+    this exits 1. No fallback: a tree without them exits 1 rather than emitting "no aids", which would read
+    every charter as lore."""
+    profiles = schema_dir.parent / "profiles"
+    fixture_path, page_path, room_path = profiles / "lens.fixture.json", profiles / "lens.md", profiles / "room.md"
+    if not fixture_path.is_file() or not page_path.is_file() or not room_path.is_file():
+        raise SystemExit(f"READING_AID_PAIRS comes only from the distribution's {fixture_path.name}, "
+                         f"{page_path.name} and {room_path.name} (serial 82 on); this tree lacks one.")
+    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+    raw = fixture.get("reading_aid_pairs")
+    if not isinstance(raw, list) or not raw or not all(isinstance(w, str) and w.count("/") == 1 for w in raw):
+        raise SystemExit(f"{fixture_path}: `reading_aid_pairs` is {raw!r}, expected a list of 'type/supertype' words.")
+    pairs = [tuple(w.split("/")) for w in raw]
+    stray = [t for t, _ in pairs if t not in ELEMENT_TYPES]
+    if stray:
+        raise SystemExit(f"{fixture_path}: reading aid pairs name {stray}, which are not element types.")
+    if any(s != s.strip() or not s or "'" in s or "\\" in s for _, s in pairs):
+        raise SystemExit(f"{fixture_path}: a reading aid's supertype is empty, carries edge spaces, or a quote "
+                         f"or backslash this emitter does not escape: {pairs!r}.")
+    if len({(t.lower(), s.lower()) for t, s in pairs}) != len(pairs):
+        raise SystemExit(f"{fixture_path}: reading aid pairs repeat one another without regard to case: {pairs!r}.")
+    mark = (fixture.get("reading_aid_mark") or {}).get("field")
+    if not isinstance(mark, str) or not re.fullmatch(r"x_[a-z0-9_]+", mark):
+        raise SystemExit(f"{fixture_path}: `reading_aid_mark.field` is {mark!r}, expected an extension key.")
+    page, room = page_path.read_text(encoding="utf-8"), room_path.read_text(encoding="utf-8")
+    missing = [f"`{w}`" for w in raw if f"`{w}`" not in page] + [f"`{mark}`" for text in (page, room)
+                                                                 if f"`{mark}`" not in text]
+    if missing:
+        raise SystemExit(f"the lens and room pages do not name the fixture's reading aids {missing}. "
+                         "Route it to the schema-dist owner; never pick one.")
+    return [(t, s) for t, s in pairs], mark
+
+
+def render_reading_aids(pairs: list[tuple[str, str]], mark: str) -> str:
+    lines = [
+        "/** The reading aids (schema-dist `profiles/lens.md` rule 4 and `profiles/room.md`): the charter, its",
+        " *  guide and its domains, which every tool's front door shows first and a lore view leaves out. An",
+        " *  element is one when its type and supertype, each trimmed and compared without regard to case, match",
+        " *  one of these AND it carries the mark READING_AID_MARK; the pair without the mark is lore (a kingdom's",
+        " *  Charter in a novel's world). Module-internal: match with isCharterElement. Source:",
+        " *  `profiles/lens.fixture.json`'s `reading_aid_pairs`, as it writes them, checked against the pages. */",
+        "export const READING_AID_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly supertype: string }> = [",
+    ]
+    lines += [f"  {{ type: '{t}', supertype: '{s}' }}," for t, s in pairs]
+    lines += [
+        "];",
+        "",
+        "/** The reading aids' mark: the id of the world the aid belongs to. Source: `profiles/lens.fixture.json`'s",
+        " *  `reading_aid_mark.field`, checked against lens.md and room.md at codegen. Module-internal. */",
+        f"export const READING_AID_MARK = '{mark}' as const;",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 REVIEW_LABEL = re.compile(r'labels each one it keeps \*\*"([^"]+)"\*\*')
 
 
@@ -1023,6 +1082,7 @@ def main() -> None:
     parts.append(render_maps(all_fields, families, icons, sections, public))
     room_pairs = load_room_pairs(schema_dir)
     parts.append(render_room_pairs(room_pairs, load_room_mark(schema_dir)))
+    parts.append(render_reading_aids(*load_reading_aids(schema_dir)))
     parts.append(render_review_label(load_review_label(schema_dir)))
     parts.append(render_message_profile(*load_message_profile(schema_dir, room_pairs, all_fields)))
     parts.append(render_field_schema(all_fields, sections, required_sets))

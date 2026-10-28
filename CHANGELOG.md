@@ -7,12 +7,19 @@ earlier history lives in git log only.
 
 ### Added
 
+- **The reading aids, and `isCharterElement(element)`**: the world's charter (a Law with supertype `Charter`), its guide and its domains (Constructs with supertype `Guide` or `Domain`) are reading aids when they carry the mark `x_charter_of`, the id of the world they belong to. `isCharterElement` is true for one: the pair, trimmed and case-blind as `isRoomElement` matches, AND the mark, present and not null (a string mark only when something is left after trimming). The pair without the mark is lore, a Law like any other. `resolveLens` keeps an aid a hop reaches only when `types` names its pair (`law/charter`, `construct/guide`, `construct/domain`, now legal `types` words), cuts it as `types` otherwise, and never hops on out of it unless the pair is named; an aid the lens names as an anchor is kept and followed like any anchor. `worldGraph` leaves the aids out of an unlensed graph, counted `reading_aid` in `cut` and `edgesCut`, and no flag brings them back; a lens that names the pair keeps them as nodes. The pairs and the mark are generated from the distribution's lens fixture.
+- **`changed_within` in `x_lens`**: a whole number of days from 1. What a hop or a filter reaches is cut, counted `stale`, when it last changed longer ago than that many days before the reading's `clock` (an element exactly that many days old is kept); an anchor never is. The time read is `updated_at`, or for a folder element the newer of `server_updated_at` and `local_updated_at`; an element with no readable time is never cut. The cut's order is the fence, `types`, the window, `changed_within`, the budget. Any other value makes the lens unreadable as `changed_within`. `OwLensCutReason` gains `stale`, `OwGraphCutReason` gains `reading_aid`.
 - **`outDegreeOf(graph)`**: each node's out-degree in a graph the graph reader answered, the number of distinct nodes its own link fields point at: a target listed in two fields counts once, a link to itself does not count, and a mirror pair counts 1 at each end. Every node is a key, 0 included. Beside `degreeOf` ("most linked"), it says how far an element reaches out. Held to a direct count on every graph case of the lens profile's fixture.
 
 ### Changed
 
+- **Schema repinned to schema-dist `v0.33.0-dist.82`** (from dist.81; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'` and no element field moved). Serial 82 writes the reading aids and `changed_within` into the lens profile, and a lens served only as a stub resolves as not there, which the reader already did; the lens fixture holds 132 cases (58 resolve, 37 graph), every one passing.
 - **The `client` option's words name every call that sends `X-OW-Client`**: the element writes, and also `propose`, `acceptProposal` and `reviewNewElement`, which sent it already; the words had named only the element writes.
 - **`worldLenses`' words follow the server's wider `read_as`**: a co-builder, or the account that sponsors an agent's or a player's seat, may read a lens as that seat by its membership id, judged by the narrower view. The call already sent `readAs` as given; only the words moved.
+
+### Fixed
+
+- **A lens's `notesIgnored` counts only notes on ids the reader sees.** It counted a note on any id that was not an anchor, so a guest's reading counted notes keyed to elements it cannot see, and to ids in no element, which told it something hidden exists. It now counts a non-anchor id only when the reader's view holds it, as the profile says and the API counts. A shared edge case holds it, the same file as the Python package's.
 
 ## [4.97.1] - 2026-10-28
 

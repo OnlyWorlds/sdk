@@ -370,6 +370,8 @@ import { isRoomElement } from '@onlyworlds/sdk';
 const lore = elements.filter(el => !isRoomElement(el)); // a lore view, unless the person asks for the room
 ```
 
+The world's charter (a Law with supertype `Charter`), its guide and its domains (Constructs with supertype `Guide` or `Domain`) are reading aids when they carry the mark `x_charter_of`, the id of the world they belong to: `isCharterElement(el)` is true for one (pair and mark, matched as `isRoomElement` matches). A tool's front door shows them first and a lore view leaves them out; the pair without the mark is lore (a kingdom's Charter in a novel's world). A reading aid is not a room element.
+
 A lore view (a list, a count, search, a graph, a link picker, a story's context) leaves room elements out unless the person asks to see them; the room's own views show them whole, and a tool that writes the world writes them like any element. A Law with supertype `Charter` is lore on purpose. The profile: [`profiles/room.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/room.md) in the schema distribution.
 
 ### Messages
@@ -394,7 +396,7 @@ Both lists are in `created_at` order, equal times keep the order of the list giv
 
 ### Lenses
 
-A lens is a saved way of reading a world: a Construct with supertype `Lens` (`isLens(el)`) whose links are its anchors and whose `x_lens` is the recipe (`depth`, `types`, `window` or `from` and `to`, `undated`, `show`, `budget`, `mail`, `notes`). `resolveLens(world, lens, reader)` resolves it for one reader over a world snapshot, the same answer as the Python package's `resolve_lens`: the kept ids and their rows in the profile's order, the cut counted by reason, and the mail part when the lens names a mail rule. A template (`isTemplate(el)`, subtype `Template`) resolves to nothing; `lensesInUse(membership, character.x_lens_uses)` gives the lenses a seat reads (the membership's choice wins).
+A lens is a saved way of reading a world: a Construct with supertype `Lens` (`isLens(el)`) whose links are its anchors and whose `x_lens` is the recipe (`depth`, `types`, `window` or `from` and `to`, `undated`, `changed_within`, `show`, `budget`, `mail`, `notes`). `resolveLens(world, lens, reader)` resolves it for one reader over a world snapshot, the same answer as the Python package's `resolve_lens`: the kept ids and their rows in the profile's order, the cut counted by reason, and the mail part when the lens names a mail rule. A template (`isTemplate(el)`, subtype `Template`) resolves to nothing; `lensesInUse(membership, character.x_lens_uses)` gives the lenses a seat reads (the membership's choice wins).
 
 ```typescript
 import { isLens, resolveLens } from '@onlyworlds/sdk';
@@ -409,7 +411,7 @@ The world holds the elements as the owner is served them; the reader's `rung` (`
 
 `DATE_FIELD` is the profile's date table (each dated type's date field; the ten timeless types are not in it), and `dateOf(el)` is an element's date as that table reads it: the whole number in its type's date field, else null. A timeline or a horizon dates elements exactly as the lens reader's fence does.
 
-`worldGraph(world, reader, options)` reads the same snapshot, for the same reader, as nodes and edges: `nodes` (`{ id, type, name, family, icon }`, by id), `edges` (`{ source, field, target, index }`, one per link, by source, field and index), `edgesCut` (links to elements that are not nodes, by reason; with a lens, `outside_lens` counts links to elements the reader sees that the lens left out), `cut` and `unreadable` (the `x_lens` key a lens could not be read by, else null). Room elements, hidden and proposed ones and map space are out unless `rooms`, `hidden`, `proposed` or `mapSpace` brings them back (`hidden` and `proposed` are the owner's alone, and a public reader takes no flag); with `{ lens }` the nodes are exactly what the lens kept.
+`worldGraph(world, reader, options)` reads the same snapshot, for the same reader, as nodes and edges: `nodes` (`{ id, type, name, family, icon }`, by id), `edges` (`{ source, field, target, index }`, one per link, by source, field and index), `edgesCut` (links to elements that are not nodes, by reason; with a lens, `outside_lens` counts links to elements the reader sees that the lens left out), `cut` and `unreadable` (the `x_lens` key a lens could not be read by, else null). Room elements, hidden and proposed ones and map space are out unless `rooms`, `hidden`, `proposed` or `mapSpace` brings them back (`hidden` and `proposed` are the owner's alone, and a public reader takes no flag); the reading aids are out too, counted `reading_aid`, and no flag brings them back; with `{ lens }` the nodes are exactly what the lens kept, an aid among them when the lens names its pair in `types`.
 
 ```typescript
 import { degreeOf, worldGraph } from '@onlyworlds/sdk';

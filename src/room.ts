@@ -3,7 +3,7 @@
 // ROOM_MARK are generated from the vendored dist; this file holds only the matcher, so a tool
 // that keeps its own copy of the pairs can drop it for these exports.
 
-import { ROOM_MARK, ROOM_PAIRS } from './v2/types.generated';
+import { READING_AID_MARK, READING_AID_PAIRS, ROOM_MARK, ROOM_PAIRS } from './v2/types.generated';
 import { simpleCaseFold } from './world-file';
 
 export { ROOM_PAIRS };
@@ -44,8 +44,9 @@ export const fold = (text: string): string => simpleCaseFold(trimWhiteSpace(text
  * non-empty string (the id of the world or the sitting the room belongs to). Both, always:
  * a pair without the mark is lore (a novel's letters are Narratives with supertype Message),
  * and a mark without a pair is not a room element (a malformed mark: report it, never hide it).
- * The pair match is the whole word: a Narrative with supertype `Messages` is lore, and so is
- * the charter (`law` / `Charter`). A missing, null or empty supertype is never a room element.
+ * The pair match is the whole word: a Narrative with supertype `Messages` is lore. The charter
+ * (`law` / `Charter`) is never a room element: with its own mark it is a reading aid
+ * (isCharterElement), without it lore. A missing, null or empty supertype is never a room element.
  *
  * What it is for: a lore view (a list, a count, search, a graph, a link picker, a story's
  * context) leaves room elements out unless the person asks to see them; the room's own views,
@@ -66,4 +67,42 @@ export function isRoomElement(
   const type = fold(el.type);
   const supertype = fold(el.supertype);
   return ROOM_PAIRS.some(p => fold(p.type) === type && fold(p.supertype) === supertype);
+}
+
+/** The reading aids' pairs as `types` words, folded: `law/charter`, `construct/guide`, `construct/domain`. Module-internal. */
+export const READING_AID_KEYS: ReadonlySet<string> = new Set(READING_AID_PAIRS.map(p => `${fold(p.type)}/${fold(p.supertype)}`));
+
+/**
+ * The reading aid's pair word (`law/charter`, `construct/guide` or `construct/domain`, folded) when the element
+ * is one, else null (module-internal; the lens and graph readers read it). The mark counts when it is present
+ * and not null, and a string only when something is left after trimming, as the API reads it.
+ */
+export function readingAidKey(element: unknown): string | null {
+  if (element === null || typeof element !== 'object' || Array.isArray(element)) return null;
+  const el = element as Record<string, unknown>;
+  if (typeof el.type !== 'string' || typeof el.supertype !== 'string') return null;
+  const key = `${fold(el.type)}/${fold(el.supertype)}`;
+  if (!READING_AID_KEYS.has(key)) return null;
+  const mark = Object.prototype.hasOwnProperty.call(el, READING_AID_MARK) ? el[READING_AID_MARK] : undefined;
+  if (mark === undefined || mark === null || (typeof mark === 'string' && trimWhiteSpace(mark) === '')) return null;
+  return key;
+}
+
+/**
+ * True when the element is a reading aid (schema-dist profiles/room.md, profiles/lens.md rule 4): the
+ * world's charter (`law`, supertype `Charter`), its guide (`construct`, supertype `Guide`) or one of its
+ * domains (`construct`, supertype `Domain`), the type and supertype each trimmed and compared without
+ * regard to case, the whole word, AND the mark `x_charter_of`, the id of the world the aid belongs to. The
+ * mark counts when it is present and not null; a string mark counts only when something is left after
+ * trimming. Both, always: the pair without the mark is lore, and stays in every view (a kingdom's Charter
+ * in a novel's world is a Law like any other).
+ *
+ * What it is for: a tool's front door shows the aids first; a lore view (a list, a graph, a story's
+ * context) leaves them out by default. A reading aid is not a room element: `isRoomElement` answers false
+ * for one, and a public reader sees it. In a lens, one reached by a hop is kept only when `types` names its
+ * pair (`law/charter`, `construct/guide`, `construct/domain`); one the lens names as an anchor is kept and
+ * followed like any anchor.
+ */
+export function isCharterElement(element: object | null | undefined): boolean {
+  return readingAidKey(element) !== null;
 }
