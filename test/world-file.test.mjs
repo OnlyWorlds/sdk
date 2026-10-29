@@ -4,8 +4,9 @@
  * (Temper's) onto the tool-neutral reader, the cases the move added (`skip`,
  * reason codes, a path that is both a file and a folder, the writer's
  * refusals), and §4.7's checks OW-1 to OW-22, each on bytes built here. The
- * last test runs the whole fixture set, vendored with the schema distribution
- * (codegen/schema-dist/fixtures/owworld/).
+ * fixture-set test runs the whole set, vendored with the schema distribution
+ * (codegen/schema-dist/fixtures/owworld/). The author fields' cases run
+ * test/fixtures/author-fields.fixture.json, shared with the Python package.
  * Runs against the compiled public bundle (dist), same as the other tests.
  */
 import { test } from 'node:test';
@@ -745,6 +746,11 @@ test('writeWorldFile\'s options: an unknown key or a non-boolean is refused by n
   }
   assert.throws(() => writeWorldFile([wj], 'w', { includeHidden: false, report: {} }), typeErr(/report must be a function/));
   assert.throws(() => writeWorldFile([wj], 'w', { includeHidden: false, hidden: false }), typeErr(/unknown option 'hidden'.*includeHidden/));
+  for (const value of ['true', 1, null]) {
+    assert.throws(() => writeWorldFile([wj], 'w', { includeAuthorFields: value }), typeErr(/includeAuthorFields must be true or false/), `includeAuthorFields: ${JSON.stringify(value)}`);
+  }
+  assert.throws(() => writeWorldFile([wj], 'w', { includeAuthors: true }), typeErr(/unknown option 'includeAuthors'.*includeAuthorFields/));
+  assert.ok(writeWorldFile([wj], 'w', { includeAuthorFields: true }) instanceof Uint8Array);
 });
 
 // --- the hidden mark (§4.8): a copy keeps it, a share leaves it out ----------------
@@ -766,7 +772,7 @@ test('§4.8: by default a hidden element file travels byte for byte, and the rep
     const ada = back.find(f => f.path === 'elements/character/ada-0001.json');
     assert.deepEqual(ada.data, files[1].data, 'the hidden file is byte-identical');
   }
-  assert.deepEqual(reports, [{ hiddenLeftOut: 0 }]);
+  assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: 0 }]);
   // Determinism: the same input, the same bytes, by default and as a share.
   assert.deepEqual(writeWorldFile(files, 'w'), writeWorldFile([...files].reverse(), 'w'));
   assert.deepEqual(writeWorldFile(files, 'w', { includeHidden: false }), writeWorldFile([...files].reverse(), 'w', { includeHidden: false }));
@@ -777,7 +783,7 @@ test('§4.8: includeHidden: false leaves a hidden element file out whole, counts
   const files = hiddenFiles();
   const reports = [];
   const back = entriesOf(writeWorldFile(files, 'w', { includeHidden: false, report: r => reports.push(r) }));
-  assert.deepEqual(reports, [{ hiddenLeftOut: 1 }]);
+  assert.deepEqual(reports, [{ hiddenLeftOut: 1, authorFieldsLeftOut: 0 }]);
   assert.deepEqual(back.map(f => f.path), ['elements/character/bo-0002.json', 'elements/location/keep-0003.json', 'world.json']);
   // Bo's link to Ada keeps its id, now naming no file; hidden: false is no mark.
   for (const f of back) assert.deepEqual(f.data, files.find(g => g.path === f.path).data, f.path);
@@ -817,4 +823,93 @@ test('§4.8: the report is not called on a refusal', () => {
   const reports = [];
   assert.throws(() => writeWorldFile([el('elements/character/a.json', { hidden: true })], 'w', { includeHidden: false, report: r => reports.push(r) }), (e) => e instanceof OwWorldFileError && e.reason === 'not_a_world');
   assert.deepEqual(reports, []);
+});
+
+// --- the author fields: which member and which tool wrote each element, left out of a file handed on ----
+
+// The same bytes as the Python package's tests/fixtures/author-fields.fixture.json (both suites hold its sha256).
+const AUTHOR_FIXTURE = fileURLToPath(new URL('./fixtures/author-fields.fixture.json', import.meta.url));
+const AUTHOR_FIXTURE_SHA256 = 'ed9e2a6161b0b6b276b71680750943f7ee6fe5d49fdbd932995a1b93555a1e4f';
+const AUTHOR_CASES = 5;
+// writeWorldFile before includeAuthorFields (4.108.1) on each case's files, the archives one after another.
+const BEFORE_SHA256 = '57b381b3e03faf4f2d030a6cd6ad63cad8360fe9b44cc7f9666c6d848d8abf97';
+const AUTHOR_FIELDS = ['created_by', 'changed_by', 'changed_via', 'changed_client', 'doors'];
+
+const authorDoc = () => {
+  const bytes = readFileSync(AUTHOR_FIXTURE);
+  assert.equal(sha256(bytes), AUTHOR_FIXTURE_SHA256);
+  const doc = JSON.parse(bytes.toString('utf8'));
+  assert.deepEqual(doc.fields, AUTHOR_FIELDS);
+  assert.equal(doc.cases.length, AUTHOR_CASES);
+  return doc;
+};
+const filesOf = (texts) => Object.entries(texts).map(([path, t]) => ({ path, data: strToU8(t) }));
+// A byte order mark is kept: the default decoder drops it, and a file that keeps its bytes keeps its mark.
+const textsOf = (bytes) => Object.fromEntries(readWorldFile(bytes).files
+  .map(f => [f.path, new TextDecoder('utf-8', { ignoreBOM: true }).decode(f.data)]));
+const bytesOf = (bytes) => Object.fromEntries(readWorldFile(bytes).files.map(f => [f.path, new Uint8Array(f.data)]));
+
+test('author fields: every case of the shared fixture, left out by default and carried when asked (the Python package runs the same file)', () => {
+  for (const c of authorDoc().cases) {
+    const files = filesOf(c.files);
+    const reports = [];
+    const byDefault = writeWorldFile(files, 'w', { report: r => reports.push(r) });
+    assert.deepEqual(textsOf(byDefault), c.default, c.name);
+    const asked = writeWorldFile(files, 'w', { includeAuthorFields: true, report: r => reports.push(r) });
+    assert.deepEqual(bytesOf(asked), Object.fromEntries(files.map(f => [f.path, f.data])), `${c.name}: asked, byte for byte`);
+    assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: c.stripped }, { hiddenLeftOut: 0, authorFieldsLeftOut: 0 }], c.name);
+    // No options at all is the default.
+    assert.deepEqual(writeWorldFile(files, 'w'), byDefault, c.name);
+  }
+});
+
+test('author fields: includeAuthorFields: true writes the archive the writer wrote before the option, byte for byte', () => {
+  const h = createHash('sha256');
+  for (const c of authorDoc().cases) h.update(writeWorldFile(filesOf(c.files), 'w', { includeAuthorFields: true }));
+  assert.equal(h.digest('hex'), BEFORE_SHA256);
+});
+
+test('author fields: the example world, Hyperion, its element files without the five and every other byte kept', () => {
+  const root = fileURLToPath(new URL('../codegen/schema-dist/example/hyperion/', import.meta.url));
+  const walk = (rel) => readdirSync(join(root, rel), { withFileTypes: true }).flatMap((d) => {
+    const p = rel ? `${rel}/${d.name}` : d.name;
+    return d.isDirectory() ? walk(p) : [{ path: p, data: new Uint8Array(readFileSync(join(root, p))) }];
+  });
+  const files = walk('');
+  const reports = [];
+  const byDefault = bytesOf(writeWorldFile(files, 'hyperion', { report: r => reports.push(r) }));
+  const asked = bytesOf(writeWorldFile(files, 'hyperion', { includeAuthorFields: true }));
+  assert.deepEqual(asked, Object.fromEntries(files.map(f => [f.path, f.data])));
+  let rewritten = 0;
+  for (const f of files) {
+    const out = byDefault[f.path];
+    if (!f.path.startsWith('elements/')) { assert.deepEqual(out, f.data, f.path); continue; }
+    const src = JSON.parse(text(f.data));
+    const got = JSON.parse(text(out));
+    for (const k of AUTHOR_FIELDS) delete src[k];
+    assert.deepEqual(Object.keys(got), Object.keys(src), f.path);
+    assert.deepEqual(got, src, f.path);
+    assert.ok('created_at' in got && 'updated_at' in got, f.path);
+    if (sha256(out) !== sha256(f.data)) rewritten++;
+  }
+  assert.ok(rewritten > 0, 'the example carries author fields');
+  assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: rewritten }]);
+});
+
+test('author fields: a share counts only the files it keeps; a tool\'s dot-folder is no element folder', () => {
+  const files = [
+    wj,
+    el('elements/character/ada.json', { id: 'a', hidden: true, created_by: 'u' }),
+    el('elements/character/bo.json', { id: 'b', changed_by: 'u' }),
+    el('.atlas/elements/character/c.json', { id: 'c', created_by: 'u' }),
+  ];
+  const reports = [];
+  const out = textsOf(writeWorldFile(files, 'w', { includeHidden: false, report: r => reports.push(r) }));
+  assert.deepEqual(reports, [{ hiddenLeftOut: 1, authorFieldsLeftOut: 1 }]);
+  assert.deepEqual(Object.keys(out), ['.atlas/elements/character/c.json', 'elements/character/bo.json', 'world.json']);
+  assert.equal(out['elements/character/bo.json'], j({ id: 'b' }));
+  assert.equal(out['.atlas/elements/character/c.json'], j({ id: 'c', created_by: 'u' }));
+  // A file that is not UTF-8 travels as it is.
+  const latin = { path: 'elements/character/latin.json', data: new Uint8Array([0x7b, 0x22, 0xe9, 0x22, 0x3a, 0x31, 0x7d]) };
+  assert.deepEqual(bytesOf(writeWorldFile([wj, latin], 'w'))[latin.path], latin.data);
 });

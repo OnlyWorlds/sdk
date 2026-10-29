@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.109.0] - 2026-10-29
+
+### Changed
+
+- **`writeWorldFile` leaves the author fields out of every element file by default.** `created_by`, `changed_by`, `changed_via`, `changed_client` and `doors` record which member and which tool wrote each element (a membership id, a door), which means nothing to someone the world is handed to. Each element file under `elements/<type>/` or `spatial/<type>/` holding any of the five is now written without them, in the folder's own form (two-space indent, a trailing newline, its other keys in their order); `created_at` and `updated_at` stay. A file holding none of them, or that is not a JSON object, travels byte for byte, and `world.json`, records, media and every other file are untouched; an `x_*` value that holds one of the names is the extension's and stays. A caller archiving their own world passes `{ includeAuthorFields: true }`, which writes the same bytes as 4.108.1.
+
+### Added
+
+- **`includeAuthorFields`** on `writeWorldFile`, refused by name when it is not a boolean, as `includePrivateRecords` and `includeHidden` are; and **`authorFieldsLeftOut`** in its `report`, the element files written without their author fields (0 when the option is true). A shared fixture of five cases (`test/fixtures/author-fields.fixture.json`, the same bytes as the Python package's) holds both writers to the same entries.
+
 ## [4.108.1] - 2026-10-29
 
 ### Fixed

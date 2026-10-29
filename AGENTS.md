@@ -115,9 +115,13 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   `writeWorldFile(files, topDir, { includePrivateRecords: true })` (since 4.63.0; OW-8).
   Element files marked `hidden: true` travel by default (a copy); a share passes
   `{ includeHidden: false, report: r => r.hiddenLeftOut }` to leave them out whole and count
-  them (since 4.70.0; §4.8). Two names are one after OW-18's fold: NFC, then simple case
-  folding, both Unicode 15.1's from its own files (`nfc` since 4.71.0, `simpleCaseFold`), never
-  the runtime's `normalize`, whose Unicode is its ICU's (Node 22: 16.0).
+  them (since 4.70.0; §4.8). Element files leave out the author fields (`created_by`,
+  `changed_by`, `changed_via`, `changed_client`, `doors`: which member and tool wrote it) by default,
+  counted in `r.authorFieldsLeftOut`; `{ includeAuthorFields: true }` writes every file byte
+  for byte, for an archive of your own world (since 4.109.0). Two names are one after OW-18's
+  fold: NFC, then simple case folding, both Unicode 15.1's from its own files (`nfc` since
+  4.71.0, `simpleCaseFold`), never the runtime's `normalize`, whose Unicode is its ICU's (Node
+  22: 16.0).
 - World calendars (since 4.20.0): `worldCalendars(elements)` finds the elements carrying
   `atlas_calendar` (Atlas owns the field: read it, never write it); `resolveCalendar` picks
   one; `formatStep(config, step)` names a point on the world's integer time line, `parseDate`

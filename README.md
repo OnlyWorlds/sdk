@@ -320,6 +320,12 @@ const share = writeWorldFile(files, topDir, { includeHidden: false, report: r =>
 
 The two defaults differ on purpose: private records stay out unless you ask, hidden elements stay in unless the write is a share.
 
+An element's author fields, `created_by`, `changed_by`, `changed_via`, `changed_client` and `doors`, record which member and which tool wrote it (a membership id, a door), which means nothing to someone the world is handed to. So by default every element file leaves them out (since 4.109.0). `created_at` and `updated_at` stay. A file holding any of the five is rewritten without them, two-space indented with a trailing newline and its other keys in their order; a file holding none travels byte for byte, and nothing outside `elements/<type>/` (or `spatial/<type>/`) changes. `report` counts the files rewritten in `r.authorFieldsLeftOut`. To archive your own world as it is on disk, pass `includeAuthorFields: true`:
+
+```typescript
+const backup = writeWorldFile(files, topDir, { includeAuthorFields: true }); // every file byte for byte
+```
+
 ## World calendars
 
 A world's time is an integer line (`time_range_current` is a point on it, and so is an Event's `start_date`). A calendar names its points: months, days, eras. Atlas keeps a calendar on an element (a Construct by convention) in its `atlas_calendar` field, and the SDK reads it with Atlas's own calendar code (since 4.20.0). Atlas owns that field and is its only writer; read it, never write it.
