@@ -450,6 +450,25 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         }
         expect(readCalendarConfig({ version: 1, grain: 'day' })).not.toBe(null);
     });
+    // Serial 89 (Quillon's Unreal port): a day after a month the year lacks has no position.
+    it('refuses an intercalary day after a month the year does not have', () => {
+        const months = { names: ['A', 'B'], lengths: [10, 10] };
+        const at = (after_month, extra = {}) => ({ version: 1, grain: 'day', bundles: { months, ...extra }, intercalary: [{ name: 'Gap', after_month }] });
+        for (const v of [0, 1, 2]) expect(readCalendarConfig(at(v))).not.toBe(null);
+        expect(readCalendarConfig(at(3))).toBe(null);
+        expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { year: { steps: 10 } }, intercalary: [{ name: 'Gap', after_month: 0 }] })).not.toBe(null);
+        expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { year: { steps: 10 } }, intercalary: [{ name: 'Gap', after_month: 1 }] })).toBe(null);
+    });
+    // Serial 89: a format template that is not a string is ignored and the default prints.
+    it('prints the default template when a format is not a string', () => {
+        const base = { version: 1, grain: 'day', bundles: { months: { names: ['A', 'B'], lengths: [10, 10] } }, intercalary: [{ name: 'Gap', after_month: 1 }] };
+        for (const bad of [1, null, ['{day}'], { x: 1 }]) {
+            const cfg = readCalendarConfig({ ...base, format: bad, format_intercalary: bad });
+            expect(cfg).not.toBe(null);
+            expect(formatStep(cfg, 0)).toBe(formatStep(base, 0));
+            expect(formatStep(cfg, 10)).toBe(formatStep(base, 10));
+        }
+    });
     // 4.42.1 (Quillon): a falsy non-list threw a TypeError; the profile's whole numbers and string names.
     it('refuses a falsy eras or intercalary instead of throwing', () => {
         for (const bad of [false, 0, '']) {

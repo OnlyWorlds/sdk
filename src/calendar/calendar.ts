@@ -233,6 +233,10 @@ export function readCalendarConfig(value: unknown): CalendarConfig | null {
   if (cfg.intercalary?.some((i) => i.every_years != null && !isPositiveInt(i.every_years))) return null;
   // Version 2's leap keys (version 1 ignores them, as it ignores any unknown key).
   if (cfg.version === 2 && cfg.intercalary?.some((i) => leapRuleProblem(i) != null)) return null;
+  // A day placed after a month the year does not have has no position, and a reader never
+  // invents one: the calendar is unreadable (the profile, serial 89; the free week threw here).
+  const monthCount = months ? months.names.length : 0;
+  if (cfg.intercalary?.some((i) => i.after_month > monthCount)) return null;
   return cfg;
 }
 
@@ -600,9 +604,11 @@ export function formatStep(cfg: CalendarConfig, step: number): string {
     step: String(step),
     intercalary: b.intercalary,
   };
+  // A template that is not a string is ignored and the default prints (the profile: a reader
+  // may ignore the format templates, serial 89; renderTemplate threw on one).
   const template = b.intercalary != null
-    ? (cfg.format_intercalary ?? DEFAULT_FORMAT_INTERCALARY)
-    : (cfg.format ?? (cfg.bundles?.months ? DEFAULT_FORMAT_MONTHS : DEFAULT_FORMAT_PLAIN));
+    ? (typeof cfg.format_intercalary === 'string' ? cfg.format_intercalary : DEFAULT_FORMAT_INTERCALARY)
+    : (typeof cfg.format === 'string' ? cfg.format : (cfg.bundles?.months ? DEFAULT_FORMAT_MONTHS : DEFAULT_FORMAT_PLAIN));
   return renderTemplate(template, values);
 }
 
