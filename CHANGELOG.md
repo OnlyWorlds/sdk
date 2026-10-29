@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.107.1] - 2026-10-29
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.91`** (from dist.90; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'`). Serial 91, no change to what the package reads or writes: the dist's folder checker (`walk/lint_folder.py`) moves to folder format 0.3.21 and takes `doors` on an element file as a server-managed key beside `changed_client`, and its README says 0.3.21. No code changed.
+
 ## [4.107.0] - 2026-10-29
 
 ### Added

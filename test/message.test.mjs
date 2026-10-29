@@ -100,7 +100,7 @@ test('the message readers answer every case of the message fixture', (t) => {
   }
   t.diagnostic(`the message fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 87, `the fixture holds ${cases.length} cases, serial 90 has 87`);
+  assert.equal(cases.length, 87, `the fixture holds ${cases.length} cases, serial 91 has 87`);
   assert.deepEqual(counts, COUNTS);
 });
 
