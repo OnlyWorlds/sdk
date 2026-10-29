@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.102.3] - 2026-10-29
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.88`** (from dist.87; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'` and no type, field or constant moved). The lens fixture gains a graph case where one element's `x_review_proposed` is `{}` and another's is `""`: both are kept as settled nodes with no mark. `worldGraph` already read an empty mark this way since 4.102.1, so no code changed. The fixture's 153 cases (39 of them graph cases) pass.
+
 ## [4.102.2] - 2026-10-29
 
 ### Changed
