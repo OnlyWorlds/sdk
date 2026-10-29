@@ -73,7 +73,7 @@ const SVG = 'http://www.w3.org/2000/svg';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const TOAST_MS = 2000;
 const COPIED = 'Link copied';
-const NOT_COPIED = 'Could not copy. Select the text and copy it yourself.';
+const NOT_COPIED = 'Could not copy the link.';
 let mounted = 0;
 
 const fail = (what: string): never => {
@@ -99,7 +99,9 @@ function shapedOn(at: string, now: Date): string {
  * (and, for a member or guest, "Last shaped in Atlas, 12 Oct" from `doorsOf` and `doorWhere`), the Open
  * with rows `openersFor` gives, each with its word, the Through row when the surface offers lenses, and
  * Copy link last, which copies the site's address with the world's id (`elementAddress`) and says "Link
- * copied" (with no clipboard, or the copy refused: "Could not copy. Select the text and copy it yourself.").
+ * copied" and closes; with no clipboard, or the copy refused, the fan-out stays open and the toast says
+ * "Could not copy the link." over the address, selected in a read-only line to copy by hand, until the
+ * fan-out closes. Focus moving out of the fan-out closes it and stays where it was moved.
  *
  * Keyboard: the mark is a button and the fan-out a menu; Tab goes from the mark through the rows in
  * order, the arrow keys, Home and End move within it, Escape closes it and returns focus to what opened
@@ -339,9 +341,19 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   const toast = el('div', 'ow-waymark__toast');
   toast.setAttribute('role', 'status');
   toast.hidden = true;
-  toast.appendChild(glyph(COPY_GLYPH, 'ow-waymark__icon ow-waymark__icon--small'));
+  const toastLine = el('span', 'ow-waymark__toast-line');
+  toastLine.appendChild(glyph(COPY_GLYPH, 'ow-waymark__icon ow-waymark__icon--small'));
   const toastWords = el('span', 'ow-waymark__label', COPIED);
-  toast.appendChild(toastWords);
+  toastWords.id = `ow-waymark-${n}-toast`;
+  toastLine.appendChild(toastWords);
+  toast.appendChild(toastLine);
+  // After a failed copy: the address, read-only, to select and copy by hand.
+  const addressLine = el('input', 'ow-waymark__address');
+  addressLine.type = 'text';
+  addressLine.readOnly = true;
+  addressLine.setAttribute('aria-labelledby', toastWords.id);
+  addressLine.hidden = true;
+  toast.appendChild(addressLine);
   root.appendChild(toast);
 
   // Behaviour.
@@ -361,16 +373,23 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     const list = items();
     (focus === 'first' ? list[0] : list[list.length - 1])?.focus();
   };
+  const failed = (): boolean => !addressLine.hidden;
   const close = (refocus: boolean): void => {
     if (!isOpen()) return;
     pop.hidden = true;
     scrim.hidden = true;
     openedBy.setAttribute('aria-expanded', 'false');
     offAll(openListeners);
+    // The failed copy's toast lives as long as the fan-out.
+    if (failed()) {
+      toast.hidden = true;
+      addressLine.hidden = true;
+      toast.classList.remove('ow-waymark__toast--failed');
+    }
     if (refocus) focusBack().focus();
   };
-  const showToast = (words: string): void => {
-    toastWords.textContent = words;
+  const copied = (): void => {
+    toastWords.textContent = COPIED;
     toast.hidden = false;
     if (toastTimer !== null) timers.clearTimeout(toastTimer);
     toastTimer = timers.setTimeout(() => {
@@ -378,13 +397,36 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
       toast.hidden = true;
     }, TOAST_MS);
   };
+  // The fan-out stays open, and the toast with it, holding the address selected for a copy by hand.
+  const notCopied = (text: string): void => {
+    if (toastTimer !== null) timers.clearTimeout(toastTimer);
+    toastTimer = null;
+    toastWords.textContent = NOT_COPIED;
+    addressLine.value = text;
+    addressLine.hidden = false;
+    toast.classList.add('ow-waymark__toast--failed');
+    toast.hidden = false;
+    addressLine.focus();
+    addressLine.select();
+  };
 
   function onOutside(e: Event): void {
     const t = e.target as Node | null;
     if (t !== null && (root.contains(t) || menuEntry?.contains(t))) return;
     close(false);
   }
-  const onOpenerClick = (e: Event): void => (isOpen() ? close(false) : open(e.currentTarget as HTMLButtonElement, 'first'));
+  // A press on the button that opened the fan-out moves focus out of it, which closes it (onFocusOut)
+  // before the click lands: the click then must not open it again.
+  let openAtPress = false;
+  const onOpenerPress = (): void => {
+    openAtPress = isOpen();
+  };
+  const onOpenerClick = (e: Event): void => {
+    const wasOpen = openAtPress || isOpen();
+    openAtPress = false;
+    if (wasOpen) close(false);
+    else open(e.currentTarget as HTMLButtonElement, 'first');
+  };
   const onOpenerKey = (e: KeyboardEvent): void => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
@@ -429,23 +471,42 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     } else if (row === copy) {
       const text = linkFor(chosenLens);
       const clipboard = timers.navigator?.clipboard;
-      close(true);
-      if (!clipboard) showToast(NOT_COPIED);
-      else clipboard.writeText(text).then(() => { if (!disposed) showToast(COPIED); }, () => { if (!disposed) showToast(NOT_COPIED); });
+      if (!clipboard) notCopied(text);
+      else {
+        clipboard.writeText(text).then(
+          () => {
+            if (disposed) return;
+            close(true);
+            copied();
+          },
+          () => {
+            if (!disposed && isOpen()) notCopied(text);
+          },
+        );
+      }
     } else {
       close(false);
     }
   };
+  // Focus moved out of the fan-out (Tab off the last row, Shift+Tab off the first, a click elsewhere):
+  // it closes, and focus stays where the person put it.
   const onFocusOut = (e: FocusEvent): void => {
     const to = e.relatedTarget as Node | null;
-    if (to !== null && !root.contains(to) && !menuEntry?.contains(to)) close(false);
+    if (to !== null && !pop.contains(to) && !toast.contains(to)) close(false);
   };
 
   for (const b of openers) {
+    on(listeners, b, 'pointerdown', onOpenerPress as EventListener);
     on(listeners, b, 'click', onOpenerClick as EventListener);
     on(listeners, b, 'keydown', onOpenerKey as EventListener);
   }
   on(listeners, pop, 'keydown', onMenuKey as EventListener);
+  on(listeners, toast, 'keydown', ((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      close(true);
+    }
+  }) as EventListener);
   on(listeners, menu, 'click', onMenuClick as EventListener);
   on(listeners, scrim, 'click', (() => close(true)) as EventListener);
   on(listeners, root, 'focusout', onFocusOut as EventListener);
