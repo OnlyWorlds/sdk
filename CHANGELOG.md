@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.102.2] - 2026-10-29
+
+### Changed
+
+- **`draughtText` reads the review mark as the review profile's rule 1 does**, through `handsOnAsProposed`, as the Python package's `draught_text` does. In 4.102.1 it still read the key itself and wrote ` · proposed` on any value but absent or null. Now an empty mark (`""`, white space only, `[]`, `{}`) is settled and its line carries no ` · proposed`, while a doubt (`false`, `0`, a non-empty string) still does. The draught fixture's `proposed-odd-values` case now marks only its `false`.
+
 ## [4.102.1] - 2026-10-29
 
 ### Changed

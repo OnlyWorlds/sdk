@@ -7,6 +7,7 @@
 // hold is counted, never looked up. Nothing is trimmed or cut, so the two languages cannot disagree
 // on where a string ends: strings print exactly as served, with their line breaks read as LF.
 
+import { handsOnAsProposed } from './review';
 import { FIELD_SCHEMA } from './v2/types.generated';
 import type { OwDraught, OwDraughtCompact } from './v2/types';
 
@@ -77,10 +78,9 @@ function kindOf(el: Obj): string | null {
   return sup ?? sub;
 }
 
-/** ` · hidden` when `hidden` is true, ` · proposed` when `x_review_proposed` is present and not null (as the server counts it). */
+/** ` · hidden` when `hidden` is true, ` · proposed` when `x_review_proposed` is present (`handsOnAsProposed`: an empty mark is settled, as the server's compact rule leaves it out). */
 function marks(el: Obj): string {
-  const proposed = own(el, 'x_review_proposed');
-  return (own(el, 'hidden') === true ? ' · hidden' : '') + (proposed !== undefined && proposed !== null ? ' · proposed' : '');
+  return (own(el, 'hidden') === true ? ' · hidden' : '') + (handsOnAsProposed(el) ? ' · proposed' : '');
 }
 
 /** The description's lines, each indented by two spaces; none when it is not set. */

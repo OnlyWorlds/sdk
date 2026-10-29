@@ -220,7 +220,8 @@ const PLANTED = {
     d.recent = [{ op: 'upsert', type: 'character', id: herId, when: '2026-10-20\nT09:15', who: 'owner', door: 'site' }];
     d.roster = [{ id: null, kind: 'owner', role: 'own\ner', character: herId, status: 'active' }];
   },
-  // Proposed is any value but null: false, "" and {} (no compact twin: compact drops "" and {}).
+  // Proposed is a present mark (handsOnAsProposed): false is, and "" and {} are empty, so settled, as
+  // compact drops them (no compact twin: compact drops "" and {}).
   'proposed-odd-values': (d) => {
     d.events[0].element.x_review_proposed = false;
     d.names.construct[0].element.x_review_proposed = '';
