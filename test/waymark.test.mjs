@@ -325,21 +325,127 @@ test('Copy link copies the site\'s address with the world\'s id (and the lens ch
   assert.equal(timers.size, 1, 'the second toast replaces the first timer');
 });
 
-test('a failed copy says "Could not copy. Select the text and copy it yourself." in the same toast: a refused write, and no clipboard', async () => {
-  const NOT_COPIED = 'Could not copy. Select the text and copy it yourself.';
-  for (const clipboard of [{ writeText: async () => { throw new Error('denied'); } }, undefined]) {
-    const { window, name, timers } = page();
+test('a failed copy says "Could not copy the link." over the address in a read-only line, and stays until the fan-out closes', async () => {
+  const refused = { writeText: async () => { throw new Error('denied'); } };
+  for (const [clipboard, how] of [[refused, 'refused'], [undefined, 'no clipboard']]) {
+    const { window, doc, name, timers } = page();
     Object.defineProperty(window.navigator, 'clipboard', { configurable: true, value: clipboard });
-    mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member' });
-    name.querySelector('.ow-waymark__mark').click();
+    mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', lenses: LENSES });
+    const mark = name.querySelector('.ow-waymark__mark');
+    mark.click();
+    items(name).find((i) => i.getAttribute('aria-haspopup') === 'true').click();
+    items(name).find((i) => i.dataset.lens === LENSES[0].id).click();
     items(name).at(-1).click();
     await flush();
     const toasts = name.querySelectorAll('.ow-waymark__toast');
-    assert.equal(toasts.length, 1, 'the same toast element');
-    assert.equal(toasts[0].hidden, false, `${clipboard ? 'refused' : 'no clipboard'}: the toast shows`);
-    assert.equal(toasts[0].textContent, NOT_COPIED, `${clipboard ? 'refused' : 'no clipboard'}: the exact words`);
-    assert.equal(timers.size, 1, 'the same timer hides it');
+    assert.equal(toasts.length, 1, `${how}: the same toast element`);
+    const toast = toasts[0];
+    assert.equal(toast.hidden, false, `${how}: the toast shows`);
+    assert.equal(text(toast.querySelector('.ow-waymark__toast-line')), 'Could not copy the link.', `${how}: the exact words`);
+    const line = toast.querySelector('.ow-waymark__address');
+    assert.equal(line.hidden, false);
+    assert.equal(line.tagName, 'INPUT');
+    assert.equal(line.readOnly, true, `${how}: read-only`);
+    assert.equal(line.value, elementAddress({ form: 'human', world: WORLD.id, type: ELEMENT.type, id: ELEMENT.id, lens: LENSES[0].id }), `${how}: the address Copy link would have copied`);
+    assert.ok(doc.activeElement === line, `${how}: focus on the address, ready to copy`);
+    assert.equal(name.querySelector('.ow-waymark__pop').hidden, false, `${how}: the fan-out stays open`);
+    assert.equal(timers.size, 0, `${how}: no timer hides it`);
+    key(window, line, 'Escape');
+    assert.equal(toast.hidden, true, `${how}: Escape closes it with the fan-out`);
+    assert.ok(doc.activeElement === mark, `${how}: and returns focus`);
   }
+  // It outlives the 2 s of "Link copied", and goes when the fan-out closes another way.
+  const { window, doc, name } = page();
+  Object.defineProperty(window.navigator, 'clipboard', { configurable: true, value: undefined });
+  mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member' });
+  name.querySelector('.ow-waymark__mark').click();
+  items(name).at(-1).click();
+  const toast = name.querySelector('.ow-waymark__toast');
+  await new Promise((r) => setTimeout(r, 2100));
+  assert.equal(toast.hidden, false, 'still there after 2.1 s');
+  doc.querySelector('.elsewhere').dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true }));
+  assert.equal(toast.hidden, true, 'gone with the fan-out');
+  // "Link copied" afterwards keeps its timer and shows no address line.
+  const copied = [];
+  Object.defineProperty(window.navigator, 'clipboard', { configurable: true, value: { writeText: async (t) => { copied.push(t); } } });
+  name.querySelector('.ow-waymark__mark').click();
+  items(name).at(-1).click();
+  await flush();
+  assert.equal(text(toast.querySelector('.ow-waymark__toast-line')), 'Link copied');
+  assert.equal(toast.querySelector('.ow-waymark__address').hidden, true);
+});
+
+test('focus moving out of the fan-out closes it and stays where it was moved: Tab off the last row, Shift+Tab off the first, a click elsewhere', () => {
+  for (const entry of ['mark', 'menu']) {
+    const { doc, name, more } = page();
+    const w = mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', entry });
+    if (w.entry) more.appendChild(w.entry);
+    const opener = w.entry ?? name.querySelector('.ow-waymark__mark');
+    const pop = name.querySelector('.ow-waymark__pop');
+    const elsewhere = doc.querySelector('.elsewhere');
+    // Tab off the last row, to the next thing on the page.
+    opener.click();
+    items(name).at(-1).focus();
+    let pulledBack = 0;
+    const count = () => { pulledBack += 1; };
+    for (const b of [opener, name.querySelector('.ow-waymark__mark')].filter(Boolean)) b.addEventListener('focus', count);
+    elsewhere.focus();
+    for (const b of [opener, name.querySelector('.ow-waymark__mark')].filter(Boolean)) b.removeEventListener('focus', count);
+    assert.equal(pulledBack, 0, `${entry}: nothing takes the focus back on the way out`);
+    assert.equal(pop.hidden, true, `${entry}: Tab out closes it`);
+    assert.ok(doc.activeElement === elsewhere, `${entry}: focus stays where it went`);
+    assert.equal(opener.getAttribute('aria-expanded'), 'false', `${entry}: aria-expanded reset`);
+    // Shift+Tab off the first row: to the mark (or whatever comes before), which keeps the focus.
+    opener.click();
+    items(name)[0].focus();
+    opener.focus();
+    assert.equal(pop.hidden, true, `${entry}: Shift+Tab out closes it`);
+    assert.ok(doc.activeElement === opener, `${entry}: focus where it was moved, not moved again`);
+    assert.equal(opener.getAttribute('aria-expanded'), 'false');
+    // Moving between rows keeps it open.
+    opener.click();
+    items(name)[1].focus();
+    assert.equal(pop.hidden, false, `${entry}: focus within stays open`);
+  }
+  // A press on the mark while it is open closes it and does not open it again.
+  const { window, name } = page();
+  mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member' });
+  const mark = name.querySelector('.ow-waymark__mark');
+  mark.click();
+  mark.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true }));
+  mark.focus();
+  mark.click();
+  assert.equal(name.querySelector('.ow-waymark__pop').hidden, true, 'pressed open: closed, and the click does not reopen it');
+});
+
+test('tap targets: rows at least 44 px tall in the sheet, the type size kept; the mark\'s tap box at least 44 by 44 at every width, with no room taken', () => {
+  const css = readFileSync(fileURLToPath(new URL('../dist/waymark.css', import.meta.url)), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const sheet = /@media \(max-width: 390px\) \{([\s\S]*)\}\s*$/.exec(css)[1];
+  const rule = (src, sel) => {
+    const m = new RegExp(`(?:^|\\})\\s*${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(src);
+    return m ? Object.fromEntries(m[1].split(';').map((d) => d.split(':').map((s) => s.trim())).filter((d) => d[0])) : null;
+  };
+  const px = (v) => Number(/^(\d+(?:\.\d+)?)px$/.exec(v)?.[1] ?? NaN);
+  const row = rule(sheet, '.ow-waymark__row');
+  assert.ok(px(row['min-height']) >= 44, `sheet rows: min-height ${row['min-height']}`);
+  assert.equal(rule(css, '.ow-waymark__row')['box-sizing'], 'border-box', 'the min-height holds the padding');
+  const [padTop, , padBottom] = (row.padding + ' ' + row.padding).split(/\s+/);
+  assert.ok(px(padTop) + px(padBottom) + 15 * 1.45 >= 44, `sheet rows: the padding and the line make 44 (${row.padding})`);
+  assert.equal(row['font-size'], '15px', 'the type size as drawn');
+  assert.equal(rule(sheet, '.ow-waymark__row--lens')['padding-left'], '30px', 'the lens rows keep their indent in the sheet');
+  // The mark: a pseudo-element, absolutely placed, centred, at least 44 by 44, so the button's own box does not change.
+  const mark = rule(css, '.ow-waymark__mark');
+  assert.equal(mark.position, 'relative');
+  assert.equal(mark.padding, '0.15em', 'the mark\'s own padding as before');
+  assert.equal(mark.margin, '0 0 0 0.3em', 'the mark\'s own margin as before');
+  const box = rule(css, '.ow-waymark__mark::before');
+  assert.ok(box, 'a tap box on the mark');
+  assert.equal(box.content, "''");
+  assert.equal(box.position, 'absolute', 'it takes no room');
+  assert.equal(box.width, 'max(44px, 100%)');
+  assert.equal(box.height, 'max(44px, 100%)');
+  assert.equal(box.transform, 'translate(-50%, -50%)', 'centred on the glyph');
+  assert.ok(!/@media[^{]*\{[^@]*\.ow-waymark__mark::before/.test(css), 'at every width: no media rule changes it');
 });
 
 test('no element the component makes carries a style attribute, in any face, arm or state', async () => {

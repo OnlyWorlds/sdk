@@ -2,8 +2,9 @@
 // its name, from the built subpath (dist/waymark.js and dist/waymark.css). The element's body is baked
 // (element.json, as the API serves it to anyone; element-member.json, the same with the doors a member
 // is served), so the page reads nothing from the network. Switches: ?entry=mark|menu|both,
-// ?reader=member|guest|public, ?ground=dark|paper, ?signedIn=unknown|true|false; ?open=1 opens the
-// fan-out on load, for a picture of it.
+// ?reader=member|guest|public, ?ground=dark|paper, ?signedIn=unknown|true|false, ?current=<tool key>
+// (the page's own tool, as openersFor takes it: its row says "You are here"; none by default); ?open=1
+// opens the fan-out on load, for a picture of it.
 
 import { mountWaymark } from '../dist/waymark.js';
 
@@ -14,15 +15,16 @@ const entry = pick('entry', ['mark', 'menu', 'both']);
 const reader = pick('reader', ['member', 'guest', 'public']);
 const ground = pick('ground', ['dark', 'paper']);
 const signedIn = { unknown: null, true: true, false: false }[pick('signedIn', ['unknown', 'true', 'false'])];
-const current = { entry, reader, ground, signedIn: q.get('signedIn') ?? 'unknown' };
+const tool = q.get('current') && q.get('current') !== 'none' ? q.get('current') : null;
+const switches = { entry, reader, ground, signedIn: q.get('signedIn') ?? 'unknown', current: tool ?? 'none' };
 const openOnLoad = q.get('open') === '1';
 
 document.documentElement.classList.add(`ground-${ground}`);
 for (const a of document.querySelectorAll('[data-set]')) {
   const [k, v] = a.dataset.set.split('=');
-  const next = new URLSearchParams({ ...current, [k]: v });
+  const next = new URLSearchParams({ ...switches, [k]: v });
   a.href = `?${next}`;
-  if (current[k] === v) a.setAttribute('aria-current', 'true');
+  if (switches[k] === v) a.setAttribute('aria-current', 'true');
 }
 
 const element = await (await fetch(reader === 'public' ? 'element.json' : 'element-member.json')).json();
@@ -41,7 +43,7 @@ for (const [k, v] of [['Birth date', element.birth_date], ['Created', element.cr
 const moreButton = document.querySelector('.more-button');
 const moreMenu = document.querySelector('.more-menu');
 const waymark = mountWaymark(name, {
-  world: WORLD, element, reader, ground, entry, signedIn, returnFocus: entry === 'mark' ? null : moreButton,
+  world: WORLD, element, reader, ground, entry, signedIn, tool, returnFocus: entry === 'mark' ? null : moreButton,
 });
 if (waymark.entry) {
   waymark.entry.setAttribute('role', 'menuitem');
