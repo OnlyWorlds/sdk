@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.89
-//         commit          1eae9fa1f48d4682e4a36f25fc6c1f469565e6ce
-//         MANIFEST sha256 dfac118e9ec46958ddc491015f2a1be0e372e8d0509b6e628d1550b6cd89b251
-//         canonical 00.33.00, dist serial 89, published 2026-10-29
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.90
+//         commit          7fa101aacaebcd81a04916ecd5a962da679337dc
+//         MANIFEST sha256 0acff899ad76c815e176d04e74cce26e7adfb0cc937b93607676eba0c3c9780b
+//         canonical 00.33.00, dist serial 90, published 2026-10-29
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -34,9 +34,9 @@ export interface OwElementBase {
   name: string;
   /** Any kind of details about the element. */
   description?: string;
-  /** The top level classification of the element within its category. */
+  /** The top level classification of the element within its type. */
   supertype?: string;
-  /** The sub level classification through which the element is further sorted within its category. */
+  /** The sub level classification through which the element is further sorted within its type. */
   subtype?: string;
   /** URL to an image representing the element. */
   image_url?: string;

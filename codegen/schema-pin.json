@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.89",
-  "commit": "1eae9fa1f48d4682e4a36f25fc6c1f469565e6ce",
-  "manifest_sha256": "dfac118e9ec46958ddc491015f2a1be0e372e8d0509b6e628d1550b6cd89b251",
+  "tag": "v0.33.0-dist.90",
+  "commit": "7fa101aacaebcd81a04916ecd5a962da679337dc",
+  "manifest_sha256": "0acff899ad76c815e176d04e74cce26e7adfb0cc937b93607676eba0c3c9780b",
   "canonical_version": "00.33.00",
-  "dist_serial": 89,
+  "dist_serial": 90,
   "published": "2026-10-29",
   "pinned_at": "2026-10-29",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.89",
+      "manifest_sha256": "dfac118e9ec46958ddc491015f2a1be0e372e8d0509b6e628d1550b6cd89b251",
+      "note": "superseded by v0.33.0-dist.90 (calendar.md: an intercalary entry on a calendar with no months is unreadable whatever its after_month, 0 included, one refusal case, 76 cases and 42 refusals; lens.md's founder sentence: where the writer has a Character of their own, else unset; base_properties.yaml and schema.json: supertype and subtype described as a classification within the element's type)"
+    },
     {
       "tag": "v0.33.0-dist.88",
       "manifest_sha256": "375a00634e37f00d39c7838ce568b85420c60bc3819167d4f99590b699a9c398",

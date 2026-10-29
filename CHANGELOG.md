@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.104.3] - 2026-10-29
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.90`** (from dist.89; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'`). The calendar fixture gains one refusal, an intercalary day on a calendar with no months at `after_month: 0` (76 cases, 42 refusals), which `readCalendarConfig` has refused since 4.103.0; with that check removed, the case fails. The doc comments on `supertype` and `subtype` now say a classification within the element's type. No code changed.
+
 ## [4.104.2] - 2026-10-29
 
 ### Fixed
