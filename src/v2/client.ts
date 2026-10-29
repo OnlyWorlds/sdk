@@ -1249,7 +1249,7 @@ export class OwV2Client {
    * owner's and a co-builder's keys, a member's own for any other. `state` is `open` by keel's
    * default (not past `expires`), or `lapsed`, `accepted`, `declined`, `all`; `since` keeps rows
    * whose `updated_at` is at or after it; `limit` defaults to the client's pageSize. Any member
-   * key that reads the element, a read key included.
+   * key that reads the element, a read key included; the owner's read key reads every row.
    */
   async listProposals(type: ElementType | string, id: string, opts: OwProposalQuery = {}): Promise<OwProposalList> {
     only('listProposals', opts, ['state', 'since', 'limit', 'cursor']);
@@ -1265,8 +1265,8 @@ export class OwV2Client {
    * `open`, `lapsed` and `all`, never `accepted` or `declined`; keel reads at most the 500 newest.
    * Every row for the owner's and a co-builder's keys, a member's own for any other. The query is
    * listProposals', plus `element` (one element's rows, by id). The cursor is opaque: pass
-   * `next_cursor` back as it came. Any member key, a read key included; a read key with no member
-   * (a demo key, the owner's read key) and the keyless public view get a 404.
+   * `next_cursor` back as it came. Any member key, a read key included; the owner's read key (or
+   * write key, no PIN needed) reads every row; a demo key and the keyless public view get a 404.
    */
   async worldProposals(opts: OwWorldProposalQuery = {}): Promise<OwWorldProposalList> {
     only('worldProposals', opts, ['state', 'since', 'element', 'limit', 'cursor']);

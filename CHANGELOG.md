@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.104.1] - 2026-10-29
+
+### Fixed
+
+- `worldProposals` and `listProposals` say who reads the review queue as the server now answers: the owner's read key (or the write key, with no PIN) reads every row, and a demo key and the keyless public view get a 404. No code changed.
+
 ## [4.104.0] - 2026-10-29
 
 ### Added
