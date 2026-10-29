@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.108.1] - 2026-10-29
+
+### Fixed
+
+- **A list filter with an empty value is sent.** `list` and `listAll` sent nothing for a key under `filter` whose value was `''`, so `filter: { characters: '' }` or `filter: { supertype: '' }` listed every element. On keel an empty value is a filter of its own: `supertype=` and `subtype=` list the elements with none, `characters=` the Messages addressed to everyone, and a single link's (`parent_location=`, since every single link became a list filter) the elements linking to nothing. Each key under `filter` is now sent as given, `''` included; an empty `name__icontains` still matches every name, and outside `filter` an empty value is still not sent. The `filter` doc names the single-link filters.
+
 ## [4.108.0] - 2026-10-29
 
 ### Added

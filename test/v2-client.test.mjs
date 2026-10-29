@@ -1628,6 +1628,19 @@ test('list and listAll refuse an unknown top-level key before sending: a wire fi
   assert.equal(new URL(fetchImpl.calls[0].url).searchParams.get('name__icontains'), 'Hidden mark probe');
 });
 
+test('a filter with an empty value is sent as key= (4.108.1): keel reads it as a filter of its own, never dropped into the whole list', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: { data: [], has_more: false } });
+  await client.list('narrative', { filter: { characters: '', supertype: '' }, limit: 5 });
+  const sent = new URL(fetchImpl.calls[0].url).searchParams;
+  assert.equal(sent.get('characters'), '');
+  assert.equal(sent.get('supertype'), '');
+  for await (const _ of client.listAll('location', { filter: { parent_location: '' } })) { /* one empty page */ }
+  assert.equal(new URL(fetchImpl.calls[1].url).searchParams.get('parent_location'), '');
+  // Outside `filter`, an empty value is still not sent.
+  await client.list('character', { cursor: '', filter: { name__icontains: 'a' } });
+  assert.equal(new URL(fetchImpl.calls[2].url).searchParams.has('cursor'), false);
+});
+
 test('the constructor refuses an unknown key by name (4.56.0): a typo in `client` cannot fall back to the default without a sound', () => {
   assert.throws(
     () => new OwV2Client({ apiKey: 'ow_w_test', clinet: 'atlas' }),

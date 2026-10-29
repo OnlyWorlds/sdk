@@ -209,7 +209,7 @@ export class OwV2Client {
       created_by: params.createdBy,
       ...params.filter,
       as: params.viewAs,
-    });
+    }, new Set(Object.keys(params.filter ?? {})));
     return this.request('GET', `/${type}/`, { query, worldRead: true, ...withSignal(params.signal) }) as Promise<OwPage>;
   }
 
@@ -2023,10 +2023,13 @@ function clientNameOf(value: unknown): string {
   return value;
 }
 
-function buildQuery(params: Record<string, string | number | boolean | undefined>): string {
+// An empty value is dropped, except for the keys in `keepEmpty`: a list filter's empty value is a
+// filter of its own on keel (`supertype=` lists the elements with none, `characters=` a Message to
+// everyone, a single link's the elements linking to nothing), so dropping it listed every element.
+function buildQuery(params: Record<string, string | number | boolean | undefined>, keepEmpty?: ReadonlySet<string>): string {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== null && v !== '') q.set(k, String(v));
+    if (v !== undefined && v !== null && (v !== '' || keepEmpty?.has(k))) q.set(k, String(v));
   }
   return q.toString();
 }

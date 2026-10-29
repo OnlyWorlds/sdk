@@ -1423,10 +1423,14 @@ export interface ListParams {
   /** Sparse include-set of field names. */
   fields?: string[];
   /**
-   * Accepted: `name` (exact), `name__icontains`, `supertype`, `subtype`, and
+   * Accepted: `name` (exact), `name__icontains`, `supertype`, `subtype`,
    * `characters=<id>` (contains) on every type with a `characters` link (at schema
-   * 0.30.1: collective, construct, event, narrative, relation, title). Any other key 422s
-   * server-side with the list of filters in the message -- the client passes keys
+   * 0.30.1: collective, construct, event, narrative, relation, title), and each single link
+   * of the type (`parent_location`, `birthplace`, ...: the elements linking to that id). An
+   * empty value is sent as `key=`, a filter of its own: `supertype: ''` lists the elements
+   * with none, `characters: ''` a Message to everyone, a single link's the elements linking
+   * to nothing (until 4.108.1 it was dropped and the list came back whole). Any other key
+   * 422s server-side with the list of filters in the message -- the client passes keys
    * through unchecked and lets the platform say so. (`__in`, `__gte`, `__lte` and
    * `__isnull` are designed in keel's spec but not built; `ordering` 422s too.)
    */
