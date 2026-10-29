@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.107.0] - 2026-10-29
+
+### Added
+
+- **`doorsOf(element, tools = TOOLS)`**: which tools wrote an element, newest first, from its `doors` field, each `{ door, at, tool, last, from }` (`OwDoor`). `door` is the key (a tool's client name, or a door word such as `site` or `mcp`), `at` its time exactly as served, `tool` the first `tools` row whose `client` is the door as `{ id, name }` (else null), `from` is `doors`. Times are compared as instants at their full precision, offsets and microseconds included, never as strings and never through `Date`; entries at the same instant go by key, by Unicode code point. A key that is empty, or a value that is not a time (`YYYY-MM-DDTHH:MM:SS`, an optional fraction, then `Z` or `±HH:MM`, with a real date and clock), is skipped. `last` is true on the first entry at the same instant as `updated_at`; when none is, the last write came through no door the field records (a restore or a scrub). An element without `doors`, or with no valid entry in it, gives one entry from its last write (`changed_client`, else `changed_via`, at `updated_at`, `from: 'last-write'`), or `[]` when it has neither door or no valid `updated_at`, as a public reader's element does. Data only, no words: a "Last shaped in Atlas" line reads the first entry. An element that is not an object, or `tools` that is not an array, is a TypeError. The Python package's `doors_of` answers the same shared fixture (26 cases) entry for entry.
+
 ## [4.106.0] - 2026-10-29
 
 ### Added
