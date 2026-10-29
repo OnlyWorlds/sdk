@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.104.0] - 2026-10-29
+
+### Added
+
+- **Sign in with OnlyWorlds from a native app** (RFC 8252). A tool registered as native lists a loopback return without a port (`http://127.0.0.1/<path>` or `http://[::1]/<path>`) or its own scheme (`obsidian://onlyworlds-signin`). `signInWithOnlyWorlds` now takes, beside an `https:` address, the loopback address with the port the app bound for this sign-in (`http://127.0.0.1:53682/onlyworlds-signin`, 1 to 65535, written plainly), which the server matches against the portless one, and a custom scheme exactly as registered (lower-case, not `http`, `https`, `javascript`, `data` or `file`, something after `://`). It refuses `localhost`, a loopback without its port, and on any form userinfo, a query, a fragment and a dot segment (and an `https:` address with an upper-case host or no path, which it took before), with a TypeError naming the forms it takes: the server would refuse each of them at authorize. Whether the tool is registered as native is the server's to check; the SDK does not read the client list. A native app opens the authorize URL in the system browser through `navigate`, and passes the address its loopback server or scheme handler received to `completeSignIn` as `url`.
+
+### Fixed
+
+- **`completeSignIn` compares the return address exactly**: its scheme, its host with the port, and its path. It compared `URL.origin`, which is `"null"` for every scheme that is not special, so a page at `evil://onlyworlds-signin` would have matched a sign-in begun for `obsidian://onlyworlds-signin` (out of reach until now, since only `https:` could be begun). A trailing slash is still tolerated on `https:`, where a static host may answer `/callback` by sending the browser to `/callback/`; on a loopback or custom-scheme address it is not.
+- **`completeSignIn` cleans the address bar only when it read the address from `location`.** With `url` given, the window's history is left alone: a native app's callback address is not the address of the window it runs in.
+
 ## [4.103.0] - 2026-10-29
 
 ### Changed

@@ -1448,10 +1448,13 @@ export class OwV2Client {
    * Start Sign in with OnlyWorlds from a tool's page: mint `state` and a PKCE verifier, keep them
    * under `clientId` in `storage` (sessionStorage by default; in Node pass one), and send the
    * browser to `https://www.onlyworlds.com/signin/authorize` (or only return the URL with
-   * `navigate: false`). `redirectUri` is the registered return address as a string, `https:`
-   * only, never built from `location.origin`: a tool's registration is read at
-   * `GET /api/v2/auth/clients`. `resume` is small JSON handed back by `completeSignIn`. No request
-   * is sent; any client, keyless included.
+   * `navigate: false`). `redirectUri` is the registered return address as a string, never built
+   * from `location.origin`: a tool's registration is read at `GET /api/v2/auth/clients`. A web
+   * tool's is `https:`; a tool registered as native may pass a loopback address with the port it
+   * bound for this sign-in (`http://127.0.0.1:<port>/<path>` or `http://[::1]:<port>/<path>`,
+   * registered without the port) or its own scheme as registered (`obsidian://onlyworlds-signin`),
+   * and opens the URL in the system browser with `navigate`. `resume` is small JSON handed back by
+   * `completeSignIn`. No request is sent; any client, keyless included.
    */
   async signInWithOnlyWorlds(opts: OwSignInBegin): Promise<OwSignInBegun> {
     only('signInWithOnlyWorlds', opts, ['clientId', 'redirectUri', 'resume', 'storage', 'navigate']);
@@ -1460,7 +1463,9 @@ export class OwV2Client {
 
   /**
    * Finish Sign in with OnlyWorlds on the callback page: check `state` against the record and the
-   * page against the registered address, take `code` and `state` out of the address bar, trade
+   * page against the registered address (scheme, host with port, and path, each exactly), take
+   * `code` and `state` out of the address bar (only when `url` is not given: a native app passes
+   * the address its loopback server or scheme handler received), trade
    * the code once at `POST /auth/token` with the PKCE verifier and no credential, and return the
    * `ow_a_` token with the account and `resume`. The record is cleared on success and on refusal;
    * the SDK keeps no token: the tool does. Refusals are `OwSignInError`: `state_mismatch` (no

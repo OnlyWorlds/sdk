@@ -24,7 +24,14 @@ export interface OwSignInStorage {
 export interface OwSignInBegin {
   /** The `client_id` keel's registry lists the tool under (`GET /api/v2/auth/clients`). */
   clientId: string;
-  /** The registered return address, the exact string, `https:` only; never built from `location.origin`. */
+  /**
+   * The registered return address, the exact string; never built from `location.origin`. A web tool's
+   * is `https:`. A tool registered as a native app may also use a loopback address, registered without
+   * a port (`http://127.0.0.1/<path>` or `http://[::1]/<path>`) and passed here with the port the app
+   * bound for this sign-in (`http://127.0.0.1:53682/<path>`, 1 to 65535), or its own scheme, exactly as
+   * registered (`obsidian://onlyworlds-signin`). `localhost`, a loopback without its port, userinfo, a
+   * query and a fragment are refused.
+   */
   redirectUri: string;
   /** Small JSON the tool wants back after the redirect (an open link, a pending join code). */
   resume?: unknown;
@@ -43,7 +50,11 @@ export interface OwSignInBegun {
 export interface OwSignInComplete {
   clientId: string;
   storage?: OwSignInStorage;
-  /** The callback page's address; defaults to `location.href`. */
+  /**
+   * The callback page's address; defaults to `location.href`, which is then cleaned of `code` and
+   * `state`. A native app passes the address its loopback server or scheme handler received, and
+   * the window's history is left alone.
+   */
   url?: string;
 }
 
@@ -116,11 +127,73 @@ function sitePage(baseUrl: string, path: string): string {
   return `${new URL(baseUrl).origin}${path}`;
 }
 
+// The return addresses keel takes at authorize (its accounts/signin.py: uri_problem, native_uri_problem
+// and return_matches), as the tool presents them. A native app's (RFC 8252) are a loopback literal with
+// the port the app bound (registered with none, any port matching) and a custom scheme matched exactly.
+// Whether the client is registered as native is keel's to check: the SDK does not read the client list.
+const LOOPBACK_HOSTS = ['127.0.0.1', '[::1]'];
+const REFUSED_SCHEMES = ['http', 'https', 'javascript', 'data', 'file'];
+const SCHEME = /^[a-z][a-z0-9+.-]*$/;
+const PORT = /^[1-9][0-9]{0,4}$/;
+
+function pathProblem(path: string): string | null {
+  const segments = path.split('/');
+  if (segments.includes('.') || segments.includes('..')) return 'carries a dot segment';
+  return null;
+}
+
+/** Why a presented return address is not one keel can match, or null. */
+function redirectProblem(uri: unknown): string | null {
+  if (typeof uri !== 'string' || uri === '') return 'is not a string';
+  for (let i = 0; i < uri.length; i++) {
+    const c = uri.charCodeAt(i);
+    if (c < 0x21 || c > 0x7e) return 'carries whitespace or a character outside printable ASCII';
+  }
+  if (uri.includes('*')) return 'carries a wildcard: a return address is exact';
+  if (uri.includes('#')) return 'carries a fragment';
+  if (uri.includes('?')) return 'carries a query: the code and state are the only query';
+  const sep = uri.indexOf('://');
+  if (sep < 0) return 'is not <scheme>://<path>';
+  const scheme = uri.slice(0, sep);
+  const rest = uri.slice(sep + 3);
+  const slash = rest.indexOf('/');
+  const netloc = slash < 0 ? rest : rest.slice(0, slash);
+  const path = slash < 0 ? '' : rest.slice(slash);
+  if (scheme === 'https') {
+    if (netloc.includes('@')) return 'carries userinfo';
+    const host = netloc.split(':')[0];
+    if (host === '' || host.includes('[')) return 'has no plain host';
+    if (host !== host.toLowerCase()) return 'has an upper-case host';
+    if (path === '') return 'has no path';
+    return pathProblem(path);
+  }
+  if (scheme === 'http') {
+    if (netloc.includes('@')) return 'carries userinfo';
+    if (netloc.split(':')[0].toLowerCase() === 'localhost') return 'names localhost: a loopback return is the literal 127.0.0.1 or [::1]';
+    if (LOOPBACK_HOSTS.includes(netloc)) return 'names no port: a loopback return carries the port the app bound';
+    const host = LOOPBACK_HOSTS.find((h) => netloc.startsWith(h + ':'));
+    if (host === undefined) return 'is http on a host that is not a loopback literal (127.0.0.1 or [::1])';
+    const port = netloc.slice(host.length + 1);
+    if (!PORT.test(port) || Number(port) > 65535) return 'carries a port that is not a whole number from 1 to 65535, written plainly';
+    if (path === '') return 'has no path';
+    return pathProblem(path);
+  }
+  if (scheme !== scheme.toLowerCase()) return 'has an upper-case scheme: a custom scheme is lower-case';
+  if (!SCHEME.test(scheme)) return 'has a scheme of characters a scheme may not hold';
+  if (REFUSED_SCHEMES.includes(scheme)) return 'uses a scheme a return address may never use';
+  if (rest === '') return 'has no path after the scheme';
+  if (rest.includes('@')) return 'carries userinfo';
+  return pathProblem(rest);
+}
+
 export async function beginSignIn(baseUrl: string, opts: OwSignInBegin): Promise<OwSignInBegun> {
   const { clientId, redirectUri, resume = null } = opts ?? ({} as OwSignInBegin);
   if (typeof clientId !== 'string' || clientId === '') throw new TypeError('signInWithOnlyWorlds needs clientId');
-  if (typeof redirectUri !== 'string' || !redirectUri.startsWith('https://')) {
-    throw new TypeError('signInWithOnlyWorlds: redirectUri must be the registered https: address, as a string');
+  const why = redirectProblem(redirectUri);
+  if (why !== null) {
+    throw new TypeError(`signInWithOnlyWorlds: redirectUri ${why}. Pass the registered return address as a string: `
+      + 'https://<host>/<path>, or for a native app http://127.0.0.1:<port>/<path> or http://[::1]:<port>/<path> '
+      + 'with the port it bound, or its own scheme, <scheme>://<path>');
   }
   const storage = opts.storage ?? defaultStorage('signInWithOnlyWorlds');
   const state = randomToken(32);
@@ -141,10 +214,16 @@ export async function beginSignIn(baseUrl: string, opts: OwSignInBegin): Promise
   return { url: href, state };
 }
 
+// The scheme, the host with its port, and the path, each exactly. Never `origin`: it is "null" for every
+// scheme that is not special, so `evil://onlyworlds-signin` would match `obsidian://onlyworlds-signin`.
+// A trailing slash is tolerated on https alone, where a static host may answer `/callback` by sending
+// the browser to `/callback/`; a loopback or custom-scheme return reaches the app as it was registered.
 function samePage(a: string, b: string): boolean {
   try {
     const x = new URL(a), y = new URL(b);
-    return x.origin === y.origin && x.pathname.replace(/\/$/, '') === y.pathname.replace(/\/$/, '');
+    if (x.protocol !== y.protocol || x.host !== y.host) return false;
+    if (x.protocol === 'https:') return x.pathname.replace(/\/$/, '') === y.pathname.replace(/\/$/, '');
+    return x.pathname === y.pathname;
   } catch {
     return false;
   }
@@ -165,7 +244,9 @@ export async function completeSignIn(
   const state = page.searchParams.get('state');
 
   // The code is single use: out of the address bar before anything else, so a reload spends nothing.
-  const hist = (globalThis as { history?: History }).history;
+  // Only when the address came from the address bar: a `url` passed in (a native app's loopback
+  // server or scheme handler) is not this window's, and its history is left alone.
+  const hist = opts.url === undefined ? (globalThis as { history?: History }).history : undefined;
   if (hist && typeof hist.replaceState === 'function' && (page.searchParams.has('code') || page.searchParams.has('state'))) {
     const clean = new URL(here);
     clean.searchParams.delete('code');
