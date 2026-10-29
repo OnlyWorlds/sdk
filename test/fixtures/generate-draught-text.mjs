@@ -75,6 +75,11 @@ const PLANTED = {
     d.names.construct[0].element.hidden = true;
     d.names.construct[0].element.x_review_proposed = { by: M[0] };
   },
+  // The door history keel serves a member (keel #760): never a field line.
+  'doors': (d) => {
+    d.character.element.doors = { atlas: '2026-10-29T14:31:07.123456Z', site: '2026-10-29T14:20:00Z' };
+    d.sheet[0].element.doors = { mcp: '2026-10-29T14:33:00Z' };
+  },
   // What the budget left out, two keys in the server's order.
   'cut': (d) => {
     d.cut = { events: 3, proposed: 1 };

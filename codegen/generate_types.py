@@ -130,9 +130,9 @@ __ELEMENT_BASE__
 #     truth -- every element row has a world -- while the v2 API REJECTS `world` in a
 #     request body, because the API key determines the world. (rulings.yaml:
 #     required-world-wire-caveat. Canonical truing rides a later YAML bump.)
-#   - Eight server-managed fields are ADDED. They exist on every wire body and in no
+#   - Nine server-managed fields are ADDED. They exist on wire bodies and in no
 #     element YAML: type, created_at, updated_at, change_seq, created_by, changed_by,
-#     changed_via, changed_client.
+#     changed_via, changed_client, and doors (the last four served to members only).
 #   - One server-managed marker is ADDED that rides only some bodies: `known_of`,
 #     present and true only on a stub, never on a whole element.
 #   - Only Id and Name stay non-optional. Everything else is optional per
@@ -148,10 +148,12 @@ WIRE_ONLY_BASE_FIELDS = [
     ("change_seq", "Per-world change cursor, stamped on every write (server-managed, read-only).", "number", False),
     ("created_by", "The membership that created this element (server-managed, read-only); null for the world's owner and for anything created before memberships existed.", "string | null", False),
     # The last write's author and the door it came through.
-    ("changed_by", "The membership whose write last changed this element (server-managed, read-only); null for the world's owner and for anything last changed before writes recorded it.", "string | null", False),
-    ("changed_via", "The door of the last write (server-managed, read-only): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, `server` (keel's own writes) or `site` (the owner signed in on onlyworlds.com). The first three are agent-made. Null for anything last changed before writes recorded it.", "'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | 'site' | null", False),
+    ("changed_by", "The membership whose write last changed this element (server-managed, read-only; served to the world's members only, absent for the public reader); null for the world's owner and for anything last changed before writes recorded it.", "string | null", False),
+    ("changed_via", "The door of the last write (server-managed, read-only; served to the world's members only, absent for the public reader): `seat` (an agent seat), `mcp`, `declared` (a client that sent X-OW-Agent), then `api`, `v1`, `sync`, `server` (keel's own writes) or `site` (the owner signed in on onlyworlds.com). The first three are agent-made. Null for anything last changed before writes recorded it.", "'seat' | 'mcp' | 'declared' | 'api' | 'v1' | 'sync' | 'server' | 'site' | null", False),
     # The client's own name for itself, from X-OW-Client.
-    ("changed_client", "The name the client gave in the X-OW-Client header on the last write (server-managed, read-only): lower case letters, digits and hyphens, 1 to 32 characters, such as `sdk` or `atlas`. It is the client's claim about itself, never proof, and says nothing about whether an agent drove the write (that is `changed_via`). Null when the last write sent no name or one outside the rule, for keel's own writes, and for anything last changed before names were recorded. Sent in a write it is ignored. This SDK sends its `client` option, `sdk` by default.", "string | null", False),
+    ("changed_client", "The name the client gave in the X-OW-Client header on the last write (server-managed, read-only; served to the world's members only, absent for the public reader): lower case letters, digits and hyphens, 1 to 32 characters, such as `sdk` or `atlas`. It is the client's claim about itself, never proof, and says nothing about whether an agent drove the write (that is `changed_via`). Null when the last write sent no name or one outside the rule, for keel's own writes, and for anything last changed before names were recorded. Sent in a write it is ignored. This SDK sends its `client` option, `sdk` by default.", "string | null", False),
+    # Each tool that wrote it, and when (members only).
+    ("doors", "Each tool that wrote this element, with the time of its last write there (server-managed, read-only): one key per tool, the name it gave in X-OW-Client or else the door word of that write (`site`, `api`, `mcp`, ...), each value the `updated_at` that write left; at most 16 keys, the one with the oldest time dropped past that. Stamped from 2026-10-29 on, so an element not written since carries none. Served to the world's members only: absent for the public reader, on a known-of stub, in the change feed's bodies and in a world file.", "Record<string, string>", False),
     # The sheet grant's stub marker.
     # The hidden mark, shown to the readers who still see the element.
     ("hidden", "Present, and true, only when the world's owner or a co-builder hid this element and this reader still sees it (server-managed, read-only): the owner, a co-builder, a key the owner minted, or the member who made it; to every other reader the element does not exist. Absent otherwise, whatever `fields` asked; on the read, the list, the change feed's upserts and MCP, never in the download, world sync or v1. Sent on a create (a POST, a PUT of a new id, a bulk item that creates), `hidden: true` creates the element hidden, from the owner's keys or a co-builder's; any other key gets 403 `hidden_not_allowed` and nothing is created. On any other write it is ignored: hide and unhide with hide() and unhide().", "true", False),

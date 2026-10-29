@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.106.0] - 2026-10-29
+
+### Added
+
+- **`doors` on every element type**: each tool that wrote the element, with the time of its last write there, as the API serves it to a world's members since 2026-10-29. One key per tool (the name it sent in `X-OW-Client`, else the door word of that write, such as `site` or `mcp`), each value the `updated_at` that write left; at most 16 keys. Optional: absent for the public reader, on a known-of stub, in the change feed's bodies, in a world file, and on an element not written since the field arrived. Read-only; the server ignores it in a write.
+
+### Changed
+
+- The doc comments on `changed_by`, `changed_via` and `changed_client` say they are served to a world's members only and absent for the public reader, as the API serves them since the same day.
+- The draught text fixture gains a `doors` case: the door history never prints as a field line.
+
 ## [4.105.0] - 2026-10-29
 
 ### Added
