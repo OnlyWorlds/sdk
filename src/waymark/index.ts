@@ -18,8 +18,8 @@ import { CHEVRON_GLYPH, COPY_GLYPH, LENS_GLYPH, MARK_PATH, TOOL_GLYPH, type Glyp
 /** Who reads the fan-out: a member of the world, a guest (a seat in it, a member too), or the public (signed out). */
 export type OwWaymarkReader = 'member' | 'guest' | 'public';
 
-/** How a person reaches the fan-out: `mark`, the OnlyWorlds mark beside the name, a button; `menu`, an "Open with" entry the surface puts in its own "..." menu, and no mark. */
-export type OwWaymarkEntry = 'mark' | 'menu';
+/** How a person reaches the fan-out: `mark`, the OnlyWorlds mark beside the name, a button; `menu`, an "Open with" entry the surface puts in its own "..." menu, and no mark; `both`, the mark and the entry. */
+export type OwWaymarkEntry = 'mark' | 'menu' | 'both';
 
 /** One lens the reader may read the element through: its id (an element id, as the address takes it) and its name. */
 export interface OwWaymarkLens {
@@ -49,26 +49,31 @@ export interface OwWaymarkOptions {
   lenses?: readonly OwWaymarkLens[] | null;
   /** The ground the fan-out sits on: `dark` (the brand cyan mark) or `paper` (the mark in a dark ink). Default `dark`. */
   ground?: 'dark' | 'paper';
-  /** The way in: `mark` or `menu`. Default `mark`. */
+  /** The way in: `mark`, `menu` or `both`. Default `mark`. */
   entry?: OwWaymarkEntry;
+  /** With `menu` or `both`: the surface's own visible element (its "..." button) that takes focus when the fan-out, opened from the entry, closes by Escape; absent, the entry takes it. Refused with `mark`. */
+  returnFocus?: HTMLElement | null;
 }
 
 /** The disposer `mountWaymark` returns: call it to remove every node, listener and timer the fan-out added. */
 export interface OwWaymark {
   (): void;
-  /** With `entry: 'menu'`, the "Open with" button for the surface to put in its own "..." menu (it opens the fan-out); with `mark`, null. */
+  /** With `entry: 'menu'` or `'both'`, the "Open with" button for the surface to put in its own "..." menu (it opens the fan-out); with `mark`, null. */
   readonly entry: HTMLButtonElement | null;
 }
 
 const OPTION_KEYS: readonly string[] = [
   'world', 'element', 'reader', 'tool', 'signedIn', 'browser', 'phone', 'tools', 'lenses', 'ground', 'entry',
+  'returnFocus',
 ];
 const READERS: readonly unknown[] = ['member', 'guest', 'public'];
 const GROUNDS: readonly unknown[] = ['dark', 'paper'];
-const ENTRIES: readonly unknown[] = ['mark', 'menu'];
+const ENTRIES: readonly unknown[] = ['mark', 'menu', 'both'];
 const SVG = 'http://www.w3.org/2000/svg';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const TOAST_MS = 2000;
+const COPIED = 'Link copied';
+const NOT_COPIED = 'Could not copy. Select the text and copy it yourself.';
 let mounted = 0;
 
 const fail = (what: string): never => {
@@ -90,14 +95,16 @@ function shapedOn(at: string, now: Date): string {
 /**
  * Draw the Waymark into `target`, the element that holds a world's or an element's name: the OnlyWorlds
  * mark at its end (`entry: 'mark'`), or nothing visible there and an "Open with" entry for the surface's
- * own menu (`entry: 'menu'`), each opening the same fan-out: the name line (and, for a member or guest,
- * "Last shaped in Atlas, 12 Oct" from `doorsOf` and `doorWhere`), the Open with rows `openersFor` gives,
- * each with its word, the Through row when the surface offers lenses, and Copy link last, which copies
- * the site's address with the world's id (`elementAddress`) and says "Link copied".
+ * own menu (`entry: 'menu'`), or both (`entry: 'both'`), each opening the same fan-out: the name line
+ * (and, for a member or guest, "Last shaped in Atlas, 12 Oct" from `doorsOf` and `doorWhere`), the Open
+ * with rows `openersFor` gives, each with its word, the Through row when the surface offers lenses, and
+ * Copy link last, which copies the site's address with the world's id (`elementAddress`) and says "Link
+ * copied" (with no clipboard, or the copy refused: "Could not copy. Select the text and copy it yourself.").
  *
  * Keyboard: the mark is a button and the fan-out a menu; Tab goes from the mark through the rows in
- * order, the arrow keys, Home and End move within it, Escape closes it and returns focus to the mark
- * (or the entry). A click outside closes it. At 390 px wide and below the stylesheet draws it as a sheet
+ * order, the arrow keys, Home and End move within it, Escape closes it and returns focus to what opened
+ * it: the mark, or for the entry `returnFocus` when given (the surface's "..." button, which stays
+ * visible when its menu closes), else the entry. A click outside closes it. At 390 px wide and below the stylesheet draws it as a sheet
  * from the bottom. The page must load `@onlyworlds/sdk/waymark.css`; no node carries a style attribute.
  *
  * Refuses, before anything is drawn, an unknown option key by name and a value of the wrong kind (a
@@ -112,7 +119,7 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   refuseUnknownOptions('mountWaymark', options, OPTION_KEYS);
   const {
     world, element = null, reader, tool = null, signedIn = null, browser = true, phone = false,
-    tools = TOOLS, lenses = null, ground = 'dark', entry = 'mark',
+    tools = TOOLS, lenses = null, ground = 'dark', entry = 'mark', returnFocus = null,
   } = options;
   if (world === null || typeof world !== 'object' || typeof world.id !== 'string' || typeof world.name !== 'string') {
     fail('world is an object with a string id and name');
@@ -122,7 +129,13 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   }
   if (!READERS.includes(reader)) fail(`reader is 'member', 'guest' or 'public'; got ${JSON.stringify(reader)}`);
   if (!GROUNDS.includes(ground)) fail(`ground is 'dark' or 'paper'; got ${JSON.stringify(ground)}`);
-  if (!ENTRIES.includes(entry)) fail(`entry is 'mark' or 'menu'; got ${JSON.stringify(entry)}`);
+  if (!ENTRIES.includes(entry)) fail(`entry is 'mark', 'menu' or 'both'; got ${JSON.stringify(entry)}`);
+  if (returnFocus !== null) {
+    if (entry === 'mark') fail("returnFocus is for entry 'menu' or 'both': with the mark alone, focus returns to the mark");
+    const View = target.ownerDocument.defaultView?.HTMLElement;
+    const isElement = View ? returnFocus instanceof View : typeof returnFocus === 'object' && (returnFocus as Node).nodeType === 1;
+    if (!isElement) fail("returnFocus is an HTMLElement: the surface's own button that takes focus back");
+  }
   if (lenses !== null && !Array.isArray(lenses)) fail('lenses is an array of { id, name } or null');
   for (const l of lenses ?? []) {
     if (l === null || typeof l !== 'object' || typeof l.id !== 'string' || typeof l.name !== 'string') fail('each lens is { id, name }, both strings');
@@ -200,7 +213,7 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   const nameId = `ow-waymark-${n}-name`;
 
   let mark: HTMLButtonElement | null = null;
-  if (entry === 'mark') {
+  if (entry !== 'menu') {
     mark = el('button', 'ow-waymark__mark');
     mark.type = 'button';
     mark.setAttribute('aria-label', 'Open with');
@@ -210,14 +223,17 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     mark.appendChild(markSvg('ow-waymark__glyph'));
     root.appendChild(mark);
   }
-  const menuEntry: HTMLButtonElement | null = entry === 'menu' ? el('button', 'ow-waymark-entry', 'Open with') : null;
+  const menuEntry: HTMLButtonElement | null = entry !== 'mark' ? el('button', 'ow-waymark-entry', 'Open with') : null;
   if (menuEntry !== null) {
     menuEntry.type = 'button';
     menuEntry.setAttribute('aria-haspopup', 'menu');
     menuEntry.setAttribute('aria-expanded', 'false');
     menuEntry.setAttribute('aria-controls', menuId);
   }
-  const opener = (mark ?? menuEntry) as HTMLButtonElement;
+  const openers = [mark, menuEntry].filter((b): b is HTMLButtonElement => b !== null);
+  // The one that opened the fan-out, and where focus goes back when it closes.
+  let openedBy: HTMLButtonElement = openers[0];
+  const focusBack = (): HTMLElement => (openedBy === menuEntry ? returnFocus ?? menuEntry : openedBy);
 
   const scrim = el('div', 'ow-waymark__scrim');
   scrim.hidden = true;
@@ -324,7 +340,8 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   toast.setAttribute('role', 'status');
   toast.hidden = true;
   toast.appendChild(glyph(COPY_GLYPH, 'ow-waymark__icon ow-waymark__icon--small'));
-  toast.appendChild(el('span', 'ow-waymark__label', 'Link copied'));
+  const toastWords = el('span', 'ow-waymark__label', COPIED);
+  toast.appendChild(toastWords);
   root.appendChild(toast);
 
   // Behaviour.
@@ -334,24 +351,26 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"], [role="menuitemradio"]')).filter((i) => !i.closest('[hidden]'));
   const isOpen = (): boolean => !pop.hidden;
 
-  const open = (focus: 'first' | 'last'): void => {
+  const open = (from: HTMLButtonElement, focus: 'first' | 'last'): void => {
     if (isOpen()) return;
+    openedBy = from;
     pop.hidden = false;
     scrim.hidden = false;
-    opener.setAttribute('aria-expanded', 'true');
+    from.setAttribute('aria-expanded', 'true');
     on(openListeners, doc, 'pointerdown', onOutside as EventListener, true);
     const list = items();
     (focus === 'first' ? list[0] : list[list.length - 1])?.focus();
   };
-  const close = (returnFocus: boolean): void => {
+  const close = (refocus: boolean): void => {
     if (!isOpen()) return;
     pop.hidden = true;
     scrim.hidden = true;
-    opener.setAttribute('aria-expanded', 'false');
+    openedBy.setAttribute('aria-expanded', 'false');
     offAll(openListeners);
-    if (returnFocus) opener.focus();
+    if (refocus) focusBack().focus();
   };
-  const showToast = (): void => {
+  const showToast = (words: string): void => {
+    toastWords.textContent = words;
     toast.hidden = false;
     if (toastTimer !== null) timers.clearTimeout(toastTimer);
     toastTimer = timers.setTimeout(() => {
@@ -365,11 +384,11 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     if (t !== null && (root.contains(t) || menuEntry?.contains(t))) return;
     close(false);
   }
-  const onOpenerClick = (): void => (isOpen() ? close(false) : open('first'));
+  const onOpenerClick = (e: Event): void => (isOpen() ? close(false) : open(e.currentTarget as HTMLButtonElement, 'first'));
   const onOpenerKey = (e: KeyboardEvent): void => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
-      open(e.key === 'ArrowDown' ? 'first' : 'last');
+      open(e.currentTarget as HTMLButtonElement, e.key === 'ArrowDown' ? 'first' : 'last');
     } else if (e.key === 'Escape' && isOpen()) {
       e.preventDefault();
       close(true);
@@ -411,7 +430,8 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
       const text = linkFor(chosenLens);
       const clipboard = timers.navigator?.clipboard;
       close(true);
-      if (clipboard) clipboard.writeText(text).then(() => { if (!disposed) showToast(); }, () => {});
+      if (!clipboard) showToast(NOT_COPIED);
+      else clipboard.writeText(text).then(() => { if (!disposed) showToast(COPIED); }, () => { if (!disposed) showToast(NOT_COPIED); });
     } else {
       close(false);
     }
@@ -421,8 +441,10 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     if (to !== null && !root.contains(to) && !menuEntry?.contains(to)) close(false);
   };
 
-  on(listeners, opener, 'click', onOpenerClick as EventListener);
-  on(listeners, opener, 'keydown', onOpenerKey as EventListener);
+  for (const b of openers) {
+    on(listeners, b, 'click', onOpenerClick as EventListener);
+    on(listeners, b, 'keydown', onOpenerKey as EventListener);
+  }
   on(listeners, pop, 'keydown', onMenuKey as EventListener);
   on(listeners, menu, 'click', onMenuClick as EventListener);
   on(listeners, scrim, 'click', (() => close(true)) as EventListener);
