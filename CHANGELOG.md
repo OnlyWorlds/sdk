@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.110.0] - 2026-10-30
+
+### Changed
+
+- **`openersFor` checks the whole address.** It handed the address writer only the world, type and id, in the site's form, so a malformed `lens` or `moment`, or a `form` that is neither `human` nor `text`, still gave rows. The whole address now goes to `elementAddress` in its own form (the site's when it has none), so it refuses with the writer's own `OwAddressError`, `bad_lens`, `bad_moment` or `bad_form`, as it already did for the world, type and id; an address without a world still refuses `no_world`, the text form inside a world included. The rows are unchanged: a lens and a moment still ride on no href. The shared fixture gains four cases (45; the same bytes as the Python package's): the three refusals, and a well-formed lens and moment giving exactly the rows of the same address without them.
+
 ## [4.109.0] - 2026-10-29
 
 ### Changed

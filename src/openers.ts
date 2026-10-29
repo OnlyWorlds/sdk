@@ -104,8 +104,10 @@ function templateOf(row: string, key: 'world' | 'element', v: unknown): string |
  * only when the surface knows it is true), `device` on a phone "Needs the world on this phone"; then
  * "Opens the world" (a world door on an element: a sign-in the row needs is the more urgent word); else null.
  *
- * Refuses with `OwAddressError` an address without a world (`no_world`) or with a slug or anything else
- * for its id (`bad_world`), and a type, id or pairing `elementAddress` refuses. A TypeError names the
+ * Refuses with `OwAddressError` whatever `elementAddress` refuses of the whole address, in its own form
+ * (the site's when it has none): a form, type, id, pairing, moment or lens (`bad_moment`, `bad_lens`),
+ * and a slug or anything else for the world's id (`bad_world`); and an address without a world
+ * (`no_world`), the text form inside a world included, since every row needs one. A TypeError names the
  * rest: a `kind` that is neither, an element's openers asked of an address with no element, an unknown
  * key on the address or the surface, a missing or unknown `audience`, a surface value of the wrong type,
  * a tools row that is not one (a `needs` outside the list's format included).
@@ -123,7 +125,9 @@ export function openersFor(
   }
   refuseUnknownOptions('openersFor', address, ADDRESS_KEYS);
   const a = address as unknown as Record<string, unknown>;
-  // The address's checks are the writer's, so a slug, a missing world and a bad type or id refuse as there.
+  // The address's checks are the writer's: the whole address in its own form, so a bad form, a slug, a bad
+  // type, id, moment or lens refuse as there; then the site's page, where a missing world refuses.
+  elementAddress({ ...a, form: a.form ?? 'human' } as unknown as OwAddress);
   const page = elementAddress({ form: 'human', world: a.world as string, type: a.type as string, id: a.id as string });
   const world = (a.world as string).toLowerCase();
   const hasElement = a.type !== undefined && a.type !== null;
