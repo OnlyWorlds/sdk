@@ -21,6 +21,7 @@
  */
 
 import { refuseUnknownOptions } from '../options';
+import { trimWhiteSpace } from '../room';
 
 // ---- Config shape (persisted in the `atlas_calendar` element field) ----
 
@@ -129,10 +130,15 @@ export function floorMod(a: number, b: number): number {
 
 // ---- Validation (the builder rejects loudly; wild configs fall back) ----
 
+/** The profile's grain: a string with something left after the White_Space trim (room.md's, never trim()). */
+function hasGrain(grain: unknown): boolean {
+  return typeof grain === 'string' && trimWhiteSpace(grain) !== '';
+}
+
 export function validateCalendarConfig(cfg: CalendarConfig): string[] {
   const errors: string[] = [];
   if (cfg.version !== 1 && cfg.version !== 2) errors.push(`Unsupported calendar version: ${cfg.version}`);
-  if (!cfg.grain || typeof cfg.grain !== 'string') errors.push('Grain is required');
+  if (!hasGrain(cfg.grain)) errors.push('Grain is required');
 
   const months = cfg.bundles?.months;
   if (months) {
@@ -206,8 +212,9 @@ export function validateCalendarConfig(cfg: CalendarConfig): string[] {
 export function readCalendarConfig(value: unknown): CalendarConfig | null {
   if (typeof value !== 'object' || value === null) return null;
   const cfg = value as CalendarConfig;
-  // The profile: grain is required, a string; an empty string is no grain (serial 89's case).
-  if ((cfg.version !== 1 && cfg.version !== 2) || typeof cfg.grain !== 'string' || cfg.grain === '') return null;
+  // The profile: grain is required, a string with something left after the room profile's
+  // White_Space trim; an empty or White_Space-only string is no grain (serial 89).
+  if ((cfg.version !== 1 && cfg.version !== 2) || !hasGrain(cfg.grain)) return null;
   // Structural sanity only — validateCalendarConfig covers semantics. A config
   // with semantic errors (overlaps) still formats via deterministic fallbacks.
   const months = cfg.bundles?.months;
@@ -233,10 +240,11 @@ export function readCalendarConfig(value: unknown): CalendarConfig | null {
   if (cfg.intercalary?.some((i) => i.every_years != null && !isPositiveInt(i.every_years))) return null;
   // Version 2's leap keys (version 1 ignores them, as it ignores any unknown key).
   if (cfg.version === 2 && cfg.intercalary?.some((i) => leapRuleProblem(i) != null)) return null;
-  // A day placed after a month the year does not have has no position, and a reader never
-  // invents one: the calendar is unreadable (the profile, serial 89; the free week threw here).
+  // A day placed after a month the year does not have, past the last or below the first, has
+  // no position, and a reader never invents one: the calendar is unreadable (the profile,
+  // serial 89; the free week threw here). With no months, any after_month above 0 is past the last.
   const monthCount = months ? months.names.length : 0;
-  if (cfg.intercalary?.some((i) => i.after_month > monthCount)) return null;
+  if (cfg.intercalary?.some((i) => i.after_month < 0 || i.after_month > monthCount)) return null;
   return cfg;
 }
 

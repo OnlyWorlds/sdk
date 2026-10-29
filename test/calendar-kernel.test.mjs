@@ -450,6 +450,24 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         }
         expect(readCalendarConfig({ version: 1, grain: 'day' })).not.toBe(null);
     });
+    // Serial 89: a grain with nothing left after the room profile's White_Space trim is no grain;
+    // the trim is White_Space exactly, so U+FEFF and U+200B (which trim() strips or keeps differently) stay.
+    it('refuses a White_Space-only grain, by the room profile\'s trim, and the builder says so', () => {
+        const ws = [0x20, 0x09, 0x0a, 0x0d, 0x85, 0xa0, 0x1680, 0x2000, 0x200a, 0x2028, 0x2029, 0x202f, 0x205f, 0x3000];
+        for (const cp of ws) {
+            const grain = String.fromCharCode(cp, cp);
+            expect(readCalendarConfig({ version: 1, grain })).toBe(null);
+            expect(readCalendarConfig({ version: 2, grain })).toBe(null);
+            expect(validateCalendarConfig({ version: 1, grain })).toEqual(['Grain is required']);
+        }
+        for (const cp of [0xfeff, 0x200b]) {
+            const grain = String.fromCharCode(0x20, cp, 0x20);
+            expect(readCalendarConfig({ version: 1, grain })).not.toBe(null);
+            expect(validateCalendarConfig({ version: 1, grain })).toEqual([]);
+        }
+        expect(readCalendarConfig({ version: 1, grain: String.fromCharCode(0x20) + 'day' + String.fromCharCode(0x3000) })).not.toBe(null);
+        expect(validateCalendarConfig({ version: 1, grain: 'day' })).toEqual([]);
+    });
     // Serial 89 (Quillon's Unreal port): a day after a month the year lacks has no position.
     it('refuses an intercalary day after a month the year does not have', () => {
         const months = { names: ['A', 'B'], lengths: [10, 10] };
@@ -458,6 +476,15 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         expect(readCalendarConfig(at(3))).toBe(null);
         expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { year: { steps: 10 } }, intercalary: [{ name: 'Gap', after_month: 0 }] })).not.toBe(null);
         expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { year: { steps: 10 } }, intercalary: [{ name: 'Gap', after_month: 1 }] })).toBe(null);
+    });
+    // Serial 89: an after_month below the first month names no month either.
+    it('refuses an intercalary day after a negative month', () => {
+        const months = { names: ['A', 'B'], lengths: [10, 10] };
+        for (const v of [-1, -2, -100]) {
+            expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { months }, intercalary: [{ name: 'Gap', after_month: v }] })).toBe(null);
+            expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { year: { steps: 10 } }, intercalary: [{ name: 'Gap', after_month: v }] })).toBe(null);
+        }
+        expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { months }, intercalary: [{ name: 'Gap', after_month: 0 }, { name: 'Gap2', after_month: -1 }] })).toBe(null);
     });
     // Serial 89: a format template that is not a string is ignored and the default prints.
     it('prints the default template when a format is not a string', () => {

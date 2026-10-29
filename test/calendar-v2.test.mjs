@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   breakdownStep, formatStep, readCalendarConfig, readCalendarValue, validateCalendarConfig, eraForStep,
-  yearLength, yearStartStep, absoluteYear, intercalaryInYear, parseDate, isParseError,
+  yearLength, yearStartStep, absoluteYear, intercalaryInYear, parseDate, isParseError, worldCalendars,
 } from '../dist/index.js';
 
 const read = (rel) => JSON.parse(readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8'));
@@ -135,14 +135,18 @@ test('an up era with no end runs to the next up era, past a down era listed afte
 
 test('the vendored calendar fixture: every case reads as written', () => {
   assert.equal(FIXTURE.profile, 'atlas_calendar');
-  assert.equal(FIXTURE.cases.length, 64, 'serial 69 carries 64 cases');
-  assert.equal(FIXTURE.cases.reduce((n, c) => n + (c.steps?.length ?? 0), 0), 198, 'serial 69 carries 198 steps');
+  assert.equal(FIXTURE.cases.length, 75, 'serial 89 carries 75 cases');
+  assert.equal(FIXTURE.cases.reduce((n, c) => n + (c.steps?.length ?? 0), 0), 209, 'serial 89 carries 209 steps');
+  assert.equal(FIXTURE.cases.filter((c) => !c.valid).length, 41, 'serial 89 carries 41 values a reader must refuse');
   // Serial 69 added the days around Leap Day in 1900, 2000 and 2100 (12 steps) to the Gregorian case.
   assert.equal(FIXTURE.cases.find((c) => c.name === 'v2-except-chain-gregorian')?.steps.length, 29, 'the Gregorian case holds 29 steps');
+  // Serial 89: one case carries a world's elements and the ids a reader finds a calendar on.
+  assert.deepEqual(FIXTURE.cases.filter((c) => c.elements).map((c) => c.name), ['found-by-the-field-never-by-type']);
   const failed = [];
   for (const c of FIXTURE.cases) {
     const cfg = readCalendarValue(c.value);
     let ok = (cfg != null) === c.valid;
+    if (c.elements && JSON.stringify(worldCalendars(c.elements).map((w) => w.id)) !== JSON.stringify(c.found)) ok = false;
     for (const s of (ok && cfg ? c.steps ?? [] : [])) {
       const b = breakdownStep(cfg, s.step);
       const got = { absYear: b.absYear, year: b.year, era: b.era?.name ?? null, month: b.month, monthName: b.monthName, day: b.day, intercalary: b.intercalary, weekday: b.weekday };

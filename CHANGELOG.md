@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.103.0] - 2026-10-29
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.89`** (from dist.88; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'` and no type, field or constant moved). The calendar profile's fixture goes from 64 cases to 75 (209 steps, 41 values a reader must refuse) and the message profile's from 85 to 87; every case passes.
+- **`readCalendarConfig` refuses more values, as the calendar profile now rules**, and `readCalendarValue`, `worldCalendars` and `resolveCalendar` follow (no calendar: show bare numbers):
+  - a `grain` with nothing left after trimming the room profile's White_Space set (`" "`, a tab, U+3000), where 4.102.5 refused only `""`. The trim is White_Space exactly, never JavaScript's `trim()`: a grain of U+FEFF still reads. `validateCalendarConfig` says `Grain is required` for the same values;
+  - an intercalary day whose `after_month` names a month the year does not have: past the last month (`after_month: 5` on a year of two months, which 4.102.5 read as a day in no month), below the first (`-1`), or above 0 on a calendar with no months. `after_month: 0` (before the first month) still reads.
+- **A `format` or `format_intercalary` that is not a string is ignored** and the default template prints. In 4.102.5 `formatStep` threw a TypeError on one.
+- The calendar fixture's new case with a world's elements replays through `worldCalendars`: a calendar is found by the `atlas_calendar` field being present, never by type or supertype. The message fixture's two new cases, a `created_at` with an offset and a fraction of a second read as an instant, and the newest Note listed last, already passed: the message readers read times that way and keep the newest Note wherever it stands.
+
 ## [4.102.5] - 2026-10-29
 
 ### Fixed
