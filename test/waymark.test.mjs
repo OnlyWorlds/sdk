@@ -418,6 +418,48 @@ test('focus moving out of the fan-out closes it and stays where it was moved: Ta
   assert.equal(name.querySelector('.ow-waymark__pop').hidden, true, 'pressed open: closed, and the click does not reopen it');
 });
 
+test('Tab off the last row with nothing after it (focus on the body) closes the fan-out; the window losing focus does not', async () => {
+  const settle = () => new Promise((r) => setTimeout(r, 5));
+  for (const entry of ['mark', 'menu']) {
+    const { doc, name, more } = page();
+    const w = mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', entry });
+    if (w.entry) more.appendChild(w.entry);
+    const opener = w.entry ?? name.querySelector('.ow-waymark__mark');
+    const pop = name.querySelector('.ow-waymark__pop');
+    // The end of the page: focus leaves the last row for the body, with no relatedTarget.
+    doc.hasFocus = () => true;
+    opener.click();
+    const last = items(name).at(-1);
+    last.focus();
+    last.blur();
+    assert.ok(doc.activeElement === doc.body, `${entry}: focus on the body`);
+    assert.equal(pop.hidden, false, `${entry}: read on the next tick, not at once`);
+    await settle();
+    assert.equal(pop.hidden, true, `${entry}: Tab to the body closes it`);
+    assert.ok(doc.activeElement === doc.body, `${entry}: focus stays where it went`);
+    assert.equal(opener.getAttribute('aria-expanded'), 'false', `${entry}: aria-expanded reset`);
+    // The window loses focus (alt-tab): the document no longer has it, and the fan-out stays open.
+    opener.click();
+    const row = items(name)[0];
+    row.focus();
+    doc.hasFocus = () => false;
+    row.blur();
+    await settle();
+    assert.equal(pop.hidden, false, `${entry}: a window blur keeps it open`);
+    assert.equal(opener.getAttribute('aria-expanded'), 'true');
+  }
+  // A press inside the fan-out on something that takes no focus (the name line) is not leaving.
+  const { window, doc, name } = page();
+  doc.hasFocus = () => true;
+  mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member' });
+  name.querySelector('.ow-waymark__mark').click();
+  const head = name.querySelector('.ow-waymark__head');
+  head.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true }));
+  items(name)[0].blur();
+  await settle();
+  assert.equal(name.querySelector('.ow-waymark__pop').hidden, false, 'a press on the name line keeps it open');
+});
+
 test('tap targets: rows at least 44 px tall in the sheet, the type size kept; the mark\'s tap box at least 44 by 44 at every width, with no room taken', () => {
   const css = readFileSync(fileURLToPath(new URL('../dist/waymark.css', import.meta.url)), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const sheet = /@media \(max-width: 390px\) \{([\s\S]*)\}\s*$/.exec(css)[1];

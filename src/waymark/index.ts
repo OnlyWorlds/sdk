@@ -366,6 +366,7 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   const open = (from: HTMLButtonElement, focus: 'first' | 'last'): void => {
     if (isOpen()) return;
     openedBy = from;
+    pressedInside = false;
     pop.hidden = false;
     scrim.hidden = false;
     from.setAttribute('aria-expanded', 'true');
@@ -410,9 +411,13 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     addressLine.select();
   };
 
+  // A press inside the fan-out on something that takes no focus (the name line, the padding) sends focus
+  // to the body; that is not leaving it (onFocusOut).
+  let pressedInside = false;
   function onOutside(e: Event): void {
     const t = e.target as Node | null;
-    if (t !== null && (root.contains(t) || menuEntry?.contains(t))) return;
+    pressedInside = t !== null && (root.contains(t) || menuEntry?.contains(t) === true);
+    if (pressedInside) return;
     close(false);
   }
   // A press on the button that opened the fan-out moves focus out of it, which closes it (onFocusOut)
@@ -437,6 +442,7 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     }
   };
   const onMenuKey = (e: KeyboardEvent): void => {
+    pressedInside = false;
     const list = items();
     const at = list.indexOf(doc.activeElement as HTMLElement);
     let next: HTMLElement | undefined;
@@ -490,9 +496,25 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   };
   // Focus moved out of the fan-out (Tab off the last row, Shift+Tab off the first, a click elsewhere):
   // it closes, and focus stays where the person put it.
+  // Focus with nowhere to go (Tab off the last row at the end of the page) lands on the body with no
+  // relatedTarget: read where it settled on the next tick. A window losing focus (the document no longer
+  // has it) is not leaving, and keeps the fan-out open.
+  let settleTimer: ReturnType<typeof setTimeout> | null = null;
+  const inside = (n: Node | null): boolean => n !== null && (pop.contains(n) || toast.contains(n));
   const onFocusOut = (e: FocusEvent): void => {
     const to = e.relatedTarget as Node | null;
-    if (to !== null && !pop.contains(to) && !toast.contains(to)) close(false);
+    if (to !== null) {
+      if (!inside(to)) close(false);
+      return;
+    }
+    if (settleTimer !== null) timers.clearTimeout(settleTimer);
+    settleTimer = timers.setTimeout(() => {
+      settleTimer = null;
+      const pressed = pressedInside;
+      pressedInside = false;
+      if (!isOpen() || pressed || !doc.hasFocus()) return;
+      if (!inside(doc.activeElement)) close(false);
+    }, 0);
   };
 
   for (const b of openers) {
@@ -520,6 +542,8 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     offAll(listeners);
     if (toastTimer !== null) timers.clearTimeout(toastTimer);
     toastTimer = null;
+    if (settleTimer !== null) timers.clearTimeout(settleTimer);
+    settleTimer = null;
     root.remove();
     menuEntry?.remove();
   };
