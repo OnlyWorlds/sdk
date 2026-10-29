@@ -16,10 +16,14 @@ const CASES = [
   ['no key', undefined, null, false],
   ['null: settled', null, null, false],
   ['a string: not a mark, a doubt', 'yes', null, true],
-  ['an array: not a mark, a doubt', [], null, true],
+  ['an empty string: an empty mark, settled', '', null, false],
+  ['ASCII spaces only: an empty mark, settled', '   ', null, false],
+  ['an empty array: an empty mark, settled', [], null, false],
+  ['an array holding an empty array: present, not a mark, a doubt', [[]], null, true],
   ['false: a value, a doubt', false, null, true],
   ['zero: a value, a doubt', 0, null, true],
-  ['an empty object', {}, { by: null, expires: null, lapsed: false }, true],
+  ['an empty object: an empty mark, settled', {}, null, false],
+  ['an object with no key the profile names: present, a mark', { x: null }, { by: null, expires: null, lapsed: false }, true],
   ['a whole mark, open', { by: 'm1', evidence: 'seen', expires: '2026-11-01' }, { by: 'm1', expires: '2026-11-01', lapsed: false }, true],
   ['trimmed by and expires', { by: '  m1 ', expires: ' 2026-11-01 ' }, { by: 'm1', expires: '2026-11-01', lapsed: false }, true],
   ['lapses on its own day', { by: 'm1', expires: TODAY }, { by: 'm1', expires: TODAY, lapsed: true }, true],
@@ -33,8 +37,12 @@ const CASES = [
 // trim by White_Space and read ASCII digits, so each of these is kept or refused the same in both.
 const FS = String.fromCharCode(0x1c);
 const BOM = String.fromCharCode(0xfeff);
+const IDEOGRAPHIC_SPACE = String.fromCharCode(0x3000);
 const ARABIC_DAY = [0x662, 0x660, 0x662, 0x666].map((c) => String.fromCharCode(c)).join('') + '-10-01';
 CASES.push(
+  ['U+3000 only: White_Space, an empty mark, settled', IDEOGRAPHIC_SPACE, null, false],
+  ['U+001C only: not White_Space, present, a doubt', FS, null, true],
+  ['a byte order mark only: not White_Space, present, a doubt', BOM, null, true],
   ['a by wrapped in U+001C keeps it', { by: `${FS}m1${FS}` }, { by: `${FS}m1${FS}`, expires: null, lapsed: false }, true],
   ['a by wrapped in a byte order mark keeps it', { by: `${BOM}m1` }, { by: `${BOM}m1`, expires: null, lapsed: false }, true],
   ['an expires in Arabic-Indic digits is no day', { by: 'm1', expires: ARABIC_DAY }, { by: 'm1', expires: null, lapsed: false }, true],
@@ -66,13 +74,14 @@ test('review: today must be a day', () => {
   assert.doesNotThrow(() => proposedMarkOf(el({}))); // today in UTC by default
 });
 
-test('review: buildAskContext leaves out what handsOnAsProposed says, a doubt included', () => {
+test('review: buildAskContext leaves out what handsOnAsProposed says, a doubt included and an empty mark kept', () => {
   const els = [
     { id: 'a', type: 'character', name: 'Settled' },
     { id: 'b', type: 'character', name: 'Marked', x_review_proposed: { by: 'm1' } },
     { id: 'c', type: 'character', name: 'Doubted', x_review_proposed: 'yes' },
+    { id: 'd', type: 'character', name: 'Emptied', x_review_proposed: [] },
   ];
   const r = buildAskContext(els, buildWorldIndex(els));
-  assert.deepEqual(r.kept, ['a']);
+  assert.deepEqual(r.kept, ['a', 'd']);
   assert.deepEqual([...r.leftOut.proposed].sort(), ['b', 'c']);
 });

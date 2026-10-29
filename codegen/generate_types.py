@@ -1040,7 +1040,7 @@ def render_review_label(label: str) -> str:
     lines = [
         "/** The review profile's label (schema-dist `profiles/review.md`, rule 1): the words a reader that",
         " *  hands a world on (a context for an AI, a pack, a share) puts on each proposed element it keeps,",
-        " *  one whose `x_review_proposed` is anything but absent or null (a doubt, rule 4, included).",
+        " *  one whose `x_review_proposed` is present (a doubt, rule 4, included; an empty mark is settled).",
         " *  buildAskContext writes it on the element's first line. Source: rule 1's own sentence, read at",
         " *  codegen. */",
         f"export const REVIEW_PROPOSED_LABEL = '{label}' as const;",

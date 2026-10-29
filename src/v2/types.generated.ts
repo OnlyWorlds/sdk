@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.86
-//         commit          b0ca326054f1328752a145594211a3275556dd6e
-//         MANIFEST sha256 15200898cd533de34fb3c05ba651beb6bc47ec35deaf016c6058e867da0cb1fe
-//         canonical 00.33.00, dist serial 86, published 2026-10-28
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.87
+//         commit          1d1a5330d6ca03b949249971bf1da21f61e8a4e8
+//         MANIFEST sha256 a8ba849c6ae5d216c758351605f68dd9d4ecb17ea3e9fe49c40f9ab69c3dfcf2
+//         canonical 00.33.00, dist serial 87, published 2026-10-29
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -390,7 +390,7 @@ export const CHARTER_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly
 
 /** The review profile's label (schema-dist `profiles/review.md`, rule 1): the words a reader that
  *  hands a world on (a context for an AI, a pack, a share) puts on each proposed element it keeps,
- *  one whose `x_review_proposed` is anything but absent or null (a doubt, rule 4, included).
+ *  one whose `x_review_proposed` is present (a doubt, rule 4, included; an empty mark is settled).
  *  buildAskContext writes it on the element's first line. Source: rule 1's own sentence, read at
  *  codegen. */
 export const REVIEW_PROPOSED_LABEL = 'proposed, not yet reviewed' as const;

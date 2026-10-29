@@ -1,6 +1,6 @@
 # For AI agents using @onlyworlds/sdk
 
-**Current as of**: SDK **4.x** · schema-dist **v0.33.0-dist.86** (canonical 00.33.00).
+**Current as of**: SDK **4.x** · schema-dist **v0.33.0-dist.87** (canonical 00.33.00).
 This line is asserted by `codegen:check` in CI — if the pin moves and this file is not
 re-read against it, the check fails rather than letting this document rot quietly.
 
@@ -56,7 +56,8 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   account's daily token rating (`tokens_remaining`, `token_rating`; `remaining` counts answers of
   this size still in it); used up → `err.isQuotaExceeded`. `isAskUnavailable`, `isAskFailed`
   count nothing. Custom fields (`x_*`) are in the lookup and the context; `atlas_*` is not.
-  Since 4.72.0 `buildAskContext` leaves proposed (`x_review_proposed` not absent or null), hidden
+  Since 4.72.0 `buildAskContext` leaves proposed (`x_review_proposed` present; since 4.102.1 an
+  empty mark, `""`, White_Space only, `[]` or `{}`, is settled), hidden
   (`hidden` not absent, null or false) and room elements out unless asked
   (`{ includeProposed, includeHidden, includeRoom }`), lists their ids in `leftOut.proposed`,
   `.hidden`, `.room` (hidden and proposed: under `hidden` only), and labels a proposed element it

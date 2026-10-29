@@ -103,12 +103,13 @@ test('a doubt (x_review_proposed not a proper mark) is proposed: left out, count
   const cleared = { ...el('c', 'Cleared'), x_review_proposed: null };
   const els = [doubt, emptyObj, cleared];
   const r = buildAskContext(els, buildWorldIndex(els));
-  assert.deepEqual(r.leftOut.proposed, ['d', 'e']);
-  assert.deepEqual(r.kept, ['c']);
-  assert.ok(!r.context[0].includes(REVIEW_PROPOSED_LABEL), 'a cleared mark is settled, never labelled');
+  assert.deepEqual(r.leftOut.proposed, ['d']);
+  assert.deepEqual(r.kept, ['e', 'c']);
+  assert.ok(r.context.every((t) => !t.includes(REVIEW_PROPOSED_LABEL)), 'an empty or cleared mark is settled, never labelled');
   const asked = buildAskContext(els, buildWorldIndex(els), { includeProposed: true });
   assert.deepEqual(asked.kept, ['d', 'e', 'c']);
   assert.ok(asked.context[0].startsWith(`[${REVIEW_PROPOSED_LABEL}] `));
+  assert.ok(!asked.context[1].includes(REVIEW_PROPOSED_LABEL), 'an empty mark is settled when proposed ones are asked for too');
 });
 
 test('each include* brings its own elements back, and only those', () => {

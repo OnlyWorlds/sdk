@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.102.1] - 2026-10-29
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.87`** (from dist.86; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'` and no type, field or constant moved).
+- **An empty review mark is settled.** The review profile now reads `x_review_proposed` by presence, as the room and charter profiles read their marks, and for this mark an empty list or an empty object is absent too. Before, `handsOnAsProposed` answered true for any value but absent or null, so `""`, a string of white space only and `[]` were doubts and `{}` was a mark (`proposedMarkOf` gave `{ by: null, expires: null, lapsed: false }`). Now each of the four reads exactly as absent: `proposedMarkOf` gives `null`, `handsOnAsProposed` gives `false`, and every reader built on them follows, so `buildAskContext` sends such an element without the label and no longer lists it in `leftOut.proposed`, a lens or `worldGraph` keeps it as settled, and a Note carrying one counts as the newest own note. White space is the room profile's White_Space set, so a string of U+3000 is empty and a string of U+001C is a doubt. Any other present value is unchanged: `false`, `0`, a non-empty string and `[[]]` are doubts, and an object with any key, `{ x: null }` included, is a mark.
+- The lens fixture's new graph case, one element of each of the 22 types with map space on, replays: each node carries its colour word and icon as `presentation.json` gives them. The fixture's 152 cases (38 of them graph cases) pass.
+
 ## [4.102.0] - 2026-10-29
 
 ### Added

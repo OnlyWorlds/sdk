@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.86",
-  "commit": "b0ca326054f1328752a145594211a3275556dd6e",
-  "manifest_sha256": "15200898cd533de34fb3c05ba651beb6bc47ec35deaf016c6058e867da0cb1fe",
+  "tag": "v0.33.0-dist.87",
+  "commit": "1d1a5330d6ca03b949249971bf1da21f61e8a4e8",
+  "manifest_sha256": "a8ba849c6ae5d216c758351605f68dd9d4ecb17ea3e9fe49c40f9ab69c3dfcf2",
   "canonical_version": "00.33.00",
-  "dist_serial": 86,
-  "published": "2026-10-28",
+  "dist_serial": 87,
+  "published": "2026-10-29",
   "pinned_at": "2026-10-29",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.86",
+      "manifest_sha256": "15200898cd533de34fb3c05ba651beb6bc47ec35deaf016c6058e867da0cb1fe",
+      "note": "superseded by v0.33.0-dist.87 (review.md rule 1 reads x_review_proposed by presence, as the room and charter profiles define it, and for this mark an empty list or an empty object is absent too, so an empty mark is settled, never a doubt, and keel refuses one on a write; lens.fixture.json gains a graph case with one element of each of the 22 types; lens.md and presentation.json's _meta.groups say a reader meeting a word not in colors.order fails loudly; no schema file moved)"
+    },
     {
       "tag": "v0.33.0-dist.85",
       "manifest_sha256": "31e953dac2ba77cbc0d65b71de2ac3520d50d9df760156df95359c155c0c57ed",

@@ -9,8 +9,8 @@
  *   const reply = await account.ask({ worldId, question, context });
  *
  * It is a reader that hands a world on, so three published rules hold here, not only in
- * the caller: an element marked proposed (the review profile, rules 1 and 4: any
- * `x_review_proposed` but absent or null, a doubt included), one marked hidden (folder
+ * the caller: an element marked proposed (the review profile, rules 1 and 4: an
+ * `x_review_proposed` read as present, `handsOnAsProposed`, a doubt included), one marked hidden (folder
  * format §4.8: a `hidden` but absent, null or false) and a room element (the room
  * profile, rules 1 and 4: `isRoomElement`) are left out unless asked for, and listed in
  * `leftOut`. A kept proposed element carries REVIEW_PROPOSED_LABEL on its first line. A
@@ -34,9 +34,10 @@ export const ASK_LIMITS = { questionMax: 500, itemsMax: 8, itemMax: 2000, totalM
 
 export interface OwAskContextOptions {
   /**
-   * Send proposed elements: those whose `x_review_proposed` is anything but absent or null
-   * (the review profile; a value that is not a proper mark is a doubt, rule 4, and counts as
-   * proposed). Each one sent carries REVIEW_PROPOSED_LABEL on its first line. Default false:
+   * Send proposed elements: those whose `x_review_proposed` is present (the review profile;
+   * absent, null and an empty mark, `""`, White_Space only, `[]` or `{}`, are settled; a present
+   * value that is not a proper mark is a doubt, rule 4, and counts as proposed). Each one sent
+   * carries REVIEW_PROPOSED_LABEL on its first line. Default false:
    * left out and listed in `leftOut.proposed`.
    */
   includeProposed?: boolean;
@@ -78,7 +79,7 @@ const cut = (s: string, n: number): string => [...s].slice(0, n).join('');
 
 /** Folder format §4.8: marked hidden unless `hidden` is absent, null or false (`"true"` and 1 count, as in writeWorldFile and the Python package's `is_hidden`). */
 const isHidden = (el: OwLookupElement): boolean => el.hidden !== undefined && el.hidden !== null && el.hidden !== false;
-/** The review profile: proposed unless `x_review_proposed` is absent or null; a value that is not a proper mark is a doubt, counted with the proposed (rule 4). */
+/** The review profile: proposed when `x_review_proposed` is present (absent, null and an empty mark are settled); a value that is not a proper mark is a doubt, counted with the proposed (rule 4). */
 const isProposed = (el: OwLookupElement): boolean => handsOnAsProposed(el);
 
 function readOptions(opts: unknown): Required<OwAskContextOptions> {
