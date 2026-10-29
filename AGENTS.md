@@ -216,6 +216,9 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   `ow://<world id>/<type>/<id>` for another world's, the site's address for a person. Read one
   with `parseOwLink(text)`; a refusal throws `OwAddressError` with the profile's `reason`. An
   address in a field is text: never fetch it to show what it names.
+- To offer a world or an element in other tools, `openersFor(TOOLS, kind, address, surface)` gives
+  the "Open with" rows in order, each `{ id, name, href, state }` with its word ("Sign in to Atlas
+  first") or null. Draw them as given; never word a row yourself.
 - A string holding an unpaired surrogate (text cut mid-emoji) is a 422 naming the field.
   Slice strings by code point, not by UTF-16 unit.
 - Colour carries the element's colour group (`elementColor(type, mode)`, `groupOf(type)`: `blue`,

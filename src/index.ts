@@ -66,6 +66,11 @@ export type { OwNamesMap, OwWordPair } from './names';
 // and the two ow:// text forms) and a world's own, with an optional moment and lens, written and read.
 export { elementAddress, parseOwLink, OwAddressError } from './address';
 export type { OwAddress, OwAddressReading, OwAddressForm, OwAddressReason } from './address';
+// The Open with menu: the rows that open a world or an element in a tool, each with its word, from the
+// OnlyWorlds tools list (baked at this release as TOOLS).
+export { openersFor } from './openers';
+export { TOOLS } from './tools.generated';
+export type { OwTool, OwToolOpen, OwToolNeeds, OwOpener, OwOpenerKind, OwOpenerState, OwOpenerSurface } from './openers';
 
 // Canonical element colour palette (colour groups and hexes generated from the distribution; hexes CVD-validated).
 // The FAMILY names are the pre-4.102.0 words, deprecated, and leave in 5.0.

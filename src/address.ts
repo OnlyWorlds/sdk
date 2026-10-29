@@ -87,7 +87,8 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const STEP = /^(?:0|-?[1-9][0-9]*)$/;
 const STEP_MIN = -2147483648;
 const STEP_MAX = 2147483647;
-const ADDRESS_KEYS: readonly string[] = ['form', 'world', 'type', 'id', 'lens', 'moment', 'worldIsSlug', 'canonical'];
+/** An address's keys, a reading's included. Module-internal: openers.ts fences its address with the same list. */
+export const ADDRESS_KEYS: readonly string[] = ['form', 'world', 'type', 'id', 'lens', 'moment', 'worldIsSlug', 'canonical'];
 
 /** A to Z lowered, nothing else: the profile's case is ASCII's, so no runtime's Unicode tables decide it. */
 const asciiLower = (s: string): string => s.replace(/[A-Z]/g, c => String.fromCharCode(c.charCodeAt(0) + 32));

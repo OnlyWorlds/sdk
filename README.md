@@ -452,6 +452,19 @@ const r = parseOwLink(text); // { form, world, worldIsSlug, type, id, lens, mome
 
 A field that holds an address is text: never fetch or resolve it on the server, and show one wording ("private or missing") for a world you cannot read and an element that is not there. `parseOwLink` reads one string whole; finding a link inside other text is yours. The profile: [`profiles/address.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/address.md), with its 133-case fixture, which is these functions' test.
 
+### Open with
+
+The rows of an "Open with" menu for a world or one of its elements: the site's page first, then each listed tool that has a link for it, in the tools list's order, each with the word it says when it cannot open now. `TOOLS` is the [OnlyWorlds tools list](https://github.com/OnlyWorlds/tools) as of this release.
+
+```typescript
+import { openersFor, parseOwLink, TOOLS } from '@onlyworlds/sdk';
+
+const rows = openersFor(TOOLS, 'element', parseOwLink(link), { audience: 'member', signedIn: false, tool: 'mytool' });
+// [{ id: 'onlyworlds', name: 'onlyworlds.com', href, state: null }, { id: 'atlas', name: 'Atlas', href, state: 'Sign in to Atlas first' }, ...]
+```
+
+`surface` says what the page knows and nothing is guessed: `audience` (`member` or `public`; the public sees only rows that need nothing first), `signedIn` (`null` when the page cannot know, and then no row says so), `browser` (false in a desktop app), `phone`, and `tool`, the page's own client name, whose row says "You are here". Draw the rows as given; the words are decided here, so every surface says the same.
+
 ## Tokens
 
 The account's token rating, which some OnlyWorlds tools use. `getStatus()` and `getEncryptionInfo()` are what keel still serves under `/tokens/`; `consume()`, `getAccessKey()` and the two session revokes are deprecated (keel answers 404) and leave in 5.0. To read the token rating, prefer `account.allowance()` above.
