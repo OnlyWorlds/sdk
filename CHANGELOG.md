@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.102.4] - 2026-10-29
+
+### Fixed
+
+- **`OwMember.name` and `OwMe.name` say what the server serves.** A roster row's `name` is an agent's or a player's name to every reader, and on a person's row the person's username, served only to the owner's keys and co-builders and absent for everyone else. On `me()` it is your agent's or player's name. Only the doc comments changed; the types are the same.
+
 ## [4.102.3] - 2026-10-29
 
 ### Changed

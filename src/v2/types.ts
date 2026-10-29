@@ -680,7 +680,7 @@ export interface OwMe {
    * key cannot see; then it names `lenses`. Saving the list you were shown keeps that lens where it stands.
    */
   x_served_trimmed?: 'lenses'[];
-  /** Agent seats only: the agent's name. */
+  /** Agent and player seats only: your agent's or your player's name. */
   name?: string;
   /** Who you are here, who answers for you, and the house rules. */
   front_door: OwFrontDoor;
@@ -788,7 +788,11 @@ export interface OwMember {
   character: string | null;
   /** `removed` rows stay, so their elements keep `created_by`. */
   status: 'active' | 'removed';
-  /** Agent rows only: the agent's name. */
+  /**
+   * Agent and player rows: the agent's or the player's name, to every reader. Person rows: the
+   * person's username, served only to the owner's keys and co-builders (a co-builder's AI seat
+   * included); absent for every other reader, and on a row whose account was deleted.
+   */
   name?: string;
   /**
    * The lenses this row starts with, lens ids in order: the ones it chose, or, for a live seat that
