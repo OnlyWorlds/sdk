@@ -15,9 +15,10 @@ export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './keys';
 export type { OwKeyKind } from './keys';
 export { ELEMENT_TYPES, SPATIAL_TYPES, AGENT_DOORS, isAgentDoor, isKnownOf } from './types';
 export {
-  ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf, elementColor,
+  ELEMENT_GROUPS, GROUP_COLORS, GROUP_ORDER, groupOf, elementColor,
+  ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf,
 } from './palette';
-export type { ElementFamily } from './palette';
+export type { ElementGroup, ElementFamily } from './palette';
 export { FIELD_ACRONYMS, fieldLabel } from './labels';
 export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,

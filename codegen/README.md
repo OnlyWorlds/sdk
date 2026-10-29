@@ -3,7 +3,7 @@
 `generate_types.py` reads the OnlyWorlds schema YAML (the 22 element types)
 and emits `src/v2/types.generated.ts` and `SCHEMA.md`: the `ElementType` union, one `<Type>V2`
 interface per element type extending a shared `OwElementBase`, and the `ELEMENT_TYPES` /
-`ELEMENT_FAMILIES` / `ELEMENT_ICONS` / `PUBLIC_FIELDS` / `ELEMENT_SECTIONS` / `FIELD_SCHEMA` /
+`ELEMENT_GROUPS` / `GROUP_ORDER` / `GROUP_COLORS` / `ELEMENT_ICONS` / `PUBLIC_FIELDS` / `ELEMENT_SECTIONS` / `FIELD_SCHEMA` /
 `SINGLE_LINK_FIELDS` / `MULTI_LINK_FIELDS` / `ROOM_PAIRS` / `ROOM_MARK` / `MESSAGE_PAIR` /
 `MESSAGE_READ_MARK` / `NOTE_PAIR` / `READING_AID_PAIRS` / `READING_AID_MARK` / `CHARTER_PAIRS` / `ONLYWORLDS_VERSION`
 constants. Field shapes are pinned to
@@ -49,11 +49,15 @@ consequences, both now closed:
   upstream commits sharing a `VERSION` string were indistinguishable from inside this repo. The
   generated file now carries the source repo, tag, commit and MANIFEST hash in its header.
 
-`--schema` still accepts an out-of-tree path (e.g. a keel checkout, which keeps its inline
-`family:`/`icon:` presentation wrapper keys for one cycle past this repoint as the deliberate
-rollback artifact). Presentation metadata is read from the distribution's `presentation.json`
-sidecar when present, and from the inline wrapper keys otherwise. **Colour values are not in the
-sidecar** -- `FAMILY_COLORS` is hand-authored in `src/v2/palette.ts` and stays there.
+`--schema` still accepts an out-of-tree path, but only a `schema/` folder with the distribution's
+`presentation.json` beside it: presentation metadata is read from that sidecar alone (keel's inline
+wrapper keys are no longer read). **The colour groups are generated whole** (4.102.0, serial 86):
+`ELEMENT_GROUPS` from `types.<type>.family`, the type's colour word; `GROUP_ORDER` from
+`colors.order`; `GROUP_COLORS` from `colors.families`, keyed by the same words. `load_colors()` exits
+1 unless the order is four distinct lowercase words, the pairs name exactly those groups, and every
+hex is `#rrggbb`; a type whose group is outside the order exits 1 too. The deprecated
+`ELEMENT_FAMILIES`, `FAMILY_COLORS`, `FAMILY_ORDER` and `familyOf` are derived in `src/v2/palette.ts`
+through one legacy table, the only place the pre-4.102.0 words stand, and leave in 5.0.
 `PUBLIC_FIELDS` (serial 28 on: `types.<type>.public`, the fields the platform shows on a
 known-of stub) has no wrapper-key fallback: it is platform behaviour, not a default, so a tree
 without the sidecar, a type without the key, or a name the walk does not give for that type

@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.33.0-dist.85** — canonical schema **00.33.00**, published 2026-10-28.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.33.0-dist.86** — canonical schema **00.33.00**, published 2026-10-28.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -15,10 +15,11 @@ are `UUID[]`. **Links are owned one-way**: the type listed below owns the field 
 Character owns `abilities`; Ability has no `characters`). Sections and their order are the
 canonical display grouping.
 
-Families (colour semantics; icon carries the type): agents · world · abstract · temporal.
+Colour groups (a visual aid for drawing the 22 types, not part of the standard; colour carries
+the group, the icon carries the type): blue · green · pink · amber.
 
 
-## ability  ·  family: abstract  ·  icon: auto_fix_normal
+## ability  ·  colour: amber  ·  icon: auto_fix_normal
 
 
 ### Mechanics
@@ -42,7 +43,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `systems` (multi link → construct) — Magic frameworks or structures that the ability associates with
 
 
-## character  ·  family: agents  ·  icon: person
+## character  ·  colour: blue  ·  icon: person
 
 
 ### Constitution
@@ -97,7 +98,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `CHA` (integer) — Persuasiveness and personal magnetism
 
 
-## collective  ·  family: agents  ·  icon: groups_3
+## collective  ·  colour: blue  ·  icon: groups_3
 
 
 ### Formation
@@ -124,7 +125,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `phenomena` (multi link → phenomenon) — Phenomena that influence or characterize the collective
 
 
-## construct  ·  family: world  ·  icon: api
+## construct  ·  colour: pink  ·  icon: api
 
 
 ### Nature
@@ -160,7 +161,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `narratives` (multi link → narrative) — Narratives relevant to the construct
 
 
-## creature  ·  family: agents  ·  icon: bug_report
+## creature  ·  colour: blue  ·  icon: bug_report
 
 
 ### Biology
@@ -194,7 +195,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `actions` (multi link → ability) — Combat or tactical abilities the creature can perform or use
 
 
-## event  ·  family: temporal  ·  icon: saved_search
+## event  ·  colour: amber  ·  icon: saved_search
 
 
 ### Nature
@@ -226,7 +227,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `constructs` (multi link → construct) — Concepts, laws, or built entities relevant to the event
 
 
-## family  ·  family: agents  ·  icon: supervisor_account
+## family  ·  colour: blue  ·  icon: supervisor_account
 
 
 ### Identity
@@ -248,7 +249,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `creatures` (multi link → creature) — Creatures owned, bonded to, or representing the family
 
 
-## institution  ·  family: agents  ·  icon: account_balance
+## institution  ·  colour: blue  ·  icon: account_balance
 
 
 ### Foundation
@@ -271,7 +272,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `constructs` (multi link → construct) — Conceptual, procedural, or structural systems created or maintained by the institution
 
 
-## language  ·  family: abstract  ·  icon: edit_road
+## language  ·  colour: pink  ·  icon: edit_road
 
 
 ### Structure
@@ -289,7 +290,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `dialects` (multi link → language) — Variants or dialect languages derived from the language
 
 
-## law  ·  family: abstract  ·  icon: gpp_bad
+## law  ·  colour: pink  ·  icon: gpp_bad
 
 
 ### Code
@@ -310,7 +311,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `enforcers` (multi link → title) — Titles responsible for enforcing or imposing the law
 
 
-## location  ·  family: world  ·  icon: castle
+## location  ·  colour: green  ·  icon: castle
 
 
 ### Setting
@@ -366,7 +367,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `defensive_objects` (multi link → object) — Objects or installations for defending the location
 
 
-## map  ·  family: world  ·  icon: map
+## map  ·  colour: green  ·  icon: map
 
 
 ### Details
@@ -380,7 +381,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `location` (single link → location) — Location element that this map represents
 
 
-## marker  ·  family: world  ·  icon: polyline
+## marker  ·  colour: green  ·  icon: polyline
 
 
 ### Details
@@ -393,7 +394,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `order` (integer) — Sequence position when markers define a polygon or line (0 = first point); without it, markers keep the order they were made in
 
 
-## narrative  ·  family: temporal  ·  icon: menu_book
+## narrative  ·  colour: amber  ·  icon: menu_book
 
 
 ### Context
@@ -431,7 +432,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `laws` (multi link → law) — Laws relevant to the narrative
 
 
-## object  ·  family: world  ·  icon: webhook
+## object  ·  colour: green  ·  icon: webhook
 
 
 ### Form
@@ -458,7 +459,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `affinities` (multi link → trait) — Traits that resonate with or enhance the object's use, function, or effects
 
 
-## phenomenon  ·  family: temporal  ·  icon: thunderstorm
+## phenomenon  ·  colour: amber  ·  icon: thunderstorm
 
 
 ### Mechanics
@@ -478,7 +479,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `environments` (multi link → location) — Locations where the phenomenon occurs or is known to manifest
 
 
-## pin  ·  family: world  ·  icon: push_pin
+## pin  ·  colour: green  ·  icon: push_pin
 
 
 ### Details
@@ -490,7 +491,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `z` (integer) — z coordinate, in case of depth (optional)
 
 
-## relation  ·  family: temporal  ·  icon: link
+## relation  ·  colour: amber  ·  icon: link
 
 
 ### Nature
@@ -522,7 +523,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `narratives` (multi link → narrative) — Narratives relevant to the relation
 
 
-## species  ·  family: agents  ·  icon: crib
+## species  ·  colour: blue  ·  icon: crib
 
 
 ### Biology
@@ -552,7 +553,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `affinities` (multi link → phenomenon) — Phenomena associated with the species or its behavior
 
 
-## title  ·  family: abstract  ·  icon: military_tech
+## title  ·  colour: pink  ·  icon: military_tech
 
 
 ### Mandate
@@ -586,7 +587,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `languages` (multi link → language) — Languages relevant to the title
 
 
-## trait  ·  family: abstract  ·  icon: flaky
+## trait  ·  colour: pink  ·  icon: flaky
 
 
 ### Qualitative
@@ -613,7 +614,7 @@ Families (colour semantics; icon carries the type): agents · world · abstract 
 - `empowered_abilities` (multi link → ability) — Abilities strengthened or enabled by the trait
 
 
-## zone  ·  family: world  ·  icon: pentagon
+## zone  ·  colour: green  ·  icon: pentagon
 
 
 ### Scope

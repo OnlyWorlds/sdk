@@ -4,8 +4,8 @@
 // with a lens the nodes are exactly what the lens kept. The Python package's `world_graph` gives the same
 // answers, byte for byte, on the same input.
 
-import { ELEMENT_FAMILIES, ELEMENT_ICONS } from './v2/types.generated';
-import type { ElementFamily, ElementType } from './v2/types.generated';
+import { ELEMENT_GROUPS, ELEMENT_ICONS } from './v2/types.generated';
+import type { ElementGroup, ElementType } from './v2/types.generated';
 import {
   CUT_REASONS, LINK_FIELDS, OWNER_ONLY, Reading, byCodePoint, checkReader, isBody, lensReading, readingDate, valueOf,
 } from './lens';
@@ -49,8 +49,9 @@ export interface OwGraphNode {
   type: string;
   /** The element's name, or null when it has none. */
   name: string | null;
-  /** The type's family, from the distribution's presentation defaults. */
-  family: ElementFamily;
+  /** The type's colour group, its colour word (`blue`, `green`, `pink` or `amber`), from the distribution's
+   *  presentation defaults: a key for drawing the 22 types, never a classification and never shown as a label. */
+  family: ElementGroup;
   /** The type's icon name, from the distribution's presentation defaults. */
   icon: string;
   /** The out-by-default kinds the element belongs to, in this order: `room`, `hidden`, `proposed`; absent when none. */
@@ -190,7 +191,7 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
     const el = r.byId.get(id) as Body;
     const type = r.typeOf.get(id) as ElementType;
     const node: OwGraphNode = {
-      id, type, name: typeof el.name === 'string' ? el.name : null, family: ELEMENT_FAMILIES[type], icon: ELEMENT_ICONS[type],
+      id, type, name: typeof el.name === 'string' ? el.name : null, family: ELEMENT_GROUPS[type], icon: ELEMENT_ICONS[type],
     };
     const marks = kinds(id).filter((k): k is OwGraphMark => k !== 'map_space' && k !== 'reading_aid');
     if (marks.length > 0) node.marks = marks;

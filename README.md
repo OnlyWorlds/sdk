@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/@onlyworlds%2Fsdk.svg)](https://www.npmjs.com/package/@onlyworlds/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-OnlyWorlds is an open standard for worldbuilding data: 22 element types (characters, locations, events, laws and the rest) that any tool can read and write. This is a typed client for its API, with the schema's constants (element types, icons, colour families, field metadata) generated from the published [schema distribution](https://github.com/OnlyWorlds/schema-dist). It runs in Node 18+ and in the browser through a bundler (ESM only).
+OnlyWorlds is an open standard for worldbuilding data: 22 element types (characters, locations, events, laws and the rest) that any tool can read and write. This is a typed client for its API, with the schema's constants (element types, icons, colour groups, field metadata) generated from the published [schema distribution](https://github.com/OnlyWorlds/schema-dist). It runs in Node 18+ and in the browser through a bundler (ESM only).
 
 ## Install
 
@@ -352,13 +352,14 @@ import {
   ELEMENT_SECTIONS, // field grouping and display order
   FIELD_SCHEMA,     // per-field type and link target
   PUBLIC_FIELDS,    // per type, the fields a known-of stub carries besides the base fields
-  elementColor,     // colour by family; the icon carries the type
+  elementColor,     // colour by colour group; the icon carries the type
+  groupOf,          // a type's colour group: 'blue', 'green', 'pink' or 'amber'
 } from '@onlyworlds/sdk';
 
 elementColor('character', 'dark'); // '#3987e5'
 ```
 
-The four colour families (agents, world, abstract, temporal) are checked for colour-blind separation. Show colour with the icon and label, never alone. [SCHEMA.md](SCHEMA.md) (generated, in the package) describes every field; AI agents should read [AGENTS.md](AGENTS.md) first.
+The four colour groups (`ELEMENT_GROUPS`, `GROUP_ORDER`, `GROUP_COLORS`, from the schema distribution's presentation defaults) are named by their colour, `blue`, `green`, `pink` and `amber`: a visual aid for drawing the 22 types, not part of the standard, so never show the word as a label. They are checked for colour-blind separation. Show colour with the icon and label, never alone. `ELEMENT_FAMILIES`, `FAMILY_COLORS`, `FAMILY_ORDER`, `familyOf` and `ElementFamily`, the names before 4.102.0, still answer in their old words (`agents`, `world`, `abstract`, `temporal`), are deprecated and leave in 5.0. [SCHEMA.md](SCHEMA.md) (generated, in the package) describes every field; AI agents should read [AGENTS.md](AGENTS.md) first.
 
 ### The room
 
@@ -413,7 +414,7 @@ The world holds the elements as the owner is served them; the reader's `rung` (`
 
 `DATE_FIELD` is the profile's date table (each dated type's date field; the ten timeless types are not in it), and `dateOf(el)` is an element's date as that table reads it: the whole number in its type's date field, else null. A timeline or a horizon dates elements exactly as the lens reader's fence does.
 
-`worldGraph(world, reader, options)` reads the same snapshot, for the same reader, as nodes and edges: `nodes` (`{ id, type, name, family, icon }`, by id), `edges` (`{ source, field, target, index }`, one per link, by source, field and index), `edgesCut` (links to elements that are not nodes, by reason; with a lens, `outside_lens` counts links to elements the reader sees that the lens left out), `cut` and `unreadable` (the `x_lens` key a lens could not be read by, else null). Room elements, hidden and proposed ones and map space are out unless `rooms`, `hidden`, `proposed` or `mapSpace` brings them back (`hidden` and `proposed` are the owner's alone, and a public reader takes no flag); the reading aids are out too, counted `reading_aid`, and no flag brings them back; with `{ lens }` the nodes are exactly what the lens kept, an aid among them when the lens names its pair in `types`.
+`worldGraph(world, reader, options)` reads the same snapshot, for the same reader, as nodes and edges: `nodes` (`{ id, type, name, family, icon }`, by id; `family` is the type's colour word), `edges` (`{ source, field, target, index }`, one per link, by source, field and index), `edgesCut` (links to elements that are not nodes, by reason; with a lens, `outside_lens` counts links to elements the reader sees that the lens left out), `cut` and `unreadable` (the `x_lens` key a lens could not be read by, else null). Room elements, hidden and proposed ones and map space are out unless `rooms`, `hidden`, `proposed` or `mapSpace` brings them back (`hidden` and `proposed` are the owner's alone, and a public reader takes no flag); the reading aids are out too, counted `reading_aid`, and no flag brings them back; with `{ lens }` the nodes are exactly what the lens kept, an aid among them when the lens names its pair in `types`.
 
 ```typescript
 import { degreeOf, worldGraph } from '@onlyworlds/sdk';

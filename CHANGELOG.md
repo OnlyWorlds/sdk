@@ -5,6 +5,22 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.102.0] - 2026-10-29
+
+### Added
+
+- **The colour groups, generated from the distribution's presentation defaults**: `ElementGroup` (`'blue' | 'green' | 'pink' | 'amber'`), `ELEMENT_GROUPS` (each type's group, from `types.<type>.family`), `GROUP_ORDER` (from `colors.order`) and `GROUP_COLORS` (each group's `{ light, dark }` hex, from `colors.families`), with `groupOf(type)`. The groups are named by their colour: a visual aid for drawing the 22 types, not part of the standard. The hexes are no longer hand-typed in the package; the generator refuses a group outside the order, a pair missing for a group, or a hex that is not `#rrggbb`, and the hexes themselves are unchanged. `elementColor(type, mode)` reads the groups, and an unknown type still throws its TypeError.
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.86`** (from dist.85; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'` and no field moved). `presentation.json` names each type's group by its colour word, and two types move: **Construct is pink** (it was with the green types) and **Ability is amber** (it was with the pink types), so `elementColor('construct')` and `elementColor('ability')` now answer those colours.
+- **A `worldGraph` node's `family` is the type's colour word**, typed `ElementGroup`, as the lens profile now says: a key for drawing, never a classification or a label. The lens fixture asserts the words, and its 151 cases (37 of them graph cases) pass.
+- `SCHEMA.md` heads each type with `colour:` and the colour word.
+
+### Deprecated
+
+- **`ElementFamily`, `ELEMENT_FAMILIES`, `FAMILY_COLORS`, `FAMILY_ORDER` and `familyOf`** — use `ElementGroup`, `ELEMENT_GROUPS`, `GROUP_COLORS`, `GROUP_ORDER` and `groupOf`; the old names leave in 5.0. Until then they keep their old words (`agents`, `world`, `abstract`, `temporal`), so code that types one still builds, and they are derived from the colour groups (blue as `agents`, green as `world`, pink as `abstract`, amber as `temporal`): their membership follows the schema, so `familyOf('construct')` is now `'abstract'` and `familyOf('ability')` `'temporal'`.
+
 ## [4.101.1] - 2026-10-28
 
 ### Changed

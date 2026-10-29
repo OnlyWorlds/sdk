@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.85
-//         commit          dc4be3ee6cbb8ee8e45527c374fe2648d990113c
-//         MANIFEST sha256 31e953dac2ba77cbc0d65b71de2ac3520d50d9df760156df95359c155c0c57ed
-//         canonical 00.33.00, dist serial 85, published 2026-10-28
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.86
+//         commit          b0ca326054f1328752a145594211a3275556dd6e
+//         MANIFEST sha256 15200898cd533de34fb3c05ba651beb6bc47ec35deaf016c6058e867da0cb1fe
+//         canonical 00.33.00, dist serial 86, published 2026-10-28
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -73,36 +73,51 @@ export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective
  *  distribution's VERSION file (see the provenance block at the top of this file). */
 export const ONLYWORLDS_VERSION = '00.33.00' as const;
 
-/** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */
-export type ElementFamily = 'agents' | 'world' | 'abstract' | 'temporal';
+/** The four colour groups, named by their colour. A visual aid for drawing the 22 types,
+ *  not part of the standard: colour carries the group, ELEMENT_ICONS carries the type. */
+export type ElementGroup = 'blue' | 'green' | 'pink' | 'amber';
 
-/** Per-type semantic family. Source: the distribution's `presentation.json` sidecar
- *  (first-party rendering DEFAULTS — NOT part of the council-governed OnlyWorlds
- *  standard, and explicitly overridable by any consumer). The colour values are
- *  NOT in the sidecar: FAMILY_COLORS is hand-authored here in src/v2/palette.ts. */
-export const ELEMENT_FAMILIES: Record<ElementType, ElementFamily> = {
-  ability: 'abstract',
-  character: 'agents',
-  collective: 'agents',
-  construct: 'world',
-  creature: 'agents',
-  event: 'temporal',
-  family: 'agents',
-  institution: 'agents',
-  language: 'abstract',
-  law: 'abstract',
-  location: 'world',
-  map: 'world',
-  marker: 'world',
-  narrative: 'temporal',
-  object: 'world',
-  phenomenon: 'temporal',
-  pin: 'world',
-  relation: 'temporal',
-  species: 'agents',
-  title: 'abstract',
-  trait: 'abstract',
-  zone: 'world',
+/** Per-type colour group. Source: the distribution's `presentation.json` sidecar
+ *  (`types.<type>.family`): first-party drawing DEFAULTS, NOT part of the council-governed
+ *  OnlyWorlds standard, and explicitly overridable by any consumer. */
+export const ELEMENT_GROUPS: Record<ElementType, ElementGroup> = {
+  ability: 'amber',
+  character: 'blue',
+  collective: 'blue',
+  construct: 'pink',
+  creature: 'blue',
+  event: 'amber',
+  family: 'blue',
+  institution: 'blue',
+  language: 'pink',
+  law: 'pink',
+  location: 'green',
+  map: 'green',
+  marker: 'green',
+  narrative: 'amber',
+  object: 'green',
+  phenomenon: 'amber',
+  pin: 'green',
+  relation: 'amber',
+  species: 'blue',
+  title: 'pink',
+  trait: 'pink',
+  zone: 'green',
+};
+
+/** The four colour groups in the distribution's order (`colors.order`), the order the
+ *  palette was checked for colour-vision separation in. */
+export const GROUP_ORDER: readonly ElementGroup[] = ['blue', 'green', 'pink', 'amber'];
+
+/** Each colour group's hex per surface mode, from the sidecar's `colors`: `light` assumes
+ *  near-white surfaces, `dark` near-black (measured against #0a0a0a). Checked for
+ *  colour-vision separation; dark-mode pairs sit in the 6-8 deltaE floor band, so show
+ *  the icon and label with the colour, never the colour alone. */
+export const GROUP_COLORS: Record<ElementGroup, { light: string; dark: string }> = {
+  blue: { light: '#2a78d6', dark: '#3987e5' },
+  green: { light: '#008300', dark: '#008300' },
+  pink: { light: '#e87ba4', dark: '#d55181' },
+  amber: { light: '#eda100', dark: '#c98500' },
 };
 
 /** Material Symbols icon name per type. Source: the distribution's `presentation.json` sidecar. */

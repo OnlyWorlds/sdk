@@ -14,7 +14,7 @@ changed_via, changed_client), the stub marker `known_of` (present only on a stub
 and lens profiles' served-only `x_served_trimmed` (present only on a message or a lens whose ids were left out), plus an extension
 index signature ride the shared base.
 
-Run:  python codegen/generate_types.py [--schema ../keel/schema]
+Run:  python codegen/generate_types.py [--schema <a schema-dist tree>/schema]
 """
 
 from __future__ import annotations
@@ -270,7 +270,7 @@ def render_interface(type_slug: str, fields: list[dict]) -> str:
     return "\n".join(lines)
 
 
-VALID_FAMILIES = ("agents", "world", "abstract", "temporal")
+HEX = re.compile(r"#[0-9a-f]{6}")
 
 
 def parse_sections(doc: dict, tslug: str) -> list[dict]:
@@ -288,7 +288,8 @@ def parse_sections(doc: dict, tslug: str) -> list[dict]:
     return out
 
 
-def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str],
+def render_maps(all_fields: dict[str, list[dict]], groups: dict[str, str],
+                colors: tuple[list[str], dict[str, dict[str, str]]],
                 icons: dict[str, str], sections: dict[str, list[dict]],
                 public: dict[str, list[str]]) -> str:
     types_sorted = sorted(ELEMENT_TYPES)
@@ -307,17 +308,33 @@ def render_maps(all_fields: dict[str, list[dict]], families: dict[str, str],
     lines.append(f"export const ONLYWORLDS_VERSION = '{_schema_version}' as const;")
     lines.append("")
 
-    fam_union = " | ".join(f"'{f}'" for f in VALID_FAMILIES)
-    lines.append("/** The four semantic families (colour carries the family; ELEMENT_ICONS carries the type). */")
-    lines.append(f"export type ElementFamily = {fam_union};")
+    group_order, group_colors = colors
+    group_union = " | ".join(f"'{g}'" for g in group_order)
+    lines.append("/** The four colour groups, named by their colour. A visual aid for drawing the 22 types,")
+    lines.append(" *  not part of the standard: colour carries the group, ELEMENT_ICONS carries the type. */")
+    lines.append(f"export type ElementGroup = {group_union};")
     lines.append("")
-    lines.append("/** Per-type semantic family. Source: the distribution's `presentation.json` sidecar")
-    lines.append(" *  (first-party rendering DEFAULTS — NOT part of the council-governed OnlyWorlds")
-    lines.append(" *  standard, and explicitly overridable by any consumer). The colour values are")
-    lines.append(" *  NOT in the sidecar: FAMILY_COLORS is hand-authored here in src/v2/palette.ts. */")
-    lines.append("export const ELEMENT_FAMILIES: Record<ElementType, ElementFamily> = {")
+    lines.append("/** Per-type colour group. Source: the distribution's `presentation.json` sidecar")
+    lines.append(" *  (`types.<type>.family`): first-party drawing DEFAULTS, NOT part of the council-governed")
+    lines.append(" *  OnlyWorlds standard, and explicitly overridable by any consumer. */")
+    lines.append("export const ELEMENT_GROUPS: Record<ElementType, ElementGroup> = {")
     for t in types_sorted:
-        lines.append(f"  {t}: '{families[t]}',")
+        lines.append(f"  {t}: '{groups[t]}',")
+    lines.append("};")
+    lines.append("")
+    arr = ", ".join(f"'{g}'" for g in group_order)
+    lines.append("/** The four colour groups in the distribution's order (`colors.order`), the order the")
+    lines.append(" *  palette was checked for colour-vision separation in. */")
+    lines.append(f"export const GROUP_ORDER: readonly ElementGroup[] = [{arr}];")
+    lines.append("")
+    lines.append("/** Each colour group's hex per surface mode, from the sidecar's `colors`: `light` assumes")
+    lines.append(" *  near-white surfaces, `dark` near-black (measured against #0a0a0a). Checked for")
+    lines.append(" *  colour-vision separation; dark-mode pairs sit in the 6-8 deltaE floor band, so show")
+    lines.append(" *  the icon and label with the colour, never the colour alone. */")
+    lines.append("export const GROUP_COLORS: Record<ElementGroup, { light: string; dark: string }> = {")
+    for g in group_order:
+        pair = group_colors[g]
+        lines.append(f"  {g}: {{ light: '{pair['light']}', dark: '{pair['dark']}' }},")
     lines.append("};")
     lines.append("")
 
@@ -545,7 +562,8 @@ are `UUID[]`. **Links are owned one-way**: the type listed below owns the field 
 Character owns `abilities`; Ability has no `characters`). Sections and their order are the
 canonical display grouping.
 
-Families (colour semantics; icon carries the type): agents · world · abstract · temporal.
+Colour groups (a visual aid for drawing the 22 types, not part of the standard; colour carries
+the group, the icon carries the type): __GROUP_ORDER__.
 """
 
 
@@ -566,7 +584,7 @@ def render_schema_md_source() -> str:
             f"**{pin.get('canonical_version')}**, published {pin.get('published')}.")
 
 
-def render_schema_md(all_fields, families, icons, sections) -> str:
+def render_schema_md(all_fields, groups, group_order, icons, sections) -> str:
     kind_label = {
         "scalar_str": "text",
         "scalar_int": "integer",
@@ -575,11 +593,13 @@ def render_schema_md(all_fields, families, icons, sections) -> str:
         "generic": "generic link (any element type)",
     }
     by_name = {}
-    parts = [SCHEMA_MD_HEADER.replace("__SCHEMA_SOURCE__", render_schema_md_source())]
+    parts = [SCHEMA_MD_HEADER
+             .replace("__SCHEMA_SOURCE__", render_schema_md_source())
+             .replace("__GROUP_ORDER__", " · ".join(group_order))]
     for tslug in sorted(ELEMENT_TYPES):
         fields = all_fields[tslug]
         by_name = {f["name"]: f for f in fields}
-        parts.append(f"\n## {tslug}  ·  family: {families[tslug]}  ·  icon: {icons[tslug]}\n")
+        parts.append(f"\n## {tslug}  ·  colour: {groups[tslug]}  ·  icon: {icons[tslug]}\n")
         for sec in sections[tslug]:
             parts.append(f"\n### {sec['name']}\n")
             for fname in sec["fields"]:
@@ -671,13 +691,12 @@ def read_canonical_version(schema_dir: Path) -> str:
 
 
 def load_presentation(schema_dir: Path) -> dict | None:
-    """Load the presentation sidecar (family + icon defaults), if this tree has one.
+    """Load the presentation sidecar (colour group + icon defaults), if this tree has one.
 
-    The distribution strips `family:`/`icon:` from the schema YAMLs into
+    The distribution strips the presentation keys from the schema YAMLs into
     presentation.json, which makes the walk wrapper-agnostic by construction.
-    keel keeps its inline wrapper keys for one full cycle past this repoint as
-    the deliberate rollback artifact — so BOTH sources stay supported here, and
-    the sidecar wins when present.
+    A tree without it cannot be generated from: the colour groups, their colours
+    (`load_colors`) and PUBLIC_FIELDS come only from the sidecar.
     """
     p = schema_dir.parent / "presentation.json"
     if not p.is_file():
@@ -696,27 +715,62 @@ def load_presentation(schema_dir: Path) -> dict | None:
     return types
 
 
-def presentation_for(presentation: dict | None, doc: dict, tslug: str) -> tuple[str, str]:
-    """Resolve (family, icon) from the sidecar, or from keel's inline wrapper keys."""
-    if presentation is not None:
-        entry = presentation.get(tslug) or {}
-        fam, icon, src = entry.get("family"), entry.get("icon"), "presentation.json"
-    else:
-        fam, icon, src = doc.get("family"), doc.get("icon"), f"{tslug}.yaml wrapper keys"
-
-    if fam not in VALID_FAMILIES:
+def load_colors(schema_dir: Path) -> tuple[list[str], dict[str, dict[str, str]]]:
+    """The colour groups in order, and each group's {light, dark} hex, from the
+    sidecar's `colors` (`order`, and `families` keyed by the group's colour word,
+    serial 86 on). Each group in the order has exactly one pair, no pair names a
+    group outside the order, and every hex is `#rrggbb` in lowercase: a sidecar
+    that breaks any of these exits 1 rather than emitting a palette that reads
+    as checked."""
+    p = schema_dir.parent / "presentation.json"
+    if not p.is_file():
         raise SystemExit(
-            f"{tslug}: `family` is {fam!r} from {src} — expected one of {VALID_FAMILIES}. "
+            f"{p}: the colour groups and their colours come only from the distribution's "
+            "presentation.json (`colors`); this tree has no sidecar."
+        )
+    colors = json.loads(p.read_text(encoding="utf-8")).get("colors")
+    if not isinstance(colors, dict):
+        raise SystemExit(f"{p}: no `colors` object — unexpected sidecar shape.")
+    order, pairs = colors.get("order"), colors.get("families")
+    if (not isinstance(order, list) or len(order) != 4 or len(set(order)) != 4
+            or not all(isinstance(g, str) and re.fullmatch(r"[a-z]+", g) for g in order)):
+        raise SystemExit(f"{p}: `colors.order` is {order!r}, expected four distinct lowercase words.")
+    if not isinstance(pairs, dict) or sorted(pairs) != sorted(order):
+        raise SystemExit(
+            f"{p}: `colors.families` names {sorted(pairs) if isinstance(pairs, dict) else pairs!r}, "
+            f"expected exactly the groups of `colors.order`, {order}."
+        )
+    out: dict[str, dict[str, str]] = {}
+    for g in order:
+        pair = pairs[g]
+        if not isinstance(pair, dict) or sorted(pair) != ["dark", "light"]:
+            raise SystemExit(f"{p}: `colors.families.{g}` is {pair!r}, expected {{light, dark}}.")
+        for mode in ("light", "dark"):
+            if not isinstance(pair[mode], str) or not HEX.fullmatch(pair[mode]):
+                raise SystemExit(f"{p}: `colors.families.{g}.{mode}` is {pair[mode]!r}, expected #rrggbb.")
+        out[g] = {"light": pair["light"], "dark": pair["dark"]}
+    return order, out
+
+
+def presentation_for(presentation: dict, tslug: str, order: list[str]) -> tuple[str, str]:
+    """Resolve (colour group, icon) from the sidecar; the group must be one of `colors.order`."""
+    entry = presentation.get(tslug) or {}
+    group, icon = entry.get("family"), entry.get("icon")
+
+    if group not in order:
+        raise SystemExit(
+            f"{tslug}: `family` (the colour group) is {group!r} from presentation.json — "
+            f"expected one of `colors.order`, {order}. "
             "Presentation metadata is first-party rendering data, NOT part of the "
             "council-governed standard. A refresh that OVERWRITES instead of MERGING "
             "wipes it — check that first."
         )
     if not isinstance(icon, str) or not icon:
         raise SystemExit(
-            f"{tslug}: `icon` missing or empty from {src}. "
-            "Same wiped-presentation check applies as for family."
+            f"{tslug}: `icon` missing or empty from presentation.json. "
+            "Same wiped-presentation check applies as for the colour group."
         )
-    return fam, icon
+    return group, icon
 
 
 def public_for(presentation: dict | None, tslug: str, fields: list[dict]) -> list[str]:
@@ -1090,16 +1144,17 @@ def main() -> None:
             "(github.com/OnlyWorlds/schema-dist) at codegen/schema-dist/, pinned in "
             "codegen/schema-pin.json. Run `npm run schema:verify` first; if the tree is "
             "missing, re-vendor from the pinned tag. Pass --schema <path> to point at "
-            "another source (e.g. a keel checkout, which still carries inline "
-            "presentation wrapper keys for one cycle as the rollback artifact)."
+            "another source: a schema/ folder with the distribution's presentation.json "
+            "beside it."
         )
 
     global _schema_version
     _schema_version = read_canonical_version(schema_dir)
     presentation = load_presentation(schema_dir)
+    colors = load_colors(schema_dir)
 
     all_fields: dict[str, list[dict]] = {}
-    families: dict[str, str] = {}
+    groups: dict[str, str] = {}
     icons: dict[str, str] = {}
     public: dict[str, list[str]] = {}
     sections: dict[str, list[dict]] = {}
@@ -1108,8 +1163,8 @@ def main() -> None:
     interfaces: list[str] = []
     for tslug in ELEMENT_TYPES:
         doc = load_yaml(schema_dir, tslug)
-        fam, icon = presentation_for(presentation, doc, tslug)
-        families[tslug] = fam
+        group, icon = presentation_for(presentation, tslug, colors[0])
+        groups[tslug] = group
         icons[tslug] = icon
         sections[tslug] = parse_sections(doc, tslug)
         # Since canonical 00.30.02 the schema requires `name` and nothing else, and `name`
@@ -1135,7 +1190,7 @@ def main() -> None:
               .replace("__PROVENANCE__", render_provenance(schema_dir))
               .replace("__ELEMENT_BASE__", render_element_base(schema_dir)))
     parts = [header, ""]
-    parts.append(render_maps(all_fields, families, icons, sections, public))
+    parts.append(render_maps(all_fields, groups, colors, icons, sections, public))
     room_pairs = load_room_pairs(schema_dir)
     parts.append(render_room_pairs(room_pairs, load_room_mark(schema_dir)))
     aid_pairs, aid_mark = load_reading_aids(schema_dir)
@@ -1147,7 +1202,7 @@ def main() -> None:
     parts.append("\n\n".join(interfaces))
     parts.append("")
     output = "\n".join(parts)
-    schema_md = render_schema_md(all_fields, families, icons, sections)
+    schema_md = render_schema_md(all_fields, groups, colors[0], icons, sections)
 
     if args.check:
         for path, want, label in ((OUT_PATH, output, "types.generated.ts"),

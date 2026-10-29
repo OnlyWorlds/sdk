@@ -67,9 +67,11 @@ export type { OwNamesMap, OwWordPair } from './names';
 export { elementAddress, parseOwLink, OwAddressError } from './address';
 export type { OwAddress, OwAddressReading, OwAddressForm, OwAddressReason } from './address';
 
-// Canonical element colour palette (families generated from schema; hexes CVD-validated)
-export { ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf, elementColor } from './v2';
-export type { ElementFamily } from './v2';
+// Canonical element colour palette (colour groups and hexes generated from the distribution; hexes CVD-validated).
+// The FAMILY names are the pre-4.102.0 words, deprecated, and leave in 5.0.
+export { ELEMENT_GROUPS, GROUP_COLORS, GROUP_ORDER, groupOf, elementColor } from './v2';
+export { ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf } from './v2';
+export type { ElementGroup, ElementFamily } from './v2';
 
 // Field labels: a field name as the words a tool shows (sentence case, acronyms kept)
 export { FIELD_ACRONYMS, fieldLabel } from './v2';
