@@ -40,7 +40,7 @@ const SURFACE = { tool: 'atlas', signedIn: false, phone: true };
 function page() {
   const window = new Window({ url: 'https://surface.example/w/x' });
   const doc = window.document;
-  doc.body.innerHTML = '<main><h1 class="name">Governor Threadsworth</h1><div class="more" role="menu"></div><button class="elsewhere">Elsewhere</button></main>';
+  doc.body.innerHTML = '<main><h1 class="name">Governor Threadsworth</h1><button class="dots">...</button><div class="more" role="menu"></div><button class="elsewhere">Elsewhere</button></main>';
   const copied = [];
   Object.defineProperty(window.navigator, 'clipboard', { configurable: true, value: { writeText: async (t) => { copied.push(t); } } });
   const live = new Map();
@@ -182,14 +182,67 @@ test('entry: \'menu\' draws no mark; its "Open with" entry opens the same fan-ou
   entry.click();
   assert.equal(pop.hidden, false);
   assert.equal(entry.getAttribute('aria-expanded'), 'true');
-  assert.equal(doc.activeElement, items(name)[0]);
+  assert.ok(doc.activeElement === items(name)[0], 'focus on the first row');
   key(window, doc.activeElement, 'Escape');
   assert.equal(pop.hidden, true);
-  assert.equal(doc.activeElement, entry, 'focus back on the entry');
+  assert.ok(doc.activeElement === entry, 'focus back on the entry');
   waymark();
   assert.equal(more.children.length, 0, 'the disposer takes the entry out of the surface\'s menu too');
   const { name: name2 } = page();
   assert.equal(mountWaymark(name2, { world: WORLD, element: ELEMENT, reader: 'member' }).entry, null, 'the mark arm has no entry');
+});
+
+test('returnFocus: the surface\'s own button takes focus when the fan-out opened from the entry closes by Escape', () => {
+  const { window, doc, name, more } = page();
+  const dots = doc.querySelector('.dots');
+  const waymark = mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', entry: 'menu', returnFocus: dots });
+  more.appendChild(waymark.entry);
+  waymark.entry.click();
+  assert.ok(doc.activeElement === items(name)[0], 'focus on the first row');
+  key(window, doc.activeElement, 'Escape');
+  assert.equal(name.querySelector('.ow-waymark__pop').hidden, true);
+  assert.ok(doc.activeElement === dots, 'focus on the surface\'s "..." button, not the entry');
+});
+
+test('returnFocus is refused by name with entry \'mark\' (or by default), and when it is not an HTMLElement, before anything is drawn', () => {
+  const { doc, name } = page();
+  const before = name.innerHTML;
+  const dots = doc.querySelector('.dots');
+  assert.throws(() => mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', entry: 'mark', returnFocus: dots }),
+    (err) => err instanceof TypeError && err.message.startsWith('mountWaymark: returnFocus is for entry \'menu\' or \'both\''));
+  assert.throws(() => mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', returnFocus: dots }), /mountWaymark: returnFocus is for entry/);
+  for (const bad of [{}, 'dots', doc.createTextNode('...'), { focus() {} }]) {
+    assert.throws(() => mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', entry: 'menu', returnFocus: bad }),
+      (err) => err instanceof TypeError && err.message.startsWith('mountWaymark: returnFocus is an HTMLElement'));
+  }
+  assert.equal(name.innerHTML, before, 'nothing drawn');
+});
+
+test('entry: \'both\' draws the mark and the entry, both open the same fan-out, and Escape returns focus to the one that opened it', () => {
+  const { window, doc, name, more } = page();
+  const dots = doc.querySelector('.dots');
+  for (const returnFocus of [null, dots]) {
+    const waymark = mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', entry: 'both', returnFocus });
+    const mark = name.querySelector('.ow-waymark__mark');
+    assert.ok(mark, 'the mark is drawn');
+    assert.equal(waymark.entry?.textContent, 'Open with', 'and the entry is given');
+    more.appendChild(waymark.entry);
+    const pop = name.querySelector('.ow-waymark__pop');
+    assert.equal(name.querySelectorAll('.ow-waymark__pop').length, 1, 'one fan-out');
+    mark.click();
+    assert.equal(pop.hidden, false);
+    assert.equal(mark.getAttribute('aria-expanded'), 'true');
+    assert.equal(waymark.entry.getAttribute('aria-expanded'), 'false');
+    key(window, doc.activeElement, 'Escape');
+    assert.ok(doc.activeElement === mark, 'opened by the mark: back to the mark');
+    waymark.entry.click();
+    assert.equal(pop.hidden, false);
+    assert.equal(waymark.entry.getAttribute('aria-expanded'), 'true');
+    key(window, doc.activeElement, 'Escape');
+    assert.ok(doc.activeElement === (returnFocus ?? waymark.entry), 'opened by the entry: back to returnFocus, else the entry');
+    waymark();
+    assert.equal(more.children.length, 0);
+  }
 });
 
 test('keyboard: the mark is a button opening a menu; Tab order is the mark then the rows; arrows, Home and End move; Escape closes and returns focus', () => {
@@ -204,23 +257,23 @@ test('keyboard: the mark is a button opening a menu; Tab order is the mark then 
   key(window, mark, 'ArrowDown');
   const list = items(name);
   assert.equal(mark.getAttribute('aria-expanded'), 'true');
-  assert.equal(doc.activeElement, list[0]);
+  assert.ok(doc.activeElement === list[0], 'focus on the first row');
   // Tab order: what the page reaches in document order, the menu open.
   const tabbable = [...name.querySelectorAll('a[href], button')].filter((n) => !n.closest('[hidden]') && n.tabIndex >= 0);
   assert.deepEqual(tabbable, [mark, ...list], 'the mark, then every row in order');
   key(window, doc.activeElement, 'ArrowDown');
-  assert.equal(doc.activeElement, list[1]);
+  assert.ok(doc.activeElement === list[1], 'focus on the second row');
   key(window, doc.activeElement, 'ArrowUp');
   key(window, doc.activeElement, 'ArrowUp');
-  assert.equal(doc.activeElement, list[list.length - 1], 'ArrowUp from the first wraps to the last');
+  assert.ok(doc.activeElement === list[list.length - 1], 'ArrowUp from the first wraps to the last');
   key(window, doc.activeElement, 'Home');
-  assert.equal(doc.activeElement, list[0]);
+  assert.ok(doc.activeElement === list[0], 'focus on the first row');
   key(window, doc.activeElement, 'End');
   assert.equal(text(doc.activeElement.querySelector('.ow-waymark__label')), 'Copy link');
   key(window, doc.activeElement, 'Escape');
   assert.equal(name.querySelector('.ow-waymark__pop').hidden, true);
   assert.equal(mark.getAttribute('aria-expanded'), 'false');
-  assert.equal(doc.activeElement, mark, 'focus back on the mark');
+  assert.ok(doc.activeElement === mark, 'focus back on the mark');
   // The lens list opens in place and its rows join the arrow order.
   mark.click();
   const toggle = items(name).find((i) => i.getAttribute('aria-haspopup') === 'true');
@@ -272,9 +325,26 @@ test('Copy link copies the site\'s address with the world\'s id (and the lens ch
   assert.equal(timers.size, 1, 'the second toast replaces the first timer');
 });
 
+test('a failed copy says "Could not copy. Select the text and copy it yourself." in the same toast: a refused write, and no clipboard', async () => {
+  const NOT_COPIED = 'Could not copy. Select the text and copy it yourself.';
+  for (const clipboard of [{ writeText: async () => { throw new Error('denied'); } }, undefined]) {
+    const { window, name, timers } = page();
+    Object.defineProperty(window.navigator, 'clipboard', { configurable: true, value: clipboard });
+    mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member' });
+    name.querySelector('.ow-waymark__mark').click();
+    items(name).at(-1).click();
+    await flush();
+    const toasts = name.querySelectorAll('.ow-waymark__toast');
+    assert.equal(toasts.length, 1, 'the same toast element');
+    assert.equal(toasts[0].hidden, false, `${clipboard ? 'refused' : 'no clipboard'}: the toast shows`);
+    assert.equal(toasts[0].textContent, NOT_COPIED, `${clipboard ? 'refused' : 'no clipboard'}: the exact words`);
+    assert.equal(timers.size, 1, 'the same timer hides it');
+  }
+});
+
 test('no element the component makes carries a style attribute, in any face, arm or state', async () => {
   for (const reader of ['member', 'guest', 'public']) {
-    for (const entry of ['mark', 'menu']) {
+    for (const entry of ['mark', 'menu', 'both']) {
       for (const ground of ['dark', 'paper']) {
         const { doc, name, more } = page();
         const w = mountWaymark(name, { world: WORLD, element: MEMBER_ELEMENT, reader, entry, ground, lenses: LENSES, tools: TOOLS_ALL, ...SURFACE });
@@ -291,7 +361,7 @@ test('no element the component makes carries a style attribute, in any face, arm
 });
 
 test('the disposer leaves the target as it was, with no listener and no timer left behind', async () => {
-  for (const entry of ['mark', 'menu']) {
+  for (const entry of ['mark', 'menu', 'both']) {
     const { window, doc, name, more, listening, timers } = page();
     const before = name.innerHTML;
     const baseline = listening();
