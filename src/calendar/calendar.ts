@@ -206,7 +206,8 @@ export function validateCalendarConfig(cfg: CalendarConfig): string[] {
 export function readCalendarConfig(value: unknown): CalendarConfig | null {
   if (typeof value !== 'object' || value === null) return null;
   const cfg = value as CalendarConfig;
-  if ((cfg.version !== 1 && cfg.version !== 2) || typeof cfg.grain !== 'string') return null;
+  // The profile: grain is required, a string; an empty string is no grain (serial 89's case).
+  if ((cfg.version !== 1 && cfg.version !== 2) || typeof cfg.grain !== 'string' || cfg.grain === '') return null;
   // Structural sanity only — validateCalendarConfig covers semantics. A config
   // with semantic errors (overlaps) still formats via deterministic fallbacks.
   const months = cfg.bundles?.months;

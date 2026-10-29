@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.102.5] - 2026-10-29
+
+### Fixed
+
+- **`readCalendarConfig` refuses an empty `grain`.** The calendar profile requires `grain` as a string, and an empty string is no grain: the reader took `grain: ""` as a calendar while `validateCalendarConfig` already refused it. It now returns `null` (show bare numbers), as the Python package's reader does from 0.84.3; schema-dist's next serial carries the case.
+
 ## [4.102.4] - 2026-10-29
 
 ### Fixed

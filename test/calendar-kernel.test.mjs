@@ -442,6 +442,14 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { months: { names: ['a'], lengths: [1, 2] } } })).toBe(null);
         expect(readCalendarConfig({ version: 1, grain: 'day', eras: [{ name: 'X' }] })).toBe(null);
     });
+    // The profile's grain is required and a string; an empty string is no grain (Quillon's Unreal port).
+    it('refuses an empty or non-string grain, and reads a named one', () => {
+        for (const bad of ['', 1, null, ['day']]) {
+            expect(readCalendarConfig({ version: 1, grain: bad })).toBe(null);
+            expect(readCalendarConfig({ version: 2, grain: bad })).toBe(null);
+        }
+        expect(readCalendarConfig({ version: 1, grain: 'day' })).not.toBe(null);
+    });
     // 4.42.1 (Quillon): a falsy non-list threw a TypeError; the profile's whole numbers and string names.
     it('refuses a falsy eras or intercalary instead of throwing', () => {
         for (const bad of [false, 0, '']) {
