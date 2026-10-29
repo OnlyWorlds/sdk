@@ -1,0 +1,316 @@
+/*
+ * The Waymark's fan-out (@onlyworlds/sdk/waymark.css). Bundle it with the page that mounts
+ * @onlyworlds/sdk/waymark: the component sets no inline style, so this file is all of its look.
+ *
+ * Every colour is a value of the Waymark's states file (waymark-states: two grounds, dark and paper),
+ * declared once below under its ground and its key; the rules read them only through the ground's
+ * names. The mark: in its ink on the ground at rest, no tile; the hover tile behind it on hover; an
+ * outline of 2px in the ink, offset 2px, on focus; the open tile behind it while the fan-out is open.
+ */
+
+.ow-waymark {
+  --ow-waymark-dark-page: #02050a;
+  --ow-waymark-dark-bg: #0b0f14;
+  --ow-waymark-dark-popover: #111823;
+  --ow-waymark-dark-ink: #37c1f0;
+  --ow-waymark-dark-text: #e2e8f0;
+  --ow-waymark-dark-muted: #94a3b8;
+  --ow-waymark-dark-line: #243040;
+  --ow-waymark-dark-hover-tile: #0f212a;
+  --ow-waymark-dark-open-tile: #153644;
+
+  --ow-waymark-paper-page: #ebe8df;
+  --ow-waymark-paper-bg: #f6f4ee;
+  --ow-waymark-paper-popover: #ffffff;
+  --ow-waymark-paper-ink: #1b2430;
+  --ow-waymark-paper-text: #1b2430;
+  --ow-waymark-paper-muted: #5b6573;
+  --ow-waymark-paper-line: #d5d1c4;
+  --ow-waymark-paper-hover-tile: #e7e5e1;
+  --ow-waymark-paper-open-tile: #d3d3d0;
+
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.ow-waymark--dark {
+  --ow-waymark-page: var(--ow-waymark-dark-page);
+  --ow-waymark-popover: var(--ow-waymark-dark-popover);
+  --ow-waymark-ink: var(--ow-waymark-dark-ink);
+  --ow-waymark-text: var(--ow-waymark-dark-text);
+  --ow-waymark-muted: var(--ow-waymark-dark-muted);
+  --ow-waymark-line: var(--ow-waymark-dark-line);
+  --ow-waymark-hover-tile: var(--ow-waymark-dark-hover-tile);
+  --ow-waymark-open-tile: var(--ow-waymark-dark-open-tile);
+  --ow-waymark-shadow: var(--ow-waymark-dark-page);
+}
+
+.ow-waymark--paper {
+  --ow-waymark-page: var(--ow-waymark-paper-page);
+  --ow-waymark-popover: var(--ow-waymark-paper-popover);
+  --ow-waymark-ink: var(--ow-waymark-paper-ink);
+  --ow-waymark-text: var(--ow-waymark-paper-text);
+  --ow-waymark-muted: var(--ow-waymark-paper-muted);
+  --ow-waymark-line: var(--ow-waymark-paper-line);
+  --ow-waymark-hover-tile: var(--ow-waymark-paper-hover-tile);
+  --ow-waymark-open-tile: var(--ow-waymark-paper-open-tile);
+  --ow-waymark-shadow: var(--ow-waymark-paper-line);
+}
+
+.ow-waymark [hidden] {
+  display: none !important;
+}
+
+/* The mark: a button, the glyph alone. */
+.ow-waymark__mark {
+  appearance: none;
+  display: inline-flex;
+  margin: 0 0 0 0.3em;
+  padding: 0.15em;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ow-waymark-ink);
+  font: inherit;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.ow-waymark__mark .ow-waymark__glyph {
+  display: block;
+  width: 1em;
+  height: 1em;
+}
+.ow-waymark__mark:hover {
+  background: var(--ow-waymark-hover-tile);
+}
+.ow-waymark__mark:focus {
+  outline: none;
+}
+.ow-waymark__mark:focus-visible {
+  outline: 2px solid var(--ow-waymark-ink);
+  outline-offset: 2px;
+}
+.ow-waymark__mark[aria-expanded='true'] {
+  background: var(--ow-waymark-open-tile);
+}
+
+/* The fan-out: a popover under the name. */
+.ow-waymark__pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1000;
+  box-sizing: border-box;
+  width: 300px;
+  max-width: calc(100vw - 16px);
+  padding: 12px 12px 8px;
+  border: 1px solid var(--ow-waymark-line);
+  border-radius: 12px;
+  background: var(--ow-waymark-popover);
+  box-shadow: 0 8px 24px var(--ow-waymark-shadow);
+  color: var(--ow-waymark-text);
+  font: 400 13px/1.45 system-ui, 'Segoe UI', sans-serif;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+}
+.ow-waymark__grab {
+  display: none;
+}
+.ow-waymark__scrim {
+  display: none;
+}
+
+/* 1. The name line. */
+.ow-waymark__head {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  padding: 2px 2px 6px;
+}
+.ow-waymark__tile {
+  display: inline-flex;
+  flex: none;
+  padding: 5px;
+  border-radius: 6px;
+  background: var(--ow-waymark-open-tile);
+  color: var(--ow-waymark-ink);
+}
+.ow-waymark__tile .ow-waymark__glyph {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+.ow-waymark__names {
+  min-width: 0;
+}
+.ow-waymark__name {
+  font-size: 15px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.ow-waymark__sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--ow-waymark-muted);
+  font-size: 12px;
+}
+.ow-waymark__door {
+  margin-bottom: 2px;
+  padding: 2px 4px 8px;
+  border-bottom: 1px solid var(--ow-waymark-line);
+  color: var(--ow-waymark-muted);
+  font-size: 12px;
+}
+
+/* 2 to 4. The menu. */
+.ow-waymark__sec {
+  padding: 8px 4px 3px;
+  color: var(--ow-waymark-muted);
+  font-size: 11.5px;
+}
+.ow-waymark__sep {
+  margin: 6px 0 2px;
+  border-top: 1px solid var(--ow-waymark-line);
+}
+.ow-waymark__row {
+  appearance: none;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ow-waymark-text);
+  font: inherit;
+  font-weight: 400;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ow-waymark__row:hover {
+  background: var(--ow-waymark-hover-tile);
+}
+.ow-waymark__row:focus {
+  outline: none;
+}
+.ow-waymark__row:focus-visible {
+  outline: 2px solid var(--ow-waymark-ink);
+  outline-offset: -2px;
+}
+.ow-waymark__icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+.ow-waymark__icon--small {
+  width: 16px;
+  height: 16px;
+}
+.ow-waymark__label {
+  min-width: 0;
+}
+.ow-waymark__state {
+  margin-left: auto;
+  padding-left: 8px;
+  color: var(--ow-waymark-muted);
+  font-size: 11.5px;
+  text-align: right;
+}
+.ow-waymark__chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+.ow-waymark__state:empty + .ow-waymark__chevron {
+  margin-left: auto;
+}
+.ow-waymark__row[aria-expanded='true'] .ow-waymark__chevron {
+  transform: rotate(180deg);
+}
+/* Grey says the row cannot open now, and nothing else. */
+.ow-waymark__row--cannot .ow-waymark__label,
+.ow-waymark__row--cannot .ow-waymark__icon {
+  color: var(--ow-waymark-muted);
+}
+.ow-waymark__row--lens {
+  padding-left: 30px;
+}
+.ow-waymark__row--lens[aria-checked='true'] {
+  background: var(--ow-waymark-open-tile);
+}
+
+/* The copied toast. */
+.ow-waymark__toast {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1001;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 14px;
+  border: 1px solid var(--ow-waymark-line);
+  border-radius: 9px;
+  background: var(--ow-waymark-popover);
+  box-shadow: 0 6px 18px var(--ow-waymark-shadow);
+  color: var(--ow-waymark-text);
+  font: 400 13px/1.45 system-ui, 'Segoe UI', sans-serif;
+  white-space: nowrap;
+}
+
+/* 390 px wide and below: a sheet from the bottom, the page behind dimmed, rows tall enough to touch. */
+@media (max-width: 390px) {
+  .ow-waymark__scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: var(--ow-waymark-page);
+    opacity: 0.6;
+  }
+  .ow-waymark__pop {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-width: none;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 8px 14px 18px;
+    border-width: 1px 0 0;
+    border-radius: 18px 18px 0 0;
+    box-shadow: none;
+  }
+  .ow-waymark__grab {
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 0 auto 8px;
+    border-radius: 2px;
+    background: var(--ow-waymark-line);
+  }
+  .ow-waymark__row {
+    min-height: 34px;
+    padding: 8px 6px;
+    font-size: 15px;
+  }
+  .ow-waymark__toast {
+    position: fixed;
+    top: auto;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}

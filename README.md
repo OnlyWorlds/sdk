@@ -471,6 +471,36 @@ const rows = openersFor(TOOLS, 'element', parseOwLink(link), { audience: 'member
 
 `surface` says what the page knows and nothing is guessed: `audience` (`member` or `public`; the public sees only rows that need nothing first), `signedIn` (`null` when the page cannot know, and then no row says so), `browser` (false in a desktop app), `phone`, and `tool`, the page's own client name, whose row says "You are here". Draw the rows as given; the words are decided here, so every surface says the same.
 
+### The Waymark: Open with, beside a name
+
+A web page can draw the rows above for a person: the OnlyWorlds mark beside a world's or an element's name, which opens a small menu (the fan-out) with the name line, the Open with rows, the lenses the page offers, and Copy link. It ships at its own subpath with its own stylesheet, so the core stays free of the DOM:
+
+```typescript
+import { mountWaymark } from '@onlyworlds/sdk/waymark';
+import '@onlyworlds/sdk/waymark.css'; // or <link rel="stylesheet"> to the file
+
+const dispose = mountWaymark(document.querySelector('h1.name'), {
+  world: { id: worldId, name: 'Moppetopia' },
+  element,                 // the element's body as the API serves it; leave it out for the world's own fan-out
+  reader: 'member',        // 'member', 'guest' or 'public'
+  signedIn: false, tool: 'mytool', phone: false, browser: true,  // what the page knows, as openersFor takes it
+  ground: 'dark',          // or 'paper'
+});
+// later: dispose() removes every node, listener and timer it added
+```
+
+What it draws is decided in the core, never in the component: the rows and their words are `openersFor`'s, a member's "Last shaped in Atlas, 12 Oct" line is `doorsOf`'s newest entry in `doorWhere`'s words with its date, and Copy link copies `elementAddress`'s site address with the world's id (never a slug) and says "Link copied". The public face (`reader: 'public'`) shows the name and type, only the rows that need nothing first, and Copy link: no last door, no lenses. A row that cannot open now says why ("Sign in to Atlas first", "Needs the world on this phone") and is grey; grey means nothing else. The page's own tool says "You are here".
+
+Options, each refused by name when unknown, before anything is drawn: `world` (its `x_names`, when present, words the type), `element`, `reader`, `tool`, `signedIn`, `browser`, `phone`, `tools` (default `TOOLS`), `lenses` (`[{ id, name }]`, the Through row; absent, no row; a lens chosen rides on the copied link as `?lens=`), `ground` and `entry`.
+
+**No inline style.** The component sets no `style` attribute and never touches `element.style`, so it runs under `style-src 'self'`; bundle `waymark.css` with the page. Every colour in it is one of the Waymark's two grounds, declared once at the top of the file.
+
+**Keyboard and small screens.** The mark is a button and the fan-out a menu: Tab goes from the mark through the rows in order, the arrow keys, Home and End move between rows, Escape closes it and returns focus to the mark, and a click outside closes it. At 390 px wide and below it is a sheet from the bottom.
+
+**Two ways in, one setting.** `entry: 'mark'` draws the mark beside the name as the button that opens the fan-out. `entry: 'menu'` draws no mark and gives back an "Open with" entry for the page's own "..." menu, as `dispose.entry` (a button; put it in the menu, and the disposer takes it out again), which opens the same fan-out and takes focus back on Escape. The default is `'mark'`; which way in is the default for everyone waits on a round with people who have never seen the tools, so a surface that sets `entry` explicitly is unaffected when it changes.
+
+Not in this version: an element in a folder (no address on a server, so Copy link would copy the `ow://` text form), the moment picker (it needs a time bar), and the tools' own marks (every tool row wears one generic glyph for now). Try it locally with `npm run demo`, which builds the package and serves `demo/waymark.html`.
+
 ## Tokens
 
 The account's token rating, which some OnlyWorlds tools use. `getStatus()` and `getEncryptionInfo()` are what keel still serves under `/tokens/`; `consume()`, `getAccessKey()` and the two session revokes are deprecated (keel answers 404) and leave in 5.0. To read the token rating, prefer `account.allowance()` above.

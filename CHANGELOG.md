@@ -5,6 +5,15 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **`@onlyworlds/sdk/waymark`**, with its stylesheet at **`@onlyworlds/sdk/waymark.css`**: `mountWaymark(target, options)` draws the OnlyWorlds mark beside a world's or an element's name and the fan-out it opens (the name line, the Open with rows, the lenses the page offers, Copy link), and returns a disposer that removes every node, listener and timer it added. Every word is the core's: the rows and their state words from `openersFor`, a member's "Last shaped in Atlas, 12 Oct" from `doorsOf` and `doorWhere`, the copied link from `elementAddress` (the site's address with the world's id; the toast says "Link copied"). The public face shows the name and type, only the rows that need nothing first, and Copy link. Options are refused by name when unknown, before anything is drawn. No node carries a `style` attribute, so it runs under `style-src 'self'`; every colour in the stylesheet is one of the Waymark's two grounds (`dark`, `paper`). The mark is a button and the fan-out a menu, keyboard first (Tab through the rows, arrows, Home, End, Escape back to the mark); at 390 px wide and below it is a sheet from the bottom. `entry: 'mark' | 'menu'` picks the way in: the mark beside the name, or an "Open with" entry (`dispose.entry`) for the page's own "..." menu. The core (`.`) does not import it and stays free of the DOM.
+- **`npm run demo`**: builds the package and serves `demo/waymark.html`, one public element on a plain page with the fan-out beside its name (`?entry=`, `?reader=`, `?ground=`, `?signedIn=`). Not in the package.
+
+### Changed
+
+- **`sideEffects`** in `package.json` is `["*.css"]` (was `false`), so a bundler keeps an import of `waymark.css`; every JavaScript file is still free of side effects.
+
 ## [4.112.0] - 2026-10-30
 
 ### Changed
@@ -31,7 +40,6 @@ earlier history lives in git log only.
 ### Changed
 
 - **`openersFor` checks the whole address.** It handed the address writer only the world, type and id, in the site's form, so a malformed `lens` or `moment`, or a `form` that is neither `human` nor `text`, still gave rows. The whole address now goes to `elementAddress` in its own form (the site's when it has none), so it refuses with the writer's own `OwAddressError`, `bad_lens`, `bad_moment` or `bad_form`, as it already did for the world, type and id; an address without a world still refuses `no_world`, the text form inside a world included. The rows are unchanged: a lens and a moment still ride on no href. The shared fixture gains four cases (45; the same bytes as the Python package's): the three refusals, and a well-formed lens and moment giving exactly the rows of the same address without them.
-
 ## [4.109.0] - 2026-10-29
 
 ### Changed
