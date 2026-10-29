@@ -474,8 +474,20 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         const at = (after_month, extra = {}) => ({ version: 1, grain: 'day', bundles: { months, ...extra }, intercalary: [{ name: 'Gap', after_month }] });
         for (const v of [0, 1, 2]) expect(readCalendarConfig(at(v))).not.toBe(null);
         expect(readCalendarConfig(at(3))).toBe(null);
-        expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { year: { steps: 10 } }, intercalary: [{ name: 'Gap', after_month: 0 }] })).not.toBe(null);
         expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { year: { steps: 10 } }, intercalary: [{ name: 'Gap', after_month: 1 }] })).toBe(null);
+    });
+    // Ruled for serial 90, ahead of its fixture: with no months there is no place between months,
+    // so any intercalary day is unreadable, after_month 0 included; an empty list holds no day.
+    it('refuses any intercalary day on a calendar with no months', () => {
+        const gap = (after_month) => [{ name: 'Gap', after_month }];
+        for (const bundles of [{ year: { steps: 10 } }, {}, undefined, { months: null }, { year: { steps: 10 }, months: null }]) {
+            expect(readCalendarConfig({ version: 1, grain: 'day', bundles, intercalary: gap(0) })).toBe(null);
+            expect(readCalendarConfig({ version: 2, grain: 'day', bundles, intercalary: [{ name: 'Leap', after_month: 0, every_years: 4 }] })).toBe(null);
+            expect(readCalendarConfig({ version: 1, grain: 'day', bundles, intercalary: [] })).not.toBe(null);
+            expect(readCalendarConfig({ version: 1, grain: 'day', bundles, intercalary: null })).not.toBe(null);
+            expect(validateCalendarConfig({ version: 1, grain: 'day', bundles, intercalary: gap(0) })).toEqual(['Festival days need months']);
+        }
+        expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { months: { names: ['A'], lengths: [10] } }, intercalary: gap(0) })).not.toBe(null);
     });
     // Serial 89: an after_month below the first month names no month either.
     it('refuses an intercalary day after a negative month', () => {
