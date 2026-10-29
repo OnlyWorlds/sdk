@@ -1,5 +1,6 @@
 /**
- * The package's exported surface, read with the TypeScript checker from src/index.ts: every
+ * The package's exported surface, read with the TypeScript checker from src/index.ts (or another entry,
+ * a subpath's, relative to this file): every
  * parameter of every exported function, constructor and public method whose type is an object
  * (not a primitive, an array, a function, or a built-in such as Blob or Response; a type with a
  * string index signature is a record by nature and left out). test/options.test.mjs holds each
@@ -12,8 +13,8 @@
 import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
 
-export function objectParameters() {
-  const entry = fileURLToPath(new URL('../src/index.ts', import.meta.url));
+export function objectParameters(from = '../src/index.ts') {
+  const entry = fileURLToPath(new URL(from, import.meta.url));
   const program = ts.createProgram([entry], {
     target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Node10,
     lib: ['lib.es2020.d.ts', 'lib.dom.d.ts'], strict: true, skipLibCheck: true, noEmit: true, resolveJsonModule: true,

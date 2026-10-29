@@ -24,6 +24,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const PUBLISHED = [
   'src',
+  'demo',
   'codegen',
   'scripts',
   '.github',

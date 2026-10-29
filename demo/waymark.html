@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The surfaces' wall: no inline style. The one inline script is the import map (allowed by its hash),
+     which gives the browser the package's one runtime dependency, as a bundler would. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self' 'sha256-jmo4LIKhAJQzXEzPIRYyeO7VNLF35Lsg0jOciMf8huc='; img-src 'self' data:">
+<title>Waymark demo</title>
+<link rel="stylesheet" href="../dist/waymark.css">
+<link rel="stylesheet" href="demo.css">
+<script type="importmap">{"imports":{"fflate":"../node_modules/fflate/esm/browser.js"}}</script>
+<script type="module" src="waymark-demo.js"></script>
+</head>
+<body>
+<nav class="switches" aria-label="Demo switches">
+  <span>Entry: <a data-set="entry=mark">mark</a> <a data-set="entry=menu">menu</a></span>
+  <span>Reader: <a data-set="reader=member">member</a> <a data-set="reader=guest">guest</a> <a data-set="reader=public">public</a></span>
+  <span>Ground: <a data-set="ground=dark">dark</a> <a data-set="ground=paper">paper</a></span>
+  <span>Signed in: <a data-set="signedIn=unknown">unknown</a> <a data-set="signedIn=true">yes</a> <a data-set="signedIn=false">no</a></span>
+</nav>
+<main class="sheet">
+  <header class="bar">
+    <span class="crumb">Moppetopia / Characters</span>
+    <div class="more">
+      <button type="button" class="more-button" aria-haspopup="menu" aria-expanded="false" aria-label="More">...</button>
+      <div class="more-menu" role="menu" hidden>
+        <button type="button" role="menuitem" class="more-item">Export</button>
+        <button type="button" role="menuitem" class="more-item">Show history</button>
+      </div>
+    </div>
+  </header>
+  <h1 class="name" id="name"></h1>
+  <p class="meta" id="meta"></p>
+  <p class="desc" id="desc"></p>
+  <dl class="fields" id="fields"></dl>
+</main>
+</body>
+</html>
