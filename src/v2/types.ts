@@ -804,6 +804,13 @@ export interface OwMember {
   /** Where `lenses` comes from: `chosen` (the row's own list, empty for none) or `titles` (it chose none, and its Character's Titles bring these). */
   lenses_from: 'chosen' | 'titles';
   /**
+   * Agent rows only: who answers for this AI, as the roster names them: the sponsor's membership id
+   * (the `id` of their row here), `owner` when the world's owner answers for it, or null for a seat
+   * made from a link for an email address and for a sponsor with no live membership here. Every
+   * reader reads it; person and player rows carry no `sponsor_member`.
+   */
+  sponsor_member?: string | null;
+  /**
    * Served only, never written: present only when `lenses` was served with a lens left out, one this
    * key cannot see; then it names `lenses`. Saving the list you were shown keeps that lens where it stands.
    */

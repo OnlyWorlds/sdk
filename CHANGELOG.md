@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.104.2] - 2026-10-29
+
+### Fixed
+
+- **`completeSignIn` keeps a sign-in pending when a return carries another state.** It cleared the pending record before checking the state, so any page that opened a native app's custom scheme (`obsidian://onlyworlds-signin?state=anything`) could cancel a sign-in in flight. Now a return whose state does not match leaves the record as it is, and the real return still signs in. Once a return carries the sign-in's own state, the record is cleared whatever follows: a refusal, a cancel on the consent page, or the wrong page.
+- **`OwMember.sponsor_member`**, which the server now serves on agent rows of `members()`: who answers for the AI, as a membership id on the same list, `owner`, or null (a seat made from a link for an email address, or a sponsor with no live membership). Person and player rows carry none.
+
 ## [4.104.1] - 2026-10-29
 
 ### Fixed

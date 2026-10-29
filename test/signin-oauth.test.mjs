@@ -98,10 +98,12 @@ test('completeSignIn carries expires_at as expiresAt, as served; absent, empty o
   }
 });
 
-test('completeSignIn refuses a wrong state, a wrong page and a missing record before sending; the record goes either way', async () => {
-  for (const [url, why] of [
-    ['https://atlas.onlyworlds.com/signin/callback?code=c1&state=other', 'state'],
-    ['https://evil.example/signin/callback?code=c1&state=STATE', 'page'],
+test('completeSignIn refuses a wrong state, a wrong page and a missing record before sending; a wrong state leaves the sign-in pending, a matching one ends it', async () => {
+  for (const [url, why, kept] of [
+    ['https://atlas.onlyworlds.com/signin/callback?code=c1&state=other', 'state', true],
+    ['https://atlas.onlyworlds.com/signin/callback?code=c1', 'no state', true],
+    ['https://evil.example/signin/callback?code=c1&state=STATE', 'page', false],
+    ['https://atlas.onlyworlds.com/signin/callback?error=access_denied&state=STATE', 'cancelled', false],
   ]) {
     const storage = memory();
     const state = await begun(storage);
@@ -111,7 +113,7 @@ test('completeSignIn refuses a wrong state, a wrong page and a missing record be
     assert.ok(err instanceof OwSignInError, why);
     assert.equal(err.reason, 'state_mismatch', why);
     assert.equal(calls.length, 0, why);
-    assert.equal(storage.get('ow_signin:atlas'), null, why);
+    assert.equal(storage.get('ow_signin:atlas') !== null, kept, why);
   }
   const client = new OwV2Client({ fetch: fetchStub(200, {}, []) });
   const err = await client.completeSignIn({ clientId: 'atlas', storage: memory(), url: 'https://atlas.onlyworlds.com/signin/callback?code=c1&state=s' }).catch((e) => e);
@@ -274,4 +276,22 @@ test('completeSignIn reads keel\'s refusals: 400 invalid_grant, 429 rate_limited
     assert.equal(err.status, status);
     assert.equal(storage.get('ow_signin:atlas'), null);
   }
+});
+
+test('a forged custom-scheme return does not cancel a sign-in in flight: the real return still signs in', async () => {
+  const storage = memory();
+  const state = await begunAt(storage, 'obsidian://onlyworlds-signin');
+  const calls = [];
+  const answer = { token: 'ow_a_new', token_id: 't1', token_type: 'bearer', account: { id: 'u1', username: 'ann' } };
+  const client = new OwV2Client({ fetch: fetchStub(200, answer, calls) });
+  for (const forged of ['obsidian://onlyworlds-signin?code=evil&state=guess', 'obsidian://onlyworlds-signin?code=evil']) {
+    const err = await client.completeSignIn({ clientId: 'obsidian', storage, url: forged }).catch((e) => e);
+    assert.equal(err.reason, 'state_mismatch', forged);
+    assert.notEqual(storage.get('ow_signin:obsidian'), null, forged);
+  }
+  assert.equal(calls.length, 0);
+  const got = await client.completeSignIn({ clientId: 'obsidian', storage, url: `obsidian://onlyworlds-signin?code=c1&state=${state}` });
+  assert.equal(got.token, 'ow_a_new');
+  assert.equal(calls.length, 1);
+  assert.equal(storage.get('ow_signin:obsidian'), null);
 });

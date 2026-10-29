@@ -8,8 +8,8 @@
  * callback page: it checks `state` and that the page is the registered return address, takes the
  * code out of the address bar, trades it at `POST /api/v2/auth/token` with no credential, and
  * returns the token with the account and the `resume` the tool parked before the redirect. The
- * SDK keeps nothing: the record is cleared on success and on refusal, and the token is the tool's
- * to store.
+ * SDK keeps nothing: the record is cleared once a return carries its state (success or refusal; a
+ * return with another state leaves it pending), and the token is the tool's to store.
  */
 
 import { OwSignInError, parseRetryAfter } from './errors';
@@ -256,13 +256,20 @@ export async function completeSignIn(
 
   const key = RECORD_PREFIX + clientId;
   const raw = storage.get(key);
-  storage.remove(key); // success or refusal, the record goes
   let record: { state?: unknown; verifier?: unknown; redirectUri?: unknown; resume?: unknown } | null = null;
   try { record = raw ? JSON.parse(raw) : null; } catch { record = null; }
   if (!record || typeof record.state !== 'string' || typeof record.verifier !== 'string' || typeof record.redirectUri !== 'string') {
+    storage.remove(key);
     throw new OwSignInError('state_mismatch', 'No sign-in is pending for this tool here: start again from the sign-in button.');
   }
-  if (!code || !state || state !== record.state) {
+  // A return that does not carry this sign-in's state leaves it pending: anyone can open a custom
+  // scheme's address, and a forged one must not cancel a sign-in in flight. Once the state matches,
+  // the sign-in that was started here has come back, and the record goes whatever happens next.
+  if (state !== record.state) {
+    throw new OwSignInError('state_mismatch', 'This page was not reached from the sign-in that was started here: start again.');
+  }
+  storage.remove(key);
+  if (!code) {
     throw new OwSignInError('state_mismatch', 'This page was not reached from the sign-in that was started here: start again.');
   }
   if (!samePage(here, record.redirectUri)) {

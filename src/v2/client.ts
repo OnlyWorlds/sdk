@@ -1467,7 +1467,8 @@ export class OwV2Client {
    * `code` and `state` out of the address bar (only when `url` is not given: a native app passes
    * the address its loopback server or scheme handler received), trade
    * the code once at `POST /auth/token` with the PKCE verifier and no credential, and return the
-   * `ow_a_` token with the account and `resume`. The record is cleared on success and on refusal;
+   * `ow_a_` token with the account and `resume`. The record is cleared once a return carries its
+   * state, on success and on refusal; a return with another state leaves the sign-in pending;
    * the SDK keeps no token: the tool does. Refusals are `OwSignInError`: `state_mismatch` (no
    * pending sign-in, a different state, or the wrong page; nothing sent), `invalid_grant` (keel's
    * 400: used, expired, or another client's code), `rate_limited`, `offline`, `failed`.
