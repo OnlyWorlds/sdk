@@ -1,19 +1,19 @@
 /**
  * The door history: doorsOf on every case of test/fixtures/doors.fixture.json, the same bytes as the
  * Python package's tests/fixtures/doors.fixture.json (both suites hold its sha256), every expected list
- * written by hand. Then the refusals, and TOOLS, the baked list, as the default. Runs against the
- * compiled bundle (dist).
+ * written by hand, and doorWhere on each entry against the case's where list. Then the refusals, and
+ * TOOLS, the baked list, as the default. Runs against the compiled bundle (dist).
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { doorsOf, TOOLS } from '../dist/index.js';
+import { doorsOf, doorWhere, TOOLS } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/doors.fixture.json', import.meta.url));
-const FIXTURE_SHA256 = '5efd5c3fd88dcfa7b9ec06551186ee56370eaa4bb273f5d3c7ec94de058c0679';
-const CASES = 26;
+const FIXTURE_SHA256 = '3b21bb1e86470c1eb158d486691acc95440a5f1c707cc22fef7dc98e306d7de1';
+const CASES = 27;
 
 test('doorsOf answers every case of the shared fixture (the Python package runs the same file)', () => {
   const bytes = readFileSync(FIXTURE);
@@ -28,6 +28,31 @@ test('doorsOf answers every case of the shared fixture (the Python package runs 
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
   assert.equal(doc.cases.length, CASES);
+});
+
+test('doorWhere gives every case\'s where list, one phrase per expected entry (the Python package runs the same file)', () => {
+  const doc = JSON.parse(readFileSync(FIXTURE, 'utf8'));
+  const wrong = [];
+  for (const c of doc.cases) {
+    let got;
+    try { got = c.expected.map(doorWhere); } catch (err) { got = { threw: String(err) }; }
+    try { assert.deepEqual(got, c.where); } catch { wrong.push(`${c.name}: gave ${JSON.stringify(got)}, want ${JSON.stringify(c.where)}`); }
+  }
+  for (const line of wrong) console.log(line);
+  assert.deepEqual(wrong, []);
+  // Every phrase the rules give is held by at least one entry.
+  const phrases = new Set(doc.cases.flatMap((c) => c.where));
+  for (const p of ['in Atlas', 'in Lantern', 'in Zephyr', 'on onlyworlds.com', 'with an AI', 'by OnlyWorlds', 'in code']) assert.ok(phrases.has(p), p);
+});
+
+test('doorWhere refuses what is not an entry of doorsOf with a TypeError naming it', () => {
+  const bad = [null, undefined, [], 'site', 7, {}, { door: 7 }, { door: null }, { door: 'atlas', tool: 'Atlas' }, { door: 'atlas', tool: { id: 'atlas' } }];
+  for (const door of bad) {
+    assert.throws(() => doorWhere(door), (err) => err instanceof TypeError && err.message.startsWith('doorWhere: '), JSON.stringify(door));
+  }
+  // The other keys are not read: an entry with only a door is enough.
+  assert.equal(doorWhere({ door: 'mcp' }), 'with an AI');
+  assert.equal(doorWhere({ door: 'atlas', tool: null }), 'in code');
 });
 
 test('an element that is not an object, or tools that are not an array, is a TypeError naming it', () => {
@@ -47,6 +72,7 @@ test('the default tools are TOOLS, the baked list', () => {
     const element = { doors: { [row.client]: at, site: '2026-10-28T09:00:00Z' }, updated_at: at };
     assert.deepEqual(doorsOf(element), doorsOf(element, TOOLS));
     assert.deepEqual(doorsOf(element)[0], { door: row.client, at, tool: { id: row.id, name: row.name }, last: true, from: 'doors' });
+    assert.deepEqual(doorsOf(element).map(doorWhere), [`in ${row.name}`, 'on onlyworlds.com']);
   }
   assert.ok(TOOLS.some((t) => typeof t.client === 'string'));
 });

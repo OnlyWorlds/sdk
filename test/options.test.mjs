@@ -139,6 +139,7 @@ Object.assign(DATA, {
   'charterOf#1': 'the reader, as resolveLens takes it',
   'domainsOf#0': 'the world snapshot, as charterOf takes it',
   'domainsOf#1': 'the reader, as charterOf takes it',
+  'doorWhere#0': 'an entry of doorsOf, as doorsOf gives it',
 });
 
 /** Run a call that may throw, return a promise, or return an iterator; hand back what it threw. */

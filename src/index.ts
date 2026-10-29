@@ -71,8 +71,9 @@ export type { OwAddress, OwAddressReading, OwAddressForm, OwAddressReason } from
 export { openersFor } from './openers';
 export { TOOLS } from './tools.generated';
 export type { OwTool, OwToolOpen, OwToolNeeds, OwOpener, OwOpenerKind, OwOpenerState, OwOpenerSurface } from './openers';
-// The door history: which tools wrote an element, newest first, from its doors field (or its last write).
-export { doorsOf } from './doors';
+// The door history: which tools wrote an element, newest first, from its doors field (or its last write),
+// and where each entry wrote it, in the Open with menu's words.
+export { doorsOf, doorWhere } from './doors';
 export type { OwDoor } from './doors';
 
 // Canonical element colour palette (colour groups and hexes generated from the distribution; hexes CVD-validated).

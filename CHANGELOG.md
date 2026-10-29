@@ -5,6 +5,19 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.108.0] - 2026-10-29
+
+### Added
+
+- **`doorWhere(door)`**: where one entry of `doorsOf` wrote the element, as the where-phrase a "Last shaped" line shows, and nothing else (no reader, no time: "by you" and when stay the caller's). It pairs with `doorsOf`: pass it an entry as `doorsOf` gives it, its tools-list match already made. The words are the ones the Open with menu will use:
+  - a listed tool (`tool` not null): `in <tool name>`, such as `in Atlas`; this rule comes first;
+  - `site`: `on onlyworlds.com`;
+  - an agent's door (`isAgentDoor`: `seat`, `mcp`, `declared`): `with an AI`;
+  - `server`: `by OnlyWorlds`;
+  - anything else (`sync`, `api`, `v1`, a client the tools list does not hold, such as `sdk`): `in code`.
+
+  An entry that is not an object, a `door` that is not a string, or a `tool` that is neither null nor an object with a string `name` is a TypeError. The shared fixture gives every case a `where` list, one phrase per expected entry, and a case with every rule's word (27 cases); the Python package's `door_where` answers it phrase for phrase.
+
 ## [4.107.1] - 2026-10-29
 
 ### Changed

@@ -2,11 +2,13 @@
 // write there. The API serves every element a `doors` field (to a world's members only): one key per
 // tool that wrote it, the name the tool sent in `X-OW-Client` or else the door word of that write
 // (`site`, `api`, `mcp`, ...), each value the `updated_at` that write left. Pure and DOM-free: a UI's
-// "Last shaped in Atlas" line reads the first entry, a trail reads them all, and the Python package's
-// doors_of answers the shared fixture, test/fixtures/doors.fixture.json, the same way.
+// "Last shaped in Atlas" line reads the first entry, a trail reads them all, doorWhere gives an entry's
+// "in Atlas", and the Python package's doors_of and door_where answer the shared fixture,
+// test/fixtures/doors.fixture.json, the same way.
 
 import type { OwTool } from './openers';
 import { TOOLS } from './tools.generated';
+import { isAgentDoor, type OwWriteDoor } from './v2/types';
 
 /** One tool that wrote an element, as `doorsOf` reads it. */
 export interface OwDoor {
@@ -144,4 +146,33 @@ export function doorsOf(element: object, tools: readonly OwTool[] = TOOLS): OwDo
     if (last) lastSeen = true;
     return { door, at, tool: toolOf(door), last, from: 'doors' };
   });
+}
+
+/**
+ * Where an entry of `doorsOf` wrote the element, as the words a UI shows after "Last shaped": the
+ * where-phrase only.
+ *
+ * - A listed tool (`tool` not null): `in <tool.name>`, such as `in Atlas`. This comes first, so a door
+ *   word the case's tools list holds as a client reads as that tool.
+ * - `site`: `on onlyworlds.com`.
+ * - An agent's door (`isAgentDoor`: `seat`, `mcp`, `declared`): `with an AI`.
+ * - `server`: `by OnlyWorlds`.
+ * - Anything else (`sync`, `api`, `v1`, a client the tools list does not hold, such as `sdk`): `in code`.
+ *
+ * Nothing about the reader or the time: "by you" and when are the caller's. A TypeError when `door` is
+ * not an object, its `door` is not a string, or its `tool` is neither null nor an object with a string
+ * `name`. The Python package's `door_where` gives the same words on the shared fixture.
+ */
+export function doorWhere(door: OwDoor): string {
+  if (door === null || typeof door !== 'object' || Array.isArray(door)) throw new TypeError('doorWhere: the door is an entry of doorsOf, an object');
+  if (typeof door.door !== 'string') throw new TypeError('doorWhere: the entry\'s door is a string');
+  const tool: unknown = door.tool;
+  if (tool != null) {
+    if (typeof tool !== 'object' || typeof (tool as { name?: unknown }).name !== 'string') throw new TypeError('doorWhere: the entry\'s tool is null or { id, name }');
+    return `in ${(tool as { name: string }).name}`;
+  }
+  if (door.door === 'site') return 'on onlyworlds.com';
+  if (isAgentDoor(door.door as OwWriteDoor)) return 'with an AI';
+  if (door.door === 'server') return 'by OnlyWorlds';
+  return 'in code';
 }
