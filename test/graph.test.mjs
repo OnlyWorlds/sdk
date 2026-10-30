@@ -169,6 +169,21 @@ test('an edge to an element the lens cut only as a wrongly typed anchor reads th
   assert.deepEqual([g.nodes.map(n => n.id), g.cut, g.edgesCut], [['o'], { anchor_not_visible: 1 }, { anchor_not_visible: 1 }]);
 });
 
+test('below the owner an edge to a wrongly typed anchor a child lens cut by types reads types', () => {
+  // keel records an unseen anchor for the owner alone (elements/lens.py:705-707), so for any other reader the
+  // child's reason is the element's reason, and the edge's.
+  const world = { elements: [
+    { id: 'C', type: 'construct', name: 'C', supertype: 'Lens', objects: ['o'], x_lens: { types: ['object'] } },
+    { id: 'o', type: 'object', name: 'Ledger', location: 'x' },
+    { id: 'x', type: 'location', name: 'Harbour' },
+  ] };
+  const lens = { id: 'L', type: 'construct', name: 'L', supertype: 'Lens', characters: ['x'], constructs: ['C'], x_lens: { depth: 0 } };
+  const g = worldGraph(world, { rung: 'contributor' }, { lens });
+  assert.deepEqual([g.nodes.map(n => n.id), g.cut, g.edgesCut], [['o'], { types: 1 }, { types: 1 }]);
+  const owner = worldGraph(world, { rung: 'owner' }, { lens });
+  assert.deepEqual([owner.cut, owner.edgesCut], [{ anchor_not_visible: 1 }, { anchor_not_visible: 1 }]);
+});
+
 test('degreeOf: the edges of each node, in or out, a mirror pair two, a link to itself once, every node a key', () => {
   const world = {
     elements: [
