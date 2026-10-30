@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.120.0] - 2026-10-31
+
+### Changed
+
+- **A strand begins when its story is chosen** (schema-dist serial 99). `x_strand` needs only `narrative`: `event` and `location` may each be `null` or absent, read as unset, so a world whose story is chosen before its happening and place reads as a strand begun, the story, hero and now filled and the other slots empty. A place named with no event is an empty place. The value is still no mark when `narrative` is missing or not a non-empty string, or when `event` or `location` is anything but a non-empty string, `null` or absent (an empty string, a number, an object), so a broken writer never shows as a half-built strand. `strandOf` reads every case of the serial's 26-case fixture.
+- **The schema pin moves to schema-dist serial 99** (`v0.33.0-dist.99`). No schema file moved.
+
+### Fixed
+
+- **No `X-OW-Agent` on hide, unhide, `setMyCharacter` and `mintWorldKey`.** An `agent: true` client sent the header on these four, where the API document declares none and the server reads none. It now sends it only where the document lists it: the element writes, the links route, `bulk`, `adopt` and the file ticket.
+
 ## [4.119.0] - 2026-10-30
 
 ### Added
