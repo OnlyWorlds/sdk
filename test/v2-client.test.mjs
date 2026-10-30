@@ -1569,7 +1569,7 @@ test('client: no X-OW-Client on a read (get, list, changes, world meta, me)', as
   for (const c of fetchImpl.calls) assert.equal('X-OW-Client' in c.init.headers, false, `${c.init.method} ${c.url}`);
 });
 
-test('client: no X-OW-Client on the writes keel does not read it on (hide, unhide, the file ticket, setMyCharacter, mintWorldKey)', async () => {
+test('client: no X-OW-Client on the writes keel does not read it on (hide, unhide, the file ticket, setMyCharacter, mintWorldKey), and X-OW-Agent only on the file ticket', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { id: 'x', upload_url: 'https://u', token: 't' } }, { client: 'atlas', agent: true });
   await client.hide('character', 'x');
   await client.unhide('character', 'x');
@@ -1581,7 +1581,9 @@ test('client: no X-OW-Client on the writes keel does not read it on (hide, unhid
   assert.equal(calls.length, 5);
   for (const c of calls) {
     assert.equal('X-OW-Client' in c.init.headers, false, `${c.init.method} ${c.url}`);
-    assert.equal(c.init.headers['X-OW-Agent'], '1', `${c.init.method} ${c.url}: these still carry the agent's declaration`);
+    // keel's document declares X-OW-Agent on the file ticket and on none of the other four, whose handlers read no agent
+    const ticket = c.init.method === 'POST' && c.url.includes('/files');
+    assert.equal(c.init.headers['X-OW-Agent'], ticket ? '1' : undefined, `${c.init.method} ${c.url}`);
   }
 });
 

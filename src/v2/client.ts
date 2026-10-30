@@ -120,7 +120,7 @@ export class OwV2Client {
     if (this.keyKind === 'account') {
       throw new TypeError('setMyCharacter needs a world key: an account token is not a member of one world');
     }
-    return this.request('PUT', '/me/character', { write: true, body: { character } }) as Promise<OwMe>;
+    return this.request('PUT', '/me/character', { body: { character } }) as Promise<OwMe>;
   }
 
   /**
@@ -1182,12 +1182,12 @@ export class OwV2Client {
    * lists, search, counts and the link arrays that name it. 204, no body. No Idempotency-Key.
    */
   async hide(type: ElementType | string, id: string): Promise<void> {
-    await this.request('PUT', `/${type}/${id}/hidden`, { write: true, body: {}, allowEmpty: true });
+    await this.request('PUT', `/${type}/${id}/hidden`, { body: {}, allowEmpty: true });
   }
 
   /** DELETE /{type}/{id}/hidden -- clear the mark; an element that is not hidden stays as it is. 204. */
   async unhide(type: ElementType | string, id: string): Promise<void> {
-    await this.request('DELETE', `/${type}/${id}/hidden`, { write: true, allowEmpty: true });
+    await this.request('DELETE', `/${type}/${id}/hidden`, { allowEmpty: true });
   }
 
   /**
@@ -1415,7 +1415,7 @@ export class OwV2Client {
     if (opts.scope !== undefined) body.scope = opts.scope;
     if (opts.name !== undefined) body.name = opts.name;
     if (opts.keep !== undefined) body.keep = opts.keep;
-    return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/keys`, { write: true, body }) as Promise<OwMintedKey>;
+    return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/keys`, { body }) as Promise<OwMintedKey>;
   }
 
   /**
@@ -1555,7 +1555,7 @@ export class OwV2Client {
       allowEmpty?: boolean;
       replayAware?: boolean;
       /** A `change_seq` to send as `If-Match`; a whole number, else TypeError before sending. */
-      /** A write keel's document lists X-OW-Agent on (the element writes, hide and unhide, the file ticket, setMyCharacter, mintWorldKey): where an agent client sends it. */
+      /** A write keel's document lists X-OW-Agent on (the element writes, the links route, bulk, adopt, the file ticket): where an agent client sends it. Hide, unhide, setMyCharacter and mintWorldKey are not, and keel reads no agent there. */
       write?: boolean;
       /** One of the writes keel reads X-OW-Client on (create, put, patch, delete, links, bulk, adopt, propose, accept): where the client's name goes. */
       elementWrite?: boolean;
