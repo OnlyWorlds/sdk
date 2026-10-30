@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.113.0] - 2026-10-30
+
 ### Added
 
 - **`@onlyworlds/sdk/waymark`**, with its stylesheet at **`@onlyworlds/sdk/waymark.css`**: `mountWaymark(target, options)` draws the OnlyWorlds mark beside a world's or an element's name and the fan-out it opens (the name line, the Open with rows, the lenses the page offers, Copy link), and returns a disposer that removes every node, listener and timer it added. Every word is the core's: the rows and their state words from `openersFor`, a member's "Last shaped in Atlas, 12 Oct" from `doorsOf` and `doorWhere`, the copied link from `elementAddress` (the site's address with the world's id; the toast says "Link copied"). The public face shows the name and type, only the rows that need nothing first, and Copy link. Options are refused by name when unknown, before anything is drawn. No node carries a `style` attribute, so it runs under `style-src 'self'`; every colour in the stylesheet is one of the Waymark's two grounds (`dark`, `paper`). The mark is a button and the fan-out a menu, keyboard first (Tab through the rows, arrows, Home, End, Escape back to the mark; focus moving out of it closes it and stays where it went, the end of the page included, while the window losing focus leaves it open); at 390 px wide and below it is a sheet from the bottom with rows at least 44 px tall, and the mark's tap area is at least 44 by 44 px at every width. `entry: 'mark' | 'menu' | 'both'` picks the way in: the mark beside the name, an "Open with" entry (`dispose.entry`) for the page's own "..." menu, or both; Escape returns focus to the one that opened it, and `returnFocus` (refused with `'mark'`) names the page's own element, its "..." button, to take focus back from a fan-out the entry opened. A failed copy (no clipboard, or the write refused) keeps the fan-out open, and the toast says "Could not copy the link." over the address in a read-only line to copy by hand, until the fan-out closes. The core (`.`) does not import it and stays free of the DOM.
@@ -13,6 +15,7 @@ earlier history lives in git log only.
 ### Changed
 
 - **`sideEffects`** in `package.json` is `["*.css"]` (was `false`), so a bundler keeps an import of `waymark.css`; every JavaScript file is still free of side effects.
+- **The package has two entries.** `dist/index.js` and `dist/waymark.js` share one chunk of code, and each entry's declarations stand alone in its own `.d.ts`: `dist/index.d.ts` still holds every declaration of the core.
 
 ## [4.112.0] - 2026-10-30
 

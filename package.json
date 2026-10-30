@@ -1,6 +1,6 @@
 {
   "name": "@onlyworlds/sdk",
-  "version": "4.112.0",
+  "version": "4.113.0",
   "description": "TypeScript SDK for the OnlyWorlds API - build world-building applications with type safety",
   "type": "module",
   "exports": {
@@ -27,7 +27,7 @@
     "SCHEMA.md"
   ],
   "scripts": {
-    "build": "tsup --entry.index src/index.ts --entry.waymark src/waymark/index.ts --format esm --dts --clean && node -e \"require('fs').copyFileSync('src/waymark/waymark.css', 'dist/waymark.css')\"",
+    "build": "tsup --entry.index src/index.ts --entry.waymark src/waymark/index.ts --format esm --clean && tsup --entry.index src/index.ts --format esm --dts-only && tsup --entry.waymark src/waymark/index.ts --format esm --dts-only && node -e \"require('fs').copyFileSync('src/waymark/waymark.css', 'dist/waymark.css')\"",
     "dev": "tsup --entry.index src/index.ts --entry.waymark src/waymark/index.ts --format esm --dts --watch",
     "pretest": "npm run build",
     "test": "node --test",
