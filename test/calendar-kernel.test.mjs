@@ -442,7 +442,7 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         expect(readCalendarConfig({ version: 1, grain: 'day', bundles: { months: { names: ['a'], lengths: [1, 2] } } })).toBe(null);
         expect(readCalendarConfig({ version: 1, grain: 'day', eras: [{ name: 'X' }] })).toBe(null);
     });
-    // The profile's grain is required and a string; an empty string is no grain (Quillon's Unreal port).
+    // The profile's grain is required and a string; an empty string is no grain (found in the Unreal port).
     it('refuses an empty or non-string grain, and reads a named one', () => {
         for (const bad of ['', 1, null, ['day']]) {
             expect(readCalendarConfig({ version: 1, grain: bad })).toBe(null);
@@ -468,7 +468,7 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         expect(readCalendarConfig({ version: 1, grain: String.fromCharCode(0x20) + 'day' + String.fromCharCode(0x3000) })).not.toBe(null);
         expect(validateCalendarConfig({ version: 1, grain: 'day' })).toEqual([]);
     });
-    // Serial 89 (Quillon's Unreal port): a day after a month the year lacks has no position.
+    // Serial 89 (found in the Unreal port): a day after a month the year lacks has no position.
     it('refuses an intercalary day after a month the year does not have', () => {
         const months = { names: ['A', 'B'], lengths: [10, 10] };
         const at = (after_month, extra = {}) => ({ version: 1, grain: 'day', bundles: { months, ...extra }, intercalary: [{ name: 'Gap', after_month }] });
@@ -508,7 +508,7 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
             expect(formatStep(cfg, 10)).toBe(formatStep(base, 10));
         }
     });
-    // 4.42.1 (Quillon): a falsy non-list threw a TypeError; the profile's whole numbers and string names.
+    // 4.42.1: a falsy non-list threw a TypeError; the profile's whole numbers and string names.
     it('refuses a falsy eras or intercalary instead of throwing', () => {
         for (const bad of [false, 0, '']) {
             expect(readCalendarConfig({ version: 1, grain: 'day', eras: bad })).toBe(null);
@@ -542,7 +542,7 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
         expect(formatStep(cal(5), -1)).toBe('10 Thaw, 2 BG');
         expect(formatStep(cal(5), 5)).toBe('6 Frost, 1 AG');
     });
-    // 4.42.3: parseDate is formatStep's inverse on both sides of a mid-year pivot (Quillon).
+    // 4.42.3: parseDate is formatStep's inverse on both sides of a mid-year pivot.
     it('a mid-year down pivot round-trips through parseDate', () => {
         const months = { names: ['Frost', 'Thaw'], lengths: [10, 10] };
         for (const pivot of [0, 5]) {
@@ -556,7 +556,7 @@ describe('defensive read (wild configs fall back, never a broken axis)', () => {
             }
         }
     });
-    // 4.42.4: a typed era names the date's era (Temper).
+    // 4.42.4: a typed era names the date's era.
     it('a date the typed era does not hold is refused, not read in another era', () => {
         const cfg = { version: 1, grain: 'day', bundles: { months: { names: ['Frost', 'Thaw'], lengths: [10, 10] } }, eras: [
             { name: 'Before Gate', abbrev: 'BG', start: 5, direction: 'down' }, { name: 'After Gate', abbrev: 'AG', start: 5 }] };

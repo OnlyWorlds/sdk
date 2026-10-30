@@ -16,7 +16,7 @@ const FID = '018f0000-0000-7000-8000-0000000000f1';
 
 const ROW = {
   id: FID, name: 'Map notes.pdf', kind: 'pdf', size: 5, label: 'description',
-  added_by: { name: 'Temper', membership: null, agent: false }, added_at: '2026-10-19T18:00:00Z',
+  added_by: { name: 'Ada', membership: null, agent: false }, added_at: '2026-10-19T18:00:00Z',
 };
 const WORLD = {
   data: [{ ...ROW, element_type: 'location', element_id: EL }],

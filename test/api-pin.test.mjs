@@ -1,5 +1,5 @@
 /**
- * API-Pin only where keel checks it (Skeld's ruling, 2026-10-22): every write (any method
+ * API-Pin only where keel checks it (ruled 2026-10-22): every write (any method
  * but GET), GET /me, and every request of a 10-digit legacy key. keel
  * verifies a PIN wherever it is sent (argon2, 64 MiB each); reads sent with one OOM-killed staging
  * on a cold cache (2026-10-22). Each call below states its own expectation for a prefixed key, so

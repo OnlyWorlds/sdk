@@ -17,7 +17,7 @@ function fake(body) {
 }
 
 test('client.me: GET /me with the world key and PIN, the body as keel sends it', async () => {
-  const me = { world: { id: 'w1', name: 'Moppetopia' }, scope: 'write', kind: 'agent', role: 'guest', membership: 'm1', character: 'c1', name: 'Kael player test' };
+  const me = { world: { id: 'w1', name: 'Moppetopia' }, scope: 'write', kind: 'agent', role: 'guest', membership: 'm1', character: 'c1', name: 'player test' };
   const f = fake(me);
   const c = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: f.fetch });
   assert.deepEqual(await c.me(), me);
@@ -74,7 +74,7 @@ test('the published types: OwFrontDoor\'s six keys in the document\'s order, OwM
 test('client.members: GET /members, the rows unwrapped from { data }', async () => {
   const rows = [
     { id: null, kind: 'owner', role: 'owner', character: 'c0', status: 'active' },
-    { id: 'm1', kind: 'agent', role: 'guest', character: 'c1', status: 'active', name: 'Kael player test' },
+    { id: 'm1', kind: 'agent', role: 'guest', character: 'c1', status: 'active', name: 'player test' },
     { id: 'm2', kind: 'person', role: 'contributor', character: null, status: 'removed' },
   ];
   const f = fake({ data: rows });

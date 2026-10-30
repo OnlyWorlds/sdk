@@ -1,7 +1,7 @@
 /**
  * The world file, `.owworld` (Folder Format §4.7; a portable copy, §4.1):
  * Atlas's reader cases, ported from Atlas's tests/unit/world-file.test.ts
- * (Temper's) onto the tool-neutral reader, the cases the move added (`skip`,
+ * onto the tool-neutral reader, the cases the move added (`skip`,
  * reason codes, a path that is both a file and a folder, the writer's
  * refusals), and §4.7's checks OW-1 to OW-22, each on bytes built here. The
  * fixture-set test runs the whole set, vendored with the schema distribution
@@ -389,7 +389,7 @@ test('OW-18: two names that are one after NFC and simple case folding are refuse
 
 test('OW-18: the fold is CaseFolding.txt 15.1, C and S rows, for every code point and nothing more', () => {
   // Unicode's file as published (unicode.org/Public/15.1.0/ucd/CaseFolding.txt), the copy the schema dist carries
-  // beside the fixture set; Skeld's ruling, 2026-10-22.
+  // beside the fixture set; ruled 2026-10-22.
   const table = new Map();
   for (const line of readFileSync(new URL('../codegen/schema-dist/fixtures/owworld/CaseFolding-15.1.0.txt', import.meta.url), 'utf8').split(/\r?\n/)) {
     const m = /^([0-9A-F]+); ([CS]); ([0-9A-F]+);/.exec(line);

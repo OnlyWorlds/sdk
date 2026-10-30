@@ -11,8 +11,8 @@
 //   node scripts/public-words.mjs --commits A..B   scan the messages of the commits B adds to A
 //
 // Exit 1 and one line per finding; exit 0 when the tree is clean. Not scanned: CHANGELOG.md
-// (the dated record, kept as written), test/, codegen/schema-dist/ and codegen/tools/ (vendored
-// and hash-verified).
+// (the dated record, kept as written), test/fixtures/ (world data, where a demo
+// character's name can match a team word), codegen/schema-dist/ and codegen/tools/ (vendored and hash-verified).
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -32,8 +32,9 @@ const PUBLISHED = [
   'SECURITY.md',
   'SCHEMA.md',
   'package.json',
+  'test',
 ];
-const VENDORED = ['codegen/schema-dist/', 'codegen/tools/'];
+const VENDORED = ['codegen/schema-dist/', 'codegen/tools/', 'test/fixtures/'];
 
 // Each row: a pattern, and what a writer puts instead.
 const PATTERNS = [
