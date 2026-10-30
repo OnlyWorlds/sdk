@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.117.1] - 2026-10-30
+
+### Changed
+
+- **The schema pin moves to schema-dist serial 97** (`v0.33.0-dist.97`), which states in the address profile that a writer's empty string is never absent and cases it four times, once per part. `elementAddress` already answered that way, so no code changes: given `""` for the world, the type, the id or the lens it throws `OwAddressError` with that part's own reason (`bad_world`, `unknown_type`, `bad_id`, `bad_lens`); only `null` or a missing key counts as absent.
+
 ## [4.117.0] - 2026-10-30
 
 ### Changed

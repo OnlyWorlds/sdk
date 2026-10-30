@@ -65,7 +65,7 @@ test('elementAddress and parseOwLink answer every case of the address fixture', 
   t.diagnostic(line);
   for (const w of wrong) t.diagnostic(w);
   assert.deepEqual(wrong, [], line);
-  assert.ok(doc.cases.length >= 133, `the fixture holds ${doc.cases.length} cases`);
+  assert.ok(doc.cases.length >= 137, `the fixture holds ${doc.cases.length} cases, serial 97 has 137`);
 });
 
 test('every refusal the fixture names is exercised by a case, and no case refuses by another name', () => {
