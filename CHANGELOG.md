@@ -14,6 +14,7 @@ earlier history lives in git log only.
   - **A `full` row is the body as served.** A row of an element under the hidden mark (the world's `hidden` list or the element's own `hidden`) carries `hidden: true`, as the API serves it: the owner's row of a hidden element, and a guest's row of a hidden element of its own. No other body carries a `hidden` key, so a stored `hidden: false` is dropped. A `name` or `first_line` row never carries it.
   - **A proposed element is in no Domain's hubs.** `charterOf` and `domainsOf` leave an element written as proposed out of a Domain's `hubs` for every reader, the owner included, as they already left it out of the Charter, the Guide, the Domains and `skill`.
 - The serial's other cases (a public reader's served list, a single link stored empty, an id one lens anchors under two fields met once under the first, a member reading the Charter whole from a stub, a skill id compared whatever its case, and the names map's six) replay unchanged.
+- **The waymark entry no longer loads the world-file and zip code.** `@onlyworlds/sdk/waymark` reached `readWorldFile`'s module, and with it fflate, through the case fold the room and names readers use; the fold now lives in its own module, so the chunk the entry loads imports no fflate (101 KB to 58 KB). `simpleCaseFold` is exported from the package root as before.
 
 ## [4.113.0] - 2026-10-30
 

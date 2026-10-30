@@ -1,5 +1,5 @@
 // The OW-18 fold table (Folder Format §4.7; ruled 2026-10-22): the C and S rows of Unicode's
-// CaseFolding.txt at the pinned version, as runs, for `FOLD_RUNS` in src/world-file.ts.
+// CaseFolding.txt at the pinned version, as runs, for `FOLD_RUNS` in src/case-fold.ts.
 //
 //   node codegen/fold_runs.mjs [codegen/schema-dist/fixtures/owworld/CaseFolding-15.1.0.txt]
 //

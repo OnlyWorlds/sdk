@@ -4,7 +4,7 @@
 // that keeps its own copy of the pairs can drop it for these exports.
 
 import { CHARTER_PAIRS, READING_AID_MARK, READING_AID_PAIRS, ROOM_MARK, ROOM_PAIRS } from './v2/types.generated';
-import { simpleCaseFold } from './world-file';
+import { simpleCaseFold } from './case-fold';
 
 export { ROOM_PAIRS };
 
