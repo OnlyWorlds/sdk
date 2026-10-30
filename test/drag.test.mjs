@@ -14,7 +14,7 @@ const PAIRS = DOC.pairs;
 test('the vendored table is version 1 and holds 113 pairs, each two type slugs in code point order', () => {
   assert.equal(DOC.version, 1);
   const keys = Object.keys(PAIRS);
-  assert.equal(keys.length, 113, `pairs.json holds ${keys.length} pairs, serial 95 has 113`);
+  assert.equal(keys.length, 113, `pairs.json holds ${keys.length} pairs, serial 96 has 113`);
   for (const key of keys) {
     const [a, b, ...rest] = key.split('+');
     assert.deepEqual(rest, [], key);

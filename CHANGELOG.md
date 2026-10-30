@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.116.1] - 2026-10-30
+
+### Changed
+
+- **The schema pin moves to schema-dist serial 96** (`v0.33.0-dist.96`), which states how the lens profile's graph reads a guest's own hidden creation and cases it twice. Both cases pass as `worldGraph` already reads them, so no reader changes: with no lens the creation is not in the guest's graph, with no count and no counted cut edge, as for any hidden element below the owner; in a lens's graph that keeps it, it is a node marked `hidden`.
+
 ## [4.116.0] - 2026-10-30
 
 ### Changed
