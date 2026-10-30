@@ -124,9 +124,10 @@ function shapedOn(at: string, now: Date): string {
  * Placement: below the name at its start, unless it would cross the box that clips it (the nearest
  * ancestor of `target` whose overflow on that axis is not visible, within the window, else the window):
  * measured at each open, it then opens at the name's end (class `ow-waymark__pop--end`) or above the
- * name (`ow-waymark__pop--up`), where that side crosses less; the toast takes the same side. At 390 px
- * wide and below the stylesheet draws it as a sheet from the bottom, and no side is chosen. The page
- * must load `@onlyworlds/sdk/waymark.css`; no node carries a style attribute.
+ * name (`ow-waymark__pop--up`), where that side crosses less; the toast takes the same side. At 480 px
+ * wide and below (every portrait phone, and a desktop window as narrow) the stylesheet draws it as a
+ * sheet from the bottom, and no side is chosen. The page must load `@onlyworlds/sdk/waymark.css`; no
+ * node carries a style attribute.
  *
  * Refuses, before anything is drawn, an unknown option key by name and a value of the wrong kind (a
  * TypeError), and an address `elementAddress` refuses (an `OwAddressError`: a world id that is not an

@@ -463,7 +463,7 @@ test('Tab off the last row with nothing after it (focus on the body) closes the 
 
 test('tap targets: rows at least 44 px tall in the sheet, the type size kept; the mark\'s tap box at least 44 by 44 at every width, with no room taken', () => {
   const css = readFileSync(fileURLToPath(new URL('../dist/waymark.css', import.meta.url)), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  const sheet = /@media \(max-width: 390px\) \{([\s\S]*)\}\s*$/.exec(css)[1];
+  const sheet = /@media \(max-width: 480px\) \{([\s\S]*)\}\s*$/.exec(css)[1];
   const rule = (src, sel) => {
     const m = new RegExp(`(?:^|\\})\\s*${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(src);
     return m ? Object.fromEntries(m[1].split(';').map((d) => d.split(':').map((s) => s.trim())).filter((d) => d[0])) : null;
@@ -656,6 +656,41 @@ test('the fan-out picks its side when it opens, by measuring against the box tha
   assert.deepEqual([f.sides(f.pop), f.sides(f.toast)], [[], []], 'the sheet keeps its place');
 });
 
+/**
+ * The fan-out opened in a window `width` px wide with the shipped stylesheet loaded (happy-dom applies its
+ * media block by the window's width), the wrapper stubbed where a pop at its start would cross a narrow
+ * window's right edge: the pop's computed position, and the side classes chosen.
+ */
+function openedAt(width) {
+  const css = readFileSync(fileURLToPath(new URL('../dist/waymark.css', import.meta.url)), 'utf8');
+  const window = new Window({ url: 'https://surface.example/w/x', width, height: 800 });
+  const doc = window.document;
+  const style = doc.createElement('style');
+  style.textContent = css;
+  doc.head.appendChild(style);
+  doc.body.innerHTML = '<main><h1 class="name">Governor Threadsworth</h1></main>';
+  const name = doc.querySelector('.name');
+  mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member' });
+  const pop = name.querySelector('.ow-waymark__pop');
+  name.querySelector('.ow-waymark').getBoundingClientRect = () => box(300, 100, 20, 20);
+  pop.getBoundingClientRect = () => box(300, 126, 300, 240);
+  name.querySelector('.ow-waymark__mark').click();
+  assert.equal(window.innerWidth, width);
+  return { position: window.getComputedStyle(pop).position, sides: [...pop.classList].filter((c) => /--(end|up)$/.test(c)) };
+}
+
+test('a 430 px phone gets the sheet from the bottom, with no side chosen', () => {
+  assert.deepEqual(openedAt(430), { position: 'fixed', sides: [] });
+});
+
+test('480 px wide is the last width with the sheet', () => {
+  assert.deepEqual(openedAt(480), { position: 'fixed', sides: [] });
+});
+
+test('481 px wide gets the popover, its side measured', () => {
+  assert.deepEqual(openedAt(481), { position: 'absolute', sides: ['ow-waymark__pop--end'] });
+});
+
 test('the surface\'s own row leads nowhere: a button with no href, kept in the arrow order; pressing it closes and returns focus', () => {
   const { window, doc, name } = page();
   mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', tools: TOOLS_ALL, ...SURFACE });
@@ -702,7 +737,7 @@ test('the stylesheet: every colour is declared once under its ground and key, an
   }
   assert.equal([...body.matchAll(/#[0-9a-fA-F]{3,8}\b/g)].length, declared.length, 'no colour outside the declarations');
   assert.doesNotMatch(body, /\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color-mix)\(|(?<![\w-])(transparent|white|black|currentcolor)(?![\w-])/i, 'no other colour form');
-  assert.match(body, /@media \(max-width: 390px\) \{[\s\S]*?\.ow-waymark__pop \{[^}]*position: fixed;[^}]*bottom: 0;/, 'a sheet from the bottom at 390 px and below');
+  assert.match(body, /@media \(max-width: 480px\) \{[\s\S]*?\.ow-waymark__pop \{[^}]*position: fixed;[^}]*bottom: 0;/, 'a sheet from the bottom at 480 px and below');
 });
 
 test('the core stays DOM-free: its bundle never reaches the component, and src outside src/waymark touches no page', () => {

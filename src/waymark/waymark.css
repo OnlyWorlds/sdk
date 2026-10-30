@@ -328,8 +328,10 @@
   outline-offset: 1px;
 }
 
-/* 390 px wide and below: a sheet from the bottom, the page behind dimmed, rows tall enough to touch. */
-@media (max-width: 390px) {
+/* 480 px wide and below: a sheet from the bottom, the page behind dimmed, rows tall enough to touch.
+   Portrait phones run to about 430 px, so every one gets the sheet with room to spare, and so does a
+   desktop window as narrow: by width alone, whatever the pointer. */
+@media (max-width: 480px) {
   .ow-waymark__scrim {
     display: block;
     position: fixed;
