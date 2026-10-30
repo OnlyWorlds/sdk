@@ -78,6 +78,8 @@ const POP_END = 'ow-waymark__pop--end';
 const POP_UP = 'ow-waymark__pop--up';
 const TOAST_END = 'ow-waymark__toast--end';
 const TOAST_UP = 'ow-waymark__toast--up';
+/** On the root when neither side fits: the fan-out is drawn as the sheet at any width. */
+const SHEET = 'ow-waymark--sheet';
 const COPIED = 'Link copied';
 const NOT_COPIED = 'Could not copy the link.';
 /** The state word openersFor gives the surface's own row. */
@@ -124,9 +126,10 @@ function shapedOn(at: string, now: Date): string {
  * Placement: below the name at its start, unless it would cross the box that clips it (the nearest
  * ancestor of `target` whose overflow on that axis is not visible, within the window, else the window):
  * measured at each open, it then opens at the name's end (class `ow-waymark__pop--end`) or above the
- * name (`ow-waymark__pop--up`), where that side crosses less; the toast takes the same side. At 480 px
- * wide and below (every portrait phone, and a desktop window as narrow) the stylesheet draws it as a
- * sheet from the bottom, and no side is chosen. The page must load `@onlyworlds/sdk/waymark.css`; no
+ * name (`ow-waymark__pop--up`), where that side fits; the toast takes the same side. When neither side
+ * of an axis fits (a mark mid-window in a narrow window, or in a narrow pane), it opens as the sheet
+ * from the bottom (class `ow-waymark--sheet` on the wrapper). At 480 px wide and below (every portrait
+ * phone, and a desktop window as narrow) the stylesheet draws it as that sheet, and no side is chosen. The page must load `@onlyworlds/sdk/waymark.css`; no
  * node carries a style attribute.
  *
  * Refuses, before anything is drawn, an unknown option key by name and a value of the wrong kind (a
@@ -396,8 +399,9 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   // The side the fan-out opens on, measured at each open against the box that clips it on each axis: the
   // nearest ancestor of the target whose overflow on that axis is not visible, within the window, else
   // the window. At the name's end (POP_END) when the start would cross that box's right edge and the end
-  // crosses its left less; above the name (POP_UP) when below would cross its bottom and above crosses
-  // its top less. The toast shares the anchor and takes the same side. The sheet (a fixed pop) has none.
+  // fits; above the name (POP_UP) when below would cross its bottom and above fits. When both sides of an
+  // axis cross, the wrapper takes SHEET and the stylesheet draws the sheet, whatever the width. The toast
+  // shares the anchor and takes the same side. The sheet (a fixed pop) has none.
   const overflowOf = (cs: CSSStyleDeclaration, axis: 'x' | 'y'): string => {
     const [x, y = x] = (cs.overflow || '').trim().split(/\s+/);
     return (axis === 'x' ? cs.overflowX || x : cs.overflowY || y) || 'visible';
@@ -413,20 +417,29 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     }
     return [0, edge];
   };
+  // Whether the last open drew the sheet: "Link copied", shown after the close, keeps its place.
+  let sheetAtOpen = false;
   const placePop = (): void => {
     pop.classList.remove(POP_END, POP_UP);
+    root.classList.remove(SHEET);
     let end = false;
     let up = false;
+    let sheet = false;
     if (win !== null && win.getComputedStyle(pop).position !== 'fixed') {
       const at = pop.getBoundingClientRect();
       const anchor = root.getBoundingClientRect();
       const [left, right] = clipBox(win, 'x');
       const [top, bottom] = clipBox(win, 'y');
-      const pastRight = at.right - right;
-      end = pastRight > 0 && Math.max(0, left - (anchor.right - at.width)) < pastRight;
-      const pastBottom = at.bottom - bottom;
-      up = pastBottom > 0 && Math.max(0, top - (anchor.top - GAP - at.height)) < pastBottom;
+      const startCrosses = at.right > right;
+      const endCrosses = anchor.right - at.width < left;
+      const belowCrosses = at.bottom > bottom;
+      const aboveCrosses = anchor.top - GAP - at.height < top;
+      sheet = (startCrosses && endCrosses) || (belowCrosses && aboveCrosses);
+      end = !sheet && startCrosses;
+      up = !sheet && belowCrosses;
     }
+    sheetAtOpen = sheet;
+    root.classList.toggle(SHEET, sheet);
     pop.classList.toggle(POP_END, end);
     pop.classList.toggle(POP_UP, up);
     toast.classList.toggle(TOAST_END, end);
@@ -445,10 +458,11 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     (focus === 'first' ? list[0] : list[list.length - 1])?.focus();
   };
   const failed = (): boolean => !addressLine.hidden;
-  /** The toast hides, and the side it took from the fan-out's last open goes with it. */
+  /** The toast hides, and the side it took from the fan-out's last open goes with it (the sheet too, once the fan-out is closed). */
   const hideToast = (): void => {
     toast.hidden = true;
     toast.classList.remove(TOAST_END, TOAST_UP);
+    if (pop.hidden) root.classList.remove(SHEET);
   };
   const close = (refocus: boolean): void => {
     if (!isOpen()) return;
@@ -463,10 +477,13 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
       addressLine.hidden = true;
       toast.classList.remove('ow-waymark__toast--failed');
     }
+    // A toast still showing keeps the sheet's place until it hides; "Link copied" restores it (copied).
+    if (toast.hidden) root.classList.remove(SHEET);
     if (refocus) focusBack().focus();
   };
   const copied = (): void => {
     toastWords.textContent = COPIED;
+    root.classList.toggle(SHEET, sheetAtOpen);
     toast.hidden = false;
     if (toastTimer !== null) timers.clearTimeout(toastTimer);
     toastTimer = timers.setTimeout(() => {

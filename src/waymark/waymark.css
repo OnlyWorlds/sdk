@@ -328,6 +328,60 @@
   outline-offset: 1px;
 }
 
+/* Wider than 480 px, when neither side of an axis fits the box that clips the fan-out (a mark
+   mid-window in a narrow window, or in a narrow pane): the same sheet as below, by the class the open
+   puts on the wrapper. Each rule here is the media block's, declaration for declaration. */
+.ow-waymark--sheet .ow-waymark__scrim {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: var(--ow-waymark-page);
+  opacity: 0.6;
+}
+.ow-waymark--sheet .ow-waymark__pop {
+  position: fixed;
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: auto;
+  max-width: none;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 8px 14px 18px;
+  border-width: 1px 0 0;
+  border-radius: 18px 18px 0 0;
+  box-shadow: none;
+}
+.ow-waymark--sheet .ow-waymark__grab {
+  display: block;
+  width: 40px;
+  height: 4px;
+  margin: 0 auto 8px;
+  border-radius: 2px;
+  background: var(--ow-waymark-line);
+}
+.ow-waymark--sheet .ow-waymark__row {
+  min-height: 44px;
+  padding: 12px 6px;
+  font-size: 15px;
+}
+.ow-waymark--sheet .ow-waymark__row--lens {
+  padding-left: 30px;
+}
+.ow-waymark--sheet .ow-waymark__toast {
+  position: fixed;
+  top: auto;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.ow-waymark--sheet .ow-waymark__pop:not([hidden]) ~ .ow-waymark__toast {
+  top: 16px;
+  bottom: auto;
+}
+
 /* 480 px wide and below: a sheet from the bottom, the page behind dimmed, rows tall enough to touch.
    Portrait phones run to about 430 px, so every one gets the sheet with room to spare, and so does a
    desktop window as narrow: by width alone, whatever the pointer. */

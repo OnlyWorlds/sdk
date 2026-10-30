@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.117.2] - 2026-10-30
+
+### Fixed
+
+- **The Waymark opens as the sheet when neither side fits.** Wider than 480 px, a fan-out whose start would cross the right edge of the box that clips it and whose end would cross its left edge (a mark in the middle of a narrow window, or of a narrow pane) took the side that crossed less and still left the box: in a 481 px window, a mark at 196 to 235 px opened its 300 px pop from 187 to 487, 6 px past the edge. The same holds for below and above. Now the open puts `ow-waymark--sheet` on the wrapper and the stylesheet draws the sheet from the bottom, the layout it already draws at 480 px and below (rows at least 44 px, the page behind dimmed), and no side class is set. A side is taken only where it fits, so `--end` and `--up` mean the pop lies inside the box. "Link copied", shown after the fan-out closes, keeps the sheet's place until it hides. The sheet's rules under the class are the media block's, declaration for declaration, held by a test. No node carries a style attribute.
+
 ## [4.117.1] - 2026-10-30
 
 ### Changed

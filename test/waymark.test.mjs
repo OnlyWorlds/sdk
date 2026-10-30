@@ -644,10 +644,11 @@ test('the fan-out picks its side when it opens, by measuring against the box tha
   f = placed({ anchor: box(300, 100, 20, 20), css: 'main { overflow-x: clip; overflow-y: visible; }', main: box(0, 90, 500, 36) });
   f.mark.click();
   assert.deepEqual(f.sides(f.pop), ['ow-waymark__pop--end'], 'the band clips the right edge, not the bottom');
-  // No room either way: it stays where it crosses less (here, below: above would start at -226).
+  // No room either way (below crosses by 86, above would start at -226): the sheet, no side.
   f = placed({ anchor: box(100, 20, 20, 20), css: 'main { overflow: hidden; }', main: box(0, 0, 1024, 200) });
   f.mark.click();
-  assert.deepEqual(f.sides(f.pop), [], 'below crosses by 86, above by 226: below');
+  assert.deepEqual(f.sides(f.pop), [], 'neither below nor above fits: no side');
+  assert.equal(f.root.classList.contains('ow-waymark--sheet'), true, 'neither below nor above fits: the sheet');
   // The sheet (a fixed pop): no side at all.
   f = placed({ anchor: box(900, 600, 20, 20) });
   const real = f.window.getComputedStyle.bind(f.window);
@@ -656,12 +657,58 @@ test('the fan-out picks its side when it opens, by measuring against the box tha
   assert.deepEqual([f.sides(f.pop), f.sides(f.toast)], [[], []], 'the sheet keeps its place');
 });
 
+test('neither side fits across (a mark mid-window in a narrow window): the sheet, and the copied toast keeps it until it hides', async () => {
+  // The site's character page at 481: the clipping box 481 wide, the wrapper at 196 to 235. The start
+  // side would end at 496, the end side would start at -65.
+  const narrow = { css: 'main { overflow: hidden; }', main: box(0, 0, 481, 768) };
+  let f = placed({ anchor: box(196, 100, 39, 20), ...narrow });
+  f.mark.click();
+  assert.equal(f.root.classList.contains('ow-waymark--sheet'), true, 'neither side fits: the sheet');
+  assert.deepEqual([f.sides(f.pop), f.sides(f.toast)], [[], []], 'no side with the sheet');
+  // The world page's numbers at the same width: the end side fits, so no sheet.
+  f.mark.click();
+  assert.equal(f.root.classList.contains('ow-waymark--sheet'), false, 'removed on close');
+  f.at.anchor = box(277, 100, 42, 20);
+  f.mark.click();
+  assert.equal(f.root.classList.contains('ow-waymark--sheet'), false, 'the end side fits: no sheet');
+  assert.deepEqual(f.sides(f.pop), ['ow-waymark__pop--end']);
+  // Back mid-window: "Link copied", shown after the close, keeps the sheet's place, and it goes when the toast hides.
+  f.mark.click();
+  f.at.anchor = box(196, 100, 39, 20);
+  f.mark.click();
+  items(f.name).at(-1).click();
+  await flush();
+  assert.equal(f.pop.hidden, true);
+  assert.equal(f.toast.hidden, false);
+  assert.equal(f.root.classList.contains('ow-waymark--sheet'), true, 'the copied toast in the sheet\'s place');
+  await new Promise((r) => setTimeout(r, 2100));
+  assert.equal(f.toast.hidden, true);
+  assert.equal(f.root.classList.contains('ow-waymark--sheet'), false, 'gone with the toast');
+  // Exactly at the edge: a pop that ends on the box's edge fits.
+  f = placed({ anchor: box(181, 100, 39, 20), ...narrow });
+  f.mark.click();
+  assert.equal(f.root.classList.contains('ow-waymark--sheet'), false, 'ending at 481 fits');
+  assert.deepEqual(f.sides(f.pop), []);
+});
+
+test('the sheet\'s rules for a narrow box are the 480 px sheet\'s, declaration for declaration', () => {
+  const css = readFileSync(fileURLToPath(new URL('../dist/waymark.css', import.meta.url)), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const at = css.indexOf('@media (max-width: 480px)');
+  assert.ok(at > 0, 'the media block');
+  const rules = (src) => [...src.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1].trim(), m[2].split(';').map((d) => d.trim()).filter(Boolean).join('; ')]);
+  const media = rules(/@media \(max-width: 480px\) \{([\s\S]*)\}\s*$/.exec(css)[1]);
+  const byClass = new Map(rules(css.slice(0, at)).filter(([s]) => s.startsWith('.ow-waymark--sheet ')));
+  assert.ok(media.length >= 7, `the media block's rules (${media.length})`);
+  for (const [sel, body] of media) assert.equal(byClass.get(`.ow-waymark--sheet ${sel}`), body, sel);
+  assert.equal(byClass.size, media.length, 'no rule under the class that the media block lacks');
+});
+
 /**
  * The fan-out opened in a window `width` px wide with the shipped stylesheet loaded (happy-dom applies its
  * media block by the window's width), the wrapper stubbed where a pop at its start would cross a narrow
  * window's right edge: the pop's computed position, and the side classes chosen.
  */
-function openedAt(width) {
+function openedAt(width, anchor = box(300, 100, 20, 20)) {
   const css = readFileSync(fileURLToPath(new URL('../dist/waymark.css', import.meta.url)), 'utf8');
   const window = new Window({ url: 'https://surface.example/w/x', width, height: 800 });
   const doc = window.document;
@@ -672,12 +719,18 @@ function openedAt(width) {
   const name = doc.querySelector('.name');
   mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member' });
   const pop = name.querySelector('.ow-waymark__pop');
-  name.querySelector('.ow-waymark').getBoundingClientRect = () => box(300, 100, 20, 20);
-  pop.getBoundingClientRect = () => box(300, 126, 300, 240);
+  name.querySelector('.ow-waymark').getBoundingClientRect = () => anchor;
+  pop.getBoundingClientRect = () => box(anchor.left, anchor.bottom + 6, 300, 240);
   name.querySelector('.ow-waymark__mark').click();
   assert.equal(window.innerWidth, width);
   return { position: window.getComputedStyle(pop).position, sides: [...pop.classList].filter((c) => /--(end|up)$/.test(c)) };
 }
+
+test('wider than 480, a mark mid-window that neither side fits gets the same sheet from the stylesheet', () => {
+  assert.deepEqual(openedAt(481, box(196, 100, 39, 20)), { position: 'fixed', sides: [] });
+  assert.deepEqual(openedAt(520, box(230, 100, 39, 20)), { position: 'fixed', sides: [] }, 'the start ends at 530, the end starts at -31');
+  assert.deepEqual(openedAt(700, box(200, 100, 39, 20)), { position: 'absolute', sides: [] }, 'room at the start');
+});
 
 test('a 430 px phone gets the sheet from the bottom, with no side chosen', () => {
   assert.deepEqual(openedAt(430), { position: 'fixed', sides: [] });
