@@ -13,7 +13,7 @@ export const STRAND_FIELD = 'x_strand';
 
 /** The world snapshot a strand is read from: the lens reader's world, the World's mark, and whether it is open to anyone. */
 export interface OwStrandWorld extends OwLensWorld {
-  /** The mark, `{narrative, event, location}`, three ids; any other shape is no mark. */
+  /** The mark, `{narrative, event, location}`: the story's id, the other two ids or unset (null or absent); any other shape is no mark. */
   x_strand?: unknown;
   /** True for a world open to anyone: only then does the public rung read anything of it. */
   open?: boolean | null;
@@ -43,18 +43,26 @@ export interface OwStrand {
 
 type Body = Record<string, unknown>;
 
-const SLOTS = ['narrative', 'event', 'location'] as const;
-
 const EMPTY = (): OwStrand => ({ narrative: null, event: null, location: null, character: null, now: null, same: null });
 
-/** The mark's three ids, or null when the value is not the profile's shape (an object whose three members are each a non-empty string). */
-function markOf(value: unknown): Record<(typeof SLOTS)[number], string> | null {
+/** A member the mark may leave unset: its id, null when it is null or absent, undefined when it is anything else (no mark). */
+function optionalId(value: unknown): string | null | undefined {
+  if (value === null || value === undefined) return null;
+  return typeof value === 'string' && value !== '' ? value : undefined;
+}
+
+/**
+ * The mark's ids, or null when the value is not the profile's shape: an object whose `narrative` is a non-empty
+ * string, and whose `event` and `location` are each a non-empty string, null or absent (read as unset).
+ */
+function markOf(value: unknown): { narrative: string; event: string | null; location: string | null } | null {
   if (!isBody(value)) return null;
   const v = value as Body;
-  for (const slot of SLOTS) {
-    if (typeof v[slot] !== 'string' || v[slot] === '') return null;
-  }
-  return { narrative: v.narrative as string, event: v.event as string, location: v.location as string };
+  if (typeof v.narrative !== 'string' || v.narrative === '') return null;
+  const event = optionalId(v.event);
+  const location = optionalId(v.location);
+  if (event === undefined || location === undefined) return null;
+  return { narrative: v.narrative, event, location };
 }
 
 /**
@@ -68,8 +76,10 @@ function markOf(value: unknown): Record<(typeof SLOTS)[number], string> | null {
  * Character in the reader's view; `now` the hero's `location` when it is a Location in the reader's view, empty when
  * the hero is. `same` is true when `now` and `location` are both filled with one id, false when with two, else null.
  * A list's order is never read, and no slot is filled from another: not the hero from the event's `characters`, not
- * `location` from `now`, not `now` from `location`. Any mark that is not an object of three non-empty strings is no
- * mark, and the strand is empty.
+ * `location` from `now`, not `now` from `location`. Only the story is required: `event` and `location` null or
+ * absent read as unset (a strand begun, its empty slots the next thing to make), and a place with no event is an
+ * empty place. A mark whose `narrative` is not a non-empty string, or whose `event` or `location` is anything but a
+ * non-empty string, null or absent, is no mark, and the strand is empty.
  *
  * `world` holds the elements as the owner is served them (the hidden in `hidden` or each element's own `hidden`),
  * the World's `x_strand`, and `open: true` for a world open to anyone; `reader` is a lens reader (`OwLensReader`):

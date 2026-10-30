@@ -17,7 +17,7 @@ test('the fixture is the strand profile\'s, its mark the field strandOf reads', 
   assert.equal(doc.profile, 'strand');
   assert.equal(doc.mark.field, STRAND_FIELD);
   assert.deepEqual(doc.mark.members, ['narrative', 'event', 'location']);
-  assert.equal(doc.cases.length, 17, `the fixture holds ${doc.cases.length} cases, serial 98 has 17`);
+  assert.equal(doc.cases.length, 21, `the fixture holds ${doc.cases.length} cases, serial 99 has 21`);
 });
 
 /** A case's world: one of the fixture's named worlds, or the case's own. */
@@ -59,10 +59,13 @@ test('a public reader reads no strand of a world that is not open, and the open 
   assert.deepEqual(strandOf({ ...world, open: true }, { rung: 'public' }), owner);
 });
 
-test('a mark with a member missing, empty or not a string is no mark', () => {
+test('a mark with no story, or an event or place that is neither an id nor unset, is no mark', () => {
   const world = doc.worlds.harbour;
   const m = world.x_strand;
-  for (const bad of [{ ...m, event: undefined }, { ...m, location: '' }, { ...m, narrative: 7 }, [m.narrative, m.event, m.location], null]) {
+  const { narrative: _n, ...noStory } = m;
+  const bads = [noStory, { ...m, narrative: '' }, { ...m, narrative: 7 }, { ...m, narrative: null }, { ...m, location: '' }, { ...m, event: 7 },
+    { ...m, event: {} }, { ...m, location: false }, [m.narrative, m.event, m.location], m.narrative, null];
+  for (const bad of bads) {
     const got = strandOf({ ...world, x_strand: bad }, { rung: 'owner' });
     assert.equal(got.narrative, null, JSON.stringify(bad));
   }
