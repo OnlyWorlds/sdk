@@ -357,6 +357,32 @@ test('a lens a guest knows only as a stub reads as nothing, by id, as keel reads
   assert.deepEqual(resolveLens(world, 'L', whole).kept, ['c1', 'c2']);
 });
 
+// An anchor reaches an element only through its field's target type and the id (rule 6: one of another type is
+// one the reader cannot see), an id under two fields of one lens met once, under the first in the anchor fields'
+// order (keel's _anchors, elements/lens.py:604-612); the cut counts each element once, and a kept element is
+// never also counted as cut.
+const childLens = (anchors) => ({ id: 'C', type: 'construct', name: 'C', supertype: 'Lens', ...anchors, x_lens: { depth: 0 } });
+const HARBOUR = { id: 'x', type: 'location', name: 'Harbour' };
+
+test('an id an umbrella and its child anchor under two wrong types is one element, counted once', () => {
+  const umbrella = lensOn({ characters: ['x'], constructs: ['C'] }, { depth: 0 });
+  const r = resolveLens({ elements: [childLens({ objects: ['x'] }), HARBOUR] }, umbrella, OWNER);
+  assert.deepEqual([r.kept, r.cut], [[], { anchor_not_visible: 1 }]);
+});
+
+test('an id anchored under the wrong type and under its own is kept and not counted; in one lens the first field wins', () => {
+  const wrongAbove = lensOn({ characters: ['x'], constructs: ['C'] }, { depth: 0 });
+  const above = resolveLens({ elements: [childLens({ locations: ['x'] }), HARBOUR] }, wrongAbove, OWNER);
+  assert.deepEqual([above.kept, above.cut], [['x'], {}]);
+  const wrongBelow = lensOn({ locations: ['x'], constructs: ['C'] }, { depth: 0 });
+  const below = resolveLens({ elements: [childLens({ characters: ['x'] }), HARBOUR] }, wrongBelow, OWNER);
+  assert.deepEqual([below.kept, below.cut], [['x'], {}]);
+  // One lens, `characters` before `locations`: keel meets the id once, as a Character (:607-609), finds no
+  // Character of it (:613) and counts it unseen (:619, :705-707); the hop knows the id already (:719).
+  const one = resolveLens({ elements: [HARBOUR] }, lensOn({ locations: ['x'], characters: ['x'] }), OWNER);
+  assert.deepEqual([one.kept, one.cut], [[], { anchor_not_visible: 1 }]);
+});
+
 test('a full row of a hidden element carries hidden: true for a reader who sees it, the two marks as one; the world stays as it was', () => {
   // keel's full row is the body it serves (elements/lens.py:894, :904; _World.served, :450-456), and a served body
   // of an element under the mark carries hidden: true, absent on every other (serialize.py:489-492,
