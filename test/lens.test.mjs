@@ -187,6 +187,13 @@ test('the fixture\'s tables, read back through the reader: pair, anchor fields, 
   // one is (the page states it; no fixture case holds it).
   const mistyped = resolveLens({ elements: [{ id: id(1), type: 'location', name: 'a' }] }, { ...LENS, characters: [id(1)], x_lens: { depth: 0 } }, OWNER);
   assert.deepEqual([mistyped.kept, mistyped.cut], [[], { anchor_not_visible: 1 }]);
+  // An anchor the reader cannot see is counted whatever it names, the lens itself included: the count comes
+  // before the visited check. A hidden lens in its own constructs, read as a body through a contributor's view,
+  // and a visible lens under a field of another type than its own.
+  const umbrella = { ...LENS, hidden: true, constructs: [LENS.id], x_lens: {} };
+  assert.deepEqual(resolveLens({ elements: [umbrella] }, umbrella, { rung: 'owner', as: { rung: 'contributor' } }).cut, { anchor_not_visible: 1 });
+  const misfiled = { ...LENS, characters: [LENS.id], x_lens: { depth: 0 } };
+  assert.deepEqual(resolveLens({ elements: [misfiled] }, LENS.id, OWNER).cut, { anchor_not_visible: 1 });
 });
 
 // The shared edge cases: inputs the fixture leaves open (a stub's links, the window's edge, the World's
