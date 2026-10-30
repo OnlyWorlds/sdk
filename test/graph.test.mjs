@@ -157,6 +157,18 @@ test('worldGraph refuses what is not a reading: an unknown option, a flag that i
   assert.deepEqual(worldGraph({ elements: [] }, { rung: 'public' }, { rooms: false, mapSpace: null }), { nodes: [], edges: [], edgesCut: {}, cut: {}, unreadable: null });
 });
 
+test('an edge to an element the lens cut only as a wrongly typed anchor reads the lens\'s reason', () => {
+  // The Location the lens names under `characters` is an anchor the reader cannot see (rule 6), counted once as
+  // the element it is; the edge to it reads that reason, never outside_lens.
+  const world = { elements: [
+    { id: 'o', type: 'object', name: 'Ledger', location: 'x' },
+    { id: 'x', type: 'location', name: 'Harbour' },
+  ] };
+  const lens = { id: 'L', type: 'construct', name: 'L', supertype: 'Lens', characters: ['x'], objects: ['o'] };
+  const g = worldGraph(world, { rung: 'owner' }, { lens });
+  assert.deepEqual([g.nodes.map(n => n.id), g.cut, g.edgesCut], [['o'], { anchor_not_visible: 1 }, { anchor_not_visible: 1 }]);
+});
+
 test('degreeOf: the edges of each node, in or out, a mirror pair two, a link to itself once, every node a key', () => {
   const world = {
     elements: [
