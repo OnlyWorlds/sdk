@@ -188,12 +188,17 @@ test('the fixture\'s tables, read back through the reader: pair, anchor fields, 
   const mistyped = resolveLens({ elements: [{ id: id(1), type: 'location', name: 'a' }] }, { ...LENS, characters: [id(1)], x_lens: { depth: 0 } }, OWNER);
   assert.deepEqual([mistyped.kept, mistyped.cut], [[], { anchor_not_visible: 1 }]);
   // An anchor the reader cannot see is counted whatever it names, the lens itself included: the count comes
-  // before the visited check. A hidden lens in its own constructs, read as a body through a contributor's view,
-  // and a visible lens under a field of another type than its own.
+  // before the visited check, for any anchor. A hidden lens in its own constructs, read as a body through a
+  // contributor's view; a visible lens under a field of another type than its own; a child lens pointing back
+  // at its hidden umbrella.
   const umbrella = { ...LENS, hidden: true, constructs: [LENS.id], x_lens: {} };
   assert.deepEqual(resolveLens({ elements: [umbrella] }, umbrella, { rung: 'owner', as: { rung: 'contributor' } }).cut, { anchor_not_visible: 1 });
   const misfiled = { ...LENS, characters: [LENS.id], x_lens: { depth: 0 } };
   assert.deepEqual(resolveLens({ elements: [misfiled] }, LENS.id, OWNER).cut, { anchor_not_visible: 1 });
+  const ancestor = { ...LENS, hidden: true, constructs: [id(901)], x_lens: {} };
+  const child = { id: id(901), type: 'construct', name: 'C', supertype: 'Lens', constructs: [LENS.id], objects: [id(1)], x_lens: { depth: 0 } };
+  const back = resolveLens({ elements: [ancestor, child, { id: id(1), type: 'object', name: 'o' }] }, ancestor, { rung: 'owner', as: { rung: 'contributor' } });
+  assert.deepEqual([back.kept, back.cut], [[id(1)], { anchor_not_visible: 1 }]);
 });
 
 // The shared edge cases: inputs the fixture leaves open (a stub's links, the window's edge, the World's
