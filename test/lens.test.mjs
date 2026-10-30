@@ -383,6 +383,24 @@ test('an id anchored under the wrong type and under its own is kept and not coun
   assert.deepEqual([one.kept, one.cut], [[], { anchor_not_visible: 1 }]);
 });
 
+// An umbrella whose wrongly typed anchor its child reaches and cuts by types.
+const TYPED = { elements: [
+  { id: 'C', type: 'construct', name: 'C', supertype: 'Lens', objects: ['o'], x_lens: { types: ['object'] } },
+  { id: 'o', type: 'object', name: 'Ledger', location: 'x' },
+  HARBOUR,
+] };
+const TYPED_LENS = lensOn({ characters: ['x'], constructs: ['C'] }, { depth: 0 });
+
+test('below the owner an anchor it cannot see is recorded under no reason, so a child\'s cut of it counts', () => {
+  // keel records an unseen anchor for the owner's counts only (elements/lens.py:705-707); every other reader's
+  // reading goes on as if the anchor were not there, and the child's cut by types stands (:758-759).
+  const r = resolveLens(TYPED, TYPED_LENS, { rung: 'contributor' });
+  assert.deepEqual([r.kept, r.cut], [['o'], { types: 1 }]);
+  // The owner's anchor_not_visible comes first, the element counted once.
+  const owner = resolveLens(TYPED, TYPED_LENS, OWNER);
+  assert.deepEqual([owner.kept, owner.cut], [['o'], { anchor_not_visible: 1 }]);
+});
+
 test('a full row of a hidden element carries hidden: true for a reader who sees it, the two marks as one; the world stays as it was', () => {
   // keel's full row is the body it serves (elements/lens.py:894, :904; _World.served, :450-456), and a served body
   // of an element under the mark carries hidden: true, absent on every other (serialize.py:489-492,

@@ -696,9 +696,11 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
   let list: string[] = [];
   const frontier: string[] = [];
   for (const id of anchors) {
-    // Rule 6 before the visited check: an anchor the reader cannot see is counted, the lens's own id included.
+    // Rule 6 before the visited check: an anchor the reader cannot see is counted, the lens's own id included,
+    // for the owner alone; every other reader records it under no reason, as if it were not there, so a reason
+    // a child gives the same element stands.
     if (!r.view.has(id) || unseen.has(id)) {
-      addCut(id, 'anchor_not_visible');
+      if (r.owner) addCut(id, 'anchor_not_visible');
       continue;
     }
     if (visited.has(id)) continue;
@@ -816,7 +818,9 @@ export function checkReader(reader: unknown, where: string): asserts reader is O
  * hopped on from, only when `types` names its pair, while one the lens names as an anchor is kept and
  * followed; anchors first in link order, then by type in the schema's order, newest first, then by id;
  * an anchor the reader cannot see (an id naming no element, or one of another type than its field's, too)
- * is skipped and counted for the owner (`anchor_not_visible`); a template resolves to nothing; the fence is `as_of` on
+ * is skipped and counted for the owner (`anchor_not_visible`, before any other reason), while for any other reader
+ * it is not there at all, so a child lens's cut of the same element counts under the child's reason; a template
+ * resolves to nothing; the fence is `as_of` on
  * each element's own date; `changed_within` cuts what a hop or a filter reaches that changed longer ago
  * than that many days before `clock` (`stale`), never an anchor. A value outside the profile's table makes
  * the lens unreadable: `unreadable` names the key and nothing is resolved.
