@@ -82,9 +82,8 @@ export interface OwLensReading {
   /**
    * The kept elements as `show` makes them, in the same order; an anchor's row carries its `note`, and only an anchor
    * the reader can see: a note on one it cannot see (an id of another type than its field's too) goes with the
-   * anchor, though another path keeps the element. Under `full` a row
-   * is the body as served to this reader, so the owner's row of a hidden element carries `hidden: true`; a `name` or
-   * `first_line` row never carries it.
+   * anchor, though another path keeps the element. Under `full` a row is the body as served to this reader, so the
+   * owner's row of a hidden element carries `hidden: true`; a `name` or `first_line` row never carries it.
    */
   rows: Record<string, unknown>[];
   /** The cut, counted by reason; a reason with no count is absent, and a reader that is not the owner never carries the owner's two. */
