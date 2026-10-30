@@ -8,7 +8,7 @@
 // The Python package's `resolve_lens` gives the same answers, byte for byte, on the same input.
 
 import { FIELD_SCHEMA, PUBLIC_FIELDS } from './v2/types.generated';
-import { READING_AID_KEYS, ROOM_PAIRS, fold, isRoomElement, readingAidKey } from './room';
+import { READING_AID_KEYS, ROOM_PAIRS, fold, isRoomElement, readingAidKey, trimWhiteSpace } from './room';
 import { handsOnAsProposed } from './review';
 import { compareKeys, isMessage, readMarkOf, timeKey, unreadFor } from './message';
 import type { OwMessageMember } from './message';
@@ -654,7 +654,8 @@ interface Resolved {
  * The anchors and the umbrella's children of a lens, in its link order. A child is a lens in `constructs`
  * the reader sees whole; one it knows only as a stub serves no recipe and no links, so it is an anchor
  * the reader cannot see (`unseen`), never entered (keel's `_anchors`). An id that names no element of the
- * world, or an element of another type than its field's, is an anchor the reader cannot see too.
+ * world, or an element of another type than its field's, is an anchor the reader cannot see too. An empty
+ * string, or one of White_Space alone, is no id and so no anchor: a lens of only such strings is a filter.
  */
 function anchorsOf(lens: Body, r: Reading): { anchors: string[]; children: string[]; unseen: Set<string>; anchored: boolean } {
   const anchors: string[] = [];
@@ -665,7 +666,7 @@ function anchorsOf(lens: Body, r: Reading): { anchors: string[]; children: strin
     const v = valueOf(lens, field);
     if (!Array.isArray(v)) continue;
     for (const id of v) {
-      if (typeof id !== 'string' || id === '' || seen.has(id)) continue;
+      if (typeof id !== 'string' || trimWhiteSpace(id) === '' || seen.has(id)) continue;
       seen.add(id);
       if (r.typeOf.get(id) !== ANCHOR_TARGET.get(field)) unseen.add(id);
       else if (field === 'constructs' && r.view.has(id) && isLens(r.byId.get(id) as Body)) {
