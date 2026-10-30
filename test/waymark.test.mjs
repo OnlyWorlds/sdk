@@ -701,6 +701,11 @@ test('the sheet\'s rules for a narrow box are the 480 px sheet\'s, declaration f
   assert.ok(media.length >= 7, `the media block's rules (${media.length})`);
   for (const [sel, body] of media) assert.equal(byClass.get(`.ow-waymark--sheet ${sel}`), body, sel);
   assert.equal(byClass.size, media.length, 'no rule under the class that the media block lacks');
+  // The phone's safe area: the sheet's last row and the toast clear a home indicator on a page with
+  // viewport-fit=cover; elsewhere the inset is 0 and nothing moves.
+  const of = (sel) => Object.fromEntries(media.find(([s]) => s === sel)[1].split('; ').map((d) => d.split(/:\s*/, 2)));
+  assert.equal(of('.ow-waymark__pop').padding, '8px 14px calc(18px + env(safe-area-inset-bottom, 0px))', 'the sheet pads the safe area');
+  assert.equal(of('.ow-waymark__toast').bottom, 'calc(24px + env(safe-area-inset-bottom, 0px))', 'the toast clears the safe area');
 });
 
 /**

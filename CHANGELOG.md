@@ -12,6 +12,10 @@ earlier history lives in git log only.
 - **`openersFor` takes `online` on the surface.** With `online: false`, every row whose href is a web address (its scheme `http:` or `https:`, read from the row's own filled href) says "Needs a connection", the site's own `onlyworlds` row included, which had no word before. The words in order, the first that holds: "You are here" for the surface's own tool, then "Needs a connection", then the account, browser and phone words, then "Opens the world"; so offline, a row that needed a sign-in says the connection. A row whose link opens an app on the device (any other scheme) keeps its own word, and every row keeps its href. `online` defaults to true, which gives the rows as before; anything but `true` or `false` is a TypeError naming it. `OwOpenerState` gains the word. The shared fixture gains nine cases (54; the same bytes as the Python package's).
 - **The Waymark draws the offline row.** At each open it reads `navigator.onLine` (no navigator reads as online) and draws the rows `openersFor` gives for it. Offline, a row that says "Needs a connection" is grey (`ow-waymark__row--cannot`, no new style) and is a link with no href and `aria-disabled="true"`, still a menu item in the arrow and Tab order; a click, Enter or Space on it does nothing, and the fan-out stays open. While the fan-out is open it listens to the window's `online` and `offline` events and redraws the rows in place: focus on a row stays on that row, and nothing else moves. The listeners go when it closes. Copy link is unchanged. No new option.
 
+### Fixed
+
+- **The Waymark's sheet and its toast clear a phone's safe area.** On a page with `viewport-fit=cover`, an iPhone's home indicator covered the lower part of the sheet's last row (Copy link) and the "Link copied" toast. The sheet's bottom padding is now `calc(18px + env(safe-area-inset-bottom, 0px))` and the toast sits at `calc(24px + env(safe-area-inset-bottom, 0px))`, at 480 px and below and in the sheet a narrow box takes alike. On a page without `viewport-fit=cover` the inset is 0 and nothing moves.
+
 ## [4.117.2] - 2026-10-30
 
 ### Fixed

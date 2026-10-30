@@ -349,7 +349,7 @@
   max-width: none;
   max-height: 85vh;
   overflow-y: auto;
-  padding: 8px 14px 18px;
+  padding: 8px 14px calc(18px + env(safe-area-inset-bottom, 0px));
   border-width: 1px 0 0;
   border-radius: 18px 18px 0 0;
   box-shadow: none;
@@ -373,7 +373,7 @@
 .ow-waymark--sheet .ow-waymark__toast {
   position: fixed;
   top: auto;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
 }
@@ -404,7 +404,7 @@
     max-width: none;
     max-height: 85vh;
     overflow-y: auto;
-    padding: 8px 14px 18px;
+    padding: 8px 14px calc(18px + env(safe-area-inset-bottom, 0px));
     border-width: 1px 0 0;
     border-radius: 18px 18px 0 0;
     box-shadow: none;
@@ -429,7 +429,7 @@
   .ow-waymark__toast {
     position: fixed;
     top: auto;
-    bottom: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     transform: translateX(-50%);
   }
