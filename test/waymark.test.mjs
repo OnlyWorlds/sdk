@@ -779,6 +779,169 @@ test('the surface\'s own row leads nowhere: a button with no href, kept in the a
   assert.equal(window.location.href, 'https://surface.example/w/x', 'and the page went nowhere');
 });
 
+/** The browser's connection, as the component reads it: `navigator.onLine`, set by the test. */
+function connection(window, online) {
+  Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => online });
+}
+const NC = 'Needs a connection';
+const ELEMENT_ADDRESS = { form: 'human', world: WORLD.id, type: ELEMENT.type, id: ELEMENT.id };
+const drawnRows = (name) => [...name.querySelectorAll('[data-opener]')].map((a) => ({
+  id: a.dataset.opener,
+  name: text(a.querySelector('.ow-waymark__label')),
+  href: a.getAttribute('href'),
+  state: text(a.querySelector('.ow-waymark__state')),
+}));
+
+test('offline at open: every web row says "Needs a connection", drawn with no href, aria-disabled and grey; a row that opens an app keeps its word', () => {
+  const { window, name } = page();
+  connection(window, false);
+  mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', tools: TOOLS_ALL, ...SURFACE });
+  name.querySelector('.ow-waymark__mark').click();
+  const expected = openersFor(TOOLS_ALL, 'element', ELEMENT_ADDRESS, { audience: 'member', ...SURFACE, online: false });
+  assert.deepEqual(expected.map((r) => r.state), [NC, 'You are here', NC, NC, 'Opens the world']);
+  // A disabled row carries no link; the href stays in openersFor's data.
+  assert.deepEqual(drawnRows(name), expected.map((r) => (r.state === NC || r.state === 'You are here' ? { ...r, href: null } : r)));
+  for (const id of ['onlyworlds', 'lantern', 'little-lens']) {
+    const a = name.querySelector(`[data-opener="${id}"]`);
+    assert.equal(a.tagName, 'A', id);
+    assert.equal(a.hasAttribute('href'), false, `${id}: no href`);
+    assert.equal(a.getAttribute('aria-disabled'), 'true', id);
+    assert.equal(a.getAttribute('role'), 'menuitem', id);
+    assert.ok(a.classList.contains('ow-waymark__row--cannot'), `${id}: grey`);
+  }
+  const obsidian = name.querySelector('[data-opener="obsidian"]');
+  assert.equal(obsidian.getAttribute('href'), 'obsidian://open?world=0695db52-5433-7332-8000-db7fe10da375', 'an app link is no web address');
+  assert.equal(obsidian.hasAttribute('aria-disabled'), false);
+  assert.equal(name.querySelector('[data-opener="atlas"]').getAttribute('aria-current'), 'page', 'the surface\'s own row stays "You are here"');
+  const grey = [...name.querySelectorAll('[data-opener]')].filter((a) => a.classList.contains('ow-waymark__row--cannot')).map((a) => a.dataset.opener);
+  assert.deepEqual(grey, ['onlyworlds', 'lantern', 'little-lens']);
+});
+
+test('a disabled row does nothing: a click, Enter or Space leaves the fan-out open and focus on it; it is in the arrow order; Copy link still copies', async () => {
+  const { window, doc, name, copied } = page();
+  connection(window, false);
+  mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', tools: TOOLS_ALL, ...SURFACE });
+  const mark = name.querySelector('.ow-waymark__mark');
+  const pop = name.querySelector('.ow-waymark__pop');
+  mark.focus();
+  key(window, mark, 'ArrowDown');
+  const site = name.querySelector('[data-opener="onlyworlds"]');
+  assert.ok(doc.activeElement === site, 'the first row takes focus at open, disabled or not');
+  key(window, site, 'ArrowDown');
+  key(window, doc.activeElement, 'ArrowDown');
+  const lantern = name.querySelector('[data-opener="lantern"]');
+  assert.ok(doc.activeElement === lantern, 'the arrows pass through and land on disabled rows');
+  lantern.click();
+  assert.equal(pop.hidden, false, 'a click leaves it open');
+  assert.ok(doc.activeElement === lantern, 'and focus where it was');
+  key(window, lantern, 'Enter');
+  assert.equal(pop.hidden, false, 'Enter leaves it open');
+  assert.ok(doc.activeElement === lantern);
+  assert.equal(key(window, lantern, ' '), false, 'Space is taken, so the page does not scroll');
+  assert.equal(pop.hidden, false, 'Space leaves it open');
+  assert.ok(doc.activeElement === lantern);
+  await flush();
+  assert.equal(pop.hidden, false, 'still open after the tick');
+  assert.equal(window.location.href, 'https://surface.example/w/x', 'and the page went nowhere');
+  items(name).at(-1).click();
+  await flush();
+  assert.deepEqual(copied, [elementAddress(ELEMENT_ADDRESS)], 'Copy link copies offline as online');
+  assert.equal(text(name.querySelector('.ow-waymark__toast .ow-waymark__label')), 'Link copied');
+  assert.equal(pop.hidden, true);
+});
+
+test('the connection going or coming while the fan-out is open redraws the rows in place, focus kept on the same row', async () => {
+  const { window, doc, name } = page();
+  let online = true;
+  Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => online });
+  mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', tools: TOOLS_ALL, lenses: LENSES, ...SURFACE });
+  const surface = { audience: 'member', ...SURFACE };
+  const mark = name.querySelector('.ow-waymark__mark');
+  const pop = name.querySelector('.ow-waymark__pop');
+  mark.click();
+  key(window, doc.activeElement, 'ArrowDown');
+  key(window, doc.activeElement, 'ArrowDown');
+  assert.equal(doc.activeElement.dataset.opener, 'lantern');
+  assert.equal(doc.activeElement.getAttribute('href'), 'https://lantern.example/#/open/0695db52-5433-7332-8000-db7fe10da375/element/0698c9de-e66f-782b-8000-bf427f5471c4');
+  const order = () => items(name).map((i) => i.dataset.opener ?? text(i.querySelector('.ow-waymark__label')));
+  const orderBefore = order();
+  const popClass = pop.className;
+
+  online = false;
+  window.dispatchEvent(new window.Event('offline'));
+  assert.deepEqual(drawnRows(name).map((r) => r.state), openersFor(TOOLS_ALL, 'element', ELEMENT_ADDRESS, { ...surface, online: false }).map((r) => r.state));
+  assert.equal(doc.activeElement.dataset.opener, 'lantern', 'focus kept on the same row');
+  assert.equal(doc.activeElement.getAttribute('aria-disabled'), 'true', 'the new row, disabled');
+  assert.equal(doc.activeElement.hasAttribute('href'), false);
+  assert.deepEqual(order(), orderBefore, 'every row in its place, Through and Copy link after them');
+  assert.equal(pop.className, popClass, 'the fan-out did not move');
+  assert.equal(name.querySelectorAll('[data-opener]').length, 5, 'the old rows gone');
+  await flush();
+  assert.equal(pop.hidden, false, 'still open');
+
+  online = true;
+  window.dispatchEvent(new window.Event('online'));
+  assert.deepEqual(drawnRows(name).map((r) => r.state), openersFor(TOOLS_ALL, 'element', ELEMENT_ADDRESS, surface).map((r) => r.state));
+  assert.equal(doc.activeElement.dataset.opener, 'lantern', 'focus kept again');
+  assert.equal(doc.activeElement.hasAttribute('aria-disabled'), false);
+  assert.ok(doc.activeElement.getAttribute('href').startsWith('https://lantern.example/'));
+
+  // Focus off the rows (on Copy link) stays where it is.
+  const copy = items(name).at(-1);
+  copy.focus();
+  online = false;
+  window.dispatchEvent(new window.Event('offline'));
+  assert.ok(doc.activeElement === copy, 'focus on Copy link is not moved');
+  assert.equal(text(name.querySelector('[data-opener="lantern"] .ow-waymark__state')), NC);
+  await flush();
+  assert.equal(pop.hidden, false);
+});
+
+test('a closed fan-out does not listen for the connection; reopening reads it anew; no navigator reads as online', () => {
+  const { window, name } = page();
+  let online = true;
+  Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => online });
+  // The window's own listeners for the two events, counted.
+  const live = { online: 0, offline: 0 };
+  const add = window.addEventListener.bind(window);
+  const remove = window.removeEventListener.bind(window);
+  window.addEventListener = (type, fn, opts) => { if (type in live) live[type] += 1; return add(type, fn, opts); };
+  window.removeEventListener = (type, fn, opts) => { if (type in live) live[type] -= 1; return remove(type, fn, opts); };
+  const connectionListeners = () => Object.entries(live).filter(([, v]) => v !== 0);
+  const dispose = mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', tools: TOOLS_ALL, ...SURFACE });
+  const mark = name.querySelector('.ow-waymark__mark');
+  const state = (id) => text(name.querySelector(`[data-opener="${id}"] .ow-waymark__state`));
+  assert.deepEqual(connectionListeners(), [], 'none while closed');
+  mark.click();
+  assert.deepEqual(connectionListeners(), [['online', 1], ['offline', 1]], 'both while open');
+  mark.click();
+  assert.equal(name.querySelector('.ow-waymark__pop').hidden, true);
+  assert.deepEqual(connectionListeners(), [], 'none once closed');
+  online = false;
+  window.dispatchEvent(new window.Event('offline'));
+  assert.equal(state('lantern'), 'Sign in to Lantern first', 'closed: no redraw');
+  mark.click();
+  assert.equal(state('lantern'), NC, 'reopened: read anew');
+  assert.equal(state('onlyworlds'), NC);
+  mark.click();
+  online = true;
+  mark.click();
+  assert.equal(state('lantern'), 'Sign in to Lantern first');
+  assert.equal(state('onlyworlds'), null);
+  mark.click();
+  assert.deepEqual(connectionListeners(), []);
+  mark.click();
+  dispose();
+  assert.deepEqual(connectionListeners(), [], 'the disposer removes them while open');
+  // A window with no navigator: online.
+  const { window: bare, name: name2 } = page();
+  Object.defineProperty(bare, 'navigator', { configurable: true, value: undefined });
+  mountWaymark(name2, { world: WORLD, element: ELEMENT, reader: 'member', tools: TOOLS_ALL, ...SURFACE });
+  name2.querySelector('.ow-waymark__mark').click();
+  assert.equal(text(name2.querySelector('[data-opener="onlyworlds"] .ow-waymark__state')), null);
+  assert.equal(name2.querySelector('[data-opener="onlyworlds"]').getAttribute('href'), elementAddress(ELEMENT_ADDRESS));
+});
+
 test('the stylesheet: every colour is declared once under its ground and key, and nothing else names a colour', () => {
   const css = readFileSync(fileURLToPath(new URL('../dist/waymark.css', import.meta.url)), 'utf8');
   assert.equal(css, readFileSync(fileURLToPath(new URL('../src/waymark/waymark.css', import.meta.url)), 'utf8'), 'shipped byte for byte');

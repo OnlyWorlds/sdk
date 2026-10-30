@@ -84,6 +84,8 @@ const COPIED = 'Link copied';
 const NOT_COPIED = 'Could not copy the link.';
 /** The state word openersFor gives the surface's own row. */
 const HERE: OwOpenerState = 'You are here';
+/** The state word openersFor gives a web row when the device has no connection: the row is drawn disabled. */
+const OFFLINE: OwOpenerState = 'Needs a connection';
 let mounted = 0;
 
 const fail = (what: string): never => {
@@ -92,7 +94,7 @@ const fail = (what: string): never => {
 
 /** A state word that says the row cannot open now: drawn grey. The rest open (here, in the browser, at the world) and keep the text colour. */
 function cannotOpen(state: OwOpenerState | null): boolean {
-  return state !== null && (state.startsWith('Sign in to ') || state === 'Needs the world on this phone');
+  return state !== null && (state.startsWith('Sign in to ') || state === 'Needs the world on this phone' || state === OFFLINE);
 }
 
 /** "12 Oct", with the year when it is not this year's, in the reader's own time zone. */
@@ -115,6 +117,13 @@ function shapedOn(at: string, now: Date): string {
  *
  * The surface's own row (the `tool` option's, "You are here") leads nowhere: a button with
  * `aria-current="page"` and no link, which closes the fan-out and returns focus to what opened it.
+ *
+ * The connection is read at each open (`navigator.onLine`; no navigator reads as online), and the rows
+ * drawn for it: offline, every row whose link is a web address says "Needs a connection" (`openersFor`
+ * with `online: false`) and is drawn grey (`ow-waymark__row--cannot`) as a link with no href,
+ * `aria-disabled="true"`, still in the arrow and Tab order; pressing it (a click, Enter or Space) does
+ * nothing and the fan-out stays open. While the fan-out is open, the window's `online` and `offline`
+ * events redraw the rows in place, and focus on a row stays on that row. Copy link is unaffected.
  *
  * Keyboard: the mark is a button and the fan-out a menu; Tab goes from the mark through the rows in
  * order, the arrow keys, Home and End move within it, Escape closes it and returns focus to what opened
@@ -172,13 +181,19 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   const address = element === null
     ? { form: 'human' as const, world: world.id }
     : { form: 'human' as const, world: world.id, type: element.type, id: element.id };
-  const rows: OwOpener[] = openersFor(tools, kind, address, { tool, audience: isPublic ? 'public' : 'member', signedIn, browser, phone });
+  // The rows with a connection and without: both read now, so a refusal draws nothing; the open picks one.
+  const rowsFor = (online: boolean): OwOpener[] =>
+    openersFor(tools, kind, address, { tool, audience: isPublic ? 'public' : 'member', signedIn, browser, phone, online });
+  const rowsOnline = rowsFor(true);
+  const rowsOffline = rowsFor(false);
   const throughLenses = isPublic ? [] : [...(lenses ?? [])];
   const linkFor = (lens: string | null): string => elementAddress({ ...address, lens });
   for (const l of throughLenses) linkFor(l.id);
   const doc = target.ownerDocument;
   const win = doc.defaultView;
   const timers = win ?? globalThis;
+  /** Whether the device has a connection, as the browser says; no navigator reads as online. */
+  const isOnline = (): boolean => timers.navigator?.onLine !== false;
   const last = !isPublic && element !== null ? doorsOf(element, tools)[0] : undefined;
   const doorLine = last === undefined ? null : `Last shaped ${doorWhere(last)}, ${shapedOn(last.at, new Date())}`;
   const typeLine = element === null ? null : typeWord(world, element.type) ?? element.type.charAt(0).toUpperCase() + element.type.slice(1);
@@ -305,9 +320,11 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   };
 
   // 2. Open with: the rows as openersFor gives them, each with its word. The surface's own row ("You are
-  // here") leads nowhere: a button, not a link, that closes the fan-out and gives focus back.
+  // here") leads nowhere: a button, not a link, that closes the fan-out and gives focus back. A row that
+  // needs a connection the device lacks is a link with no href, aria-disabled: it stays in the arrow and
+  // Tab order and does nothing when pressed.
   const openWith = section('Open with');
-  for (const r of rows) {
+  const rowNode = (r: OwOpener): HTMLElement => {
     const cls = `ow-waymark__row${cannotOpen(r.state) ? ' ow-waymark__row--cannot' : ''}`;
     let a: HTMLAnchorElement | HTMLButtonElement;
     if (r.state === HERE) {
@@ -315,6 +332,10 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
       a.type = 'button';
       a.setAttribute('aria-current', 'page');
       a.dataset.here = '';
+    } else if (r.state === OFFLINE) {
+      a = el('a', cls);
+      a.tabIndex = 0;
+      a.setAttribute('aria-disabled', 'true');
     } else {
       a = el('a', cls);
       a.href = r.href;
@@ -324,8 +345,26 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     a.appendChild(r.id === 'onlyworlds' ? markSvg('ow-waymark__icon') : glyph(TOOL_GLYPH, 'ow-waymark__icon'));
     a.appendChild(el('span', 'ow-waymark__label', r.name));
     if (r.state !== null) a.appendChild(el('span', 'ow-waymark__state', r.state));
-    openWith.appendChild(a);
-  }
+    return a;
+  };
+  let drawn: HTMLElement[] = [];
+  let drawnOnline: boolean | null = null;
+  // Draws the rows for the connection the device has now, in place of the ones drawn before (the same
+  // connection keeps the same rows). When focus was on a row, the new row with the same id takes it
+  // before the old one goes, so focus never leaves the fan-out; nothing else moves.
+  const drawRows = (): void => {
+    const online = isOnline();
+    if (online === drawnOnline) return;
+    drawnOnline = online;
+    const active = doc.activeElement as HTMLElement | null;
+    const kept = active !== null && drawn.includes(active) ? active.dataset.opener : undefined;
+    const fresh = (online ? rowsOnline : rowsOffline).map(rowNode);
+    for (const a of fresh) openWith.appendChild(a);
+    if (kept !== undefined) fresh.find((a) => a.dataset.opener === kept)?.focus();
+    for (const a of drawn) a.remove();
+    drawn = fresh;
+  };
+  drawRows();
 
   // 3. Through: a lens, when the surface offers any (no moment without a time bar).
   let chosenLens: string | null = null;
@@ -449,11 +488,16 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     if (isOpen()) return;
     openedBy = from;
     pressedInside = false;
+    drawRows();
     pop.hidden = false;
     scrim.hidden = false;
     placePop();
     from.setAttribute('aria-expanded', 'true');
     on(openListeners, doc, 'pointerdown', onOutside as EventListener, true);
+    if (win !== null) {
+      on(openListeners, win, 'online', onConnection);
+      on(openListeners, win, 'offline', onConnection);
+    }
     const list = items();
     (focus === 'first' ? list[0] : list[list.length - 1])?.focus();
   };
@@ -540,6 +584,8 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
       close(true);
     }
   };
+  // A disabled row (it needs a connection) does nothing: no link to follow, and the fan-out stays open.
+  const disabled = (n: HTMLElement): boolean => n.getAttribute('aria-disabled') === 'true';
   const onMenuKey = (e: KeyboardEvent): void => {
     pressedInside = false;
     const list = items();
@@ -553,6 +599,9 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
       owned(e);
       close(true);
       return;
+    } else if ((e.key === 'Enter' || e.key === ' ') && disabled(e.target as HTMLElement)) {
+      e.preventDefault();
+      return;
     } else if (e.key === ' ' && (e.target as HTMLElement).tagName === 'A') {
       e.preventDefault();
       (e.target as HTMLElement).click();
@@ -565,6 +614,10 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     const t = e.target as HTMLElement;
     const row = t.closest<HTMLElement>('.ow-waymark__row');
     if (row === null) return;
+    if (disabled(row)) {
+      e.preventDefault();
+      return;
+    }
     if (row === lensToggle) {
       const show = lensList!.hidden;
       lensList!.hidden = !show;
@@ -616,6 +669,11 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
       if (!isOpen() || pressed || !doc.hasFocus()) return;
       if (!inside(doc.activeElement)) close(false);
     }, 0);
+  };
+
+  // The connection came or went while the fan-out is open (listened to only then): the rows redraw.
+  const onConnection = (): void => {
+    if (isOpen()) drawRows();
   };
 
   for (const b of openers) {

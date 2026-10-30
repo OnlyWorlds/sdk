@@ -51,11 +51,14 @@ export interface OwOpenerSurface {
   browser?: boolean;
   /** True on a phone. Default false. */
   phone?: boolean;
+  /** False when the device has no connection; then every row whose link is a web address says "Needs a connection". Default true. */
+  online?: boolean;
 }
 
 /** The word a row says when it cannot open now, or says where it lands. Sentence case, exactly. */
 export type OwOpenerState =
   | 'You are here'
+  | 'Needs a connection'
   | `Sign in to ${string} first`
   | 'Opens in your browser'
   | 'Needs the world on this phone'
@@ -72,9 +75,12 @@ export interface OwOpener {
   state: OwOpenerState | null;
 }
 
-const SURFACE_KEYS: readonly string[] = ['tool', 'audience', 'signedIn', 'browser', 'phone'];
+const SURFACE_KEYS: readonly string[] = ['tool', 'audience', 'signedIn', 'browser', 'phone', 'online'];
 const NEEDS: readonly unknown[] = ['account', 'device', null];
 const PLACEHOLDER = /\{(world|type|id)\}/g;
+/** A web address: its scheme is http or https. Read from the row's filled href. */
+const WEB = /^https?:/i;
+const OFFLINE: OwOpenerState = 'Needs a connection';
 
 const fail = (what: string): never => {
   throw new TypeError(`openersFor: ${what}`);
@@ -89,19 +95,22 @@ function templateOf(row: string, key: 'world' | 'element', v: unknown): string |
 /**
  * The rows of the Open with menu for a world (`kind: 'world'`) or one element of it (`'element'`), in
  * order: first the site's own row (id `onlyworlds`, name `onlyworlds.com`, the world's or the element's
- * page on www.onlyworlds.com, never a word, for every audience), then one row per `tools` row, in the
- * list's order, that is `listed` and has a door for this kind. `tools` is the tools list's rows, `TOOLS`
- * or the list as served; `address` is a reading from `parseOwLink` or what `elementAddress` takes, with
- * the world's id. A lens and a moment on it ride on no href.
+ * page on www.onlyworlds.com, for every audience, its one word "Needs a connection" when offline), then
+ * one row per `tools` row, in the list's order, that is `listed` and has a door for this kind. `tools`
+ * is the tools list's rows, `TOOLS` or the list as served; `address` is a reading from `parseOwLink` or
+ * what `elementAddress` takes, with the world's id. A lens and a moment on it ride on no href.
  *
  * A row with `open: null`, or with no door for this kind, is not there. On an element, a tool with only
  * a world door is a row to its world door that says "Opens the world". For the `public` audience only
  * rows whose `open.needs` is null are there: a row that needs anything does not exist for the public.
  *
  * Each row's `state`, the first that holds: "You are here" for the surface's own tool (its `client` is
- * `surface.tool`); then what `needs` asks of this surface: `account` outside a browser "Opens in your
- * browser", in a browser signed out "Sign in to <name> first" (none when `signedIn` is null: a word shows
- * only when the surface knows it is true), `device` on a phone "Needs the world on this phone"; then
+ * `surface.tool`); then, when `surface.online` is false, "Needs a connection" for a row whose href is a
+ * web address (scheme `http:` or `https:`; a row whose link opens an app on the device is unaffected,
+ * and the href stays in the row either way); then what `needs` asks of this surface: `account` outside
+ * a browser "Opens in your browser", in a browser signed out "Sign in to <name> first" (none when
+ * `signedIn` is null: a word shows only when the surface knows it is true), `device` on a phone "Needs
+ * the world on this phone"; then
  * "Opens the world" (a world door on an element: a sign-in the row needs is the more urgent word); else null.
  *
  * Refuses with `OwAddressError` whatever `elementAddress` refuses of the whole address, in its own form
@@ -137,18 +146,19 @@ export function openersFor(
 
   if (surface === null || typeof surface !== 'object' || Array.isArray(surface)) fail('the surface is an object ({ audience, ... })');
   refuseUnknownOptions('openersFor', surface, SURFACE_KEYS);
-  const { tool = null, audience, signedIn = null, browser = true, phone = false } = surface;
+  const { tool = null, audience, signedIn = null, browser = true, phone = false, online = true } = surface;
   if (audience !== 'member' && audience !== 'public') fail(`surface.audience is 'member' or 'public'; got ${JSON.stringify(audience)}`);
   if (tool !== null && typeof tool !== 'string') fail('surface.tool is a client name or null');
   if (signedIn !== null && typeof signedIn !== 'boolean') fail('surface.signedIn is true, false or null');
   if (typeof browser !== 'boolean') fail('surface.browser is a boolean');
   if (typeof phone !== 'boolean') fail('surface.phone is a boolean');
+  if (typeof online !== 'boolean') fail('surface.online is a boolean');
 
   const values: Record<string, string> = { world, type, id };
   const fill = (template: string): string => template.replace(PLACEHOLDER, (_, n: string) => values[n]);
-  const rows: OwOpener[] = [
-    { id: 'onlyworlds', name: 'onlyworlds.com', href: kind === 'element' ? page : elementAddress({ form: 'human', world }), state: null },
-  ];
+  const offline = (href: string): boolean => !online && WEB.test(href);
+  const site = kind === 'element' ? page : elementAddress({ form: 'human', world });
+  const rows: OwOpener[] = [{ id: 'onlyworlds', name: 'onlyworlds.com', href: site, state: offline(site) ? OFFLINE : null }];
   for (const r of tools) {
     if (r === null || typeof r !== 'object' || typeof r.id !== 'string' || typeof r.name !== 'string') {
       fail('each tools row is an object with an id and a name');
@@ -166,14 +176,17 @@ export function openersFor(
     const template = kind === 'element' ? elementDoor ?? worldDoor : worldDoor;
     if (template === null) continue;
     // The first that holds. A word the row needs (it cannot open now) comes before "Opens the world" (it
-    // opens, somewhere else), so a world door alone that needs a sign-in says the sign-in.
+    // opens, somewhere else), so a world door alone that needs a sign-in says the sign-in. With no
+    // connection a web link opens nothing, whatever else it needs.
+    const href = fill(template);
     let state: OwOpenerState | null = null;
     if (tool !== null && r.client === tool) state = 'You are here';
+    else if (offline(href)) state = OFFLINE;
     else if (needs === 'account' && !browser) state = 'Opens in your browser';
     else if (needs === 'account' && signedIn === false) state = `Sign in to ${r.name} first`;
     else if (needs === 'device' && phone) state = 'Needs the world on this phone';
     else if (kind === 'element' && elementDoor === null) state = 'Opens the world';
-    rows.push({ id: r.id, name: r.name, href: fill(template), state });
+    rows.push({ id: r.id, name: r.name, href, state });
   }
   return rows;
 }
