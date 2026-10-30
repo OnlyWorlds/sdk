@@ -687,11 +687,12 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
   let list: string[] = [];
   const frontier: string[] = [];
   for (const id of anchors) {
-    if (visited.has(id)) continue;
+    // Rule 6 before the visited check: an anchor the reader cannot see is counted, the lens's own id included.
     if (!r.view.has(id) || unseen.has(id)) {
       addCut(id, 'anchor_not_visible');
       continue;
     }
+    if (visited.has(id)) continue;
     const why = r.fenceCut(id, recipe);
     if (why !== 'after_as_of') frontier.push(id);
     if (why !== null) addCut(id, why);
