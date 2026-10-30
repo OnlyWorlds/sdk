@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.117.0] - 2026-10-30
+
+### Changed
+
+- **The Waymark's Escape stops at the component.** Every Escape the fan-out handles (in the fan-out, on the mark or the "Open with" entry while it is open, and in the toast after a failed copy) calls `stopPropagation()` beside `preventDefault()`, so a page's own Escape listener (one on `document` that leaves the page, say) does not also run. An Escape while the fan-out is closed reaches the page as before.
+- **The fan-out picks its side when it opens.** At each open it measures itself against the box that clips it on each axis: the nearest ancestor of the name whose `overflow` on that axis is not `visible`, within the window, else the window. When the fan-out at the name's start would cross that box's right edge it opens at the name's end (`ow-waymark__pop--end`), and when below the name would cross its bottom it opens above (`ow-waymark__pop--up`), each only where that side crosses less. The toast shares the anchor and takes the same side (`ow-waymark__toast--end`, `ow-waymark__toast--up`); after a failed copy with the fan-out above the name, the toast sits below it. The fan-out's classes are removed when it closes, and the toast's when it hides. At 390 px wide and below, where the fan-out is a sheet from the bottom, no side is chosen. The rules are in `waymark.css`, with no new colour, and still no node carries a style attribute.
+- **The page's own row leads nowhere.** The row `openersFor` gives "You are here" (the `tool` option's own) is a button with `aria-current="page"` and no link, in its place in the arrow order and with the same look; pressing it closes the fan-out and returns focus to what opened it. Every other row is a link as before.
+
 ## [4.116.1] - 2026-10-30
 
 ### Changed

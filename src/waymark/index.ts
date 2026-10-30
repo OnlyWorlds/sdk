@@ -72,8 +72,16 @@ const ENTRIES: readonly unknown[] = ['mark', 'menu', 'both'];
 const SVG = 'http://www.w3.org/2000/svg';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const TOAST_MS = 2000;
+/** The gap between the name and the fan-out, as the stylesheet draws it (`calc(100% + 6px)`). */
+const GAP = 6;
+const POP_END = 'ow-waymark__pop--end';
+const POP_UP = 'ow-waymark__pop--up';
+const TOAST_END = 'ow-waymark__toast--end';
+const TOAST_UP = 'ow-waymark__toast--up';
 const COPIED = 'Link copied';
 const NOT_COPIED = 'Could not copy the link.';
+/** The state word openersFor gives the surface's own row. */
+const HERE: OwOpenerState = 'You are here';
 let mounted = 0;
 
 const fail = (what: string): never => {
@@ -103,11 +111,22 @@ function shapedOn(at: string, now: Date): string {
  * "Could not copy the link." over the address, selected in a read-only line to copy by hand, until the
  * fan-out closes. Focus moving out of the fan-out closes it and stays where it was moved.
  *
+ * The surface's own row (the `tool` option's, "You are here") leads nowhere: a button with
+ * `aria-current="page"` and no link, which closes the fan-out and returns focus to what opened it.
+ *
  * Keyboard: the mark is a button and the fan-out a menu; Tab goes from the mark through the rows in
  * order, the arrow keys, Home and End move within it, Escape closes it and returns focus to what opened
  * it: the mark, or for the entry `returnFocus` when given (the surface's "..." button, which stays
- * visible when its menu closes), else the entry. A click outside closes it. At 390 px wide and below the stylesheet draws it as a sheet
- * from the bottom. The page must load `@onlyworlds/sdk/waymark.css`; no node carries a style attribute.
+ * visible when its menu closes), else the entry. Every Escape the fan-out handles stops there
+ * (`stopPropagation`), so a page's own Escape listener does not also run; an Escape while it is closed
+ * is the page's. A click outside closes it.
+ *
+ * Placement: below the name at its start, unless it would cross the box that clips it (the nearest
+ * ancestor of `target` whose overflow on that axis is not visible, within the window, else the window):
+ * measured at each open, it then opens at the name's end (class `ow-waymark__pop--end`) or above the
+ * name (`ow-waymark__pop--up`), where that side crosses less; the toast takes the same side. At 390 px
+ * wide and below the stylesheet draws it as a sheet from the bottom, and no side is chosen. The page
+ * must load `@onlyworlds/sdk/waymark.css`; no node carries a style attribute.
  *
  * Refuses, before anything is drawn, an unknown option key by name and a value of the wrong kind (a
  * TypeError), and an address `elementAddress` refuses (an `OwAddressError`: a world id that is not an
@@ -281,11 +300,21 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     return group;
   };
 
-  // 2. Open with: the rows as openersFor gives them, each with its word.
+  // 2. Open with: the rows as openersFor gives them, each with its word. The surface's own row ("You are
+  // here") leads nowhere: a button, not a link, that closes the fan-out and gives focus back.
   const openWith = section('Open with');
   for (const r of rows) {
-    const a = el('a', `ow-waymark__row${cannotOpen(r.state) ? ' ow-waymark__row--cannot' : ''}`);
-    a.href = r.href;
+    const cls = `ow-waymark__row${cannotOpen(r.state) ? ' ow-waymark__row--cannot' : ''}`;
+    let a: HTMLAnchorElement | HTMLButtonElement;
+    if (r.state === HERE) {
+      a = el('button', cls);
+      a.type = 'button';
+      a.setAttribute('aria-current', 'page');
+      a.dataset.here = '';
+    } else {
+      a = el('a', cls);
+      a.href = r.href;
+    }
     a.setAttribute('role', 'menuitem');
     a.dataset.opener = r.id;
     a.appendChild(r.id === 'onlyworlds' ? markSvg('ow-waymark__icon') : glyph(TOOL_GLYPH, 'ow-waymark__icon'));
@@ -363,27 +392,73 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"], [role="menuitemradio"]')).filter((i) => !i.closest('[hidden]'));
   const isOpen = (): boolean => !pop.hidden;
 
+  // The side the fan-out opens on, measured at each open against the box that clips it on each axis: the
+  // nearest ancestor of the target whose overflow on that axis is not visible, within the window, else
+  // the window. At the name's end (POP_END) when the start would cross that box's right edge and the end
+  // crosses its left less; above the name (POP_UP) when below would cross its bottom and above crosses
+  // its top less. The toast shares the anchor and takes the same side. The sheet (a fixed pop) has none.
+  const overflowOf = (cs: CSSStyleDeclaration, axis: 'x' | 'y'): string => {
+    const [x, y = x] = (cs.overflow || '').trim().split(/\s+/);
+    return (axis === 'x' ? cs.overflowX || x : cs.overflowY || y) || 'visible';
+  };
+  const clipBox = (view: Window, axis: 'x' | 'y'): [number, number] => {
+    const edge = axis === 'x'
+      ? doc.documentElement.clientWidth || view.innerWidth
+      : doc.documentElement.clientHeight || view.innerHeight;
+    for (let node = root.parentElement; node !== null && node !== doc.body && node !== doc.documentElement; node = node.parentElement) {
+      if (overflowOf(view.getComputedStyle(node), axis) === 'visible') continue;
+      const r = node.getBoundingClientRect();
+      return axis === 'x' ? [Math.max(0, r.left), Math.min(edge, r.right)] : [Math.max(0, r.top), Math.min(edge, r.bottom)];
+    }
+    return [0, edge];
+  };
+  const placePop = (): void => {
+    pop.classList.remove(POP_END, POP_UP);
+    let end = false;
+    let up = false;
+    if (win !== null && win.getComputedStyle(pop).position !== 'fixed') {
+      const at = pop.getBoundingClientRect();
+      const anchor = root.getBoundingClientRect();
+      const [left, right] = clipBox(win, 'x');
+      const [top, bottom] = clipBox(win, 'y');
+      const pastRight = at.right - right;
+      end = pastRight > 0 && Math.max(0, left - (anchor.right - at.width)) < pastRight;
+      const pastBottom = at.bottom - bottom;
+      up = pastBottom > 0 && Math.max(0, top - (anchor.top - GAP - at.height)) < pastBottom;
+    }
+    pop.classList.toggle(POP_END, end);
+    pop.classList.toggle(POP_UP, up);
+    toast.classList.toggle(TOAST_END, end);
+    toast.classList.toggle(TOAST_UP, up);
+  };
   const open = (from: HTMLButtonElement, focus: 'first' | 'last'): void => {
     if (isOpen()) return;
     openedBy = from;
     pressedInside = false;
     pop.hidden = false;
     scrim.hidden = false;
+    placePop();
     from.setAttribute('aria-expanded', 'true');
     on(openListeners, doc, 'pointerdown', onOutside as EventListener, true);
     const list = items();
     (focus === 'first' ? list[0] : list[list.length - 1])?.focus();
   };
   const failed = (): boolean => !addressLine.hidden;
+  /** The toast hides, and the side it took from the fan-out's last open goes with it. */
+  const hideToast = (): void => {
+    toast.hidden = true;
+    toast.classList.remove(TOAST_END, TOAST_UP);
+  };
   const close = (refocus: boolean): void => {
     if (!isOpen()) return;
     pop.hidden = true;
+    pop.classList.remove(POP_END, POP_UP);
     scrim.hidden = true;
     openedBy.setAttribute('aria-expanded', 'false');
     offAll(openListeners);
     // The failed copy's toast lives as long as the fan-out.
     if (failed()) {
-      toast.hidden = true;
+      hideToast();
       addressLine.hidden = true;
       toast.classList.remove('ow-waymark__toast--failed');
     }
@@ -395,7 +470,7 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     if (toastTimer !== null) timers.clearTimeout(toastTimer);
     toastTimer = timers.setTimeout(() => {
       toastTimer = null;
-      toast.hidden = true;
+      hideToast();
     }, TOAST_MS);
   };
   // The fan-out stays open, and the toast with it, holding the address selected for a copy by hand.
@@ -432,12 +507,18 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     if (wasOpen) close(false);
     else open(e.currentTarget as HTMLButtonElement, 'first');
   };
+  // An Escape the fan-out handles is its own: the page's listeners above it (a document's Escape that
+  // leaves the page) do not also run. An Escape it does not handle (the fan-out closed) goes on as it came.
+  const owned = (e: KeyboardEvent): void => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
   const onOpenerKey = (e: KeyboardEvent): void => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       open(e.currentTarget as HTMLButtonElement, e.key === 'ArrowDown' ? 'first' : 'last');
     } else if (e.key === 'Escape' && isOpen()) {
-      e.preventDefault();
+      owned(e);
       close(true);
     }
   };
@@ -451,7 +532,7 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     else if (e.key === 'Home') next = list[0];
     else if (e.key === 'End') next = list[list.length - 1];
     else if (e.key === 'Escape') {
-      e.preventDefault();
+      owned(e);
       close(true);
       return;
     } else if (e.key === ' ' && (e.target as HTMLElement).tagName === 'A') {
@@ -490,6 +571,8 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
           },
         );
       }
+    } else if (row.dataset.here !== undefined) {
+      close(true);
     } else {
       close(false);
     }
@@ -524,8 +607,8 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   }
   on(listeners, pop, 'keydown', onMenuKey as EventListener);
   on(listeners, toast, 'keydown', ((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
+    if (e.key === 'Escape' && isOpen()) {
+      owned(e);
       close(true);
     }
   }) as EventListener);

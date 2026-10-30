@@ -290,6 +290,26 @@
   top: auto;
   bottom: calc(100% + 6px);
 }
+/* The side the fan-out took when it opened, measured against the box that clips it (the nearest
+   ancestor that clips, else the window): at the name's end when the start would cross that box's right
+   edge, above the name when below would cross its bottom. The toast shares the anchor and the side. No
+   side is chosen while the fan-out is the sheet below (a fixed pop), and the sheet, later in this file,
+   sets all four of the pop's sides. */
+.ow-waymark__pop--end,
+.ow-waymark__toast--end {
+  right: 0;
+  left: auto;
+}
+.ow-waymark__pop--up,
+.ow-waymark__toast--up {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+/* While the fan-out is open above the name (a failed copy), the toast sits below it, clear of it. */
+.ow-waymark__pop--up:not([hidden]) ~ .ow-waymark__toast {
+  top: calc(100% + 6px);
+  bottom: auto;
+}
 /* The address after a failed copy: read-only, selected whole by one click. */
 .ow-waymark__address {
   box-sizing: border-box;

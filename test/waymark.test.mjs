@@ -87,7 +87,8 @@ test('the rows drawn are openersFor\'s rows, in order, each with its state word;
     href: a.getAttribute('href'),
     state: text(a.querySelector('.ow-waymark__state')),
   }));
-  assert.deepEqual(drawn, expected);
+  // The surface's own row is drawn without its link (it leads nowhere); every other row carries openersFor's href.
+  assert.deepEqual(drawn, expected.map((r) => (r.state === 'You are here' ? { ...r, href: null } : r)));
   assert.deepEqual(expected.map((r) => r.state), [null, 'You are here', 'Sign in to Lantern first', 'Needs the world on this phone', 'Opens the world']);
   const grey = [...name.querySelectorAll('[data-opener]')].filter((a) => a.classList.contains('ow-waymark__row--cannot')).map((a) => a.dataset.opener);
   assert.deepEqual(grey, ['lantern', 'little-lens'], 'grey means cannot open: not "You are here", not "Opens the world"');
@@ -531,6 +532,163 @@ test('the disposer leaves the target as it was, with no listener and no timer le
     w();
     assert.equal(name.innerHTML, before, 'a second call does nothing');
   }
+});
+
+test('Escape the fan-out handles stops there: a page\'s own Escape on the document does not also run; an Escape it does not handle reaches the page', async () => {
+  const { window, doc, name, more } = page();
+  const seen = [];
+  doc.addEventListener('keydown', (e) => { if (e.key === 'Escape') seen.push(e.target); });
+  Object.defineProperty(window.navigator, 'clipboard', { configurable: true, value: undefined });
+  const w = mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', entry: 'both' });
+  more.appendChild(w.entry);
+  const mark = name.querySelector('.ow-waymark__mark');
+  const pop = name.querySelector('.ow-waymark__pop');
+  // The fan-out closed: its Escape is the page's.
+  mark.focus();
+  assert.equal(key(window, mark, 'Escape'), true, 'closed: not prevented');
+  assert.deepEqual(seen, [mark], 'closed: the page\'s Escape runs');
+  // A row of the open fan-out.
+  mark.click();
+  assert.equal(key(window, doc.activeElement, 'Escape'), false);
+  assert.equal(pop.hidden, true);
+  // The mark, and the entry, while it is open.
+  for (const opener of [mark, w.entry]) {
+    opener.click();
+    assert.equal(pop.hidden, false);
+    assert.equal(key(window, opener, 'Escape'), false);
+    assert.equal(pop.hidden, true);
+  }
+  // The toast's address line after a failed copy.
+  mark.click();
+  items(name).at(-1).click();
+  await flush();
+  const address = name.querySelector('.ow-waymark__address');
+  assert.equal(address.hidden, false);
+  assert.equal(key(window, address, 'Escape'), false);
+  assert.equal(pop.hidden, true);
+  assert.deepEqual(seen, [mark], 'none of the four Escapes it handled reached the page');
+});
+
+/** A rect as getBoundingClientRect gives one. */
+const box = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top });
+
+/**
+ * A mounted fan-out whose boxes are stubbed (happy-dom lays nothing out): the wrapper at `anchor`, the pop
+ * 300 by 240 below it at its start, and the page at happy-dom's 1024 by 768 window. `css` is the page's
+ * own stylesheet (the clipping ancestor's overflow); `main` the rect of the page's main.
+ */
+function placed({ anchor, css = '', main = null }) {
+  const p = page();
+  const { window, doc, name } = p;
+  if (css) {
+    const style = doc.createElement('style');
+    style.textContent = css;
+    doc.head.appendChild(style);
+  }
+  if (main) doc.querySelector('main').getBoundingClientRect = () => main;
+  mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member' });
+  const root = name.querySelector('.ow-waymark');
+  const pop = name.querySelector('.ow-waymark__pop');
+  const toast = name.querySelector('.ow-waymark__toast');
+  const at = { anchor };
+  root.getBoundingClientRect = () => at.anchor;
+  pop.getBoundingClientRect = () => box(at.anchor.left, at.anchor.bottom + 6, 300, 240);
+  const mark = name.querySelector('.ow-waymark__mark');
+  const sides = (n) => [...n.classList].filter((c) => /--(end|up)$/.test(c));
+  return { ...p, root, pop, toast, mark, at, sides };
+}
+
+test('the fan-out picks its side when it opens, by measuring against the box that clips it', async () => {
+  assert.equal(new Window().innerWidth, 1024, 'happy-dom\'s window, which the numbers below assume');
+  // Room on the right and below: no class.
+  let f = placed({ anchor: box(100, 100, 20, 20) });
+  f.mark.click();
+  assert.deepEqual([f.sides(f.pop), f.sides(f.toast)], [[], []], 'room: no side');
+  // The right edge crossed (the pop would end at 1200): at the end.
+  f = placed({ anchor: box(900, 100, 20, 20) });
+  f.mark.click();
+  assert.deepEqual(f.sides(f.pop), ['ow-waymark__pop--end']);
+  assert.deepEqual(f.sides(f.toast), ['ow-waymark__toast--end'], 'the toast takes the same side');
+  // Closed, the pop's class goes; the next open measures again.
+  f.mark.click();
+  assert.equal(f.pop.hidden, true);
+  assert.deepEqual(f.sides(f.pop), [], 'removed on close');
+  f.at.anchor = box(100, 100, 20, 20);
+  f.mark.click();
+  assert.deepEqual([f.sides(f.pop), f.sides(f.toast)], [[], []], 'recomputed on the next open');
+  // "Link copied" after the close keeps the side it opened on, and the side goes when it hides.
+  f.mark.click();
+  f.at.anchor = box(900, 100, 20, 20);
+  f.mark.click();
+  items(f.name).at(-1).click();
+  await flush();
+  assert.equal(f.pop.hidden, true);
+  assert.equal(f.toast.hidden, false);
+  assert.deepEqual(f.sides(f.toast), ['ow-waymark__toast--end'], 'the copied toast at the end, as the fan-out was');
+  // The bottom crossed (the pop would end at 866): above the name.
+  f = placed({ anchor: box(100, 600, 20, 20) });
+  f.mark.click();
+  assert.deepEqual([f.sides(f.pop), f.sides(f.toast)], [['ow-waymark__pop--up'], ['ow-waymark__toast--up']]);
+  // Both crossed.
+  f = placed({ anchor: box(900, 600, 20, 20) });
+  f.mark.click();
+  assert.deepEqual(f.sides(f.pop), ['ow-waymark__pop--end', 'ow-waymark__pop--up']);
+  // An ancestor that clips is the box, not the window: main ends at 500, so a pop ending at 600 crosses it.
+  f = placed({ anchor: box(300, 100, 20, 20), css: 'main { overflow: hidden; }', main: box(0, 0, 500, 400) });
+  f.mark.click();
+  assert.deepEqual(f.sides(f.pop), ['ow-waymark__pop--end'], 'overflow: hidden on main');
+  f = placed({ anchor: box(300, 100, 20, 20), main: box(0, 0, 500, 400) });
+  f.mark.click();
+  assert.deepEqual(f.sides(f.pop), [], 'the same main, not clipping: the window has room');
+  // Each axis by its own overflow: a band that clips across only (overflow-x: clip) never sends the pop up.
+  f = placed({ anchor: box(300, 100, 20, 20), css: 'main { overflow-x: clip; overflow-y: visible; }', main: box(0, 90, 500, 36) });
+  f.mark.click();
+  assert.deepEqual(f.sides(f.pop), ['ow-waymark__pop--end'], 'the band clips the right edge, not the bottom');
+  // No room either way: it stays where it crosses less (here, below: above would start at -226).
+  f = placed({ anchor: box(100, 20, 20, 20), css: 'main { overflow: hidden; }', main: box(0, 0, 1024, 200) });
+  f.mark.click();
+  assert.deepEqual(f.sides(f.pop), [], 'below crosses by 86, above by 226: below');
+  // The sheet (a fixed pop): no side at all.
+  f = placed({ anchor: box(900, 600, 20, 20) });
+  const real = f.window.getComputedStyle.bind(f.window);
+  f.window.getComputedStyle = (n) => (n === f.pop ? { position: 'fixed' } : real(n));
+  f.mark.click();
+  assert.deepEqual([f.sides(f.pop), f.sides(f.toast)], [[], []], 'the sheet keeps its place');
+});
+
+test('the surface\'s own row leads nowhere: a button with no href, kept in the arrow order; pressing it closes and returns focus', () => {
+  const { window, doc, name } = page();
+  mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', tools: TOOLS_ALL, ...SURFACE });
+  const expected = openersFor(TOOLS_ALL, 'element', { form: 'human', world: WORLD.id, type: ELEMENT.type, id: ELEMENT.id }, { audience: 'member', ...SURFACE });
+  const here = name.querySelector('[data-opener="atlas"]');
+  assert.equal(expected.find((r) => r.id === 'atlas').state, 'You are here');
+  assert.equal(here.tagName, 'BUTTON');
+  assert.equal(here.type, 'button');
+  assert.equal(here.hasAttribute('href'), false, 'no link');
+  assert.equal(here.getAttribute('role'), 'menuitem');
+  assert.equal(here.getAttribute('aria-current'), 'page');
+  assert.ok(here.classList.contains('ow-waymark__row'), 'the row\'s look');
+  assert.equal(text(here.querySelector('.ow-waymark__state')), 'You are here');
+  // Every other row is still its link.
+  for (const r of expected.filter((x) => x.id !== 'atlas')) {
+    const a = name.querySelector(`[data-opener="${r.id}"]`);
+    assert.equal(a.tagName, 'A', r.id);
+    assert.equal(a.getAttribute('href'), r.href, r.id);
+  }
+  const mark = name.querySelector('.ow-waymark__mark');
+  const pop = name.querySelector('.ow-waymark__pop');
+  mark.focus();
+  key(window, mark, 'ArrowDown');
+  key(window, doc.activeElement, 'ArrowDown');
+  assert.ok(doc.activeElement === here, 'second in the arrow order, as openersFor places it');
+  // Enter and Space are the button's own (the browser presses it); the fan-out leaves them to it.
+  assert.equal(key(window, here, 'Enter'), true, 'Enter not taken');
+  assert.equal(key(window, here, ' '), true, 'Space not taken');
+  assert.equal(pop.hidden, false);
+  here.click();
+  assert.equal(pop.hidden, true, 'pressing it closes the fan-out');
+  assert.ok(doc.activeElement === mark, 'and focus is back on the mark');
+  assert.equal(window.location.href, 'https://surface.example/w/x', 'and the page went nowhere');
 });
 
 test('the stylesheet: every colour is declared once under its ground and key, and nothing else names a colour', () => {
