@@ -36,7 +36,7 @@ export interface OwLensReader {
 /** The world snapshot a lens is resolved over: the elements as the owner is served them. */
 export interface OwLensWorld {
   elements: readonly object[];
-  /** Ids the hidden mark keeps from every reader but the owner, beside each element's own `hidden`. */
+  /** Ids the hidden mark keeps from every reader but the owner, beside each element's own `hidden`; the two are one mark, and a full row of an element under it carries `hidden: true`. */
   hidden?: readonly string[] | null;
   /** The world's members list (`client.members()`), which proves a message's sender for the mail rule. */
   members?: readonly OwMessageMember[] | null;
@@ -79,7 +79,11 @@ export interface OwLensMail {
 export interface OwLensReading {
   /** The kept elements' ids, in the profile's order. */
   kept: string[];
-  /** The kept elements as `show` makes them, in the same order; an anchor's row carries its `note`. */
+  /**
+   * The kept elements as `show` makes them, in the same order; an anchor's row carries its `note`. Under `full` a row
+   * is the body as served to this reader, so the owner's row of a hidden element carries `hidden: true`; a `name` or
+   * `first_line` row never carries it.
+   */
   rows: Record<string, unknown>[];
   /** The cut, counted by reason; a reason with no count is absent, and a reader that is not the owner never carries the owner's two. */
   cut: Partial<Record<OwLensCutReason, number>>;
@@ -338,7 +342,7 @@ export class Reading {
   /** The rung whose view is read: the reader's own, or on an owner the rung of the reader it reads `as`. */
   readonly seenRung: OwLensReader['rung'];
   readonly owner: boolean;
-  /** True when the view read is the owner's own: its rows are the bodies as stored, nothing trimmed (keel serves the owner untouched). */
+  /** True when the view read is the owner's own: its rows are the bodies as stored, nothing trimmed (keel serves the owner untouched), the hidden mark as `hidden: true`. */
   readonly stored: boolean;
   readonly character: string | null;
   readonly members: readonly OwMessageMember[] | null;
@@ -428,7 +432,9 @@ export class Reading {
    * The body this reader is served: the owner's own view the body as stored; any other reader's with the links
    * it cannot see left out (`trim`); a known-of element's a stub made from that trimmed body: the base fields
    * and the type's public fields kept, every other field of the type it holds at its unset value (`UNSET`; the
-   * server's who and door null), no extension key, and `known_of: true`.
+   * server's who and door null), no extension key, and `known_of: true`. A body of an element under the hidden
+   * mark (the world's `hidden` list or its own `hidden`) carries `hidden: true`, and no other body a `hidden` key:
+   * only the owner's view holds a hidden element, unless a guest's own lists name one.
    */
   body(id: string): Body {
     let b = this.served.get(id);
@@ -450,6 +456,9 @@ export class Reading {
       }
       b.known_of = true;
     }
+    // keel's served body carries the hidden mark as `hidden: true`, and no `hidden` key on any other body.
+    if (this.hidden.has(id)) b.hidden = true;
+    else delete b.hidden;
     this.served.set(id, b);
     return b;
   }
