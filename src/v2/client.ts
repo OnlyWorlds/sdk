@@ -178,13 +178,15 @@ export class OwV2Client {
   /**
    * GET /members -- the world's roster: each member's id (null for the owner), kind, role,
    * Character and status (`removed` rows stay, so their elements keep `created_by`). Returns
-   * the rows; keel sends them as `{ data }` with no paging. A world key's call.
+   * the rows; keel sends them as `{ data }` with no paging. A world key reads its own world's
+   * roster and sends no `world`. An account token reads the roster of the world the client's
+   * `world` names (`world=<id>`, the Bearer token, no PIN), with the token's grant there: the
+   * owner's token as the owner, a member's as its own member key; a world where it has none is a
+   * 404. Without `world` set it is a TypeError before sending. A client with no key is refused
+   * before sending: the roster has no public reader.
    */
   async members(): Promise<OwMember[]> {
-    if (this.keyKind === 'account') {
-      throw new TypeError('members needs a world key: an account token is not a member of one world');
-    }
-    const page = (await this.request('GET', '/members/')) as { data?: OwMember[] };
+    const page = (await this.request('GET', '/members/', { accountToken: 'world' })) as { data?: OwMember[] };
     return page.data ?? [];
   }
 
@@ -1583,7 +1585,7 @@ export class OwV2Client {
       worldRead?: boolean;
       /**
        * A route keel's document declares the account token on beside the world key (worldLenses,
-       * setMyLenses): an account client sends it with its Bearer token. `'path'`: the path names the
+       * setMyLenses, members): an account client sends it with its Bearer token. `'path'`: the path names the
        * world, and nothing is added. `'world'`: the world is named with `world=<id>`, added from the
        * client's `world`, and an account client without `world` set is a TypeError before sending.
        * A world key sends as without it; a keyless client is still refused.
@@ -1606,7 +1608,7 @@ export class OwV2Client {
     }
     if (opts.auth !== false && this.keyKind === 'account' && !ACCOUNT_ROUTE.test(path)) {
       if (!worldRead && accountToken === undefined) {
-        throw new TypeError(`${method} ${path} needs a world key: an account token sends the /account routes, worldLenses and setMyLenses, and with \`world\` set reads a world through list, listAll, get and getWorld only. Nothing was sent.`);
+        throw new TypeError(`${method} ${path} needs a world key: an account token sends the /account routes, worldLenses, setMyLenses and members, and with \`world\` set reads a world through list, listAll, get and getWorld only. Nothing was sent.`);
       }
       if (worldRead && this.world === undefined) {
         throw new TypeError(`${method} ${path}: an account token reads a world only with \`world\` set (new OwV2Client({ apiKey, world })), through list, listAll, get and getWorld. Nothing was sent.`);

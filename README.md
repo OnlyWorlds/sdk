@@ -177,7 +177,7 @@ const me = await client.me();           // { world, scope, kind, role, membershi
 const roster = await client.members();  // [{ id, kind, role, character, status }], the owner's id is null
 ```
 
-`me.membership` is what `created_by` holds on the elements this key creates; `me.role` decides what it may change.
+An account token reads the roster too, of the world the client's `world` names, with the token's grant there (since 4.116.0); `me()` stays a world key's. `me.membership` is what `created_by` holds on the elements this key creates; `me.role` decides what it may change.
 
 ## Sync
 

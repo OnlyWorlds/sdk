@@ -270,8 +270,8 @@ test('request(), the escape hatch, on an account client: the rule is the request
 });
 
 // Every method of the client, by what it does on an account client with `world` set:
-// `read` sends world= and the Bearer (the four reads, and setMyLenses, the one write that names its
-// world so), `path` sends the Bearer to a world route whose path names the world, without world=,
+// `read` sends world= and the Bearer (the four reads, members, and setMyLenses, the one write that
+// names its world so), `path` sends the Bearer to a world route whose path names the world, without world=,
 // `account` sends the Bearer to an /account route, `open` sends no credential, `local` sends nothing
 // at all, `refused` is a TypeError before fetch is called.
 const storage = () => { const m = new Map(); return { get: (k) => m.get(k) ?? null, set: (k, v) => m.set(k, v), remove: (k) => m.delete(k) }; };
@@ -284,7 +284,7 @@ const METHODS = {
   setMyLenses: ['read', (c) => c.setMyLenses([])],
   worldLenses: ['path', (c) => c.worldLenses(W)],
   me: ['refused', (c) => c.me()],
-  members: ['refused', (c) => c.members()],
+  members: ['read', (c) => c.members()],
   list: ['read', (c) => c.list('location')],
   draught: ['refused', (c) => c.draught(EL)],
   listAll: ['read', async (c) => { for await (const _ of c.listAll('location')) { /* empty */ } }],

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.116.0] - 2026-10-30
+
+### Changed
+
+- **`members()` works on an account token.** On a client holding an `ow_a_` token with `world` set (`new OwV2Client({ apiKey, world })`), it sends `GET /members/?world=<id>` with the Bearer token and no PIN, and reads the roster with the token's grant in that world: the owner's token as the owner, a member's as its own member key. A world where the token has no grant answers 404. Without `world` set it is a TypeError before anything is sent, naming the option; before, every account token was refused. A world key's call is unchanged (no `world`, no PIN on the read), and a client with no key is still refused before sending: the roster has no public reader.
+
 ## [4.115.0] - 2026-10-30
 
 ### Added

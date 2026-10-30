@@ -1513,7 +1513,8 @@ export interface OwClientConfig {
    * `get` and `getWorld` then read that world, sending `world=<id>`: an account token reads it as
    * that account's own access there (the owner the whole world, a member its member key's view,
    * anyone else the public view), and no key reads it as the public does. An account token also
-   * sets its own lenses there with `setMyLenses` (`world=<id>`), the one write it names. On such a
+   * sets its own lenses there with `setMyLenses` (`world=<id>`), the one write it names, and reads
+   * the world's roster with `members` (`world=<id>`) as its grant there. On such a
    * client every other world call is a TypeError before sending; the account calls and
    * `worldLenses` (the world in its path) work as without it. Given with a world key, or as
    * anything but a non-empty string, it is a TypeError when the client is constructed.

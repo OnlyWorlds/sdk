@@ -1,6 +1,7 @@
 /**
- * Who am I, and who is here: client.me() and client.members() send a world key to GET /me
- * and GET /members, and refuse an account token before sending. Runs against dist.
+ * Who am I, and who is here: client.me() sends a world key to GET /me, and refuses an account token
+ * before sending; client.members() sends GET /members with a world key, or an account token and the
+ * client's world (world=<id>), and refuses a client with no key. Runs against dist.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -83,10 +84,54 @@ test('client.members: GET /members, the rows unwrapped from { data }', async () 
   assert.match(f.calls[0].url, /\/api\/v2\/members\/?$/);
 });
 
-test('client.me and client.members: an account token is a TypeError before anything is sent', async () => {
+test('client.me: an account token is a TypeError before anything is sent', async () => {
   const f = fake({});
-  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', world: 'w1', fetch: f.fetch });
   await assert.rejects(c.me(), TypeError);
-  await assert.rejects(c.members(), TypeError);
   assert.equal(f.calls.length, 0);
+});
+
+test('client.members on a world key: GET /members with the key, no world and no PIN on the read', async () => {
+  const f = fake({ data: [] });
+  const c = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: f.fetch });
+  assert.deepEqual(await c.members(), []);
+  const { url, init } = f.calls[0];
+  assert.equal(init.method, 'GET');
+  const u = new URL(url);
+  assert.equal(u.pathname, '/api/v2/members/');
+  assert.equal(u.search, '', 'a world key names its world: no world=');
+  assert.deepEqual(Object.keys(init.headers), ['API-Key']);
+  assert.equal(init.headers['API-Key'], 'ow_w_test');
+});
+
+test('client.members on an account token with world: GET /members/?world=<id>, the Bearer, no API-Key or API-Pin', async () => {
+  const rows = [{ id: null, kind: 'owner', role: 'owner', character: 'c0', status: 'active' }];
+  const f = fake({ data: rows });
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', world: 'w 1', fetch: f.fetch });
+  assert.deepEqual(await c.members(), rows);
+  assert.equal(f.calls.length, 1);
+  const { url, init } = f.calls[0];
+  assert.equal(init.method, 'GET');
+  const u = new URL(url);
+  assert.equal(u.pathname, '/api/v2/members/');
+  assert.deepEqual([...u.searchParams], [['world', 'w 1']]);
+  assert.deepEqual(Object.keys(init.headers), ['Authorization']);
+  assert.equal(init.headers.Authorization, 'Bearer ow_a_acct');
+});
+
+test('client.members on an account token without world: a TypeError naming the client option, before anything is sent', async () => {
+  const f = fake({ data: [] });
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+  await assert.rejects(c.members(), (e) => e instanceof TypeError
+    && /new OwV2Client\(\{ apiKey, world \}\)/.test(e.message) && /Nothing was sent/.test(e.message), 'the message names the option');
+  assert.equal(f.calls.length, 0);
+});
+
+test('client.members with no key: refused before sending, world set or not (the roster has no public reader)', async () => {
+  for (const cfg of [{}, { world: 'w1' }]) {
+    const f = fake({ data: [] });
+    const c = new OwV2Client({ ...cfg, fetch: f.fetch });
+    await assert.rejects(c.members(), (e) => e instanceof TypeError && /needs a key/.test(e.message), JSON.stringify(cfg));
+    assert.equal(f.calls.length, 0, JSON.stringify(cfg));
+  }
 });

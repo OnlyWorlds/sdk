@@ -77,8 +77,8 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   world's Charter with up to five skill Objects: an agent reads `charter` first. `reading_aids`
   (since 4.100.0, also on an agent's join) is the world's three things to read first:
   `charter` (`{ id, name, rules, skill }`), `guide` and `domains` (`{ id, name, sentence, hubs }`);
-  `charterOf(world, reader)` reads the same packet from a snapshot or a folder. `client.members()` is the roster's rows. An
-  account token is a TypeError.
+  `charterOf(world, reader)` reads the same packet from a snapshot or a folder. `client.members()` is the roster's rows; an
+  account token reads it with the client's `world` set (as its grant there), and without it is a TypeError.
 - Lenses chosen (a world key, or an account token): `worldLenses(worldId, { resolve })` lists the
   world's lenses; `setMyLenses(lensIds)` sets the ones you start with (an account token needs the
   client's `world`). With an account token, `setMemberLenses(worldId, memberId, lensIds)` sets a
