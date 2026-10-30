@@ -150,12 +150,15 @@ export function draughtText(draught: OwDraught | OwDraughtCompact): string {
   const asOf = own(d, 'as_of');
   const now = own(d, 'now');
   const mode = own(d, 'mode');
+  // The public reader reads as itself in either mode, so `reader` (the rung the packet was built through)
+  // names it over `mode`, which stays what was asked; a packet without `reader` reads by `mode` alone.
+  const public_ = own(d, 'reader') === 'public';
   put(
     `What the record holds around ${herName}`
     + (isInt(asOf) ? `, dated up to ${moment(asOf)}` : '')
     + (isInt(now) ? ` (the world's now: ${moment(now)})` : '')
     + '.'
-    + (mode === 'voice' ? " Read as the Character's own view." : mode === 'act' ? " Read as the caller's view." : ''),
+    + (public_ ? ' Read as the public reader.' : mode === 'voice' ? " Read as the Character's own view." : mode === 'act' ? " Read as the caller's view." : ''),
   );
 
   // Her block, when `self` was asked.

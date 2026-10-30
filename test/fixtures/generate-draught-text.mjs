@@ -59,7 +59,7 @@ function compact(d) {
   }
   for (const rows of Object.values(c.names ?? {})) for (const r of rows) r.element = body(r.element);
   c.policy.compact = true;
-  const always = new Set(['world', 'calendar', 'as_of', 'now', 'mode', 'policy']);
+  const always = new Set(['world', 'calendar', 'as_of', 'now', 'mode', 'reader', 'policy']);
   return Object.fromEntries(Object.entries(c).filter(([k, v]) => always.has(k) || v === null || typeof v !== 'object' || !empty(v)));
 }
 
@@ -74,6 +74,13 @@ const PLANTED = {
     d.events[0].element.x_review_proposed = { by: M[0], expires: '2026-11-30' };
     d.names.construct[0].element.hidden = true;
     d.names.construct[0].element.x_review_proposed = { by: M[0] };
+  },
+  // A public packet asked in voice: keel reads it as the public reader in either mode, and names it in reader (since 2026-10-30).
+  'public-reader': (d) => {
+    d.mode = 'voice';
+    d.reader = 'public';
+    delete d.roster; // the public reader is served no roster and no mail
+    d.policy.components = d.policy.components.filter((c) => c !== 'roster' && c !== 'messages');
   },
   // The door history keel serves a member (since 2026-10-29): never a field line.
   'doors': (d) => {

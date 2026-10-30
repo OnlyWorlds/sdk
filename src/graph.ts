@@ -7,7 +7,7 @@
 import { ELEMENT_GROUPS, ELEMENT_ICONS } from './v2/types.generated';
 import type { ElementGroup, ElementType } from './v2/types.generated';
 import {
-  CUT_REASONS, LINK_FIELDS, OWNER_ONLY, Reading, byCodePoint, checkReader, isBody, lensReading, readingDate, valueOf,
+  CUT_REASONS, LINK_FIELDS, OWNER_ONLY, Reading, byCodePoint, checkReader, isBody, lensReading, linkTarget, readingDate, valueOf,
 } from './lens';
 import type { OwLensCutReason, OwLensReader, OwLensWorld } from './lens';
 import { refuseUnknownOptions } from './options';
@@ -47,7 +47,7 @@ export interface OwGraphNode {
   id: string;
   /** The element's type, as its slug (`character`). */
   type: string;
-  /** The element's name, or null when it has none. */
+  /** The element's name as stored, or null when it has none; nothing invented. */
   name: string | null;
   /** The type's colour group, its colour word (`blue`, `green`, `pink` or `amber`), from the distribution's
    *  presentation defaults: a key for drawing the 22 types, never a classification and never shown as a label. */
@@ -113,8 +113,11 @@ function flag(opts: Body, key: string): boolean {
  *
  * Each schema link field, and each extension field a profile declares a link (`x_lens_leads_to`,
  * `x_spine_depends_on`), gives one edge per target that is a node, with the target's place in the list as
- * the reader is served it; a link held on both ends is two edges. A guest's known-of element has no edges
- * out. A link to an element that is not a node is counted in `edgesCut` by that element's reason: the
+ * the reader is served it (the owner's list as stored; any other reader's leaves out what it does not see
+ * and keeps a proposed id its rung sees); a link held on both ends is two edges. A Pin's generic pair
+ * (`element_type`, `element_id`) is its placement, never an edge; its `map` link is. A guest's known-of
+ * element has no edges out. A link to an element of another type than its field's target draws no edge and
+ * is not counted. A link to an element that is not a node is counted in `edgesCut` by that element's reason: the
  * lens's cut reason, else, with a lens, `outside_lens` for one the reader sees that the lens neither kept
  * nor cut (counted for every rung); one of the kinds out by default without a lens; and `not_visible` for one the
  * reader does not see. A link to an id that is not in the world is left out and not counted.
@@ -191,7 +194,7 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
     const el = r.byId.get(id) as Body;
     const type = r.typeOf.get(id) as ElementType;
     const node: OwGraphNode = {
-      id, type, name: typeof el.name === 'string' ? el.name : null, family: ELEMENT_GROUPS[type], icon: ELEMENT_ICONS[type],
+      id, type, name: valueOf(el, 'name') as string | null, family: ELEMENT_GROUPS[type], icon: ELEMENT_ICONS[type],
     };
     const marks = kinds(id).filter((k): k is OwGraphMark => k !== 'map_space' && k !== 'reading_aid');
     if (marks.length > 0) node.marks = marks;
@@ -213,16 +216,21 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
   for (const source of ids) {
     if (r.stubs.has(source)) continue;
     const el = r.byId.get(source) as Body;
-    // A schema link is served whole to the owner; any other view is served it less the ids outside that view.
-    for (const [field, many] of LINK_FIELDS.get(r.typeOf.get(source) as string) ?? []) {
+    // A schema link is served whole to the owner; any other view is served it less the ids outside that view,
+    // keeping a proposed id its rung sees. A generic pair (a Pin's `element_type` and `element_id`) is
+    // placement, never an edge. A link to an element of another type than the field's target is a data fault:
+    // no edge, no count, and no place in a served list.
+    for (const [field, many, target] of LINK_FIELDS.get(r.typeOf.get(source) as string) ?? []) {
+      if (target === 'any') continue;
       const v = el[field];
+      const to = linkTarget(el, field, target);
       const list: unknown[] = many ? (Array.isArray(v) ? v : []) : [v];
       let served = 0;
       for (let i = 0; i < list.length; i++) {
         const t = list[i];
-        const inServed = seenOwner || (typeof t === 'string' && r.view.has(t));
-        visit(source, field, t, seenOwner ? i : served);
-        if (inServed) served++;
+        const typed = typeof t === 'string' && r.typeOf.get(t) === to;
+        if (typed) visit(source, field, t, seenOwner ? i : served);
+        if (seenOwner || (typed && r.linkable.has(t))) served++;
       }
     }
     // A declared extension link is served as stored to every reader.

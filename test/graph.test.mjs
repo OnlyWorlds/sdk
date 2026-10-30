@@ -55,15 +55,18 @@ function invariants(g, c) {
     // same view, the owner's counts); less the links the view leaves out, so is every link of the reader's own.
     const ownerView = c.reader.rung === 'owner' ? c.reader : { rung: 'owner', as: c.reader };
     const go = worldGraph(c.world, ownerView, { lens: opts.lens, asOf: opts.asOf, clock: opts.clock });
-    const inWorld = new Set(c.world.elements.map(el => el.id));
-    const linked = v => (typeof v === 'string' && inWorld.has(v) ? 1 : 0);
+    // A schema link counts only to an element of its field's target type, and a generic pair (target any) is
+    // placement, never a link; a declared link counts to any element.
+    const typeOf = new Map(c.world.elements.map(el => [el.id, el.type]));
+    const linked = (v, target) => (typeof v === 'string' && typeOf.has(v) && (target === undefined || typeOf.get(v) === target) ? 1 : 0);
     let links = 0;
     for (const n of go.nodes) {
       if (n.known_of) continue;
       const el = c.world.elements.find(x => x.id === n.id);
       for (const [field, f] of Object.entries(FIELD_SCHEMA[n.type])) {
-        if (f.type === 'single_link') links += linked(el[field]);
-        if (f.type === 'multi_link' && Array.isArray(el[field])) for (const t of el[field]) links += linked(t);
+        if (f.target === 'any') continue;
+        if (f.type === 'single_link') links += linked(el[field], f.target);
+        if (f.type === 'multi_link' && Array.isArray(el[field])) for (const t of el[field]) links += linked(t, f.target);
       }
       for (const field of ['x_lens_leads_to', 'x_spine_depends_on']) if (Array.isArray(el[field])) for (const t of el[field]) links += linked(t);
     }
@@ -104,7 +107,7 @@ test('the fixture\'s graph cases, each answer held to the invariants', () => {
   }
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 39, `the fixture holds ${cases.length} graph cases, serial 92 has 39`);
+  assert.equal(cases.length, 45, `the fixture holds ${cases.length} graph cases, serial 93 has 45`);
 });
 
 test('the fixture\'s graph tables, read back through the reader: flags, owner-only flags, edge reasons, declared links', () => {

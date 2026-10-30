@@ -5,6 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.112.0] - 2026-10-30
+
+### Changed
+
+- **The lens readers follow schema-dist serial 93** (`v0.33.0-dist.93`), whose nineteen new cases replay in `resolveLens` and `worldGraph`. Four readings change for every caller:
+  - **A link reaches only an element of its field's target type.** An id naming an element of another type reaches nothing (a data fault, not a hop), draws no edge and takes no place in a reader's served list. A generic pair (a Pin's `element_type` and `element_id`) links only when its type key is exactly one of the 22 slugs as stored, nothing trimmed or folded, and in a graph it is placement, never an edge; the Pin's `map` link is the edge.
+  - **An anchor the reader cannot see is counted.** An anchor id that names no element of the world, or an element of another type than its field's, is now counted for the owner as `anchor_not_visible`; it was skipped silently.
+  - **A known-of stub keeps its base and public fields, every other field unset.** The stub is made from the body the reader is served: `change_seq` joins the base fields, a public link (a Character's `species`) is kept as trimmed for that reader, every other field of the type it holds is at its unset value (`''`, `null` or `[]`; the who and door fields `null`), and no extension key is kept.
+  - **A graph node's name is the stored value**, `null` when absent, and an edge's `index` is the target's place in the list as served, which keeps a proposed id the reader's rung sees.
+- **`draughtText` names the public reader.** The API reads a public draught (keyless, or an account with no access in the world) as the public reader in either mode, and a public `voice` packet's text said "Read as the Character's own view." It now says "Read as the public reader." whenever the packet's `reader` is `public`; every other packet, and one without `reader`, reads by `mode` as before. The shared draughtText fixture gains the case (`public-reader`, 51 cases).
+
+### Added
+
+- **`reader` on `OwDraught`**: the rung the packet was built through (`public`, `owner`, `co_builder`, `contributor`, `guest`, `seat` or `player`), which the API serves beside `mode` on every draught since 2026-10-30, kept under `compact`; `mode` stays what was asked.
+
 ## [4.111.0] - 2026-10-30
 
 ### Changed

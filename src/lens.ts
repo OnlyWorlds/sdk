@@ -27,7 +27,7 @@ export interface OwLensReader {
   character?: string | null;
   /** A guest's whole elements. */
   whole?: readonly string[] | null;
-  /** A guest's known-of elements, served as stubs (no links, no date). */
+  /** A guest's known-of elements, served as stubs (the base and public fields, every other field unset: no links, no date). */
   known_of?: readonly string[] | null;
   /** On an owner: the reader it reads as. The view is that reader's; the owner's two counts stay. */
   as?: OwLensReader | null;
@@ -140,20 +140,40 @@ export const CUT_REASONS: readonly OwLensCutReason[] = [
 export const OWNER_ONLY: ReadonlySet<string> = new Set(['anchor_not_visible', 'not_visible']);
 const ROOM_KEYS: ReadonlySet<string> = new Set(ROOM_PAIRS.map(p => `${fold(p.type)}/${fold(p.supertype)}`));
 const MAIL_SECONDS = 30 * 86400;
-/** What a known-of stub serves beside its type's public fields (never a link, never a date). */
 /** A Message's addressing, the fields keel names in `x_served_trimmed` when it trims one (`SERVED_TRIMMED_FIELDS`). */
 const MESSAGE_ADDRESSING: readonly string[] = ['characters', 'narrator'];
-const STUB_FIELDS: readonly string[] = ['id', 'type', 'name', 'description', 'supertype', 'subtype', 'image_url', 'created_at', 'updated_at'];
+/** The base fields a known-of stub keeps beside its type's public fields. */
+const STUB_FIELDS: readonly string[] = ['id', 'type', 'name', 'description', 'supertype', 'subtype', 'image_url', 'created_at', 'updated_at', 'change_seq'];
+/** The server's who and door, which a known-of stub serves null. */
+const STUB_NULLED: readonly string[] = ['created_by', 'changed_by', 'changed_via', 'changed_client'];
+/** A field's unset value, by its kind in the schema: an empty text, null for a number or a single link, an empty list. */
+const UNSET: Readonly<Record<string, unknown>> = { text: '', integer: null, single_link: null, multi_link: [] };
 
-/** Each type's link fields in the schema's order, and whether each is a list (module-internal). */
-export const LINK_FIELDS: ReadonlyMap<string, ReadonlyArray<readonly [string, boolean]>> = new Map(
-  Object.entries(FIELD_SCHEMA as Record<string, Record<string, { type: string }>>).map(([type, fields]) => [
+/**
+ * Each type's link fields in the schema's order, whether each is a list, and its target type (`any` for a
+ * generic pair's id, a Pin's `element_id`) (module-internal).
+ */
+export const LINK_FIELDS: ReadonlyMap<string, ReadonlyArray<readonly [string, boolean, string]>> = new Map(
+  Object.entries(FIELD_SCHEMA as Record<string, Record<string, { type: string; target?: string }>>).map(([type, fields]) => [
     type,
     Object.entries(fields)
       .filter(([, f]) => f.type === 'single_link' || f.type === 'multi_link')
-      .map(([name, f]) => [name, f.type === 'multi_link'] as const),
+      .map(([name, f]) => [name, f.type === 'multi_link', f.target ?? 'any'] as const),
   ]),
 );
+/** Each anchor field's target type, which an anchor's id must name an element of. */
+const ANCHOR_TARGET: ReadonlyMap<string, string> = new Map((LINK_FIELDS.get('construct') ?? []).map(([f, , t]) => [f, t]));
+
+/**
+ * The type a link field of `el` reaches: the field's target type, or for a generic pair (target `any`, a
+ * Pin's `element_type` and `element_id`) its type key exactly as stored, nothing trimmed or folded. A key
+ * that is not one of the 22 slugs reaches nothing: `''`, which no element's type is (module-internal).
+ */
+export function linkTarget(el: Body, field: string, target: string): string {
+  if (target !== 'any') return target;
+  const key = el[`${field.slice(0, -3)}_type`];
+  return typeof key === 'string' && TYPE_RANK.has(key) ? key : '';
+}
 
 export const isBody = (v: unknown): v is Body => typeof v === 'object' && v !== null && !Array.isArray(v);
 const own = (v: Body, key: string): boolean => Object.prototype.hasOwnProperty.call(v, key);
@@ -380,14 +400,19 @@ export class Reading {
     }
   }
 
-  /** The ids the element's owner-served body links to, in the schema's field order. */
+  /**
+   * The ids the element's owner-served body links to, in the schema's field order. A link reaches only an
+   * element of its field's target type (an id of another type reaches nothing: a data fault, not a hop), and
+   * a generic pair only an element of the type its key names (`linkTarget`).
+   */
   fullLinks(id: string): string[] {
     const el = this.byId.get(id) as Body;
     const out: string[] = [];
-    for (const [field, many] of LINK_FIELDS.get(this.typeOf.get(id) as string) ?? []) {
+    for (const [field, many, target] of LINK_FIELDS.get(this.typeOf.get(id) as string) ?? []) {
       const v = el[field];
+      const to = linkTarget(el, field, target);
       for (const t of many ? (Array.isArray(v) ? v : []) : [v]) {
-        if (typeof t === 'string' && t !== '' && !out.includes(t)) out.push(t);
+        if (typeof t === 'string' && this.typeOf.get(t) === to && !out.includes(t)) out.push(t);
       }
     }
     return out;
@@ -399,22 +424,31 @@ export class Reading {
     return this.fullLinks(id).filter(t => this.view.has(t));
   }
 
-  /** The body this reader is served: a stub for a known-of element; the owner's own view the body as stored; any other reader's with the links it cannot see left out (`trim`). */
+  /**
+   * The body this reader is served: the owner's own view the body as stored; any other reader's with the links
+   * it cannot see left out (`trim`); a known-of element's a stub made from that trimmed body: the base fields
+   * and the type's public fields kept, every other field of the type it holds at its unset value (`UNSET`; the
+   * server's who and door null), no extension key, and `known_of: true`.
+   */
   body(id: string): Body {
     let b = this.served.get(id);
     if (b !== undefined) return b;
     const el = this.byId.get(id) as Body;
     const type = this.typeOf.get(id) as string;
+    b = copy(el);
+    delete b.x_served_trimmed; // keel serves only the mark it adds, never a stored one
+    if (!this.stored) this.trim(type, b);
     if (this.stubs.has(id)) {
-      const linkNames = new Set((LINK_FIELDS.get(type) ?? []).map(([f]) => f));
-      const keep = new Set([...STUB_FIELDS, ...((PUBLIC_FIELDS as Record<string, readonly string[]>)[type] ?? []).filter(f => !linkNames.has(f))]);
+      const kinds = (FIELD_SCHEMA as Record<string, Record<string, { type: string }>>)[type] ?? {};
+      const keep = new Set([...STUB_FIELDS, ...((PUBLIC_FIELDS as Record<string, readonly string[]>)[type] ?? [])]);
+      const full = b;
       b = {};
-      for (const k of Object.keys(el)) if (keep.has(k)) b[k] = copy(el[k]);
+      for (const k of Object.keys(full)) {
+        if (keep.has(k)) b[k] = full[k];
+        else if (STUB_NULLED.includes(k)) b[k] = null;
+        else if (own(kinds, k) && own(UNSET, kinds[k].type)) b[k] = copy(UNSET[kinds[k].type]);
+      }
       b.known_of = true;
-    } else {
-      b = copy(el);
-      delete b.x_served_trimmed; // keel serves only the mark it adds, never a stored one
-      if (!this.stored) this.trim(type, b);
     }
     this.served.set(id, b);
     return b;
@@ -608,7 +642,8 @@ interface Resolved {
 /**
  * The anchors and the umbrella's children of a lens, in its link order. A child is a lens in `constructs`
  * the reader sees whole; one it knows only as a stub serves no recipe and no links, so it is an anchor
- * the reader cannot see (`unseen`), never entered (keel's `_anchors`).
+ * the reader cannot see (`unseen`), never entered (keel's `_anchors`). An id that names no element of the
+ * world, or an element of another type than its field's, is an anchor the reader cannot see too.
  */
 function anchorsOf(lens: Body, r: Reading): { anchors: string[]; children: string[]; unseen: Set<string>; anchored: boolean } {
   const anchors: string[] = [];
@@ -621,7 +656,8 @@ function anchorsOf(lens: Body, r: Reading): { anchors: string[]; children: strin
     for (const id of v) {
       if (typeof id !== 'string' || id === '' || seen.has(id)) continue;
       seen.add(id);
-      if (field === 'constructs' && r.view.has(id) && isLens(r.byId.get(id) as Body)) {
+      if (r.typeOf.get(id) !== ANCHOR_TARGET.get(field)) unseen.add(id);
+      else if (field === 'constructs' && r.view.has(id) && isLens(r.byId.get(id) as Body)) {
         if (!r.stubs.has(id)) { children.push(id); continue; }
         unseen.add(id);
       }
@@ -651,7 +687,7 @@ function resolveOne(lens: Body, recipe: Recipe, r: Reading, visited: Set<string>
   let list: string[] = [];
   const frontier: string[] = [];
   for (const id of anchors) {
-    if (visited.has(id) || !r.byId.has(id)) continue;
+    if (visited.has(id)) continue;
     if (!r.view.has(id) || unseen.has(id)) {
       addCut(id, 'anchor_not_visible');
       continue;
@@ -764,11 +800,13 @@ export function checkReader(reader: unknown, where: string): asserts reader is O
  *
  * The rules, in short: visibility first (a hidden or proposed element is not there to hop through; a
  * known-of stub is kept as served and nothing hops out of it); a hop reaches both ways, and on through
- * a Relation to its parties; an umbrella enters each child lens once, each child keeping its own budget and mail rule, the rows made by the umbrella's `show`; a hop never crosses a room
+ * a Relation to its parties, only to an element of the link's target type (a generic pair's type key
+ * compared exact against the 22 slugs); an umbrella enters each child lens once, each child keeping its own budget and mail rule, the rows made by the umbrella's `show`; a hop never crosses a room
  * element; a reading aid (the charter, its guide, a domain: `isCharterElement`) a hop reaches is kept, and
  * hopped on from, only when `types` names its pair, while one the lens names as an anchor is kept and
  * followed; anchors first in link order, then by type in the schema's order, newest first, then by id;
- * an anchor the reader cannot see is skipped; a template resolves to nothing; the fence is `as_of` on
+ * an anchor the reader cannot see (an id naming no element, or one of another type than its field's, too)
+ * is skipped and counted for the owner (`anchor_not_visible`); a template resolves to nothing; the fence is `as_of` on
  * each element's own date; `changed_within` cuts what a hop or a filter reaches that changed longer ago
  * than that many days before `clock` (`stale`), never an anchor. A value outside the profile's table makes
  * the lens unreadable: `unreadable` names the key and nothing is resolved.

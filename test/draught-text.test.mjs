@@ -78,3 +78,13 @@ test('draughtText refuses a draught that is not an object, or has no world objec
   assert.throws(() => draughtText({ world: 'Moppetopia' }), TypeError);
   assert.equal(draughtText.length, 1, 'takes no options');
 });
+
+test('draughtText: the frame line names the reader the packet was read as, public over mode', () => {
+  const packet = (mode, reader) => ({ world: { id: 'w', name: 'W', description: '' }, calendar: {}, as_of: null, now: null, mode, ...(reader === undefined ? {} : { reader }), policy: {} });
+  const line = (mode, reader) => draughtText(packet(mode, reader)).split('\n').find((l) => l.startsWith('What the record holds'));
+  assert.match(line('voice', 'public'), / Read as the public reader\.$/);
+  assert.match(line('act', 'public'), / Read as the public reader\.$/);
+  assert.match(line('voice', 'owner'), / Read as the Character's own view\.$/);
+  assert.match(line('act', 'contributor'), / Read as the caller's view\.$/);
+  assert.match(line('voice'), / Read as the Character's own view\.$/, 'a packet from before keel served reader');
+});

@@ -8,10 +8,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { ROOM_PAIRS, isCharterElement, isLens, isTemplate, lensesInUse, resolveLens, worldGraph } from '../dist/index.js';
+import { FIELD_SCHEMA, ROOM_PAIRS, isCharterElement, isLens, isTemplate, lensesInUse, resolveLens, worldGraph } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/lens.fixture.json', import.meta.url));
-const COUNTS = { shape: 6, keys: 25, resolve: 75, invariant: 4, uses: 4, graph: 39 };
+const COUNTS = { shape: 6, keys: 25, resolve: 86, invariant: 4, uses: 5, graph: 45 };
 
 function loadFixture() {
   assert.ok(existsSync(FIXTURE), `no lens fixture at ${FIXTURE}`);
@@ -122,7 +122,7 @@ test('the lens readers answer every case of the lens fixture', (t) => {
   t.diagnostic(`the lens fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   for (const line of wrong) t.diagnostic(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 153, `the fixture holds ${cases.length} cases, serial 92 has 153`);
+  assert.equal(cases.length, 171, `the fixture holds ${cases.length} cases, serial 93 has 171`);
   assert.deepEqual(counts, COUNTS);
 });
 
@@ -135,9 +135,10 @@ test('the fixture\'s tables, read back through the reader: pair, anchor fields, 
   assert.deepEqual(doc.pair, { type: 'construct', supertype: 'Lens' });
   assert.equal(isTemplate({ type: 'construct', supertype: 'Lens', subtype: doc.template_subtype }), true);
   assert.equal(doc.field, 'x_lens');
-  // Anchor fields: one element per field, linked in the reverse order; the kept order is the field order.
+  // Anchor fields: one element of the field's target type per field, linked in the reverse order; the kept
+  // order is the field order.
   const fields = doc.anchor_fields;
-  const elements = fields.map((f, i) => ({ id: id(i + 1), type: 'object', name: f }));
+  const elements = fields.map((f, i) => ({ id: id(i + 1), type: FIELD_SCHEMA.construct[f].target, name: f }));
   const lens = { ...LENS, x_lens: { depth: 0 } };
   [...fields].reverse().forEach((f) => { lens[f] = [id(fields.indexOf(f) + 1)]; });
   lens.titles = [id(99)];
@@ -180,8 +181,12 @@ test('the fixture\'s tables, read back through the reader: pair, anchor fields, 
   assert.deepEqual(filtered.cut, { budget: 1 });
   assert.deepEqual(filtered.rows[0], many[0]);
   assert.equal(filtered.mail, null);
-  const hop = resolveLens({ elements: [{ id: id(1), type: 'object', name: 'a', materials: [id(2)] }, { id: id(2), type: 'object', name: 'b', materials: [id(3)] }, { id: id(3), type: 'object', name: 'c' }] }, { ...LENS, objects: [id(1)] }, OWNER);
+  const hop = resolveLens({ elements: [{ id: id(1), type: 'object', name: 'a', parent_object: id(2) }, { id: id(2), type: 'object', name: 'b', parent_object: id(3) }, { id: id(3), type: 'object', name: 'c' }] }, { ...LENS, objects: [id(1)] }, OWNER);
   assert.deepEqual(hop.kept, [id(1), id(2)]);
+  // An anchor naming an element of another type than its field's is one the reader cannot see, as a dangling
+  // one is (the page states it; no fixture case holds it).
+  const mistyped = resolveLens({ elements: [{ id: id(1), type: 'location', name: 'a' }] }, { ...LENS, characters: [id(1)], x_lens: { depth: 0 } }, OWNER);
+  assert.deepEqual([mistyped.kept, mistyped.cut], [[], { anchor_not_visible: 1 }]);
 });
 
 // The shared edge cases: inputs the fixture leaves open (a stub's links, the window's edge, the World's

@@ -1027,7 +1027,10 @@ export interface OwDraught {
   calendar: Record<string, unknown>;
   as_of: number | null;
   now: number | null;
+  /** The mode asked for (`voice` or `act`); `reader` says what the packet was read as. */
   mode: 'voice' | 'act';
+  /** The rung the packet was built through: `public` reads as itself in either mode; otherwise the owner, a member's role, or a seat. Kept under `compact`. */
+  reader?: 'public' | 'owner' | 'co_builder' | 'contributor' | 'guest' | 'seat' | 'player';
   /** The policy served under, every key resolved. */
   policy: Record<string, unknown>;
   /** {section: items the budget dropped}; empty when whole. `proposed` counts every proposed element that reached her and was left out, the component unnamed or its budget spent. */
