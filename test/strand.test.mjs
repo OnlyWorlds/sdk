@@ -17,7 +17,7 @@ test('the fixture is the strand profile\'s, its mark the field strandOf reads', 
   assert.equal(doc.profile, 'strand');
   assert.equal(doc.mark.field, STRAND_FIELD);
   assert.deepEqual(doc.mark.members, ['narrative', 'event', 'location']);
-  assert.equal(doc.cases.length, 21, `the fixture holds ${doc.cases.length} cases, serial 99 has 21`);
+  assert.equal(doc.cases.length, 26, `the fixture holds ${doc.cases.length} cases, serial 99 has 26`);
 });
 
 /** A case's world: one of the fixture's named worlds, or the case's own. */
