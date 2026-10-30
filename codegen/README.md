@@ -5,8 +5,8 @@ and emits `src/v2/types.generated.ts` and `SCHEMA.md`: the `ElementType` union, 
 interface per element type extending a shared `OwElementBase`, and the `ELEMENT_TYPES` /
 `ELEMENT_GROUPS` / `GROUP_ORDER` / `GROUP_COLORS` / `ELEMENT_ICONS` / `PUBLIC_FIELDS` / `ELEMENT_SECTIONS` / `FIELD_SCHEMA` /
 `SINGLE_LINK_FIELDS` / `MULTI_LINK_FIELDS` / `ROOM_PAIRS` / `ROOM_MARK` / `MESSAGE_PAIR` /
-`MESSAGE_READ_MARK` / `NOTE_PAIR` / `READING_AID_PAIRS` / `READING_AID_MARK` / `CHARTER_PAIRS` / `ONLYWORLDS_VERSION`
-constants. Field shapes are pinned to
+`MESSAGE_READ_MARK` / `NOTE_PAIR` / `READING_AID_PAIRS` / `READING_AID_MARK` / `CHARTER_PAIRS` / `DRAG_PAIRS` /
+`ONLYWORLDS_VERSION` constants. Field shapes are pinned to
 the v2 wire, not to Django columns -- single-links are `string | null`, multi-links `string[]`,
 integers `number | null`, link fields use bare schema names (no `_ids` suffix), and the ten
 server-managed fields plus a namespaced-extension index signature (`atlas_*` / `shadow_*` / `x_*`)
@@ -58,7 +58,10 @@ wrapper keys are no longer read). **The colour groups are generated whole** (4.1
 hex is `#rrggbb`; a type whose group is outside the order exits 1 too. The deprecated
 `ELEMENT_FAMILIES`, `FAMILY_COLORS`, `FAMILY_ORDER` and `familyOf` are derived in `src/v2/palette.ts`
 through one legacy table, the only place the pre-4.102.0 words stand, and leave in 5.0.
-`PUBLIC_FIELDS` (serial 28 on: `types.<type>.public`, the fields the platform shows on a
+`DRAG_PAIRS` (serial 95 on, read by `dragField`) comes from the `pairs.json` sidecar beside it, presentation too:
+`load_drag_pairs()` exits 1 unless the version is 1, no key repeats, each key is two distinct type slugs in code
+point order joined by `+`, and each row's `field` is a link field of its `on` whose target, by the walk, is the
+other type. `PUBLIC_FIELDS` (serial 28 on: `types.<type>.public`, the fields the platform shows on a
 known-of stub) has no wrapper-key fallback: it is platform behaviour, not a default, so a tree
 without the sidecar, a type without the key, or a name the walk does not give for that type
 exits 1.

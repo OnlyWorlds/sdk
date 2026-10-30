@@ -1102,6 +1102,69 @@ def load_message_profile(schema_dir: Path, pairs: list[tuple[str, str]],
     return (pair["type"], pair["supertype"]), mark, (note["type"], note["supertype"])
 
 
+def load_drag_pairs(schema_dir: Path, all_fields: dict[str, list[dict]]) -> list[tuple[str, str, str, bool]]:
+    """The link a drag between two types writes (schema-dist serial 95 on, the `pairs.json` sidecar beside
+    presentation.json): each pair as (key, on, field, holds), in key order. Presentation, as the colours are,
+    and held the same way: no fallback, and a sidecar that breaks its own shape exits 1 rather than emitting
+    a drag nobody ruled. Each key is two distinct type slugs in code point order joined by `+` (a repeated
+    key exits 1, never the last one silently kept); `on` is one of the two; `field` a single or multi link
+    field of `on` whose target, by the walk, is the other; `holds` a boolean. Version 1 only: a new version
+    may change what a row means."""
+    p = schema_dir.parent / "pairs.json"
+    if not p.is_file():
+        raise SystemExit(f"{p}: the drag pairs come only from the distribution's pairs.json (serial 95 on); this tree has none.")
+
+    def refuse_repeats(items: list[tuple[str, object]]) -> dict:
+        keys = [k for k, _ in items]
+        repeated = sorted({k for k in keys if keys.count(k) > 1})
+        if repeated:
+            raise SystemExit(f"{p}: the keys {repeated} repeat; a reader would keep only the last.")
+        return dict(items)
+
+    doc = json.loads(p.read_text(encoding="utf-8"), object_pairs_hook=refuse_repeats)
+    if not isinstance(doc, dict) or doc.get("version") != 1:
+        raise SystemExit(f"{p}: `version` is {doc.get('version') if isinstance(doc, dict) else doc!r}, expected 1.")
+    pairs = doc.get("pairs")
+    if not isinstance(pairs, dict) or not pairs:
+        raise SystemExit(f"{p}: `pairs` is {pairs!r}, expected an object of pairs.")
+    out: list[tuple[str, str, str, bool]] = []
+    for key in sorted(pairs):
+        row = pairs[key]
+        parts = key.split("+")
+        if len(parts) != 2 or not all(t in ELEMENT_TYPES for t in parts) or not parts[0] < parts[1]:
+            raise SystemExit(f"{p}: the key {key!r} is not two distinct type slugs in code point order joined by `+`.")
+        if not isinstance(row, dict) or set(row) != {"on", "field", "holds"}:
+            raise SystemExit(f"{p}: `pairs.{key}` is {row!r}, expected {{on, field, holds}}.")
+        on, field, holds = row["on"], row["field"], row["holds"]
+        if on not in parts:
+            raise SystemExit(f"{p}: `pairs.{key}.on` is {on!r}, expected one of {parts}.")
+        if not isinstance(holds, bool):
+            raise SystemExit(f"{p}: `pairs.{key}.holds` is {holds!r}, expected true or false.")
+        other = parts[1] if on == parts[0] else parts[0]
+        spec = next((f for f in all_fields[on] if f["name"] == field), None) if isinstance(field, str) else None
+        if spec is None or spec["kind"] not in ("single", "multi") or spec.get("target") != other:
+            raise SystemExit(f"{p}: `pairs.{key}.field` is {field!r}, which the walk does not give as a link "
+                             f"field of {on} to {other}. Route it to the schema-dist owner.")
+        out.append((key, on, field, holds))
+    return out
+
+
+def render_drag_pairs(pairs: list[tuple[str, str, str, bool]]) -> str:
+    lines = [
+        "/** The link a drag between two types writes, per pair: `on` the type that carries the field, `field`",
+        " *  the link field, `holds` whether the drop puts one element inside the other (one square under the",
+        " *  other) or only draws a line. Source: the distribution's `pairs.json` sidecar, checked against the",
+        " *  walk at codegen; each key the two type slugs in code point order joined by `+`. A drawing aid, NOT",
+        " *  part of the council-governed OnlyWorlds standard: a pair absent here (same-kind pairs, and fields that",
+        " *  name a role, are absent by ruling) offers no drag and draws no line. Read it with dragField. */",
+        "export const DRAG_PAIRS: { readonly [pair: string]: { readonly on: ElementType; readonly field: string; readonly holds: boolean } } = {",
+    ]
+    for key, on, field, holds in pairs:
+        lines.append(f"  '{key}': {{ on: '{on}', field: '{field}', holds: {'true' if holds else 'false'} }},")
+    lines += ["};", ""]
+    return "\n".join(lines)
+
+
 def render_message_profile(pair: tuple[str, str], mark: dict[str, str], note: tuple[str, str]) -> str:
     lines = [
         "/** The message profile's pair (schema-dist `profiles/message.md`, a convention on the 22 types,",
@@ -1193,6 +1256,7 @@ def main() -> None:
               .replace("__ELEMENT_BASE__", render_element_base(schema_dir)))
     parts = [header, ""]
     parts.append(render_maps(all_fields, groups, colors, icons, sections, public))
+    parts.append(render_drag_pairs(load_drag_pairs(schema_dir, all_fields)))
     room_pairs = load_room_pairs(schema_dir)
     parts.append(render_room_pairs(room_pairs, load_room_mark(schema_dir)))
     aid_pairs, aid_mark = load_reading_aids(schema_dir)

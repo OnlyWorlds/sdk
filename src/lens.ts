@@ -18,8 +18,8 @@ import { refuseUnknownOptions } from './options';
 export interface OwLensReader {
   /**
    * `owner` (the whole world), `contributor` (the world less the hidden), `guest` (exactly the ids in
-   * `whole`, and those in `known_of` as stubs) or `public` (the world less the hidden and the room
-   * elements). A proposed element is in no reader's view, but below the public rung a served body keeps
+   * `whole`, and those in `known_of` as stubs, less a hidden one: hidden beats `known_of`) or `public`
+   * (the world less the hidden and the room elements). A proposed element is in no reader's view, but below the public rung a served body keeps
    * a link to one the rung sees, and a lens's note keyed to it.
    */
   rung: 'owner' | 'contributor' | 'guest' | 'public';
@@ -27,7 +27,7 @@ export interface OwLensReader {
   character?: string | null;
   /** A guest's whole elements. */
   whole?: readonly string[] | null;
-  /** A guest's known-of elements, served as stubs (the base and public fields, every other field unset: no links, no date). */
+  /** A guest's known-of elements, served as stubs (the base and public fields, every other field unset: no links, no date); one under the hidden mark is not in its view at all. */
   known_of?: readonly string[] | null;
   /** On an owner: the reader it reads as. The view is that reader's; the owner's two counts stay. */
   as?: OwLensReader | null;
@@ -384,7 +384,13 @@ export class Reading {
         case 'owner': sees = true; break;
         case 'contributor': sees = !hidden.has(id); break;
         case 'public': sees = !hidden.has(id) && !this.room.has(id) && !proposed; break;
-        default: sees = wholeIds.has(id) || knownOf.has(id); if (!proposed && !wholeIds.has(id) && knownOf.has(id)) this.stubs.add(id);
+        // Hidden beats known_of: the hidden mark comes off the known-of grant too, so a hidden element the guest
+        // knows of and did not make is not in its view at all; its own creations come in whole.
+        default: {
+          const stub = !wholeIds.has(id) && knownOf.has(id) && !hidden.has(id);
+          sees = wholeIds.has(id) || stub;
+          if (stub && !proposed) this.stubs.add(id);
+        }
       }
       if (sees) this.linkable.add(id);
       if (sees && !proposed) this.view.add(id);
@@ -435,7 +441,7 @@ export class Reading {
    * and the type's public fields kept, every other field of the type it holds at its unset value (`UNSET`; the
    * server's who and door null), no extension key, and `known_of: true`. A body of an element under the hidden
    * mark (the world's `hidden` list or its own `hidden`) carries `hidden: true`, and no other body a `hidden` key:
-   * only the owner's view holds a hidden element, unless a guest's own lists name one.
+   * only the owner's view holds a hidden element, and a guest's its own hidden creations, listed in `whole`.
    */
   body(id: string): Body {
     let b = this.served.get(id);

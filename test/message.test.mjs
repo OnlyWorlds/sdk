@@ -14,7 +14,7 @@ import {
 } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/message.fixture.json', import.meta.url));
-const COUNTS = { pair: 10, addressed: 11, sent_by: 3, sender: 14, unread: 17, mark: 10, thread: 4, unseen: 3, everyone: 3, edited: 4, note: 8 };
+const COUNTS = { pair: 10, addressed: 11, sent_by: 3, sender: 14, unread: 17, mark: 11, thread: 4, unseen: 3, everyone: 3, edited: 4, note: 8 };
 
 function loadFixture() {
   assert.ok(existsSync(FIXTURE), `no message fixture at ${FIXTURE}`);
@@ -45,7 +45,8 @@ function answer(c, doc) {
       if (s.writtenBy !== null) got.written_by = s.writtenBy;
       return got;
     }
-    case 'mark': return { mark: readMarkOf(c.relations, c.reader, members)?.id ?? null };
+    // A case without keyless has a credential, or is a folder.
+    case 'mark': return { mark: readMarkOf(c.relations, c.reader, members, { keyless: c.keyless })?.id ?? null };
     case 'unread': return { unread: ids(unreadFor(c.messages, c.reader, c.read_mark, members)) };
     case 'thread': return { thread: ids(threadOf(c.messages, c.root)) };
     case 'edited': {
@@ -100,7 +101,7 @@ test('the message readers answer every case of the message fixture', (t) => {
   }
   t.diagnostic(`the message fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 87, `the fixture holds ${cases.length} cases, serial 94 has 87`);
+  assert.equal(cases.length, 88, `the fixture holds ${cases.length} cases, serial 95 has 88`);
   assert.deepEqual(counts, COUNTS);
 });
 

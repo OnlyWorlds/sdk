@@ -81,6 +81,9 @@ export type { OwDoor } from './doors';
 export { ELEMENT_GROUPS, GROUP_COLORS, GROUP_ORDER, groupOf, elementColor } from './v2';
 export { ELEMENT_FAMILIES, FAMILY_COLORS, FAMILY_ORDER, familyOf } from './v2';
 export type { ElementGroup, ElementFamily } from './v2';
+// The link a drag between two types writes (the distribution's pairs.json, baked at this release), either order
+export { dragField } from './drag';
+export type { OwDragField } from './drag';
 
 // Field labels: a field name as the words a tool shows (sentence case, acronyms kept)
 export { FIELD_ACRONYMS, fieldLabel } from './v2';

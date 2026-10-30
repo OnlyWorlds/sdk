@@ -5,6 +5,19 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.115.0] - 2026-10-30
+
+### Added
+
+- **`dragField(a, b)`**: the link a drag between an element of type `a` and one of type `b` writes, in either order, from the schema distribution's new `pairs.json` (a drawing aid like the colour groups, not part of the standard), baked into the package at this release. It answers `{ on, field, holds }`: `on` the type that carries the link field `field`, and `holds` true when the drop puts one element inside the other (one square under the other), false when it only draws a line. Null for the same type twice, a pair the table leaves out (113 of the 231 pairs of two types are in it), or anything that is not one of the 22 type slugs as written; a pair answered null offers no drag. Its answer's type is `OwDragField`.
+- **`readMarkOf(relations, characterId, members, { keyless })`**: an optional fourth argument, `keyless` as `isToEveryone` takes it. With `{ keyless: true }`, for bodies read with no credential, no read mark counts and the answer is null: the public reader is served no `created_by` or `changed_by`, so a mark there carries no hand to check. Without it nothing changes, and an unknown key in it is a TypeError, as in every options object.
+
+### Changed
+
+- **The lens, message and charter readers follow schema-dist serial 95** (`v0.33.0-dist.95`), whose five new cases replay in `resolveLens`, `readMarkOf` and `charterOf`. One reading changes for callers of `resolveLens` and `worldGraph`:
+  - **Hidden beats `known_of`.** A hidden element a guest's `known_of` names, and that the guest did not make, is not in the guest's view at all: no stub, no row and no count, and a link to it in a body the guest is served is left out as for any element the guest cannot see. A guest's own hidden creations, listed in `whole`, stay in its view whole. Before, such an element was served to the guest as a known-of stub.
+- The serial's other cases replay unchanged: a guest's `full` row of its own hidden creation carries `hidden: true`, an owner's `full` row of a hidden Message carries it as any hidden element's row does, and a skill id a Charter names only in uppercase hex is kept, in lowercase.
+
 ## [4.114.0] - 2026-10-30
 
 ### Changed

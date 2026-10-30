@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.94",
-  "commit": "ad040665a99e5c739cb953d58d67757113b78974",
-  "manifest_sha256": "899fcb0678c1c8158705b5bfd1b03d1a5b784667a67e200911f31ac6f9112499",
+  "tag": "v0.33.0-dist.95",
+  "commit": "fb4452b99de2617df07a78413c30c9866149b97f",
+  "manifest_sha256": "eee6f5027d758e91b40b39ca35de940caca6baf907aa4d4688c05dc46d2c921b",
   "canonical_version": "00.33.00",
-  "dist_serial": 94,
+  "dist_serial": 95,
   "published": "2026-10-30",
   "pinned_at": "2026-10-30",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.94",
+      "manifest_sha256": "899fcb0678c1c8158705b5bfd1b03d1a5b784667a67e200911f31ac6f9112499",
+      "note": "superseded by v0.33.0-dist.95 (five readings from the readers' replays of serial 94 ruled and cased: message.md's read mark is ignored on a body served without a credential, readMarkOf taking the keyless flag isToEveryone takes; lens.md rule 1, hidden beats known_of, so a hidden element a guest's known_of names and the guest did not make is not in its view at all, and the hidden mark rides every served body, a guest's own hidden creation and an owner's hidden Message row included; charter.fixture.json keeps a skill id named only in uppercase; pairs.json joins presentation.json as a sidecar, the link a drag between two types writes, 113 pairs; no schema file moved)"
+    },
     {
       "tag": "v0.33.0-dist.93",
       "manifest_sha256": "bc9b8e61d8519d570bb97a3f5b509c45802e65b53bd93727b47ae39a6f685b0c",

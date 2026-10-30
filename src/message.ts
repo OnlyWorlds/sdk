@@ -16,9 +16,10 @@ export { MESSAGE_PAIR, NOTE_PAIR };
 export type OwSenderStatus = 'verified' | 'mismatch' | 'unverifiable' | 'unseen';
 
 /**
- * The addressing readers' one option. `keyless`: the body was read with no credential (the keyless
+ * The addressing readers' and `readMarkOf`'s one option. `keyless`: the body was read with no credential (the keyless
  * public reader), which leaves hidden recipients out and never carries `x_served_trimmed`, so an
- * empty list cannot be told from one trimmed for the reader. False by default.
+ * empty list cannot be told from one trimmed for the reader, and serves no `created_by` or
+ * `changed_by`, so no read mark counts. False by default.
  */
 export interface OwAddressingOptions {
   keyless?: boolean;
@@ -292,10 +293,13 @@ export function editedBy(message: object | null | undefined, members: Members): 
  * mark with neither key (a folder, an export) has no hand to check and counts. Of several that
  * count, the newest `updated_at` is the mark wherever it stands in the list (a readable time beats
  * an unreadable one; equal times keep the first); a newer one in another's hand is ignored and the
- * reader's own stands.
+ * reader's own stands. Null for bodies read keyless (`{ keyless: true }`): the keyless public
+ * reader is served no `created_by` or `changed_by` on any body, so its marks carry neither because
+ * the hands were taken off, not because they are a folder's, and none counts.
  */
-export function readMarkOf<T extends object>(relations: readonly T[], characterId: string, members: Members): T | null {
-  if (!Array.isArray(relations) || typeof characterId !== 'string' || characterId === '') return null;
+export function readMarkOf<T extends object>(relations: readonly T[], characterId: string, members: Members, options?: OwAddressingOptions): T | null {
+  const keyless = keylessOf('readMarkOf', options);
+  if (keyless || !Array.isArray(relations) || typeof characterId !== 'string' || characterId === '') return null;
   let mark: T | null = null;
   let markKey: [number, number] | null = null;
   for (const rel of relations) {
