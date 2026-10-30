@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.97",
-  "commit": "27588c9aa364844f5790fe36a64f435ea571f880",
-  "manifest_sha256": "a236f055875a97fe97f6ee5a501bb9342d7a6b81192ba701cc185822c627f705",
+  "tag": "v0.33.0-dist.98",
+  "commit": "dec0ac8fc21f9ef1bcc12748f7861511f5459a12",
+  "manifest_sha256": "0d7393711d1f2eebc615b9c40dd8ffc34e6266f4782d854aaf552fed3264a457",
   "canonical_version": "00.33.00",
-  "dist_serial": 97,
+  "dist_serial": 98,
   "published": "2026-10-30",
   "pinned_at": "2026-10-30",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.97",
+      "manifest_sha256": "a236f055875a97fe97f6ee5a501bb9342d7a6b81192ba701cc185822c627f705",
+      "note": "superseded by v0.33.0-dist.98 (profiles/strand.md and strand.fixture.json, new: the strand profile, a world in miniature on four existing links, the World's x_strand naming a Narrative, one of its Events and that Event's place, strandOf answering six slots as a reader sees them; 17 cases; no schema file moved)"
+    },
     {
       "tag": "v0.33.0-dist.96",
       "manifest_sha256": "c17336c39cdba491cf5b7bd8c0b1d095bb584d1fbc272bb69faf4edaa8ec6a2a",

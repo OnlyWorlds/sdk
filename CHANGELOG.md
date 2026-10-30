@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.119.0] - 2026-10-30
+
+### Added
+
+- **`strandOf(world, reader)`, the strand profile's reader** (schema-dist serial 98, `profiles/strand.md`). A strand is a world in miniature: one story, one of its happenings, where that happened, the story's hero and where the hero is now, read off four links the standard already has. The World's mark `x_strand` (exported as `STRAND_FIELD`) is an object of three ids, `{narrative, event, location}`; any other shape is no mark. `strandOf` answers `{narrative, event, location, character, now, same}` as `reader` sees the world, each filled slot `{id, name}` and an empty one `null`: `narrative` is the marked Narrative; `event` the marked Event when it is in the story's `events`; `location` the marked Location when it is in that event's `locations`; `character` the story's `protagonist`; `now` the hero's `location`; `same` true when `now` and `location` are one place (compared by id), false when two, else `null`. A slot holds only its own kind, no list order is read, and no slot is filled from another. The world and the reader are `resolveLens`'s (`OwStrandWorld`, `OwLensReader`), so every slot is read through that reader's view and the bodies it is served: a story the reader knows only as a stub fills its own slot and nothing past it, and a public reader reads nothing of a world that is not open. Types `OwStrand`, `OwStrandSlot`. All 17 of the profile's fixture cases are the test.
+
+### Changed
+
+- **The schema pin moves to schema-dist serial 98** (`v0.33.0-dist.98`), which adds the strand profile and its fixture. No schema file moved: the generated output changes only its provenance lines.
+
 ## [4.118.0] - 2026-10-30
 
 ### Added
