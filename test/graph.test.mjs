@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { FIELD_SCHEMA, degreeOf, outDegreeOf, resolveLens, worldGraph } from '../dist/index.js';
+import { FIELD_SCHEMA, degreeOf, isLens, outDegreeOf, resolveLens, worldGraph } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/lens.fixture.json', import.meta.url));
 const KEY = { as_of: 'asOf', map_space: 'mapSpace' };
@@ -18,6 +18,37 @@ const loadCases = () => loadFixture().cases.filter(c => c.kind === 'graph');
 
 /** A case's options as worldGraph takes them (the file writes the Python package's names). */
 const optionsOf = c => Object.fromEntries(Object.entries(c.options ?? {}).map(([k, v]) => [KEY[k] ?? k, v]));
+
+const ANCHOR_FIELDS = loadFixture().anchor_fields;
+
+/**
+ * The ids a lens anchors under a field of another type than their element's (an id met once, under the first
+ * anchor field naming it) that the reader's view holds. Whether the view holds one is the reader's own answer: a
+ * lens anchoring the id under its own type's field keeps it exactly then. An umbrella's children, a lens so
+ * anchored, or a type no anchor field takes is beyond this count, and a case holding one fails here until it is.
+ */
+function mistypedSeen(c, lensRef) {
+  const byId = new Map(c.world.elements.map(el => [el.id, el]));
+  const lens = typeof lensRef === 'string' ? byId.get(lensRef) : lensRef;
+  if (lens === null || typeof lens !== 'object') return [];
+  const met = new Set();
+  const out = [];
+  for (const field of ANCHOR_FIELDS) {
+    for (const id of Array.isArray(lens[field]) ? lens[field] : []) {
+      if (typeof id !== 'string' || met.has(id)) continue;
+      met.add(id);
+      const el = byId.get(id);
+      if (el === undefined) continue;
+      assert.ok(!isLens(el), `${c.name}: a lens among the anchors is beyond the invariant's count of mistyped anchors`);
+      if (el.type === FIELD_SCHEMA.construct[field].target) continue;
+      const own = ANCHOR_FIELDS.find(f => FIELD_SCHEMA.construct[f].target === el.type);
+      assert.ok(own, `${c.name}: no anchor field takes a ${el.type}, so the invariant cannot ask whether the reader sees it`);
+      const probe = { id: 'probe', type: 'construct', name: 'probe', supertype: 'Lens', [own]: [id], x_lens: { depth: 0 } };
+      if (resolveLens(c.world, probe, c.reader).kept.includes(id)) out.push(id);
+    }
+  }
+  return out;
+}
 
 /** The section's invariants on one answer. */
 function invariants(g, c) {
@@ -58,7 +89,12 @@ function invariants(g, c) {
     // A schema link counts only to an element of its field's target type, and a generic pair (target any) is
     // placement, never a link; a declared link counts to any element.
     const typeOf = new Map(c.world.elements.map(el => [el.id, el.type]));
-    const linked = (v, target) => (typeof v === 'string' && typeOf.has(v) && (target === undefined || typeOf.get(v) === target) ? 1 : 0);
+    const linksTo = new Map();
+    const linked = (v, target) => {
+      if (typeof v !== 'string' || !typeOf.has(v) || (target !== undefined && typeOf.get(v) !== target)) return 0;
+      linksTo.set(v, (linksTo.get(v) ?? 0) + 1);
+      return 1;
+    };
     let links = 0;
     for (const n of go.nodes) {
       if (n.known_of) continue;
@@ -73,7 +109,12 @@ function invariants(g, c) {
     const unseen = ['not_visible', 'anchor_not_visible'];
     const sum = (counts, keep) => Object.entries(counts).filter(([k]) => keep(k)).reduce((a, [, v]) => a + v, 0);
     assert.equal(go.edges.length + sum(go.edgesCut, () => true), links, `${c.name}: every link from a kept node is an edge or counted`);
-    const inView = links - sum(go.edgesCut, k => unseen.includes(k));
+    // The owner's anchor_not_visible also counts an edge to an id the lens anchors under a field of another type,
+    // whose element a reader below the owner may see: that reader cuts the edge by its own reason (outside_lens,
+    // or a child's), so those links are in its view and are added back.
+    const ownerNodes = new Set(go.nodes.map(n => n.id));
+    const seenMistyped = c.reader.rung === 'owner' ? [] : mistypedSeen(c, opts.lens).filter(t => !ownerNodes.has(t));
+    const inView = links - sum(go.edgesCut, k => unseen.includes(k)) + seenMistyped.reduce((a, t) => a + (linksTo.get(t) ?? 0), 0);
     assert.equal(g.edges.length + sum(g.edgesCut, k => !unseen.includes(k)), inView, `${c.name}: every link from a kept node to an element the reader sees is an edge or counted`);
   } else {
     assert.equal(g.unreadable, null, `${c.name}: unreadable is null without a lens`);
