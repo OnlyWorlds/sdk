@@ -138,6 +138,8 @@ Object.assign(DATA, {
   'outDegreeOf#0': 'the graph worldGraph answered',
   'charterOf#0': 'the world snapshot, as resolveLens takes it, and whether it is open',
   'charterOf#1': 'the reader, as resolveLens takes it',
+  'strandOf#0': 'the world snapshot, as resolveLens takes it, with its x_strand and whether it is open',
+  'strandOf#1': 'the reader, as resolveLens takes it',
   'domainsOf#0': 'the world snapshot, as charterOf takes it',
   'domainsOf#1': 'the reader, as charterOf takes it',
   'doorWhere#0': 'an entry of doorsOf, as doorsOf gives it',

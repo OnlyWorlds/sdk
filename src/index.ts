@@ -40,6 +40,10 @@ export { ROOM_PAIRS, isRoomElement, isCharterElement, readingAidOf } from './roo
 // Domains, as one reader sees them (CHARTER_PAIRS generated from the vendored dist)
 export { CHARTER_PAIRS, charterOf, domainsOf } from './charter';
 export type { OwCharterWorld } from './charter';
+// The strand profile (schema-dist profiles/strand.md): a world in miniature, its story, one happening, the place
+// then, the hero and the place now, as one reader sees them
+export { STRAND_FIELD, strandOf } from './strand';
+export type { OwStrand, OwStrandSlot, OwStrandWorld } from './strand';
 // The message profile (schema-dist profiles/message.md): a message between a world's members, to whom
 // it is addressed, whether its sender is proved, who edited it, a reader's read mark and unread list, a
 // thread, and a Character's Note, which is not a message (MESSAGE_PAIR and NOTE_PAIR generated from the
