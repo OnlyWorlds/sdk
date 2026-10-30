@@ -107,7 +107,7 @@ test('the fixture\'s graph cases, each answer held to the invariants', () => {
   }
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 45, `the fixture holds ${cases.length} graph cases, serial 93 has 45`);
+  assert.equal(cases.length, 47, `the fixture holds ${cases.length} graph cases, serial 94 has 47`);
 });
 
 test('the fixture\'s graph tables, read back through the reader: flags, owner-only flags, edge reasons, declared links', () => {

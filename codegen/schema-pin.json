@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.93",
-  "commit": "9f357431094ff311b394aac8a1f9627e10d0ca38",
-  "manifest_sha256": "bc9b8e61d8519d570bb97a3f5b509c45802e65b53bd93727b47ae39a6f685b0c",
+  "tag": "v0.33.0-dist.94",
+  "commit": "ad040665a99e5c739cb953d58d67757113b78974",
+  "manifest_sha256": "899fcb0678c1c8158705b5bfd1b03d1a5b784667a67e200911f31ac6f9112499",
   "canonical_version": "00.33.00",
-  "dist_serial": 93,
+  "dist_serial": 94,
   "published": "2026-10-30",
   "pinned_at": "2026-10-30",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.93",
+      "manifest_sha256": "bc9b8e61d8519d570bb97a3f5b509c45802e65b53bd93727b47ae39a6f685b0c",
+      "note": "superseded by v0.33.0-dist.94 (profiles/charter.md, names.md and lens.md state twenty-four readings, each cased: charter.fixture.json gains two worlds and three cases (a proposed aid is no reader's, a member reads the Charter whole from a stub, a skill id compares as a UUID whatever its case); names.fixture.json six (types or supertypes as null refuses the map, an unknown slug reads the standard's name, version 1.0 is 1 and 1.5 refuses, the first of two folding supertype keys wins); lens.fixture.json fifteen, two of them graph cases (a public reader's list, an empty single link, a self-anchored hidden lens, an anchor met once under its first field, a cut counted once by id under the first reason the reader carries, an empty string is no anchor, a body's hidden key, an unresolved anchor's note); no schema file moved)"
+    },
     {
       "tag": "v0.33.0-dist.92",
       "manifest_sha256": "ab53b4d168b97562738b422b3a621e20b8ca0b0721693b17668fe9af70319465",
