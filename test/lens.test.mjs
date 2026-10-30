@@ -357,6 +357,32 @@ test('a lens a guest knows only as a stub reads as nothing, by id, as keel reads
   assert.deepEqual(resolveLens(world, 'L', whole).kept, ['c1', 'c2']);
 });
 
+test('a full row of a hidden element carries hidden: true for a reader who sees it, the two marks as one; the world stays as it was', () => {
+  // keel's full row is the body it serves (elements/lens.py:894, :904; _World.served, :450-456), and a served body
+  // of an element under the mark carries hidden: true, absent on every other (serialize.py:489-492,
+  // visibility.py:278-292); a name or first-line row is built fresh (:895-902).
+  const world = { hidden: ['h'], elements: [
+    { id: 'a', type: 'institution', name: 'Anchor', objects: ['h', 'o', 'm'] },
+    { id: 'h', type: 'object', name: 'Hidden ledger' },
+    { id: 'm', type: 'object', name: 'Marked ledger', hidden: true },
+    { id: 'o', type: 'object', name: 'Open ledger', hidden: false },
+  ] };
+  const before = JSON.stringify(world);
+  const lens = (show) => lensOn({ institutions: ['a'] }, show ? { show } : undefined);
+  const marks = (r) => r.rows.map(row => [row.id, 'hidden' in row ? row.hidden : 'absent']);
+  const full = [['a', 'absent'], ['h', true], ['m', true], ['o', 'absent']];
+  assert.deepEqual(marks(resolveLens(world, lens(), OWNER)), full);
+  assert.deepEqual(marks(resolveLens(world, lens(), { rung: 'owner', as: { rung: 'owner' } })), full);
+  for (const show of ['name', 'first_line']) {
+    assert.deepEqual(marks(resolveLens(world, lens(show), OWNER)), full.map(([i]) => [i, 'absent']), show);
+  }
+  // Below the owner a hidden element is not there; a guest's own lists name what it sees, and a body it is
+  // served of one under the mark says so (keel serves a guest its own hidden creation so).
+  assert.deepEqual(marks(resolveLens(world, lens(), { rung: 'owner', as: { rung: 'contributor' } })), [['a', 'absent'], ['o', 'absent']]);
+  assert.deepEqual(marks(resolveLens(world, lens(), { rung: 'guest', whole: ['a', 'h', 'o'] })), [['a', 'absent'], ['h', true], ['o', 'absent']]);
+  assert.equal(JSON.stringify(world), before);
+});
+
 test('resolveLens refuses what is not a reading: a bad reader, world, lens, as_of or clock is a TypeError', () => {
   assert.throws(() => resolveLens({ elements: [] }, LENS, { rung: 'admin' }), TypeError);
   assert.throws(() => resolveLens({ elements: [] }, LENS, { rung: 'owner', as: { rung: 'x' } }), TypeError);
