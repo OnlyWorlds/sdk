@@ -26,7 +26,7 @@ export interface OwGraphOptions {
   hidden?: boolean | null;
   /** Bring back elements written as proposed. The owner's alone: refused from any other rung. */
   proposed?: boolean | null;
-  /** Bring back map space: Maps, Pins, Markers and Zones. Refused for a public reader. */
+  /** Bring back map space: Maps, Pins and Markers (a Zone is a node by default). Refused for a public reader. */
   mapSpace?: boolean | null;
 }
 const GRAPH_OPTION_KEYS = ['lens', 'asOf', 'clock', 'rooms', 'hidden', 'proposed', 'mapSpace'] as const;
@@ -84,7 +84,7 @@ export interface OwWorldGraph {
 
 /** The extension fields a published profile declares a link, each a list of ids: the lens profile's and the spine profile's. */
 const DECLARED_LINKS: readonly string[] = ['x_lens_leads_to', 'x_spine_depends_on'];
-const MAP_SPACE: ReadonlySet<string> = new Set(['map', 'pin', 'marker', 'zone']);
+const MAP_SPACE: ReadonlySet<string> = new Set(['map', 'pin', 'marker']);
 const GRAPH_REASONS: readonly OwGraphCutReason[] = [...CUT_REASONS, 'room', 'hidden', 'proposed', 'map_space', 'reading_aid', 'outside_lens'];
 const GRAPH_OWNER_ONLY: ReadonlySet<string> = new Set([...OWNER_ONLY, 'hidden', 'proposed']);
 
@@ -106,7 +106,7 @@ function flag(opts: Body, key: string): boolean {
  *
  * `world` and `reader` are what `resolveLens` takes. Without `options.lens` the nodes are every element
  * the reader sees less what is out by default: room elements, hidden ones, proposed ones and map space
- * (Map, Pin, Marker, Zone), each brought back by its flag and then marked, and the reading aids (the charter,
+ * (Map, Pin, Marker; a Zone is content and a node like any other), each brought back by its flag and then marked, and the reading aids (the charter,
  * its guide, its domains: `isCharterElement`), counted `reading_aid`, which no flag brings back. With a lens the nodes are
  * exactly the lens's `kept`, its cut rides along unchanged, and a flag adds nothing. A lens whose `x_lens`
  * cannot be read gives an empty graph with `unreadable` naming the key, as `resolveLens` does.

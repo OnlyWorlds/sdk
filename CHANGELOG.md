@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.111.0] - 2026-10-30
+
+### Changed
+
+- **A Zone is a node in `worldGraph` by default.** schema-dist serial 92 (`v0.33.0-dist.92`) rules that a Zone is not map space: by its definition it is content that gains spatial presence through linked Markers, so the Markers are the geometry and the Zone is an element like any other, in a public reader's graph too. Without a lens, Zones are now nodes and their links edges; Maps, Pins and Markers stay out until `mapSpace` brings them back, and the `map_space` count no longer includes Zones. The fixture's eight graph cases over the shared world replay as the serial gives them. A graph read through a lens is unchanged: its nodes are still exactly what the lens kept.
+
 ## [4.110.0] - 2026-10-30
 
 ### Changed
