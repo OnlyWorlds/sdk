@@ -401,6 +401,21 @@ test('below the owner an anchor it cannot see is recorded under no reason, so a 
   assert.deepEqual([owner.kept, owner.cut], [['o'], { anchor_not_visible: 1 }]);
 });
 
+test('a note goes with its anchor: one that reaches nothing captions no row, though another path keeps the element, and is not counted ignored', () => {
+  // keel's anchor_ids hold the anchors it resolved only, and `noted` adds the unseen (elements/lens.py:792-793);
+  // a note captions a kept row only when its id is one of anchor_ids (:905), and _notes_ignored counts a note
+  // outside `noted` alone (:794, :807).
+  const world = { elements: [
+    { id: 'e08', type: 'language', name: 'Old Tongue' },
+    { id: 'L1', type: 'construct', name: 'L1', supertype: 'Lens', languages: ['e08'], x_lens: { depth: 0 } },
+  ] };
+  const lens = lensOn({ constructs: ['e08', 'L1'] }, { depth: 0, show: 'name', notes: { e08: 'spoken in the hills' } });
+  for (const reader of [OWNER, { rung: 'contributor' }]) {
+    const r = resolveLens(world, lens, reader);
+    assert.deepEqual([r.kept, r.rows, r.cut, r.notesIgnored], [['e08'], [{ id: 'e08', type: 'language', name: 'Old Tongue' }], {}, 0], reader.rung);
+  }
+});
+
 test('a full row of a hidden element carries hidden: true for a reader who sees it, the two marks as one; the world stays as it was', () => {
   // keel's full row is the body it serves (elements/lens.py:894, :904; _World.served, :450-456), and a served body
   // of an element under the mark carries hidden: true, absent on every other (serialize.py:489-492,

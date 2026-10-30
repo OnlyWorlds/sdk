@@ -80,7 +80,9 @@ export interface OwLensReading {
   /** The kept elements' ids, in the profile's order. */
   kept: string[];
   /**
-   * The kept elements as `show` makes them, in the same order; an anchor's row carries its `note`. Under `full` a row
+   * The kept elements as `show` makes them, in the same order; an anchor's row carries its `note`, and only an anchor
+   * the reader can see: a note on one it cannot see (an id of another type than its field's too) goes with the
+   * anchor, though another path keeps the element. Under `full` a row
    * is the body as served to this reader, so the owner's row of a hidden element carries `hidden: true`; a `name` or
    * `first_line` row never carries it.
    */
@@ -877,9 +879,12 @@ export function lensReading(r: Reading, lens: object | string, clockV: unknown):
   const visited = new Set<string>();
   if (typeof body.id === 'string') visited.add(body.id);
   const { list: keep, cut, mail } = resolveOne(body, recipe, r, visited, wall);
-  const { anchors } = anchorsOf(body, r);
-  // The rows are made once, from the union, by this lens's `show`; a note captions only this lens's own anchors.
-  const rows = keep.map(id => r.row(id, recipe.show, anchors.includes(id) ? recipe.notes : null));
+  const { anchors, unseen } = anchorsOf(body, r);
+  // The rows are made once, from the union, by this lens's `show`; a note captions only this lens's own anchors
+  // the reader can see. One the reader cannot see (a wrongly typed id among them) reaches nothing, and its note goes
+  // with it, though another path keeps the element.
+  const resolved = new Set(anchors.filter(id => r.view.has(id) && !unseen.has(id)));
+  const rows = keep.map(id => r.row(id, recipe.show, resolved.has(id) ? recipe.notes : null));
   const counts: Partial<Record<OwLensCutReason, number>> = {};
   for (const why of CUT_REASONS) {
     if (OWNER_ONLY.has(why) && !r.owner) continue;
@@ -888,7 +893,8 @@ export function lensReading(r: Reading, lens: object | string, clockV: unknown):
     if (n > 0) counts[why] = n;
   }
   // A note on an id that is not an anchor is counted only where the reader sees that id: a note keyed to an
-  // element it cannot see, or to no element, is no note of its, and counting it would tell a guest it exists.
+  // element it cannot see, or to no element, is no note of its, and counting it would tell a guest it exists. A
+  // note on an anchor the reader cannot see went with the anchor and is not counted either.
   const notesIgnored = Object.keys(recipe.notes).filter(k => !anchors.includes(k) && r.view.has(k)).length;
   return { reading: { kept: keep, rows, cut: counts, notesIgnored, mail, unreadable: null }, cutById: cut };
 }
