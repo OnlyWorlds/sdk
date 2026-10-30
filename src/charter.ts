@@ -63,7 +63,10 @@ function idsIn(text: unknown): string[] {
   return out;
 }
 
-/** A Domain's hubs from the body the reader is served: the distinct targets of its link fields, in the schema's field order, never itself; a stub's none. */
+/**
+ * A Domain's hubs from the body the reader is served: the distinct targets of its link fields, in the schema's field order, never
+ * itself and never an element written as proposed, which is in no reader's view, the owner's included; a stub's none.
+ */
 function hubsOf(id: string, r: Reading): OwReadingAidsHub[] {
   const body = r.body(id);
   if (body.known_of === true) return [];
@@ -74,7 +77,7 @@ function hubsOf(id: string, r: Reading): OwReadingAidsHub[] {
     const v = body[field];
     const target = schema[field]?.target ?? '';
     for (const t of many ? (Array.isArray(v) ? v : []) : [v]) {
-      if (typeof t !== 'string' || t === '' || seen.has(`${target}/${t}`)) continue;
+      if (typeof t !== 'string' || t === '' || r.proposed.has(t) || seen.has(`${target}/${t}`)) continue;
       seen.add(`${target}/${t}`);
       out.push({ type: target, id: t });
     }
