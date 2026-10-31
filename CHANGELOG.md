@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.121.1] - 2026-10-31
+
+### Fixed
+
+- **`draught` reads with `world` set, as `list`, `get` and `getWorld` do.** The API serves the draught to an account token that names the world (the account's own access there) and to a keyless reader of a world open to the public; the client refused both before sending. It now sends `world=<id>` with the Bearer, or with no credential.
+
 ## [4.121.0] - 2026-10-31
 
 ### Added

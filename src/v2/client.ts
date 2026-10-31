@@ -234,7 +234,8 @@ export class OwV2Client {
    * and in no other section; a room-marked Message is in `messages` or nowhere. `lens` (a lens id)
    * adds `lenses`, one frame with that lens read for this key's own view (beside `depth` or `budget`
    * a 422); with no policy key but `compact`, the packet adds one frame per lens chosen with
-   * setMyLenses. Served `Cache-Control: private, no-store`.
+   * setMyLenses. Served `Cache-Control: private, no-store`. On a client with `world` set, an account token
+   * reads the draught as the account's own access there, and no key reads it as the public reads the world.
    */
   draught(characterId: string, policy?: OwDraughtPolicy & { compact?: false }): Promise<OwDraught>;
   draught(characterId: string, policy: OwDraughtPolicy): Promise<OwDraughtCompact>;
@@ -254,7 +255,7 @@ export class OwV2Client {
       compact: policy.compact,
       lens: policy.lens,
     });
-    return this.request('GET', `/character/${characterId}/context`, { query }) as Promise<OwDraught | OwDraughtCompact>;
+    return this.request('GET', `/character/${characterId}/context`, { query, worldRead: true }) as Promise<OwDraught | OwDraughtCompact>;
   }
 
   /**
@@ -1605,14 +1606,14 @@ export class OwV2Client {
     const worldRead = opts.auth !== false && opts.worldRead === true && method.toUpperCase() === 'GET';
     const accountToken = opts.auth !== false && this.keyKind === 'account' ? opts.accountToken : undefined;
     if (opts.auth !== false && this.keyKind === 'none' && !(worldRead && this.world !== undefined)) {
-      throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin, redeemJoin and signInWithPassword work, and list, listAll, get and getWorld with \`world\` set`);
+      throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin, redeemJoin and signInWithPassword work, and list, listAll, get, getWorld and draught with \`world\` set`);
     }
     if (opts.auth !== false && this.keyKind === 'account' && !ACCOUNT_ROUTE.test(path)) {
       if (!worldRead && accountToken === undefined) {
-        throw new TypeError(`${method} ${path} needs a world key: an account token sends the /account routes, worldLenses, setMyLenses and members, and with \`world\` set reads a world through list, listAll, get and getWorld only. Nothing was sent.`);
+        throw new TypeError(`${method} ${path} needs a world key: an account token sends the /account routes, worldLenses, setMyLenses and members, and with \`world\` set reads a world through list, listAll, get, getWorld and draught only. Nothing was sent.`);
       }
       if (worldRead && this.world === undefined) {
-        throw new TypeError(`${method} ${path}: an account token reads a world only with \`world\` set (new OwV2Client({ apiKey, world })), through list, listAll, get and getWorld. Nothing was sent.`);
+        throw new TypeError(`${method} ${path}: an account token reads a world only with \`world\` set (new OwV2Client({ apiKey, world })), through list, listAll, get, getWorld and draught. Nothing was sent.`);
       }
       if (accountToken === 'world' && this.world === undefined) {
         throw new TypeError(`${method} ${path}: an account token names the world it sends to with \`world\`: set it (new OwV2Client({ apiKey, world })). Nothing was sent.`);
@@ -2006,10 +2007,10 @@ const CLIENT_CONFIG_KEYS = ['apiKey', 'apiPin', 'baseUrl', 'pageSize', 'changesP
 function worldOf(value: unknown, keyKind: OwKeyKind): string | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== 'string' || value.trim() === '') {
-    throw new TypeError(`OwV2Client: world is a world's id, a non-empty string; got ${JSON.stringify(value) ?? String(value)}. With it, an account token or no key reads that world through list, listAll, get and getWorld.`);
+    throw new TypeError(`OwV2Client: world is a world's id, a non-empty string; got ${JSON.stringify(value) ?? String(value)}. With it, an account token or no key reads that world through list, listAll, get, getWorld and draught.`);
   }
   if (keyKind !== 'account' && keyKind !== 'none') {
-    throw new TypeError('OwV2Client: a world key reads its own world; `world` is for an account token or no key, which read the world it names through list, listAll, get and getWorld.');
+    throw new TypeError('OwV2Client: a world key reads its own world; `world` is for an account token or no key, which read the world it names through list, listAll, get, getWorld and draught.');
   }
   return value;
 }

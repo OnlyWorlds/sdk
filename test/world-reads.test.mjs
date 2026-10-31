@@ -49,10 +49,11 @@ const READS = [
   { name: 'listAll', path: '/location/', run: async (c) => { for await (const _ of c.listAll('location')) { /* empty */ } } },
   { name: 'get', path: `/location/${EL}/`, run: (c) => c.get('location', EL) },
   { name: 'getWorld', path: '/world/', run: (c) => c.getWorld() },
+  { name: 'draught', path: `/character/${EL}/context`, run: (c) => c.draught(EL) },
 ];
 
 for (const [kind, config] of Object.entries(KINDS)) {
-  test(`${kind}: list, listAll, get and getWorld send world=<id>, no API-Key and no API-Pin`, async () => {
+  test(`${kind}: list, listAll, get, getWorld and draught send world=<id>, no API-Key and no API-Pin`, async () => {
     for (const read of READS) {
       const f = recorder();
       await read.run(new OwV2Client({ ...config, fetch: f.fetch }));
@@ -71,7 +72,7 @@ for (const [kind, config] of Object.entries(KINDS)) {
   });
 }
 
-test('a world key: the four reads send its API-Key and no world=, as before', async () => {
+test('a world key: the five reads send its API-Key and no world=, as before', async () => {
   for (const read of READS) {
     const f = recorder();
     await read.run(new OwV2Client({ apiKey: 'ow_r_test', fetch: f.fetch }));
@@ -94,22 +95,22 @@ test('`world` in a list filter is a TypeError before sending, on every kind of c
   }
 });
 
-test('an account token without world: the four reads are a TypeError naming `world`, before sending', async () => {
+test('an account token without world: the five reads are a TypeError naming `world`, before sending', async () => {
   for (const read of READS) {
     const f = recorder();
     const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
     await assert.rejects(async () => read.run(c), (err) => err instanceof TypeError && /only with `world` set/.test(err.message)
-      && /list, listAll, get and getWorld/.test(err.message), read.name);
+      && /list, listAll, get, getWorld and draught/.test(err.message), read.name);
     assert.equal(f.calls.length, 0, `${read.name}: nothing sent`);
   }
 });
 
-test('no key and no world: the four reads keep the keyless TypeError, which now names world', async () => {
+test('no key and no world: the five reads keep the keyless TypeError, which now names world', async () => {
   for (const read of READS) {
     const f = recorder();
     const c = new OwV2Client({ fetch: f.fetch });
     await assert.rejects(async () => read.run(c), (err) => err instanceof TypeError && /holds none/.test(err.message)
-      && /list, listAll, get and getWorld with `world` set/.test(err.message), read.name);
+      && /list, listAll, get, getWorld and draught with `world` set/.test(err.message), read.name);
     assert.equal(f.calls.length, 0, `${read.name}: nothing sent`);
   }
 });
@@ -226,12 +227,12 @@ test('construction: world with a world key is refused; world must be a non-empty
   for (const apiKey of ['ow_w_test', 'ow_r_test', '0123456789', '0000000001', 'some-other-key']) {
     assert.throws(() => new OwV2Client({ apiKey, world: W }),
       (err) => err instanceof TypeError && /a world key reads its own world; `world` is for an account token or no key/.test(err.message)
-        && /list, listAll, get and getWorld/.test(err.message), apiKey);
+        && /list, listAll, get, getWorld and draught/.test(err.message), apiKey);
   }
   for (const world of ['', '   ', 42, null, {}, ['w']]) {
     for (const apiKey of ['ow_a_acct', undefined]) {
       assert.throws(() => new OwV2Client({ apiKey, world }),
-        (err) => err instanceof TypeError && /world is a world's id/.test(err.message) && /list, listAll, get and getWorld/.test(err.message),
+        (err) => err instanceof TypeError && /world is a world's id/.test(err.message) && /list, listAll, get, getWorld and draught/.test(err.message),
         `${JSON.stringify(world)} with ${apiKey}`);
     }
   }
@@ -261,7 +262,7 @@ test('request(), the escape hatch, on an account client: the rule is the request
     ['PATCH', '/world/', { worldRead: true }], ['GET', '/accounts/x', {}], ['GET', '/world/account/', {}],
   ]) {
     await assert.rejects(c.request(verb, path, opts), (err) => err instanceof TypeError && /needs a world key/.test(err.message)
-      && /list, listAll, get and getWorld/.test(err.message), `${verb} ${path}`);
+      && /list, listAll, get, getWorld and draught/.test(err.message), `${verb} ${path}`);
   }
   assert.equal(f.calls.length, 3, 'nothing more sent');
   // auth: false sends no credential, whatever the client holds
@@ -270,7 +271,7 @@ test('request(), the escape hatch, on an account client: the rule is the request
 });
 
 // Every method of the client, by what it does on an account client with `world` set:
-// `read` sends world= and the Bearer (the four reads, members, and setMyLenses, the one write that
+// `read` sends world= and the Bearer (the five reads, members, and setMyLenses, the one write that
 // names its world so), `path` sends the Bearer to a world route whose path names the world, without world=,
 // `account` sends the Bearer to an /account route, `open` sends no credential, `local` sends nothing
 // at all, `refused` is a TypeError before fetch is called.
@@ -286,7 +287,7 @@ const METHODS = {
   me: ['refused', (c) => c.me()],
   members: ['read', (c) => c.members()],
   list: ['read', (c) => c.list('location')],
-  draught: ['refused', (c) => c.draught(EL)],
+  draught: ['read', (c) => c.draught(EL)],
   listAll: ['read', async (c) => { for await (const _ of c.listAll('location')) { /* empty */ } }],
   get: ['read', (c) => c.get('location', EL)],
   create: ['refused', (c) => c.create('location', { name: 'H' })],
@@ -347,7 +348,7 @@ const METHODS = {
   request: ['account', (c) => c.request('GET', '/account/worlds')],
 };
 
-test('every client method on an account client with world set: it sends (an /account route, the four reads, no credential) or is a TypeError before fetch', async () => {
+test('every client method on an account client with world set: it sends (an /account route, the five reads, no credential) or is a TypeError before fetch', async () => {
   const names = Object.getOwnPropertyNames(OwV2Client.prototype).filter((n) => n !== 'constructor' && typeof OwV2Client.prototype[n] === 'function');
   const unclassified = names.filter((n) => !(n in METHODS));
   assert.deepEqual(unclassified, [], `methods this test does not classify (add each to METHODS with what it does on an account client): ${unclassified.join(', ')}`);

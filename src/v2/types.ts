@@ -1471,7 +1471,7 @@ export interface OwClientConfig {
   /**
    * The key: an ow_w_ (write) or ow_r_ (read) world key, an ow_a_ account token (sent as a Bearer token, for the account routes, and with `world` set for that world's reads), or a 10-digit legacy key.
    * Leave it out for a client that holds none, such as a friend with only a link (since 4.30.0): it can call health,
-   * previewJoin, redeemJoin and signInWithPassword (and with `world` set, list, listAll, get and getWorld), and any
+   * previewJoin, redeemJoin and signInWithPassword (and with `world` set, list, listAll, get, getWorld and draught), and any
    * other call is a TypeError before anything is sent.
    */
   apiKey?: string;
