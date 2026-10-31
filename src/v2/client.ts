@@ -212,7 +212,7 @@ export class OwV2Client {
       ...params.filter,
       as: params.viewAs,
     }, new Set(Object.keys(params.filter ?? {})));
-    return this.request('GET', `/${type}/`, { query, worldRead: true, ...withSignal(params.signal) }) as Promise<OwPage>;
+    return this.request('GET', `/${encodeURIComponent(type)}/`, { query, worldRead: true, ...withSignal(params.signal) }) as Promise<OwPage>;
   }
 
   /**
@@ -255,7 +255,7 @@ export class OwV2Client {
       compact: policy.compact,
       lens: policy.lens,
     });
-    return this.request('GET', `/character/${characterId}/context`, { query, worldRead: true }) as Promise<OwDraught | OwDraughtCompact>;
+    return this.request('GET', `/character/${encodeURIComponent(characterId)}/context`, { query, worldRead: true }) as Promise<OwDraught | OwDraughtCompact>;
   }
 
   /**
@@ -286,7 +286,7 @@ export class OwV2Client {
   async get(type: ElementType | string, id: string, opts: Pick<ListParams, 'expand' | 'fields' | 'viewAs' | 'signal'> = {}): Promise<OwElement> {
     only('get', opts, ['expand', 'fields', 'viewAs', 'signal']);
     const query = buildQuery({ expand: opts.expand?.join(','), fields: opts.fields?.join(','), as: opts.viewAs });
-    return this.request('GET', `/${type}/${id}/`, { query, worldRead: true, ...withSignal(opts.signal) }) as Promise<OwElement>;
+    return this.request('GET', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/`, { query, worldRead: true, ...withSignal(opts.signal) }) as Promise<OwElement>;
   }
 
   /**
@@ -306,7 +306,7 @@ export class OwV2Client {
     if (body.id === undefined || body.id === null || body.id === '') {
       body.id = opts.idempotencyKey ? keyedId(opts.idempotencyKey, 0) : mintUuid();
     }
-    return this.request('POST', `/${type}/`, {
+    return this.request('POST', `/${encodeURIComponent(type)}/`, {
       write: true,
       elementWrite: true,
       body,
@@ -323,7 +323,7 @@ export class OwV2Client {
    */
   async upsert(type: ElementType | string, id: string, element: OwElement | Record<string, unknown>): Promise<OwElement> {
     refuseKnownOf(element, 'upsert');
-    return this.request('PUT', `/${type}/${id}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(element) }) as Promise<OwElement>;
+    return this.request('PUT', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(element) }) as Promise<OwElement>;
   }
 
   /**
@@ -349,7 +349,7 @@ export class OwV2Client {
   ): Promise<OwElement> {
     only('patch', opts, ['ifMatch']);
     refuseKnownOf(partial, 'patch');
-    return this.request('PATCH', `/${type}/${id}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
+    return this.request('PATCH', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   /**
@@ -364,7 +364,7 @@ export class OwV2Client {
    */
   async delete(type: ElementType | string, id: string, opts: { ifMatch?: number } = {}): Promise<void> {
     only('delete', opts, ['ifMatch']);
-    await this.request('DELETE', `/${type}/${id}/`, { write: true, elementWrite: true, allowEmpty: true, ifMatch: opts.ifMatch });
+    await this.request('DELETE', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/`, { write: true, elementWrite: true, allowEmpty: true, ifMatch: opts.ifMatch });
   }
 
   /**
@@ -384,7 +384,7 @@ export class OwV2Client {
   ): Promise<OwElement> {
     only('editLinks', opts, ['ifMatch']);
     only('editLinks', edit, ['add', 'remove'], 'The edit is { add?: string[], remove?: string[] }.');
-    return this.request('POST', `/${type}/${id}/links/${field}`, { write: true, elementWrite: true, proposable: true, body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
+    return this.request('POST', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/links/${encodeURIComponent(field)}`, { write: true, elementWrite: true, proposable: true, body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   /**
@@ -401,7 +401,7 @@ export class OwV2Client {
    */
   async adopt(type: ElementType | string, id: string, member: string | 'owner'): Promise<OwElement> {
     if (typeof member !== 'string' || member === '') throw new TypeError('adopt: member must be a membership id or "owner"');
-    return this.request('POST', `/${type}/${id}/adopt`, { write: true, elementWrite: true, body: { member } }) as Promise<OwElement>;
+    return this.request('POST', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/adopt`, { write: true, elementWrite: true, body: { member } }) as Promise<OwElement>;
   }
 
   // -- Bulk ----------------------------------------------------------------
@@ -652,7 +652,7 @@ export class OwV2Client {
    * are not in its body, its `change_seq` or /changes.
    */
   async listFiles(type: ElementType | string, id: string): Promise<OwFileRow[]> {
-    const page = await this.request('GET', `/${type}/${encodeURIComponent(id)}/files`) as { data?: OwFileRow[] };
+    const page = await this.request('GET', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/files`) as { data?: OwFileRow[] };
     return page.data ?? [];
   }
 
@@ -700,7 +700,7 @@ export class OwV2Client {
     if (req.label !== undefined) body.label = req.label;
     // An agent client declares itself here, the one files route keel's document lists it on:
     // the upload's added_by.agent then reads true.
-    return this.request('POST', `/${type}/${encodeURIComponent(id)}/files`, { body, write: true }) as Promise<OwFileTicket>;
+    return this.request('POST', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/files`, { body, write: true }) as Promise<OwFileTicket>;
   }
 
   /**
@@ -787,7 +787,7 @@ export class OwV2Client {
    * key that may read the element.
    */
   async fileDownloadLink(type: ElementType | string, id: string, fileId: string): Promise<OwFileDownload> {
-    return this.request('GET', `/${type}/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}/download`) as Promise<OwFileDownload>;
+    return this.request('GET', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}/download`) as Promise<OwFileDownload>;
   }
 
   /**
@@ -798,7 +798,7 @@ export class OwV2Client {
    * Deleting an element removes its files too.
    */
   async removeFile(type: ElementType | string, id: string, fileId: string): Promise<void> {
-    await this.request('DELETE', `/${type}/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}`);
+    await this.request('DELETE', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}`);
   }
 
   // -- Joining a world by link ----------------------------------
@@ -1183,12 +1183,12 @@ export class OwV2Client {
    * lists, search, counts and the link arrays that name it. 204, no body. No Idempotency-Key.
    */
   async hide(type: ElementType | string, id: string): Promise<void> {
-    await this.request('PUT', `/${type}/${id}/hidden`, { body: {}, allowEmpty: true });
+    await this.request('PUT', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/hidden`, { body: {}, allowEmpty: true });
   }
 
   /** DELETE /{type}/{id}/hidden -- clear the mark; an element that is not hidden stays as it is. 204. */
   async unhide(type: ElementType | string, id: string): Promise<void> {
-    await this.request('DELETE', `/${type}/${id}/hidden`, { allowEmpty: true });
+    await this.request('DELETE', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/hidden`, { allowEmpty: true });
   }
 
   /**
@@ -1339,7 +1339,7 @@ export class OwV2Client {
     const body: Record<string, unknown> = { decision: opts.decision };
     if (opts.reason !== undefined) body.reason = opts.reason;
     // X-OW-Client is a header keel's document lists here; X-OW-Agent is not.
-    const path = `/${type}/${encodeURIComponent(id)}/review`;
+    const path = `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/review`;
     const answer = await this.request('POST', path, { elementWrite: true, body });
     // the key the decision settles: an accept answers { element }, a decline { deleted }
     const settled = opts.decision === 'accept' ? 'element' : 'deleted';
@@ -1782,7 +1782,7 @@ const WORLD_READ_ONLY_FIELDS = ['id', 'slug', 'public_page', 'public_read', 'age
 
 /** The proposals of one element: /{type}/{id}/proposals. */
 function proposalsPath(type: string, id: string): string {
-  return `/${type}/${encodeURIComponent(id)}/proposals`;
+  return `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/proposals`;
 }
 
 /**

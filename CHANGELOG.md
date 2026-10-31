@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.122.1] - 2026-10-31
+
+### Fixed
+
+- **Every value a call puts in a request path is sent as one escaped segment.** `get`, `upsert`, `patch`, `delete`, `editLinks`, `adopt`, `hide`, `unhide`, `draught`, `list` and `create` put the element type, id, link field or Character id into the path as given, so an id carrying a `/`, `?` or `#` asked a different route (`get('character', 'abc/hidden')` asked `GET /character/abc/hidden/`). They now escape each one, as the file, review and proposal routes already escaped the id; the type is escaped on those routes too. On a real id (the API declares every element id a UUID) nothing on the wire changes. A test reads every request path in the client's source and fails on one that interpolates a value unescaped.
+
 ## [4.122.0] - 2026-10-31
 
 ### Added
