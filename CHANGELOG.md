@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.121.0] - 2026-10-31
+
 ### Added
 
 - **`reading_aids.strand` on `GET /me` and an agent's join answer** (schema-dist serial 100, the strand profile's rule 2). The server's front door serves the world's strand fourth in the reading aids, after the Charter, the Guide and the Domains: `strandOf`'s six slots as that key reads the world, every slot null when the world has no strand or its story is out of the key's view. `OwMe.reading_aids` and `OwAgentJoined.reading_aids` are typed `OwServedReadingAids`, `OwReadingAids` plus `strand: OwStrand`; `charterOf` still answers the three, and `strandOf(world, reader)` reads the same `strand` from a world snapshot.
