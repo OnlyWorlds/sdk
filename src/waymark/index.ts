@@ -35,7 +35,7 @@ export interface OwWaymarkOptions {
   element?: { id: string; type: string; name: string; [k: string]: unknown } | null;
   /** `member`, `guest` or `public`. The public face shows the name line without the last door, the rows that need nothing first, and Copy link. */
   reader: OwWaymarkReader;
-  /** The client name of the surface's own tool; its row says "You are here". */
+  /** The client name of the surface's own tool; its row says "You are here". The site passes `onlyworlds`. */
   tool?: string | null;
   /** Whether the reader is signed in; null when the surface cannot know, and then no row says so. */
   signedIn?: boolean | null;
@@ -86,13 +86,15 @@ const NOT_COPIED = 'Could not copy the link.';
 const HERE: OwOpenerState = 'You are here';
 /** The state word openersFor gives a web row when the device has no connection: the row is drawn disabled. */
 const OFFLINE: OwOpenerState = 'Needs a connection';
+/** A web address (`http:` or `https:`): its row opens in a new tab. */
+const WEB_LINK = /^https?:/i;
 let mounted = 0;
 
 const fail = (what: string): never => {
   throw new TypeError(`mountWaymark: ${what}`);
 };
 
-/** A state word that says the row cannot open now: drawn grey. The rest open (here, in the browser, at the world) and keep the text colour. */
+/** A state word that says the row cannot open now: drawn grey. The surface's own row is grey too, as where the reader is (its own class); the rest open (in the browser, at the world) and keep the text colour. */
 function cannotOpen(state: OwOpenerState | null): boolean {
   return state !== null && (state.startsWith('Sign in to ') || state === 'Needs the world on this phone' || state === OFFLINE);
 }
@@ -320,12 +322,13 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   };
 
   // 2. Open with: the rows as openersFor gives them, each with its word. The surface's own row ("You are
-  // here") leads nowhere: a button, not a link, that closes the fan-out and gives focus back. A row that
+  // here") leads nowhere: a button, not a link, drawn grey, that closes the fan-out and gives focus back. A
+  // web row opens in a new tab (`target="_blank"`, `rel="noopener"`). A row that
   // needs a connection the device lacks is a link with no href, aria-disabled: it stays in the arrow and
   // Tab order and does nothing when pressed.
   const openWith = section('Open with');
   const rowNode = (r: OwOpener): HTMLElement => {
-    const cls = `ow-waymark__row${cannotOpen(r.state) ? ' ow-waymark__row--cannot' : ''}`;
+    const cls = `ow-waymark__row${cannotOpen(r.state) ? ' ow-waymark__row--cannot' : r.state === HERE ? ' ow-waymark__row--here' : ''}`;
     let a: HTMLAnchorElement | HTMLButtonElement;
     if (r.state === HERE) {
       a = el('button', cls);
@@ -339,6 +342,12 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     } else {
       a = el('a', cls);
       a.href = r.href;
+      // A web row opens in a new tab, so the page the reader came from stays; a link that opens an app
+      // on the device (any other scheme) is handed to the device as it is.
+      if (WEB_LINK.test(r.href)) {
+        a.target = '_blank';
+        a.rel = 'noopener';
+      }
     }
     a.setAttribute('role', 'menuitem');
     a.dataset.opener = r.id;

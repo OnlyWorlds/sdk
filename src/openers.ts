@@ -41,7 +41,7 @@ export type OwOpenerKind = 'world' | 'element';
 
 /** What the surface drawing the menu knows of itself and its reader. The function guesses none of it. */
 export interface OwOpenerSurface {
-  /** The client name of the surface's own tool, when it is a listed tool; its row says "You are here". */
+  /** The client name of the surface's own tool, when it is a listed tool; its row says "You are here". `onlyworlds` is the site itself: the site's own row says it. */
   tool?: string | null;
   /** `member` (a seat in the world, a guest included) or `public` (the signed-out reader). Required. */
   audience: 'member' | 'public';
@@ -95,7 +95,8 @@ function templateOf(row: string, key: 'world' | 'element', v: unknown): string |
 /**
  * The rows of the Open with menu for a world (`kind: 'world'`) or one element of it (`'element'`), in
  * order: first the site's own row (id `onlyworlds`, name `onlyworlds.com`, the world's or the element's
- * page on www.onlyworlds.com, for every audience, its one word "Needs a connection" when offline), then
+ * page on www.onlyworlds.com, for every audience, its one word "You are here" when `surface.tool` is
+ * `onlyworlds` (the site itself), else "Needs a connection" when offline), then
  * one row per `tools` row, in the list's order, that is `listed` and has a door for this kind. `tools`
  * is the tools list's rows, `TOOLS` or the list as served; `address` is a reading from `parseOwLink` or
  * what `elementAddress` takes, with the world's id. A lens and a moment on it ride on no href.
@@ -158,7 +159,8 @@ export function openersFor(
   const fill = (template: string): string => template.replace(PLACEHOLDER, (_, n: string) => values[n]);
   const offline = (href: string): boolean => !online && WEB.test(href);
   const site = kind === 'element' ? page : elementAddress({ form: 'human', world });
-  const rows: OwOpener[] = [{ id: 'onlyworlds', name: 'onlyworlds.com', href: site, state: offline(site) ? OFFLINE : null }];
+  const siteState: OwOpenerState | null = tool === 'onlyworlds' ? 'You are here' : offline(site) ? OFFLINE : null;
+  const rows: OwOpener[] = [{ id: 'onlyworlds', name: 'onlyworlds.com', href: site, state: siteState }];
   for (const r of tools) {
     if (r === null || typeof r !== 'object' || typeof r.id !== 'string' || typeof r.name !== 'string') {
       fail('each tools row is an object with an id and a name');

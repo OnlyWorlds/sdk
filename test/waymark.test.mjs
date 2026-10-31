@@ -91,7 +91,16 @@ test('the rows drawn are openersFor\'s rows, in order, each with its state word;
   assert.deepEqual(drawn, expected.map((r) => (r.state === 'You are here' ? { ...r, href: null } : r)));
   assert.deepEqual(expected.map((r) => r.state), [null, 'You are here', 'Sign in to Lantern first', 'Needs the world on this phone', 'Opens the world']);
   const grey = [...name.querySelectorAll('[data-opener]')].filter((a) => a.classList.contains('ow-waymark__row--cannot')).map((a) => a.dataset.opener);
-  assert.deepEqual(grey, ['lantern', 'little-lens'], 'grey means cannot open: not "You are here", not "Opens the world"');
+  assert.deepEqual(grey, ['lantern', 'little-lens'], 'the cannot grey: not "You are here", not "Opens the world"');
+  // The surface's own row reads as where the reader is: its own grey class, never the cannot one.
+  const here = [...name.querySelectorAll('[data-opener]')].filter((a) => a.classList.contains('ow-waymark__row--here')).map((a) => a.dataset.opener);
+  assert.deepEqual(here, ['atlas']);
+  // A web row opens in a new tab with no opener; a link to an app on the device (obsidian:) and the row with no link do not.
+  const tabs = [...name.querySelectorAll('[data-opener]')].map((a) => [a.dataset.opener, a.getAttribute('target'), a.getAttribute('rel')]);
+  assert.deepEqual(tabs, [
+    ['onlyworlds', '_blank', 'noopener'], ['atlas', null, null], ['lantern', '_blank', 'noopener'],
+    ['little-lens', '_blank', 'noopener'], ['obsidian', null, null],
+  ]);
   // The baked list, through the same function, by default.
   dispose();
   mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'member', signedIn: false });

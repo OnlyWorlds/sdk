@@ -12,8 +12,8 @@ import { fileURLToPath } from 'node:url';
 import { openersFor, parseOwLink, OwAddressError, TOOLS } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/openers.fixture.json', import.meta.url));
-const FIXTURE_SHA256 = '5a9ebbc8604d2fc87078fef25156dd2e767605a1b08cb2bec43e37c6bc2fd9db';
-const CASES = 54;
+const FIXTURE_SHA256 = '351ddec25f3af8cf8ec2c9c901d6ed4719355286467ada091e45d6012f8ed05b';
+const CASES = 57;
 
 /** The fixture writes the surface's keys snake_case; this package spells one of them in camelCase. */
 const SPELLING = { signed_in: 'signedIn' };

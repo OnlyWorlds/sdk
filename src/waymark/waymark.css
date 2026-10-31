@@ -89,10 +89,12 @@
   height: max(44px, 100%);
   transform: translate(-50%, -50%);
 }
+/* 0.7em: the ink as tall as the name's capitals and centred on them; never under 16px, where the
+   globe's lines blur (a name under 23px). */
 .ow-waymark__mark .ow-waymark__glyph {
   display: block;
-  width: 1em;
-  height: 1em;
+  width: max(16px, 0.7em);
+  height: max(16px, 0.7em);
 }
 .ow-waymark__mark:hover {
   background: var(--ow-waymark-hover-tile);
@@ -249,9 +251,11 @@
 .ow-waymark__row[aria-expanded='true'] .ow-waymark__chevron {
   transform: rotate(180deg);
 }
-/* Grey says the row cannot open now, and nothing else. */
+/* Grey says the row cannot open now, or that it is where the reader already is. */
 .ow-waymark__row--cannot .ow-waymark__label,
-.ow-waymark__row--cannot .ow-waymark__icon {
+.ow-waymark__row--cannot .ow-waymark__icon,
+.ow-waymark__row--here .ow-waymark__label,
+.ow-waymark__row--here .ow-waymark__icon {
   color: var(--ow-waymark-muted);
 }
 .ow-waymark__row--lens {

@@ -5,6 +5,19 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.123.0] - 2026-10-31
+
+### Added
+
+- **`tool: 'onlyworlds'` is the site itself.** `openersFor` (and `mountWaymark`'s `tool`) gives the site's own row "You are here" when the surface names itself `onlyworlds`, before "Needs a connection", as a tool's own row already did; the site passes it, so on onlyworlds.com its own row reads as where the reader is, not as a door. Three cases in the shared openers fixture (57 now).
+
+### Changed
+
+- **The Waymark's web rows open in a new tab** (`target="_blank"`, `rel="noopener"`), so the page the reader came from stays open. A row whose link opens an app on the device (any scheme but `http:` and `https:`) is handed to the device as before.
+- **The surface's own row is drawn grey**, as where the reader already is (its own class, `ow-waymark__row--here`, beside the cannot-open grey). It stays a button that closes the fan-out.
+- **The mark is smaller**: its globe is `0.7em`, as tall as the name's capitals and centred on them, never under 16 px (`max(16px, 0.7em)`), where it was `1em`. Its 44 px tap area is unchanged.
+- **The schema pin moves to schema-dist serial 101** (`v0.33.0-dist.101`): a sentence on the strand page (a surface that only reads may draw the filled slots alone); no schema file moved, the strand fixture unchanged.
+
 ## [4.122.1] - 2026-10-31
 
 ### Fixed
