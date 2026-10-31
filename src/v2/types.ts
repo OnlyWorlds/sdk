@@ -10,6 +10,7 @@
  */
 
 import type { ElementType, OwElementBase } from './types.generated';
+import type { OwStrand } from '../strand';
 export { ELEMENT_TYPES } from './types.generated';
 export type { ElementType, OwElementBase } from './types.generated';
 
@@ -684,8 +685,8 @@ export interface OwMe {
   name?: string;
   /** Who you are here, who answers for you, and the house rules. */
   front_door: OwFrontDoor;
-  /** The world's three things to read first, as this key reads them: the Charter, the Guide and the Domains. */
-  reading_aids: OwReadingAids;
+  /** What to read first in this world, as this key reads it: the Charter, the Guide, the Domains and the strand. */
+  reading_aids: OwServedReadingAids;
   [k: string]: unknown;
 }
 
@@ -744,6 +745,16 @@ export interface OwReadingAids {
   guide: OwReadingAidsGuide | null;
   /** Every marked Domain the reader sees: in the Guide's `constructs` order first, then by name (any case) and id. */
   domains: OwReadingAidsDomain[];
+}
+
+/**
+ * `reading_aids` as keel serves it on `GET /me` and an agent's `POST /join` answer: `charterOf`'s three, then
+ * the world's strand (schema-dist `profiles/strand.md` rule 2, serial 100), fourth in the charter profile's order.
+ * `strandOf(world, reader)` reads the same `strand` from a world snapshot.
+ */
+export interface OwServedReadingAids extends OwReadingAids {
+  /** The story this world is about, as this key reads the world: six null slots when the world has no strand or its story is out of this key's view. */
+  strand: OwStrand;
 }
 
 /** The Charter in `reading_aids`. */
@@ -920,8 +931,8 @@ export interface OwAgentJoined {
   members: Array<Record<string, unknown>>;
   /** The world's front door for the new seat: its sponsor, its Character, the Charter to read first. */
   front_door: OwFrontDoor;
-  /** The world's three things to read first, as the new seat reads them: the Charter, the Guide and the Domains (the same packet as `GET /me`'s). */
-  reading_aids: OwReadingAids;
+  /** What to read first in this world, as the new seat reads it: the Charter, the Guide, the Domains and the strand (the same packet as `GET /me`'s). */
+  reading_aids: OwServedReadingAids;
   [k: string]: unknown;
 }
 
