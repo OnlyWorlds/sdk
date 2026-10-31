@@ -1220,6 +1220,28 @@ export interface OwMintedKey {
   kept?: boolean;
 }
 
+/** An account token as GET /account/tokens lists it: by name and last four, never the token itself. */
+export interface OwAccountToken {
+  /** The token's id: revokeAccountToken takes it, and a sign-in answers it as `tokenId`. */
+  id: string;
+  /** The label given at mint (a device, a tool). */
+  name: string;
+  /** The token's last four characters, to tell tokens apart. */
+  last4: string;
+  last_used_at: string | null;
+  revoked: boolean;
+  /** When the token stops working, for a sign-in tool's token with a lifetime; null never expires. Past it the token is refused as a revoked one. */
+  expires_at: string | null;
+  /** How many live world keys this token minted. */
+  keys_minted: number;
+  /** Who the token is for: empty for a token made by hand or a sign-in tool's; `mcp` for a hosted client's grant on the MCP server. */
+  audience: string;
+  /** On an `mcp` token only: the client's name, as it registered itself, or its id when it is no longer registered. */
+  client?: string;
+  /** On an `mcp` token only: the host the client returns the person to. */
+  return_host?: string;
+}
+
 export interface OwSeat {
   /** The seat's membership id: removeSeat takes it, and GET /members names the seat by it. */
   id: string;

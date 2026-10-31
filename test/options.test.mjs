@@ -75,6 +75,7 @@ const FENCED = {
   'OwV2Client.declineProposal#3': () => world.declineProposal('character', 'x', 'p', U),
   'OwV2Client.mintWorldKey#1': () => account.mintWorldKey('w', U),
   'OwV2Client.revokeWorldKey#2': () => account.revokeWorldKey('w', 'k', U),
+  'OwV2Client.revokeAccountToken#1': () => account.revokeAccountToken('t', U),
   'OwV2Client.createAccountWorld#0': () => account.createAccountWorld({ name: 'W', ...U }),
   'OwV2Client.reviewNewElement#2': () => world.reviewNewElement('character', 'x', { decision: 'accept', ...U }),
   'OwV2Client.signInWithOnlyWorlds#0': () => world.signInWithOnlyWorlds({ clientId: 'c', redirectUri: 'https://t.example/cb', storage, navigate: false, ...U }),

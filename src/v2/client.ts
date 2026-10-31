@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwWorldLenses,
-  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwMintedKey, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwAccountToken, OwMintedKey, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
   OwWorldProposalList, OwReviewInput, OwReviewed, OwCreateAccountWorldInput, OwCreatedAccountWorld,
@@ -1444,6 +1444,46 @@ export class OwV2Client {
     if (opts.signal !== undefined) send.signal = opts.signal;
     if (opts.keepalive !== undefined) send.keepalive = opts.keepalive;
     await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/keys/${encodeURIComponent(keyId)}`, send);
+  }
+
+  /**
+   * GET /account/tokens -- the account's tokens, each by name and last four, never the token
+   * itself: when it was last used, whether it is revoked, when it expires, how many live world
+   * keys it minted, and who it is for (`audience`). Account token only.
+   */
+  async listAccountTokens(): Promise<OwAccountToken[]> {
+    if (this.keyKind !== 'account') {
+      throw new TypeError('listAccountTokens needs an account token (ow_a_)');
+    }
+    const page = await this.request('GET', '/account/tokens') as { data: OwAccountToken[] };
+    return page.data;
+  }
+
+  /**
+   * DELETE /account/tokens/{tokenId} -- revoke one of the account's tokens, this client's own
+   * included (a tool done with a sign-in revokes it by the `tokenId` the sign-in answered); every
+   * other token stays live. A token a tool got through Sign in with OnlyWorlds takes the world keys
+   * it minted with it, unless the person holds another live token of the same tool, which then
+   * takes them; a token made by hand or by a password sign-in revokes itself only. An id that is
+   * not one of the account's tokens is a 404 (`err.isNotFound`). Once a client revokes its own
+   * token, its next call is refused as a revoked token's. `signal` and `keepalive` go to fetch
+   * as given, as revokeWorldKey's do. Account token only.
+   */
+  async revokeAccountToken(
+    tokenId: string,
+    opts: { signal?: AbortSignal; keepalive?: boolean } = {},
+  ): Promise<void> {
+    only('revokeAccountToken', opts, ['signal', 'keepalive']);
+    if (this.keyKind !== 'account') {
+      throw new TypeError('revokeAccountToken needs an account token (ow_a_)');
+    }
+    if (typeof tokenId !== 'string' || tokenId === '') {
+      throw new TypeError(`revokeAccountToken: tokenId is a token's id, a non-empty string; got ${JSON.stringify(tokenId) ?? String(tokenId)}. Nothing was sent.`);
+    }
+    const send: { signal?: AbortSignal; keepalive?: boolean } = {};
+    if (opts.signal !== undefined) send.signal = opts.signal;
+    if (opts.keepalive !== undefined) send.keepalive = opts.keepalive;
+    await this.request('DELETE', `/account/tokens/${encodeURIComponent(tokenId)}`, send);
   }
 
   // -- Sign in with OnlyWorlds (OAuth 2.1 code + PKCE) ----------------------

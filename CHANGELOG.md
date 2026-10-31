@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.122.0] - 2026-10-31
+
+### Added
+
+- **`listAccountTokens()` and `revokeAccountToken(tokenId, opts?)`**: the account's tokens (`GET /account/tokens`, each by name and last four, with `last_used_at`, `revoked`, `expires_at`, `keys_minted` and `audience`; typed `OwAccountToken`), and a revoke by id (`DELETE /account/tokens/{tokenId}`), this client's own token included, so a tool done with a sign-in can end it by the `tokenId` the sign-in answered. An id that is not one of the account's tokens is a 404 (`err.isNotFound`); `signal` and `keepalive` go to fetch as `revokeWorldKey`'s do. Account token only; a world key is a `TypeError` before sending.
+
 ## [4.121.1] - 2026-10-31
 
 ### Fixed
