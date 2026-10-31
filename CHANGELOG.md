@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.123.3] - 2026-10-31
+
+### Fixed
+
+- **A value in a request path that is not one segment is refused before anything is sent.** 4.122.1 escaped every path value, but the API decodes an escaped slash before it routes: `get('character', '<id>%2Fhidden')` and an id carrying `/` still reached another route (`/character/<id>/hidden`). Every type, id, link field and account-route id (world, seat, link, member, key, token, file, proposal) is now checked first: a type is a lower-case word, every other value letters, digits, `_`, `.` and `-`, not starting with a dot or a dash. Anything else is a `TypeError` naming the value, and nothing is sent; what passes is still escaped. Every id the API serves passes. A test reads every request path in the client's source and fails on one that does not go through the check.
+
 ## [4.123.2] - 2026-10-31
 
 ### Fixed

@@ -26,9 +26,9 @@ const CREATED = { ...ROW, code: 'ow_j_secretAb3_', link: 'https://www.onlyworlds
 test('createWorldLink: POST with the account Bearer; reader always, the rest only when set', async () => {
   const f = fake(201, CREATED);
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
-  assert.deepEqual(await c.createWorldLink('w 1', { reader: 'person' }), CREATED);
+  assert.deepEqual(await c.createWorldLink('w1', { reader: 'person' }), CREATED);
   const { url, init } = f.calls[0];
-  assert.match(url, /\/api\/v2\/account\/worlds\/w%201\/links$/);
+  assert.match(url, /\/api\/v2\/account\/worlds\/w1\/links$/);
   assert.equal(init.method, 'POST');
   assert.equal(init.headers['Authorization'], 'Bearer ow_a_acct');
   assert.deepEqual(JSON.parse(init.body), { reader: 'person' });

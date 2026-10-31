@@ -1,6 +1,9 @@
 /**
  * A caller's string never changes which route is asked: every type, id, field and other
- * caller-supplied value in a request path is sent as one escaped segment. keel's document
+ * caller-supplied value in a request path is checked as one segment (refused before sending when it
+ * is not one) and sent escaped. keel decodes an escaped slash before it routes (measured on
+ * production 2026-10-31: `/character/abc%2Fhidden/` answers 405 as `/character/abc/hidden/` does), so
+ * the escape alone cannot hold a slash. keel's document
  * declares each element id a UUID (397 path parameters, read 2026-10-31), so the escape changes
  * nothing on a real id; on `abc/hidden` the raw form asked a different route (found by a port
  * to a second client that escaped everywhere). Two halves: the source scan holds every path the client builds, so a new
@@ -14,7 +17,7 @@ import * as sdk from '../dist/index.js';
 
 const { OwV2Client } = sdk;
 
-test('source: every ${...} in a request path is escaped or a path builder that escapes', () => {
+test('source: every ${...} in a request path goes through seg() or a path builder that does', () => {
   const src = readFileSync(new URL('../src/v2/client.ts', import.meta.url), 'utf8');
   // Path templates: the template literal that is this.request's second argument, the review
   // path, and proposalsPath's body. Each is found by shape, so a new route joins the scan.
@@ -32,7 +35,7 @@ test('source: every ${...} in a request path is escaped or a path builder that e
   for (const t of templates) {
     for (const m of t.matchAll(/\$\{([^}]*)\}/g)) {
       const e = m[1];
-      if (/^encodeURIComponent\(/.test(e) || /^proposalsPath\(/.test(e)) continue;
+      if (/^seg\('[A-Za-z]+', [A-Za-z]+\)$/.test(e) || /^proposalsPath\(/.test(e)) continue;
       raw.push(`${e} in ${t}`);
     }
   }
@@ -55,31 +58,46 @@ function fake() {
   return { fetch, calls };
 }
 
-const ID = 'abc/hidden?x=1#y';
-const ESC = 'abc%2Fhidden%3Fx%3D1%23y';
+const UUID = '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f';
+const ID = `${UUID}/hidden`;
 const path = url => new URL(url).pathname + new URL(url).search;
 
-const cases = [
-  ['get', c => c.get('character', ID), `/character/${ESC}/`],
-  ['upsert', c => c.upsert('character', ID, { name: 'x' }), `/character/${ESC}/`],
-  ['patch', c => c.patch('character', ID, { name: 'x' }), `/character/${ESC}/`],
-  ['delete', c => c.delete('character', ID), `/character/${ESC}/`],
-  ['editLinks', c => c.editLinks('character', ID, 'friends/x', { add: [] }), `/character/${ESC}/links/friends%2Fx`],
-  ['adopt', c => c.adopt('character', ID, 'owner'), `/character/${ESC}/adopt`],
-  ['hide', c => c.hide('character', ID), `/character/${ESC}/hidden`],
-  ['unhide', c => c.unhide('character', ID), `/character/${ESC}/hidden`],
-  ['draught', c => c.draught(ID), `/character/${ESC}/context`],
-  ['list (type)', c => c.list('character/x'), '/character%2Fx/'],
-  ['get (type)', c => c.get('character/x', 'y'), '/character%2Fx/y/'],
+// Each refused before anything is sent, naming the value.
+const refused = [
+  ['get', c => c.get('character', ID), 'id'],
+  ['upsert', c => c.upsert('character', ID, { name: 'x' }), 'id'],
+  ['patch', c => c.patch('character', ID, { name: 'x' }), 'id'],
+  ['delete', c => c.delete('character', ID), 'id'],
+  ['editLinks (id)', c => c.editLinks('character', ID, 'friends', { add: [] }), 'id'],
+  ['editLinks (field)', c => c.editLinks('character', UUID, 'friends/x', { add: [] }), 'field'],
+  ['adopt', c => c.adopt('character', ID, 'owner'), 'id'],
+  ['hide', c => c.hide('character', ID), 'id'],
+  ['unhide', c => c.unhide('character', ID), 'id'],
+  ['draught', c => c.draught(ID), 'characterId'],
+  ['list (type)', c => c.list('character/x'), 'type'],
+  ['get (type)', c => c.get('Character', UUID), 'type'],
+  ['get (escaped slash)', c => c.get('character', `${UUID}%2Fhidden`), 'id'],
+  ['get (dot segment)', c => c.get('character', '..'), 'id'],
+  ['get (empty)', c => c.get('character', ''), 'id'],
+  ['revokeAccountToken', c => c.revokeAccountToken('t/../x'), 'tokenId'],
 ];
 
-for (const [name, call, want] of cases) {
-  test(`${name}: the caller's string is one segment`, async () => {
+for (const [name, call, what] of refused) {
+  test(`${name}: a value that is not one segment is refused before sending`, async () => {
     const f = fake();
-    const c = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: f.fetch });
-    try { await call(c); } catch { /* the fake's body need not satisfy the reader; the wire is the claim */ }
-    assert.ok(f.calls.length >= 1, 'nothing was sent');
-    const got = path(f.calls[0].url).replace(/^\/api\/v2/, '');
-    assert.equal(got.split('?')[0], want);
+    const account = name === 'revokeAccountToken';
+    const c = new OwV2Client(account ? { apiKey: 'ow_a_acct', fetch: f.fetch } : { apiKey: 'ow_w_test', apiPin: '1234', fetch: f.fetch });
+    await assert.rejects(async () => call(c), (e) => e instanceof TypeError && e.message.startsWith(`${what} `) && /Nothing was sent/.test(e.message));
+    assert.equal(f.calls.length, 0, 'something was sent');
   });
 }
+
+test('a value that is one segment goes out as given: a uuid, an owner word, dots and dashes inside', async () => {
+  const f = fake();
+  const c = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: f.fetch });
+  try { await c.get('character', UUID); } catch { /* the wire is the claim */ }
+  try { await c.get('character', 'a.b_c-D9'); } catch { /* the wire is the claim */ }
+  try { await c.editLinks('character', UUID, 'friends', { add: [] }); } catch { /* the wire is the claim */ }
+  assert.deepEqual(f.calls.map((x) => path(x.url).replace(/^\/api\/v2/, '').split('?')[0]),
+    [`/character/${UUID}/`, '/character/a.b_c-D9/', `/character/${UUID}/links/friends`]);
+});

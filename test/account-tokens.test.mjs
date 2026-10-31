@@ -1,7 +1,7 @@
 /**
  * listAccountTokens and revokeAccountToken (GET /api/v2/account/tokens, DELETE
  * /api/v2/account/tokens/{token_id}): the account Bearer alone, the rows returned as keel sends
- * them, the token's id escaped, no body and no write header. Shapes from keel's document
+ * them, the token's id as one path segment, no body and no write header. Shapes from keel's document
  * (https://www.onlyworlds.com/api/v2/openapi.json, read 2026-10-31) and its handlers
  * (accounts/api.py list_tokens, revoke_token). Runs against dist, with a fake fetch.
  */
@@ -54,13 +54,13 @@ test('listAccountTokens: GET /account/tokens with the Bearer alone; the rows ret
   for (const h of ['API-Key', 'API-Pin', 'X-OW-Agent', 'X-OW-Client']) assert.ok(!(h in headers), h);
 });
 
-test('revokeAccountToken: DELETE /account/tokens/{id} with the id escaped, no body, no write header, even on an agent client', async () => {
+test('revokeAccountToken: DELETE /account/tokens/{id} with the id as one path segment, no body, no write header, even on an agent client', async () => {
   for (const cfg of [{}, { agent: true }]) {
     const { f, c } = account({ status: 204 }, cfg);
-    assert.equal(await c.revokeAccountToken('a b/c'), undefined);
+    assert.equal(await c.revokeAccountToken('tok-1'), undefined);
     assert.equal(f.calls.length, 1);
     const { url, init } = f.calls[0];
-    assert.equal(new URL(url).pathname, '/api/v2/account/tokens/a%20b%2Fc');
+    assert.equal(new URL(url).pathname, '/api/v2/account/tokens/tok-1');
     assert.equal(init.method, 'DELETE');
     assert.equal(init.body, undefined);
     const headers = init.headers ?? {};

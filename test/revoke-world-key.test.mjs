@@ -22,9 +22,9 @@ function fake(status, body) {
 test('revokeWorldKey: DELETE the key by id with the account Bearer; a 204 resolves', async () => {
   const f = fake(204);
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
-  assert.equal(await c.revokeWorldKey('w/1', 'k/1'), undefined);
+  assert.equal(await c.revokeWorldKey('w1', 'k1'), undefined);
   assert.equal(f.calls.length, 1);
-  assert.equal(f.calls[0].url, 'https://www.onlyworlds.com/api/v2/account/worlds/w%2F1/keys/k%2F1');
+  assert.equal(f.calls[0].url, 'https://www.onlyworlds.com/api/v2/account/worlds/w1/keys/k1');
   assert.equal(f.calls[0].init.method, 'DELETE');
   assert.equal(f.calls[0].init.headers['Authorization'], 'Bearer ow_a_acct');
   assert.equal(f.calls[0].init.body, undefined);

@@ -540,13 +540,13 @@ test('setMyLenses on an account token: the Bearer and world=<id> from the client
 test('worldLenses sends GET /world/{id}/lenses with resolve and read_as, no PIN on the read, and returns the answer whole', async () => {
   const answer = { data: [{ id: 'l1', name: 'Harbour watch', element: { id: 'l1', type: 'construct', name: 'Harbour watch' }, template: false, retired: false, x_lens: null, titles: [], chosen: true }], read_as: 'guest' };
   const { client, fetchImpl } = makeClient({ status: 200, body: answer }, { agent: true, client: 'atlas' });
-  assert.deepEqual(await client.worldLenses('w 1', { resolve: true, readAs: 'guest' }), answer);
+  assert.deepEqual(await client.worldLenses('w1', { resolve: true, readAs: 'guest' }), answer);
   await client.worldLenses('w1');
   await client.worldLenses('w1', { resolve: false });
   const [a, b, c] = fetchImpl.calls;
   assert.equal(a.init.method, 'GET');
   const u = new URL(a.url);
-  assert.equal(u.pathname, '/api/v2/world/w%201/lenses');
+  assert.equal(u.pathname, '/api/v2/world/w1/lenses');
   assert.deepEqual(Object.fromEntries(u.searchParams), { resolve: 'true', read_as: 'guest' });
   assert.equal(a.init.body, undefined);
   assert.deepEqual(Object.keys(a.init.headers), ['API-Key'], 'a read: the key alone, no PIN, no write header');
@@ -561,11 +561,11 @@ test('worldLenses on an account token: the Bearer alone, the world in the path, 
   const answer = { data: [] };
   for (const cfg of [{ apiKey: 'ow_a_test' }, { apiKey: 'ow_a_test', world: 'other' }]) {
     const acct = makeClient({ status: 200, body: answer }, cfg);
-    assert.deepEqual(await acct.client.worldLenses('w 1', { resolve: true }), answer);
+    assert.deepEqual(await acct.client.worldLenses('w1', { resolve: true }), answer);
     const [a] = acct.fetchImpl.calls;
     assert.equal(a.init.method, 'GET');
     const u = new URL(a.url);
-    assert.equal(u.pathname, '/api/v2/world/w%201/lenses');
+    assert.equal(u.pathname, '/api/v2/world/w1/lenses');
     assert.deepEqual(Object.fromEntries(u.searchParams), { resolve: 'true' }, JSON.stringify(cfg));
     assert.deepEqual(Object.keys(a.init.headers), ['Authorization'], 'the Bearer alone');
     assert.equal(a.init.headers.Authorization, 'Bearer ow_a_test');
@@ -575,12 +575,12 @@ test('worldLenses on an account token: the Bearer alone, the world in the path, 
 test('setMemberLenses sends PATCH /account/worlds/{id}/members/{id} with { lenses } alone and the Bearer; refuses a world key and a non-list before sending', async () => {
   const row = { id: 'm1', username: null, role: 'guest', kind: 'agent', lenses: ['l2', 'l1'], x_served_trimmed: ['lenses'] };
   const acct = makeClient({ status: 200, body: row }, { apiKey: 'ow_a_test', agent: true, client: 'atlas' });
-  assert.deepEqual(await acct.client.setMemberLenses('w 1', 'm/1', ['l2', 'l1']), row);
+  assert.deepEqual(await acct.client.setMemberLenses('w1', 'm1', ['l2', 'l1']), row);
   await acct.client.setMemberLenses('w1', 'owner', []);
   const [a, b] = acct.fetchImpl.calls;
   assert.equal(a.init.method, 'PATCH');
   const u = new URL(a.url);
-  assert.equal(u.pathname, '/api/v2/account/worlds/w%201/members/m%2F1');
+  assert.equal(u.pathname, '/api/v2/account/worlds/w1/members/m1');
   assert.equal(u.search, '');
   assert.equal(a.init.body, JSON.stringify({ lenses: ['l2', 'l1'] }), 'exactly { lenses }');
   assert.deepEqual(Object.keys(a.init.headers).sort(), ['Authorization', 'Content-Type'], 'the Bearer, no key, PIN, agent or client header');

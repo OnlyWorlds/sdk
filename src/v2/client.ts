@@ -165,7 +165,7 @@ export class OwV2Client {
       throw new TypeError('worldLenses: resolve is true or false. Nothing was sent.');
     }
     const query = buildQuery({ resolve: opts.resolve, read_as: opts.readAs });
-    return this.request('GET', `/world/${encodeURIComponent(worldId)}/lenses`, { query, accountToken: 'path' }) as Promise<OwWorldLenses>;
+    return this.request('GET', `/world/${seg('worldId', worldId)}/lenses`, { query, accountToken: 'path' }) as Promise<OwWorldLenses>;
   }
 
   async me(): Promise<OwMe> {
@@ -212,7 +212,7 @@ export class OwV2Client {
       ...params.filter,
       as: params.viewAs,
     }, new Set(Object.keys(params.filter ?? {})));
-    return this.request('GET', `/${encodeURIComponent(type)}/`, { query, worldRead: true, ...withSignal(params.signal) }) as Promise<OwPage>;
+    return this.request('GET', `/${seg('type', type)}/`, { query, worldRead: true, ...withSignal(params.signal) }) as Promise<OwPage>;
   }
 
   /**
@@ -255,7 +255,7 @@ export class OwV2Client {
       compact: policy.compact,
       lens: policy.lens,
     });
-    return this.request('GET', `/character/${encodeURIComponent(characterId)}/context`, { query, worldRead: true }) as Promise<OwDraught | OwDraughtCompact>;
+    return this.request('GET', `/character/${seg('characterId', characterId)}/context`, { query, worldRead: true }) as Promise<OwDraught | OwDraughtCompact>;
   }
 
   /**
@@ -286,7 +286,7 @@ export class OwV2Client {
   async get(type: ElementType | string, id: string, opts: Pick<ListParams, 'expand' | 'fields' | 'viewAs' | 'signal'> = {}): Promise<OwElement> {
     only('get', opts, ['expand', 'fields', 'viewAs', 'signal']);
     const query = buildQuery({ expand: opts.expand?.join(','), fields: opts.fields?.join(','), as: opts.viewAs });
-    return this.request('GET', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/`, { query, worldRead: true, ...withSignal(opts.signal) }) as Promise<OwElement>;
+    return this.request('GET', `/${seg('type', type)}/${seg('id', id)}/`, { query, worldRead: true, ...withSignal(opts.signal) }) as Promise<OwElement>;
   }
 
   /**
@@ -306,7 +306,7 @@ export class OwV2Client {
     if (body.id === undefined || body.id === null || body.id === '') {
       body.id = opts.idempotencyKey ? keyedId(opts.idempotencyKey, 0) : mintUuid();
     }
-    return this.request('POST', `/${encodeURIComponent(type)}/`, {
+    return this.request('POST', `/${seg('type', type)}/`, {
       write: true,
       elementWrite: true,
       body,
@@ -323,7 +323,7 @@ export class OwV2Client {
    */
   async upsert(type: ElementType | string, id: string, element: OwElement | Record<string, unknown>): Promise<OwElement> {
     refuseKnownOf(element, 'upsert');
-    return this.request('PUT', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(element) }) as Promise<OwElement>;
+    return this.request('PUT', `/${seg('type', type)}/${seg('id', id)}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(element) }) as Promise<OwElement>;
   }
 
   /**
@@ -349,7 +349,7 @@ export class OwV2Client {
   ): Promise<OwElement> {
     only('patch', opts, ['ifMatch']);
     refuseKnownOf(partial, 'patch');
-    return this.request('PATCH', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
+    return this.request('PATCH', `/${seg('type', type)}/${seg('id', id)}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   /**
@@ -364,7 +364,7 @@ export class OwV2Client {
    */
   async delete(type: ElementType | string, id: string, opts: { ifMatch?: number } = {}): Promise<void> {
     only('delete', opts, ['ifMatch']);
-    await this.request('DELETE', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/`, { write: true, elementWrite: true, allowEmpty: true, ifMatch: opts.ifMatch });
+    await this.request('DELETE', `/${seg('type', type)}/${seg('id', id)}/`, { write: true, elementWrite: true, allowEmpty: true, ifMatch: opts.ifMatch });
   }
 
   /**
@@ -384,7 +384,7 @@ export class OwV2Client {
   ): Promise<OwElement> {
     only('editLinks', opts, ['ifMatch']);
     only('editLinks', edit, ['add', 'remove'], 'The edit is { add?: string[], remove?: string[] }.');
-    return this.request('POST', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/links/${encodeURIComponent(field)}`, { write: true, elementWrite: true, proposable: true, body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
+    return this.request('POST', `/${seg('type', type)}/${seg('id', id)}/links/${seg('field', field)}`, { write: true, elementWrite: true, proposable: true, body: edit, ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
   /**
@@ -401,7 +401,7 @@ export class OwV2Client {
    */
   async adopt(type: ElementType | string, id: string, member: string | 'owner'): Promise<OwElement> {
     if (typeof member !== 'string' || member === '') throw new TypeError('adopt: member must be a membership id or "owner"');
-    return this.request('POST', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/adopt`, { write: true, elementWrite: true, body: { member } }) as Promise<OwElement>;
+    return this.request('POST', `/${seg('type', type)}/${seg('id', id)}/adopt`, { write: true, elementWrite: true, body: { member } }) as Promise<OwElement>;
   }
 
   // -- Bulk ----------------------------------------------------------------
@@ -652,7 +652,7 @@ export class OwV2Client {
    * are not in its body, its `change_seq` or /changes.
    */
   async listFiles(type: ElementType | string, id: string): Promise<OwFileRow[]> {
-    const page = await this.request('GET', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/files`) as { data?: OwFileRow[] };
+    const page = await this.request('GET', `/${seg('type', type)}/${seg('id', id)}/files`) as { data?: OwFileRow[] };
     return page.data ?? [];
   }
 
@@ -700,7 +700,7 @@ export class OwV2Client {
     if (req.label !== undefined) body.label = req.label;
     // An agent client declares itself here, the one files route keel's document lists it on:
     // the upload's added_by.agent then reads true.
-    return this.request('POST', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/files`, { body, write: true }) as Promise<OwFileTicket>;
+    return this.request('POST', `/${seg('type', type)}/${seg('id', id)}/files`, { body, write: true }) as Promise<OwFileTicket>;
   }
 
   /**
@@ -787,7 +787,7 @@ export class OwV2Client {
    * key that may read the element.
    */
   async fileDownloadLink(type: ElementType | string, id: string, fileId: string): Promise<OwFileDownload> {
-    return this.request('GET', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}/download`) as Promise<OwFileDownload>;
+    return this.request('GET', `/${seg('type', type)}/${seg('id', id)}/files/${seg('fileId', fileId)}/download`) as Promise<OwFileDownload>;
   }
 
   /**
@@ -798,7 +798,7 @@ export class OwV2Client {
    * Deleting an element removes its files too.
    */
   async removeFile(type: ElementType | string, id: string, fileId: string): Promise<void> {
-    await this.request('DELETE', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}`);
+    await this.request('DELETE', `/${seg('type', type)}/${seg('id', id)}/files/${seg('fileId', fileId)}`);
   }
 
   // -- Joining a world by link ----------------------------------
@@ -1048,7 +1048,7 @@ export class OwV2Client {
     if (opts.preview !== undefined) body.preview = opts.preview;
     if (opts.maxUses !== undefined) body.max_uses = opts.maxUses;
     if (opts.characters !== undefined) body.characters = opts.characters;
-    return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/links`, { body }) as Promise<OwCreatedWorldLink>;
+    return this.request('POST', `/account/worlds/${seg('worldId', worldId)}/links`, { body }) as Promise<OwCreatedWorldLink>;
   }
 
   /**
@@ -1060,7 +1060,7 @@ export class OwV2Client {
     if (this.keyKind !== 'account') {
       throw new TypeError('listWorldLinks needs an account token (ow_a_): only the world\'s owner sees its links');
     }
-    const page = await this.request('GET', `/account/worlds/${encodeURIComponent(worldId)}/links`) as { data: OwWorldLink[] };
+    const page = await this.request('GET', `/account/worlds/${seg('worldId', worldId)}/links`) as { data: OwWorldLink[] };
     return page.data;
   }
 
@@ -1074,7 +1074,7 @@ export class OwV2Client {
     if (this.keyKind !== 'account') {
       throw new TypeError('revokeWorldLink needs an account token (ow_a_): only the world\'s owner revokes links');
     }
-    await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/links/${encodeURIComponent(linkId)}`);
+    await this.request('DELETE', `/account/worlds/${seg('worldId', worldId)}/links/${seg('linkId', linkId)}`);
   }
 
   // -- Seats for your own AI ------------------------------
@@ -1101,7 +1101,7 @@ export class OwV2Client {
     const body: Record<string, unknown> = { name: opts.name };
     if (opts.role !== undefined) body.role = opts.role;
     if (opts.character !== undefined) body.character = opts.character;
-    return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/seats`, { body }) as Promise<OwSeatCreated>;
+    return this.request('POST', `/account/worlds/${seg('worldId', worldId)}/seats`, { body }) as Promise<OwSeatCreated>;
   }
 
   /**
@@ -1112,7 +1112,7 @@ export class OwV2Client {
     if (this.keyKind !== 'account') {
       throw new TypeError('listSeats needs an account token (ow_a_)');
     }
-    const page = await this.request('GET', `/account/worlds/${encodeURIComponent(worldId)}/seats`) as { data: OwSeat[] };
+    const page = await this.request('GET', `/account/worlds/${seg('worldId', worldId)}/seats`) as { data: OwSeat[] };
     return page.data;
   }
 
@@ -1127,7 +1127,7 @@ export class OwV2Client {
     if (this.keyKind !== 'account') {
       throw new TypeError('rekeySeat needs an account token (ow_a_)');
     }
-    return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/seats/${encodeURIComponent(seatId)}/key`) as Promise<OwSeatCreated>;
+    return this.request('POST', `/account/worlds/${seg('worldId', worldId)}/seats/${seg('seatId', seatId)}/key`) as Promise<OwSeatCreated>;
   }
 
   /**
@@ -1139,7 +1139,7 @@ export class OwV2Client {
     if (this.keyKind !== 'account') {
       throw new TypeError('removeSeat needs an account token (ow_a_)');
     }
-    await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/seats/${encodeURIComponent(seatId)}`);
+    await this.request('DELETE', `/account/worlds/${seg('worldId', worldId)}/seats/${seg('seatId', seatId)}`);
   }
 
   /**
@@ -1168,7 +1168,7 @@ export class OwV2Client {
     }
     return this.request(
       'PATCH',
-      `/account/worlds/${encodeURIComponent(worldId)}/members/${encodeURIComponent(memberId)}`,
+      `/account/worlds/${seg('worldId', worldId)}/members/${seg('memberId', memberId)}`,
       { body: { lenses: lensIds } },
     ) as Promise<OwMemberLenses>;
   }
@@ -1183,12 +1183,12 @@ export class OwV2Client {
    * lists, search, counts and the link arrays that name it. 204, no body. No Idempotency-Key.
    */
   async hide(type: ElementType | string, id: string): Promise<void> {
-    await this.request('PUT', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/hidden`, { body: {}, allowEmpty: true });
+    await this.request('PUT', `/${seg('type', type)}/${seg('id', id)}/hidden`, { body: {}, allowEmpty: true });
   }
 
   /** DELETE /{type}/{id}/hidden -- clear the mark; an element that is not hidden stays as it is. 204. */
   async unhide(type: ElementType | string, id: string): Promise<void> {
-    await this.request('DELETE', `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/hidden`, { allowEmpty: true });
+    await this.request('DELETE', `/${seg('type', type)}/${seg('id', id)}/hidden`, { allowEmpty: true });
   }
 
   /**
@@ -1291,7 +1291,7 @@ export class OwV2Client {
    * Returns the row and the element as written.
    */
   async acceptProposal(type: ElementType | string, id: string, pid: string): Promise<OwProposalAccepted> {
-    return this.request('POST', `${proposalsPath(type, id)}/${encodeURIComponent(pid)}/accept`, { elementWrite: true }) as Promise<OwProposalAccepted>;
+    return this.request('POST', `${proposalsPath(type, id)}/${seg('pid', pid)}/accept`, { elementWrite: true }) as Promise<OwProposalAccepted>;
   }
 
   /**
@@ -1302,7 +1302,7 @@ export class OwV2Client {
   async declineProposal(type: ElementType | string, id: string, pid: string, opts: { reason?: string } = {}): Promise<OwProposal> {
     only('declineProposal', opts, ['reason']);
     const body = opts.reason !== undefined ? { reason: opts.reason } : undefined;
-    const out = await this.request('POST', `${proposalsPath(type, id)}/${encodeURIComponent(pid)}/decline`, { body }) as OwProposed;
+    const out = await this.request('POST', `${proposalsPath(type, id)}/${seg('pid', pid)}/decline`, { body }) as OwProposed;
     return out.proposal;
   }
 
@@ -1312,7 +1312,7 @@ export class OwV2Client {
    * any other key a 404; a decided row a 422.
    */
   async withdrawProposal(type: ElementType | string, id: string, pid: string): Promise<void> {
-    await this.request('DELETE', `${proposalsPath(type, id)}/${encodeURIComponent(pid)}`, { allowEmpty: true });
+    await this.request('DELETE', `${proposalsPath(type, id)}/${seg('pid', pid)}`, { allowEmpty: true });
   }
 
   /**
@@ -1339,7 +1339,7 @@ export class OwV2Client {
     const body: Record<string, unknown> = { decision: opts.decision };
     if (opts.reason !== undefined) body.reason = opts.reason;
     // X-OW-Client is a header keel's document lists here; X-OW-Agent is not.
-    const path = `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/review`;
+    const path = `/${seg('type', type)}/${seg('id', id)}/review`;
     const answer = await this.request('POST', path, { elementWrite: true, body });
     // the key the decision settles: an accept answers { element }, a decline { deleted }
     const settled = opts.decision === 'accept' ? 'element' : 'deleted';
@@ -1417,7 +1417,7 @@ export class OwV2Client {
     if (opts.scope !== undefined) body.scope = opts.scope;
     if (opts.name !== undefined) body.name = opts.name;
     if (opts.keep !== undefined) body.keep = opts.keep;
-    return this.request('POST', `/account/worlds/${encodeURIComponent(worldId)}/keys`, { body }) as Promise<OwMintedKey>;
+    return this.request('POST', `/account/worlds/${seg('worldId', worldId)}/keys`, { body }) as Promise<OwMintedKey>;
   }
 
   /**
@@ -1443,7 +1443,7 @@ export class OwV2Client {
     const send: { signal?: AbortSignal; keepalive?: boolean } = {};
     if (opts.signal !== undefined) send.signal = opts.signal;
     if (opts.keepalive !== undefined) send.keepalive = opts.keepalive;
-    await this.request('DELETE', `/account/worlds/${encodeURIComponent(worldId)}/keys/${encodeURIComponent(keyId)}`, send);
+    await this.request('DELETE', `/account/worlds/${seg('worldId', worldId)}/keys/${seg('keyId', keyId)}`, send);
   }
 
   /**
@@ -1483,7 +1483,7 @@ export class OwV2Client {
     const send: { signal?: AbortSignal; keepalive?: boolean } = {};
     if (opts.signal !== undefined) send.signal = opts.signal;
     if (opts.keepalive !== undefined) send.keepalive = opts.keepalive;
-    await this.request('DELETE', `/account/tokens/${encodeURIComponent(tokenId)}`, send);
+    await this.request('DELETE', `/account/tokens/${seg('tokenId', tokenId)}`, send);
   }
 
   // -- Sign in with OnlyWorlds (OAuth 2.1 code + PKCE) ----------------------
@@ -1780,9 +1780,25 @@ const READ_ONLY_FIELDS = ['world', 'type', 'created_at', 'updated_at', 'change_s
 // `counts` rides only a keyless GET /world and is an unknown key to PATCH.
 const WORLD_READ_ONLY_FIELDS = ['id', 'slug', 'public_page', 'public_read', 'agent_narrator_rule', 'agent_writes_proposed', 'origin', 'counts'] as const;
 
+/** An element type in a path: a lower-case word. */
+const PATH_TYPE = /^[a-z][a-z0-9_]*$/;
+/** Any other value in a path (an id, a link field): one segment, no slash, no escape, no dot first. */
+const PATH_VALUE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
+
+/**
+ * One caller value as one path segment, or a TypeError before anything is sent. keel decodes an escaped
+ * slash before it routes (`/character/<id>%2Fhidden` reaches the hide route), so escaping alone cannot
+ * keep a value in its segment: a value that is not one segment is refused, and what passes is escaped too.
+ */
+function seg(name: string, value: unknown): string {
+  const ok = typeof value === 'string' && (name === 'type' ? PATH_TYPE : PATH_VALUE).test(value);
+  if (!ok) throw new TypeError(`${name} ${JSON.stringify(value)} is not one path segment. Nothing was sent.`);
+  return encodeURIComponent(value as string);
+}
+
 /** The proposals of one element: /{type}/{id}/proposals. */
 function proposalsPath(type: string, id: string): string {
-  return `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/proposals`;
+  return `/${seg('type', type)}/${seg('id', id)}/proposals`;
 }
 
 /**

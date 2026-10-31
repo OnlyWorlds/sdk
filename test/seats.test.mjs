@@ -32,9 +32,9 @@ const CREATED = {
 test('createSeat: POST with the account Bearer; name always, the rest only when set; no Idempotency-Key', async () => {
   const f = fake(201, CREATED);
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
-  assert.deepEqual(await c.createSeat('w 1', { name: 'Quill' }), CREATED);
+  assert.deepEqual(await c.createSeat('w1', { name: 'Quill' }), CREATED);
   const { url, init } = f.calls[0];
-  assert.match(url, /\/api\/v2\/account\/worlds\/w%201\/seats$/);
+  assert.match(url, /\/api\/v2\/account\/worlds\/w1\/seats$/);
   assert.equal(init.method, 'POST');
   assert.equal(init.headers['Authorization'], 'Bearer ow_a_acct');
   assert.deepEqual(JSON.parse(init.body), { name: 'Quill' });
@@ -59,17 +59,17 @@ test('listSeats: GET, the rows unwrapped from { data }', async () => {
 test('removeSeat: DELETE the seat by id; a 204 resolves', async () => {
   const f = fake(204);
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
-  assert.equal(await c.removeSeat('w1', 's/1'), undefined);
-  assert.match(f.calls[0].url, /\/api\/v2\/account\/worlds\/w1\/seats\/s%2F1$/);
+  assert.equal(await c.removeSeat('w1', 's1'), undefined);
+  assert.match(f.calls[0].url, /\/api\/v2\/account\/worlds\/w1\/seats\/s1$/);
   assert.equal(f.calls[0].init.method, 'DELETE');
 });
 
 test('rekeySeat: POST .../seats/{id}/key with no body and no Idempotency-Key; the new key comes back', async () => {
   const f = fake(201, CREATED);
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
-  assert.deepEqual(await c.rekeySeat('w1', 's/1'), CREATED);
+  assert.deepEqual(await c.rekeySeat('w1', 's1'), CREATED);
   const { url, init } = f.calls[0];
-  assert.match(url, /\/api\/v2\/account\/worlds\/w1\/seats\/s%2F1\/key$/);
+  assert.match(url, /\/api\/v2\/account\/worlds\/w1\/seats\/s1\/key$/);
   assert.equal(init.method, 'POST');
   assert.equal(init.body, undefined);
   assert.equal(Object.keys(init.headers).some((h) => h.toLowerCase() === 'idempotency-key'), false);
