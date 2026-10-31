@@ -86,10 +86,21 @@ const fail = (what: string): never => {
   throw new TypeError(`openersFor: ${what}`);
 };
 
-/** A template string or null; undefined reads as null. */
+/** Schemes that open no app: a row whose link used one would run what it carries when pressed. */
+const NO_APP = ['javascript', 'data', 'vbscript', 'file', 'blob', 'about'];
+const SCHEME = /^([A-Za-z][A-Za-z0-9+.-]*):/;
+
+/**
+ * A template string or null; undefined reads as null. A template begins with its scheme (a browser drops
+ * leading spaces before reading one), and a scheme that opens no app is refused, in any case.
+ */
 function templateOf(row: string, key: 'world' | 'element', v: unknown): string | null {
   if (v === undefined || v === null) return null;
-  return typeof v === 'string' ? v : fail(`tool ${row}: open.${key} is a link template or null`);
+  if (typeof v !== 'string') fail(`tool ${row}: open.${key} is a link template or null`);
+  const scheme = SCHEME.exec(v as string)?.[1].toLowerCase();
+  if (scheme === undefined) fail(`tool ${row}: open.${key} begins with its scheme`);
+  if (NO_APP.includes(scheme as string)) fail(`tool ${row}: open.${key} is a ${scheme}: link, which opens no app`);
+  return v as string;
 }
 
 /**

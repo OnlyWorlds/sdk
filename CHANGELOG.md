@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.123.2] - 2026-10-31
+
+### Fixed
+
+- **`openersFor` refuses a link that opens no app.** A tools list row whose `open` template uses `javascript:`, `data:`, `vbscript:`, `file:`, `blob:` or `about:` (in any case), or does not begin with its scheme, is a `TypeError` naming the row, where it was drawn as a row a press would run. The tools list's own check refuses these too; this holds the reader to it for a list that skipped the check (the `tools` option, a served copy). Four cases in the shared openers fixture (61).
+
 ## [4.123.1] - 2026-10-31
 
 ### Changed
