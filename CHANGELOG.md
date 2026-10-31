@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.123.4] - 2026-10-31
+
+### Fixed
+
+- **The Waymark closes when focus comes back to the page somewhere else.** Tab off the last row with nothing after it on the page takes focus into the browser's toolbar; the fan-out stays open then, as it does for any window that loses focus. When focus came back into the page on another control (measured in Chromium and WebKit), the fan-out stayed open over the page with focus outside it. Focus arriving anywhere outside the fan-out now closes it, and stays where it arrived; coming back to a row keeps it open.
+- **Every row of the Waymark is reached by Tab in Safari.** WebKit leaves a link out of the Tab order unless it carries a `tabindex`, so Tab skipped the rows that are links (a tool that opens on the web) between the rows that are buttons. Link rows now carry `tabindex="0"`; Chromium and Firefox are unchanged. Read in Chromium, Firefox and WebKit at 390 and 1440 px wide.
+
 ## [4.123.3] - 2026-10-31
 
 ### Fixed

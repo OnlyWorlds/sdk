@@ -271,6 +271,11 @@ test('keyboard: the mark is a button opening a menu; Tab order is the mark then 
   // Tab order: what the page reaches in document order, the menu open.
   const tabbable = [...name.querySelectorAll('a[href], button')].filter((n) => !n.closest('[hidden]') && n.tabIndex >= 0);
   assert.deepEqual(tabbable, [mark, ...list], 'the mark, then every row in order');
+  // Safari leaves a link out of the Tab order unless it carries a tabindex (WebKit's default, measured
+  // 2026-10-31: Tab skipped the Lantern row between two buttons), so every link row carries one.
+  const links = list.filter((n) => n.tagName === 'A');
+  assert.ok(links.length > 0, 'the case has link rows');
+  for (const a of links) assert.equal(a.getAttribute('tabindex'), '0', `${text(a.querySelector('.ow-waymark__label'))}: tabindex="0"`);
   key(window, doc.activeElement, 'ArrowDown');
   assert.ok(doc.activeElement === list[1], 'focus on the second row');
   key(window, doc.activeElement, 'ArrowUp');
@@ -457,6 +462,23 @@ test('Tab off the last row with nothing after it (focus on the body) closes the 
     await settle();
     assert.equal(pop.hidden, false, `${entry}: a window blur keeps it open`);
     assert.equal(opener.getAttribute('aria-expanded'), 'true');
+    // The window comes back with focus on the row (alt-tab back): still open.
+    doc.hasFocus = () => true;
+    row.focus();
+    await settle();
+    assert.equal(pop.hidden, false, `${entry}: focus back on a row keeps it open`);
+    // It comes back on another control (Tab off the end of the page into the browser's toolbar, then on
+    // into the page's first control; measured in Chromium and WebKit): that is leaving, and it closes.
+    doc.hasFocus = () => false;
+    row.blur();
+    await settle();
+    assert.equal(pop.hidden, false, `${entry}: away again, still open`);
+    doc.hasFocus = () => true;
+    const elsewhere = doc.querySelector('.elsewhere');
+    elsewhere.focus();
+    assert.equal(pop.hidden, true, `${entry}: focus back elsewhere closes it`);
+    assert.ok(doc.activeElement === elsewhere, `${entry}: focus stays where it came back`);
+    assert.equal(opener.getAttribute('aria-expanded'), 'false', `${entry}: aria-expanded reset`);
   }
   // A press inside the fan-out on something that takes no focus (the name line) is not leaving.
   const { window, doc, name } = page();

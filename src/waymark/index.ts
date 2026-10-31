@@ -341,6 +341,8 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
       a.setAttribute('aria-disabled', 'true');
     } else {
       a = el('a', cls);
+      // Safari leaves a link out of the Tab order unless it carries a tabindex; every row is reached alike.
+      a.tabIndex = 0;
       a.href = r.href;
       // A web row opens in a new tab, so the page the reader came from stays; a link that opens an app
       // on the device (any other scheme) is handed to the device as it is.
@@ -503,6 +505,7 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     placePop();
     from.setAttribute('aria-expanded', 'true');
     on(openListeners, doc, 'pointerdown', onOutside as EventListener, true);
+    on(openListeners, doc, 'focusin', onFocusIn as EventListener, true);
     if (win !== null) {
       on(openListeners, win, 'online', onConnection);
       on(openListeners, win, 'offline', onConnection);
@@ -678,6 +681,12 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
       if (!isOpen() || pressed || !doc.hasFocus()) return;
       if (!inside(doc.activeElement)) close(false);
     }, 0);
+  };
+  // Focus arriving outside the fan-out while it is open. The way back from a window that lost focus (Tab
+  // off the end of the page into the browser's toolbar, then on into the page's first control) passes no
+  // focusout from inside it, so this is what reads that focus has left.
+  const onFocusIn = (e: FocusEvent): void => {
+    if (isOpen() && !inside(e.target as Node | null)) close(false);
   };
 
   // The connection came or went while the fan-out is open (listened to only then): the rows redraw.
