@@ -89,12 +89,12 @@
   height: max(44px, 100%);
   transform: translate(-50%, -50%);
 }
-/* 0.7em: the ink as tall as the name's capitals and centred on them; never under 16px, where the
-   globe's lines blur (a name under 23px). */
+/* 0.6em: the ink a little under the name's capitals (0.80 to 0.86 of them on the site's names); never
+   under 16px, where the globe's lines blur (a name under 26.7px). */
 .ow-waymark__mark .ow-waymark__glyph {
   display: block;
-  width: max(16px, 0.7em);
-  height: max(16px, 0.7em);
+  width: max(16px, 0.6em);
+  height: max(16px, 0.6em);
 }
 .ow-waymark__mark:hover {
   background: var(--ow-waymark-hover-tile);

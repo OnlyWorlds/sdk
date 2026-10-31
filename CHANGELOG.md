@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.123.1] - 2026-10-31
+
+### Changed
+
+- **The Waymark's mark is one step smaller**: its globe is `max(16px, 0.6em)`, where 4.123.0 drew `0.7em`, a little under the name's capitals. The 16 px floor reaches a name under 26.7 px. Its 44 px tap area is unchanged; a test now holds both sizes in the shipped stylesheet.
+
 ## [4.123.0] - 2026-10-31
 
 ### Added

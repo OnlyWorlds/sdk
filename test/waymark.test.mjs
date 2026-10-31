@@ -995,3 +995,18 @@ test('the core stays DOM-free: its bundle never reaches the component, and src o
     assert.doesNotMatch(code, /\b(document|window)\s*[.[]|globalThis\.(document|window)/, `${f}: no document or window`);
   }
 });
+
+test('the mark\'s globe is 0.6em, never under 16px; its tap area stays 44px', () => {
+  const css = readFileSync(fileURLToPath(new URL('../dist/waymark.css', import.meta.url)), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const rule = (sel) => {
+    const at = css.indexOf(`${sel} {`);
+    assert.ok(at >= 0, `no rule for ${sel}`);
+    return css.slice(at, css.indexOf('}', at));
+  };
+  const glyph = rule('.ow-waymark__mark .ow-waymark__glyph');
+  assert.match(glyph, /\bwidth: max\(16px, 0\.6em\);/);
+  assert.match(glyph, /\bheight: max\(16px, 0\.6em\);/);
+  const tap = rule('.ow-waymark__mark::before');
+  assert.match(tap, /\bwidth: max\(44px, 100%\);/);
+  assert.match(tap, /\bheight: max\(44px, 100%\);/);
+});
