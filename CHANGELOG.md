@@ -12,6 +12,7 @@ earlier history lives in git log only.
 ### Changed
 
 - **The schema pin moves to schema-dist serial 100** (`v0.33.0-dist.100`). No schema file moved; the strand fixture is unchanged at 26 cases.
+- **`mintWorldKey`'s `name` follows the server's rule**: trimmed, at most 80 characters (a longer one is a 422), `null` or blank for a key with no name, the same rule as `createAccountWorld`'s `key_name`. The option now takes `null`; the doc said 255, the limit the server held before.
 
 ## [4.120.0] - 2026-10-31
 

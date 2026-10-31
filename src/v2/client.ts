@@ -1395,7 +1395,8 @@ export class OwV2Client {
 
   /**
    * POST /account/worlds/{id}/keys -- mint a world key, `scope` `'write'` (the default) or
-   * `'read'`, `name` as the key list shows it (at most 255 characters). The full key comes back
+   * `'read'`, `name` as the key list shows it (trimmed, at most 80 characters, else a 422; null or blank: no
+   * name). The full key comes back
    * once in `key`. The owner mints a world key; a member mints their own member key, 409
    * `pin_required` (`err.isPinRequired`) for a write key while the account has no PIN. Account
    * token only; no Idempotency-Key. `keep: true` keeps the key across a sign-out: revoking the token
@@ -1403,7 +1404,7 @@ export class OwV2Client {
    * disconnecting the tool, or a replayed sign-in code, still takes it; the answer says `kept`.
    * Without it, revoking the token revokes the keys it minted unless the tool holds another live token.
    */
-  async mintWorldKey(worldId: string, opts: { scope?: 'read' | 'write'; name?: string; keep?: boolean } = {}): Promise<OwMintedKey> {
+  async mintWorldKey(worldId: string, opts: { scope?: 'read' | 'write'; name?: string | null; keep?: boolean } = {}): Promise<OwMintedKey> {
     only('mintWorldKey', opts, ['scope', 'name', 'keep']);
     if (opts.keep !== undefined && typeof opts.keep !== 'boolean') {
       throw new TypeError(`mintWorldKey: keep is true or false, got ${JSON.stringify(opts.keep)}. Nothing was sent.`);
