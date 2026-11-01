@@ -67,6 +67,9 @@ export type { OwLensReader, OwLensWorld, OwLensOptions, OwLensReading, OwLensMai
 // The lens profile's graph section: a reading of a world as nodes and edges, for the same reader.
 export { worldGraph, degreeOf, outDegreeOf } from './graph';
 export type { OwGraphOptions, OwGraphMark, OwGraphCutReason, OwGraphNode, OwGraphEdge, OwWorldGraph } from './graph';
+// The landing profile (schema-dist profiles/landing.md): a world's first picture at a door, read from its graph.
+export { landingOf } from './landing';
+export type { OwLanding, OwLandingCluster, OwLandingGap, OwLandingGapKind, OwLandingMember, OwLandingMode, OwLandingOptions } from './landing';
 // The names profile (schema-dist profiles/names.md): a world's own words for the types, x_names on the World.
 export { typeWord } from './names';
 export type { OwNamesMap, OwWordPair } from './names';
