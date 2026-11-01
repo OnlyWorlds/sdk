@@ -2,11 +2,12 @@
 // live in. The run is an Event carrying the mark x_record ({tool, played_at, version?, seed?, outcome?, seats?}),
 // the game's own tally beside it under its own prefix; who took part is the Event's `characters` alone; a Narrative
 // that lists the Event in `events` and names a Character as protagonist or narrator is that Character's story of
-// it. A run or a story still proposed (the review profile's x_review_proposed, any value but null) is not read until
-// a keeper settles it. `recordsOf` reads the elements as the reader is served them; the fixture,
+// it. A run or a story the review profile reads as proposed (proposedMarkOf: an empty mark is settled; serial 103) is
+// not read until a keeper settles it. `recordsOf` reads the elements as the reader is served them; the fixture,
 // profiles/record.fixture.json, is this file's own test. The Python package's `records_of` gives the same answers.
 
 import { byCodePoint } from './lens';
+import { proposedMarkOf } from './review';
 
 /** The Event's field that carries the record's mark. */
 export const RECORD_FIELD = 'x_record';
@@ -69,7 +70,8 @@ function isInstant(s: string): boolean {
   const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
   return days !== undefined && d >= 1 && d <= days && h <= 23 && mi <= 59 && se <= 59 && y >= 1;
 }
-const proposed = (el: Body): boolean => el.x_review_proposed !== undefined && el.x_review_proposed !== null;
+/** Proposed exactly when the review profile's reader says so (serial 103): an empty mark ({}, "", []) is settled. */
+const proposed = (el: Body): boolean => proposedMarkOf(el) !== null;
 
 /**
  * The record's mark on an element, read: the mark when the element is an Event whose `x_record` has the profile's
