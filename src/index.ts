@@ -44,6 +44,10 @@ export type { OwCharterWorld } from './charter';
 // then, the hero and the place now, as one reader sees them
 export { STRAND_FIELD, strandOf } from './strand';
 export type { OwStrand, OwStrandSlot, OwStrandWorld } from './strand';
+// The record profile (schema-dist profiles/record.md): a game's run kept in its Characters' world, an Event with
+// the x_record mark; recordsOf reads one Character's records and their stories.
+export { RECORD_FIELD, recordMarkOf, recordsOf } from './record';
+export type { OwRecord, OwRecordMark, OwRecordStory } from './record';
 // The message profile (schema-dist profiles/message.md): a message between a world's members, to whom
 // it is addressed, whether its sender is proved, who edited it, a reader's read mark and unread list, a
 // thread, and a Character's Note, which is not a message (MESSAGE_PAIR and NOTE_PAIR generated from the
