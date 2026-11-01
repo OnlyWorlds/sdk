@@ -414,9 +414,11 @@ FIELD_SCHEMA_INTRO = """
 //   - pin.element is a `generic-link` and is split into element_type (text) +
 //     element_id (single_link, target 'any'), which is what the v2 wire serves.
 //   - `integer_max` / `max` are deprecated (removal at 5.0.0) and emitted by
-//     nothing. The schema's `maximum:` is advisory -- the wire does not enforce
-//     it -- so the walk stays silent on bounds permanently (ruled 2026-07-29).
-//     There is no source for them, and none is coming.
+//     nothing. The schema's `minimum:` and `maximum:` are advisory -- the wire
+//     does not enforce them (rulings.yaml, maximum-is-advisory-and-zero-means-
+//     unbounded). The walk's decode_schema and schema.json carry them as display
+//     data; flatten_fields, which this table is built from, does not, and no
+//     validation is ever generated from one.
 //
 // `required: true` appears on `name` only, which is all the schema requires since
 // canonical 00.30.02 (rulings.yaml: nullable-by-default). Through 4.3.0 this table copied
@@ -435,8 +437,8 @@ export type FieldType =
    * this repository. It was meant to surface the schema's `maximum:` constraint,
    * and that constraint is **advisory**: keel declares no `MaxValueValidator` and
    * the wire stores `charisma: 9999` against a `maximum: 100` field (201, verbatim).
-   * The canonical schema walk therefore stays silent on bounds permanently, so
-   * there is no source to wire this to and no promise it could keep. A public type
+   * The walk's schema.json carries the bounds as display data (a slider's range),
+   * never as a rule, so this type would promise what no field keeps. A public type
    * member meaning "hint the wire ignores" is one consumers read as validation.
    */
   | 'integer_max'
