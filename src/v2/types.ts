@@ -900,6 +900,8 @@ export interface OwWorldLink {
   max_uses?: number;
   /** A table only: the Characters its players may pick, in the owner's order; empty when each player gets a fresh Character named after them. `taken`: a live seat in the world plays it. `name` is null if the Character was deleted. */
   characters?: Array<{ id: string; name: string | null; taken: boolean }>;
+  /** Where the link opens: `site`, onlyworlds.com's /join page; `dashboard`, the Dashboard's /join page (a person link only). Either page takes the same code. Always `site` on an agent or player link. */
+  lands_on: 'site' | 'dashboard';
   [k: string]: unknown;
 }
 
@@ -1143,8 +1145,10 @@ export interface OwWorldLens {
   title_seats?: Array<{ member: string; titles: string[] }>;
   /** The owner only: `empty` (it resolves to nothing for the owner), `over_budget` (the owner's reading cuts by budget), `retired_assigned` (retired and still chosen by a seat). */
   health?: { empty: boolean; over_budget: boolean; retired_assigned: boolean };
-  /** With `resolve`: the reading of the lens for this caller (or the reader `readAs` names). */
-  reading?: OwWorldLensReading;
+  /** With `resolve`: the reading of the lens for this caller (or the reader `readAs` names); null when it is `skipped`. */
+  reading?: OwWorldLensReading | null;
+  /** With `resolve` and `readAs`: `not_found` when the reader read as cannot see this lens (deleted or hidden from it), so it is not read and `reading` is null; the draught's word for a chosen lens it skips. */
+  skipped?: 'not_found';
 }
 
 /** A lens's reading on worldLenses with `resolve`: what it keeps and what it cut, with why. */

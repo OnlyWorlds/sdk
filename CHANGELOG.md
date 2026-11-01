@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.125.0] - 2026-11-01
+
+### Added
+
+- **`createWorldLink(worldId, { landsOn })` and `lands_on` on every link**: where a person link opens. `site` (the default) is onlyworlds.com's /join page; `dashboard` is the Dashboard's /join page, for someone invited to work in the Dashboard. Either page takes the same code; `dashboard` on an agent or player link is refused by the server. `OwWorldLink.lands_on` (and so `OwCreatedWorldLink`'s) is always present, `site` on an agent or player link.
+- **`OwWorldLens.skipped`**: with `resolve` and `readAs`, a lens the reader read as cannot see (deleted or hidden from it) is not read: `skipped` is `not_found` and `reading` is null, so `reading` is now typed `OwWorldLensReading | null`.
+
 ## [4.124.2] - 2026-11-01
 
 ### Fixed

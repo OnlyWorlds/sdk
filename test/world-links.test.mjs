@@ -43,6 +43,20 @@ test('createWorldLink: each option in keel\'s spelling', async () => {
   assert.deepEqual(JSON.parse(f.calls[1].init.body), { reader: 'player', preview: true });
 });
 
+test('createWorldLink: landsOn goes as lands_on, and only when set', async () => {
+  const f = fake(201, { ...CREATED, lands_on: 'dashboard' });
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+  const made = await c.createWorldLink('w1', { reader: 'person', landsOn: 'dashboard' });
+  assert.deepEqual(JSON.parse(f.calls[0].init.body), { reader: 'person', lands_on: 'dashboard' });
+  assert.equal(made.lands_on, 'dashboard', 'the answer\'s lands_on is passed back as served');
+  await c.createWorldLink('w1', { reader: 'person', landsOn: 'site' });
+  assert.deepEqual(JSON.parse(f.calls[1].init.body), { reader: 'person', lands_on: 'site' });
+  await c.createWorldLink('w1', { reader: 'person' });
+  assert.deepEqual(JSON.parse(f.calls[2].init.body), { reader: 'person' }, 'left out: the server\'s default, site');
+  await assert.rejects(() => c.createWorldLink('w1', { reader: 'person', lands_on: 'dashboard' }), /lands_on/, 'the wire spelling is refused by name, never dropped');
+  assert.equal(f.calls.length, 3, 'nothing sent for the refused call');
+});
+
 test('createWorldLink: a table sends max_uses and characters in keel\'s spelling, the list in the order given', async () => {
   const f = fake(201, CREATED);
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
