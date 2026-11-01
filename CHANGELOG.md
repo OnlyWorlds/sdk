@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.124.0] - 2026-11-01
+
+### Added
+
+- **`recordsOf(characterId, elements)`, `recordMarkOf(element)` and `RECORD_FIELD`: the record profile** (schema-dist `profiles/record.md`, serial 102). A game's run is kept in the world its Characters live in, as an Event carrying the mark `x_record`: `tool` and `played_at` required; `version`, `seed`, `outcome` and `seats` optional. `recordsOf` reads one Character's records from the elements as the reader is served them, newest first, each with that Character's stories of the run (a Narrative naming them as `protagonist`, `narrator` or both). Who took part is the Event's `characters` alone. A run or a story still proposed is not read. `played_at` must be a real calendar instant (checked part by part, never by `Date.parse`, which rolls February 30 into March), and records order by the instant to the millisecond. The fixture `profiles/record.fixture.json` (32 cases) is the test; the Python package's `records_of` gives the same answers.
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.33.0-dist.102`** (from dist.101; the same canonical 00.33.00, so `ONLYWORLDS_VERSION` stays `'00.33.00'`). Serial 102 adds the record profile; no schema file moved.
+
 ## [4.123.5] - 2026-11-01
 
 ### Changed
