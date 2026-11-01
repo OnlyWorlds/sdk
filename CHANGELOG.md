@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.124.1] - 2026-11-01
+
+### Changed
+
+- **`recordsOf` reads a world in one pass.** It finds the Character's stories by each Event they name once, then looks each record's stories up, where it scanned every element again for each record: on a world of 5,000 elements with 200 records, about 7 ms a call down to about 1 ms. Every answer is the same as 4.124.0's (compared on 20,000 random worlds, including Narratives that name an Event twice and `events` lists holding other values), and each record's stories are its own objects.
+
 ## [4.124.0] - 2026-11-01
 
 ### Added

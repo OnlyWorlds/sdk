@@ -101,19 +101,26 @@ export function recordMarkOf(element: unknown): OwRecordMark | null {
 export function recordsOf(characterId: string, elements: readonly unknown[]): OwRecord[] {
   if (typeof characterId !== 'string') throw new TypeError('recordsOf: characterId must be a string');
   if (!Array.isArray(elements)) throw new TypeError('recordsOf: elements must be an array');
+  // This Character's stories, by each Event they name (once per Narrative, however often it names it): one pass over
+  // the world, then a lookup per record, where each record rescanned the whole world through 4.124.0.
+  const storiesOf = new Map<unknown, OwRecordStory[]>();
+  for (const n of elements) {
+    if (!isObject(n) || n.type !== 'narrative' || proposed(n)) continue;
+    const p = n.protagonist === characterId;
+    const r = n.narrator === characterId;
+    if (!p && !r) continue;
+    const story: OwRecordStory = { id: n.id as string, name: isString(n.name) ? n.name : '', as: p && r ? 'both' : p ? 'protagonist' : 'narrator' };
+    for (const e of new Set(list(n.events))) {
+      const at = storiesOf.get(e);
+      if (at) at.push(story); else storiesOf.set(e, [story]);
+    }
+  }
   const out: OwRecord[] = [];
   for (const ev of elements) {
     const mark = recordMarkOf(ev);
     if (!mark || proposed(ev as Body) || !list((ev as Body).characters).includes(characterId)) continue;
     const id = (ev as Body).id as string;
-    const stories: OwRecordStory[] = [];
-    for (const n of elements) {
-      if (!isObject(n) || n.type !== 'narrative' || proposed(n) || !list(n.events).includes(id)) continue;
-      const p = n.protagonist === characterId;
-      const r = n.narrator === characterId;
-      if (!p && !r) continue;
-      stories.push({ id: n.id as string, name: isString(n.name) ? n.name : '', as: p && r ? 'both' : p ? 'protagonist' : 'narrator' });
-    }
+    const stories: OwRecordStory[] = (storiesOf.get(id) ?? []).map((s) => ({ ...s }));
     stories.sort((a, b) => cp(a.id, b.id));
     const name = (ev as Body).name;
     out.push({

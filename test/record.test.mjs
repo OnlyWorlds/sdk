@@ -58,6 +58,21 @@ test('recordsOf refuses what is not an id or a list, and reads no seat from an o
   for (const who of ['toString', 'constructor']) assert.equal(recordsOf(who, [ev])[0].seat, null);
 });
 
+test('a Narrative naming an Event twice is one story of it, other values in events name none, and no two records share a story', () => {
+  const C = '019a8000-0000-7000-8000-000000000101';
+  const ev = (id, at) => ({ id, type: 'event', name: id, characters: [C], x_record: { tool: 'tangle', played_at: at } });
+  const world = [
+    ev('e1', '2026-11-02T00:00:00Z'),
+    ev('e2', '2026-11-01T00:00:00Z'),
+    { id: 'n1', type: 'narrative', name: 'One', protagonist: C, events: ['e1', 'e1', 'e2'] },
+    { id: 'n2', type: 'narrative', name: 'Two', narrator: C, events: [7, null, {}, ['e1'], 'e1'] },
+  ];
+  const got = recordsOf(C, world);
+  assert.deepEqual(got.map((r) => [r.event.id, r.stories.map((s) => `${s.id}:${s.as}`)]), [['e1', ['n1:protagonist', 'n2:narrator']], ['e2', ['n1:protagonist']]]);
+  got[0].stories[0].name = 'planted';
+  assert.equal(got[1].stories[0].name, 'One');
+});
+
 test('a played_at with seconds and a fraction orders as the instant it is', () => {
   const mk = (id, at) => ({ id, type: 'event', name: id, characters: ['c'], x_record: { tool: 'subs', played_at: at } });
   const got = recordsOf('c', [mk('a', '2026-11-01T00:30Z'), mk('b', '2026-11-01T00:30:00.500Z'), mk('c', '2026-11-01T00:29:59Z')]);
