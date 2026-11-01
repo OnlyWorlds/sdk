@@ -12,8 +12,8 @@ import { fileURLToPath } from 'node:url';
 import { openersFor, parseOwLink, OwAddressError, TOOLS } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/openers.fixture.json', import.meta.url));
-const FIXTURE_SHA256 = '1e84a613a1bca3795ef7ef09bf0c3b8f7e60d2156b185441d60a10933f49a05d';
-const CASES = 65;
+const FIXTURE_SHA256 = '381b3ab03bbb19187a74e830c7236306f9ba1f6128020c8855515ce7a63bb6cc';
+const CASES = 90;
 
 /** The fixture writes the surface's keys snake_case; this package spells one of them in camelCase. */
 const SPELLING = { signed_in: 'signedIn' };
@@ -23,7 +23,7 @@ const spelt = (k) => SPELLING[k] ?? k;
 function answer(doc, c) {
   const surface = Object.fromEntries(Object.entries(c.surface).map(([k, v]) => [spelt(k), v]));
   try {
-    return { expect: openersFor(doc.lists[c.tools], c.kind, c.address, surface) };
+    return { expect: 'options' in c ? openersFor(doc.lists[c.tools], c.kind, c.address, surface, c.options) : openersFor(doc.lists[c.tools], c.kind, c.address, surface) };
   } catch (err) {
     if (err instanceof OwAddressError) return { refuse: { error: 'address', reason: err.reason } };
     if (err instanceof TypeError && 'refuse' in c && c.refuse.error === 'type') {

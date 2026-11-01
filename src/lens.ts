@@ -10,6 +10,7 @@
 import { FIELD_SCHEMA, PUBLIC_FIELDS } from './v2/types.generated';
 import { READING_AID_KEYS, ROOM_PAIRS, fold, isRoomElement, readingAidKey, trimWhiteSpace } from './room';
 import { handsOnAsProposed } from './review';
+import { isHiddenMark } from './marks';
 import { compareKeys, isMessage, readMarkOf, timeKey, unreadFor } from './message';
 import type { OwMessageMember } from './message';
 import { refuseUnknownOptions } from './options';
@@ -362,7 +363,7 @@ export class Reading {
       this.byId.set(el.id, el);
       this.typeOf.set(el.id, type);
       this.order.push(el.id);
-      if (el.hidden !== undefined && el.hidden !== null && el.hidden !== false) hidden.add(el.id);
+      if (isHiddenMark(el)) hidden.add(el.id);
       if (isRoomElement(el as { type?: string })) this.room.add(el.id);
       const aid = readingAidKey(el);
       if (aid !== null) this.aid.set(el.id, aid);

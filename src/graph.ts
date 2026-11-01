@@ -10,6 +10,7 @@ import {
   CUT_REASONS, LINK_FIELDS, OWNER_ONLY, Reading, byCodePoint, checkReader, isBody, lensReading, linkTarget, readingDate, valueOf,
 } from './lens';
 import type { OwLensCutReason, OwLensReader, OwLensWorld } from './lens';
+import { MAP_SPACE } from './marks';
 import { refuseUnknownOptions } from './options';
 
 /** `worldGraph`'s options. Each flag is a boolean, false by default, and brings back one kind of element that is out by default. */
@@ -84,7 +85,6 @@ export interface OwWorldGraph {
 
 /** The extension fields a published profile declares a link, each a list of ids: the lens profile's and the spine profile's. */
 const DECLARED_LINKS: readonly string[] = ['x_lens_leads_to', 'x_spine_depends_on'];
-const MAP_SPACE: ReadonlySet<string> = new Set(['map', 'pin', 'marker']);
 const GRAPH_REASONS: readonly OwGraphCutReason[] = [...CUT_REASONS, 'room', 'hidden', 'proposed', 'map_space', 'reading_aid', 'outside_lens'];
 const GRAPH_OWNER_ONLY: ReadonlySet<string> = new Set([...OWNER_ONLY, 'hidden', 'proposed']);
 

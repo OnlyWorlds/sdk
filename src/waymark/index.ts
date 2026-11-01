@@ -185,7 +185,7 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     : { form: 'human' as const, world: world.id, type: element.type, id: element.id };
   // The rows with a connection and without: both read now, so a refusal draws nothing; the open picks one.
   const rowsFor = (online: boolean): OwOpener[] =>
-    openersFor(tools, kind, address, { tool, audience: isPublic ? 'public' : 'member', signedIn, browser, phone, online });
+    openersFor(tools, kind, address, { tool, audience: isPublic ? 'public' : 'member', signedIn, browser, phone, online }, { element });
   const rowsOnline = rowsFor(true);
   const rowsOffline = rowsFor(false);
   const throughLenses = isPublic ? [] : [...(lenses ?? [])];

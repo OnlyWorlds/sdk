@@ -107,6 +107,7 @@ const FENCED = {
   // The Open with rows: the address as elementAddress fences it, and the surface's five keys.
   'openersFor#2': () => openersFor([], 'world', { form: 'human', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f', ...U }, { audience: 'member' }),
   'openersFor#3': () => openersFor([], 'world', { form: 'human', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f' }, { audience: 'member', ...U }),
+  'openersFor#4': () => openersFor([], 'world', { form: 'human', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f' }, { audience: 'member' }, { ...U }),
 };
 
 /** The object parameters that are not options: data a caller hands over, by nature open or required. */

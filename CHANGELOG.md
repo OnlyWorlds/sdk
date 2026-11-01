@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.126.0] - 2026-11-01
+
+### Added
+
+- **`openersFor(tools, kind, address, surface, { element })`: no row for a tool that cannot open the element.** The tools list's `open` now says what a tool's element door does not open, `element_skips`, in the graph reader's words: `room`, `hidden`, `proposed`, `map_space` (a Map, Pin or Marker; a Zone is content) and `reading_aid`. Given the element as served, `openersFor` leaves out a row whose door skips a mark the element carries, each mark read by the readers `worldGraph` uses (`isRoomElement`, the hidden mark, `handsOnAsProposed`, the type, the reading aids), so the menu and the graph give one answer; a test holds the two equal on every element of the lens fixture's worlds. Without `element` every row is there, as before. A world's menu takes no element. Refused by name: an unknown options key, an element for a world's menu or naming another id than the address, a skip word outside the list's, and skips on a row with no element door. The shared openers fixture gains 25 cases (90 in all), the same bytes as the Python package's.
+- **`mountWaymark` passes its `element` through**, so the Waymark's Open with rows follow the same rule with no change on the page.
+- **`OwOpenersOptions`, `OwElementMark`**, and `OwToolOpen.element_skips`.
+
+### Changed
+
+- **`TOOLS` repinned** at the tools list's 6da4d55: each row carries `element_skips` (Little Lens skips room, hidden, proposed and map space; Atlas and Lantern none until their doors are walked).
+
 ## [4.125.0] - 2026-11-01
 
 ### Added

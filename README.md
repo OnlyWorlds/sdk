@@ -467,9 +467,11 @@ The rows of an "Open with" menu for a world or one of its elements: the site's p
 ```typescript
 import { openersFor, parseOwLink, TOOLS } from '@onlyworlds/sdk';
 
-const rows = openersFor(TOOLS, 'element', parseOwLink(link), { audience: 'member', signedIn: false, tool: 'mytool' });
+const rows = openersFor(TOOLS, 'element', parseOwLink(link), { audience: 'member', signedIn: false, tool: 'mytool' }, { element });
 // [{ id: 'onlyworlds', name: 'onlyworlds.com', href, state: null }, { id: 'atlas', name: 'Atlas', href, state: 'Sign in to Atlas first' }, ...]
 ```
+
+Pass the element as you were served it (`{ element }`): a tool whose element door does not open what it carries (a room element, a hidden or proposed one, a Map, Pin or Marker, a reading aid: the list's `open.element_skips`, each read as `worldGraph` reads it) has no row, rather than a link to a page that cannot open it. Without it, every row is there.
 
 `surface` says what the page knows and nothing is guessed: `audience` (`member` or `public`; the public sees only rows that need nothing first), `signedIn` (`null` when the page cannot know, and then no row says so), `browser` (false in a desktop app), `phone`, `online` (false with no connection: every row whose link is a web address then says "Needs a connection"), and `tool`, the page's own client name, whose row says "You are here". Draw the rows as given; the words are decided here, so every surface says the same.
 

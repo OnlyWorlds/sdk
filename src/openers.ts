@@ -7,7 +7,18 @@
 // same way.
 
 import { ADDRESS_KEYS, elementAddress, type OwAddress, type OwAddressReading } from './address';
+import { ELEMENT_MARKS, marksOf, type OwElementMark } from './marks';
 import { refuseUnknownOptions } from './options';
+
+export type { OwElementMark } from './marks';
+
+/** What `openersFor` takes beside the surface. */
+export interface OwOpenersOptions {
+  /** The element the menu is for, as the surface was served it (the API's body, the mark flat on it): a row whose door skips what it carries is not there. Absent or null: every row, as before 4.126.0. */
+  element?: Record<string, unknown> | null;
+}
+
+const OPTION_KEYS: readonly string[] = ['element'];
 
 /** What a person must have before a tool's link works: signed in to the tool (`account`), or the world already in the tool on this device (`device`). */
 export type OwToolNeeds = 'account' | 'device';
@@ -20,6 +31,8 @@ export interface OwToolOpen {
   element: string | null;
   /** What the person needs first; null for nothing, which is the one kind of row a public page offers. */
   needs: OwToolNeeds | null;
+  /** What the element door does not open, in the graph section's words; [] or absent: it opens every element (a list older than the key has none). */
+  element_skips?: readonly OwElementMark[];
 }
 
 /** The keys of one tools list row that `openersFor` reads; a row straight from `tools.json` carries more, and they are ignored. */
@@ -113,7 +126,10 @@ function templateOf(row: string, key: 'world' | 'element', v: unknown): string |
  * what `elementAddress` takes, with the world's id. A lens and a moment on it ride on no href.
  *
  * A row with `open: null`, or with no door for this kind, is not there. On an element, a tool with only
- * a world door is a row to its world door that says "Opens the world". For the `public` audience only
+ * a world door is a row to its world door that says "Opens the world". On an element given as
+ * `options.element`, a row whose `open.element_skips` names a mark the element carries (room, hidden,
+ * proposed, map space, a reading aid, each read as `worldGraph` reads it) is not there: its door cannot
+ * open it. A world door alone opens the world, so it stays. For the `public` audience only
  * rows whose `open.needs` is null are there: a row that needs anything does not exist for the public.
  *
  * Each row's `state`, the first that holds: "You are here" for the surface's own tool (its `client` is
@@ -130,14 +146,16 @@ function templateOf(row: string, key: 'world' | 'element', v: unknown): string |
  * and a slug or anything else for the world's id (`bad_world`); and an address without a world
  * (`no_world`), the text form inside a world included, since every row needs one. A TypeError names the
  * rest: a `kind` that is neither, an element's openers asked of an address with no element, an unknown
- * key on the address or the surface, a missing or unknown `audience`, a surface value of the wrong type,
- * a tools row that is not one (a `needs` outside the list's format included).
+ * key on the address, the surface or the options, a missing or unknown `audience`, a surface value of the
+ * wrong type, an element given for a world's menu or naming another element than the address, a tools row
+ * that is not one (a `needs` or an `element_skips` word outside the list's format included).
  */
 export function openersFor(
   tools: readonly OwTool[],
   kind: OwOpenerKind,
   address: OwAddress | OwAddressReading,
   surface: OwOpenerSurface,
+  options: OwOpenersOptions = {},
 ): OwOpener[] {
   if (!Array.isArray(tools)) fail('tools is the tools list\'s rows, an array');
   if (kind !== 'world' && kind !== 'element') fail(`kind is 'world' or 'element'; got ${JSON.stringify(kind)}`);
@@ -166,6 +184,17 @@ export function openersFor(
   if (typeof phone !== 'boolean') fail('surface.phone is a boolean');
   if (typeof online !== 'boolean') fail('surface.online is a boolean');
 
+  if (options === null || typeof options !== 'object' || Array.isArray(options)) fail('the options are an object ({ element })');
+  refuseUnknownOptions('openersFor', options, OPTION_KEYS);
+  const element = options.element ?? null;
+  if (element !== null) {
+    if (typeof element !== 'object' || Array.isArray(element)) fail('options.element is the element as served, an object, or null');
+    if (kind !== 'element') fail("options.element is for an element's menu; a world's menu takes none");
+    const eid = (element as Record<string, unknown>).id;
+    if (typeof eid !== 'string' || eid.toLowerCase() !== id) fail('options.element is the element the address names: its id differs');
+  }
+  const marks = element === null ? [] : marksOf(element as Record<string, unknown>);
+
   const values: Record<string, string> = { world, type, id };
   const fill = (template: string): string => template.replace(PLACEHOLDER, (_, n: string) => values[n]);
   const offline = (href: string): boolean => !online && WEB.test(href);
@@ -184,10 +213,17 @@ export function openersFor(
     const elementDoor = templateOf(r.id, 'element', o.element);
     const needs = o.needs === undefined ? null : o.needs;
     if (!NEEDS.includes(needs)) fail(`tool ${r.id}: open.needs is 'account', 'device' or null; got ${JSON.stringify(needs)}`);
+    const skips = o.element_skips === undefined || o.element_skips === null ? [] : o.element_skips;
+    if (!Array.isArray(skips) || skips.some((s) => !ELEMENT_MARKS.includes(s as OwElementMark))) {
+      fail(`tool ${r.id}: open.element_skips is a list of ${ELEMENT_MARKS.join(', ')}; got ${JSON.stringify(o.element_skips)}`);
+    }
+    if (elementDoor === null && (skips as readonly unknown[]).length > 0) fail(`tool ${r.id}: open.element_skips names what an element door leaves out, and the row has none`);
     if (r.rung !== 'listed') continue;
     if (audience === 'public' && needs !== null) continue;
     const template = kind === 'element' ? elementDoor ?? worldDoor : worldDoor;
     if (template === null) continue;
+    // An element door that cannot open this element is no door (a row with skips has one: refused above).
+    if (kind === 'element' && marks.some((m) => (skips as readonly unknown[]).includes(m))) continue;
     // The first that holds. A word the row needs (it cannot open now) comes before "Opens the world" (it
     // opens, somewhere else), so a world door alone that needs a sign-in says the sign-in. With no
     // connection a web link opens nothing, whatever else it needs.
