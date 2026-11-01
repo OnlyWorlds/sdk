@@ -73,6 +73,21 @@ test('a Narrative naming an Event twice is one story of it, other values in even
   assert.equal(got[1].stories[0].name, 'One');
 });
 
+test('ties order by code point, never UTF-16: an id above the BMP sorts after U+FF00', () => {
+  const C = 'c';
+  const at = '2026-11-01T00:00:00Z';
+  const hi = 'e\u{1F600}', bmp = 'e\uFF00';
+  const world = [
+    { id: hi, type: 'event', name: 'hi', characters: [C], x_record: { tool: 'tangle', played_at: at } },
+    { id: bmp, type: 'event', name: 'bmp', characters: [C], x_record: { tool: 'tangle', played_at: at } },
+    { id: 'n\u{1F600}', type: 'narrative', name: 'a', protagonist: C, events: [hi] },
+    { id: 'n\uFF00', type: 'narrative', name: 'b', protagonist: C, events: [hi] },
+  ];
+  const got = recordsOf(C, world);
+  assert.deepEqual(got.map((r) => r.event.id), [bmp, hi]);
+  assert.deepEqual(got[1].stories.map((s) => s.id), ['n\uFF00', 'n\u{1F600}']);
+});
+
 test('a played_at with seconds and a fraction orders as the instant it is', () => {
   const mk = (id, at) => ({ id, type: 'event', name: id, characters: ['c'], x_record: { tool: 'subs', played_at: at } });
   const got = recordsOf('c', [mk('a', '2026-11-01T00:30Z'), mk('b', '2026-11-01T00:30:00.500Z'), mk('c', '2026-11-01T00:29:59Z')]);

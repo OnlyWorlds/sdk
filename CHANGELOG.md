@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.124.2] - 2026-11-01
+
+### Fixed
+
+- **`recordsOf` orders tied records and stories by code point**, as the record profile says. It compared ids with JavaScript's `<`, which is UTF-16 order and differs from code point order for characters above U+FFFF (an id holding U+1F600 sorted before one holding U+FF00). Ids in ASCII, which every fixture case uses, order as before.
+
 ## [4.124.1] - 2026-11-01
 
 ### Changed

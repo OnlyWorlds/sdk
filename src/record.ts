@@ -6,6 +6,8 @@
 // a keeper settles it. `recordsOf` reads the elements as the reader is served them; the fixture,
 // profiles/record.fixture.json, is this file's own test. The Python package's `records_of` gives the same answers.
 
+import { byCodePoint } from './lens';
+
 /** The Event's field that carries the record's mark. */
 export const RECORD_FIELD = 'x_record';
 
@@ -55,7 +57,8 @@ const isObject = (v: unknown): v is Body => v !== null && typeof v === 'object' 
 const unsetOr = (v: unknown, test: (v: unknown) => boolean): boolean => v === undefined || v === null || test(v);
 const isString = (v: unknown): v is string => typeof v === 'string';
 const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
-const cp = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+// Code point order, as the page says: JavaScript's < is UTF-16 order, which differs above the BMP.
+const cp = byCodePoint;
 /** A real calendar instant: month 1 to 12, the day within its month (leap years Gregorian), hour 0 to 23, minute and
  * second 0 to 59. Date.parse rolls 02-30 into March and takes 24:00, so the parts are checked here, as Python's are. */
 function isInstant(s: string): boolean {
