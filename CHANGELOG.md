@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.123.5] - 2026-11-01
+
+### Changed
+
+- **`TOOLS` carries Little Lens.** The tools list is repinned at `a1573ac` (from `86208c8`): Little Lens, a world as a web of its elements and links, read only, is a listed row, so `openersFor` offers it in the Open with menu for a world and for an element. No type or function changed.
+
 ## [4.123.4] - 2026-10-31
 
 ### Fixed
