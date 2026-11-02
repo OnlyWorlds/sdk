@@ -654,23 +654,23 @@ test('draught sends the seven policy keys to /character/{id}/context; list sends
   await client.draught('c1', { components: ['self', 'events'], mode: 'act', asOf: 453, undated: 'exclude', since: 'cur', budget: 5, depth: 0 });
   const u = new URL(fetchImpl.calls[0].url);
   assert.ok(u.pathname.endsWith('/character/c1/context'), u.pathname);
-  assert.deepEqual(Object.fromEntries(u.searchParams), { components: 'self,events', mode: 'act', as_of: '453', undated: 'exclude', since: 'cur', budget: '5', depth: '0' });
+  assert.deepEqual(Object.fromEntries(u.searchParams), { components: 'self,events', mode: 'act', as_of: '453', undated: 'exclude', since: 'cur', budget: '5', depth: '0', compact: 'false' });
   await client.draught('c1');
-  assert.equal(new URL(fetchImpl.calls[1].url).search, '');
+  assert.equal(new URL(fetchImpl.calls[1].url).search, '?compact=false');
   await client.list('character', { ids: ['a', 'b'], createdBy: 'owner' });
   const q = new URL(fetchImpl.calls[2].url).searchParams;
   assert.equal(q.get('ids'), 'a,b');
   assert.equal(q.get('created_by'), 'owner');
 });
 
-test('draught: compact is sent as true or false and nothing else; absent, nothing is sent', async () => {
+test('draught: compact is sent as true or false and nothing else; absent, false is sent, so the answer is the typed fixed shape', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { world: { id: 'w' }, character: null } });
   await client.draught('c1', { compact: true });
   assert.equal(new URL(fetchImpl.calls[0].url).searchParams.get('compact'), 'true');
   await client.draught('c1', { compact: false });
   assert.equal(new URL(fetchImpl.calls[1].url).searchParams.get('compact'), 'false');
   await client.draught('c1', {});
-  assert.equal(new URL(fetchImpl.calls[2].url).searchParams.has('compact'), false);
+  assert.equal(new URL(fetchImpl.calls[2].url).searchParams.get('compact'), 'false');
   await assert.rejects(client.draught('c1', { compact: 'yes' }), /compact is true or false/);
   assert.equal(fetchImpl.calls.length, 3, 'a refused compact sends nothing');
 });
@@ -694,7 +694,7 @@ test('draught: lens is sent as lens=<id> on GET /character/{id}/context with the
 test('draught: room and proposed are sent when named; the published types carry keel\'s thirteen components and rows with the element nested', async () => {
   const { client, fetchImpl } = makeClient({ status: 200, body: { world: { id: 'w' }, cut: { proposed: 2 }, room: [], proposed: [] } });
   await client.draught('c1', { components: ['room', 'proposed'] });
-  assert.deepEqual(Object.fromEntries(new URL(fetchImpl.calls[0].url).searchParams), { components: 'room,proposed' });
+  assert.deepEqual(Object.fromEntries(new URL(fetchImpl.calls[0].url).searchParams), { components: 'room,proposed', compact: 'false' });
 
   // keel elements/draught.py COMPONENTS, in its order.
   const KEEL = ['self', 'role', 'work', 'style', 'events', 'knowledge', 'names', 'sheet', 'recent', 'messages', 'room', 'proposed', 'roster'];

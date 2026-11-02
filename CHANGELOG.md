@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.128.1] - 2026-11-02
+
+### Fixed
+
+- **`draught(id)` without `compact` answers the fixed `OwDraught` shape again.** The server now serves the compact packet by default; the client sends `compact=false` when the caller leaves it out, so every section its type promises is there (since 4.47.0 a left-out `compact` was sent as nothing). `compact: true` still asks for the short form, typed `OwDraughtCompact`.
+
 ## [4.128.0] - 2026-11-02
 
 ### Added
