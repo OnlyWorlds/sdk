@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.129.1] - 2026-11-02
+
+### Fixed
+
+- **`mapSpace` reads two rows of one type with one id as the last one served** (schema-dist `profiles/map-space.md`, serial 106, reading I: an element is its id). Markers and Pins now follow the rule Maps and Zones already did: until now each row of a repeated Marker or Pin id was read as a Marker or Pin of its own. The last row wins even when it reads less (no point, or a map that is not served), and is then counted under its reason.
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.34.0-dist.106`** (from dist.105); the standard stays canonical **00.34.00** and no schema field moved. Serial 106 words the map-space page's readings I to K and four sharpened rules (a measured frame from placed points only, a `z` that is not a whole number read as 0, `no_markers` for a Zone with no placed Marker, a Pin with neither a served map nor a point counted once as `no_map`), and its fixture holds 34 cases. Apart from reading I, `mapSpace` already answered every new case as ruled.
+
 ## [4.129.0] - 2026-11-02
 
 ### Added
