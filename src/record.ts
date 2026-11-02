@@ -110,7 +110,7 @@ export function recordsOf(characterId: string, elements: readonly unknown[]): Ow
   // the world, then a lookup per record, where each record rescanned the whole world through 4.124.0.
   const storiesOf = new Map<unknown, OwRecordStory[]>();
   for (const n of elements) {
-    if (!isObject(n) || n.type !== 'narrative' || proposed(n)) continue;
+    if (!isObject(n) || n.type !== 'narrative' || !isString(n.id) || proposed(n)) continue;
     const p = n.protagonist === characterId;
     const r = n.narrator === characterId;
     if (!p && !r) continue;
@@ -123,7 +123,8 @@ export function recordsOf(characterId: string, elements: readonly unknown[]): Ow
   const out: OwRecord[] = [];
   for (const ev of elements) {
     const mark = recordMarkOf(ev);
-    if (!mark || proposed(ev as Body) || !list((ev as Body).characters).includes(characterId)) continue;
+    // An Event or a Narrative whose id is not a string is never read (serial 103): no entry without an id.
+    if (!mark || !isString((ev as Body).id) || proposed(ev as Body) || !list((ev as Body).characters).includes(characterId)) continue;
     const id = (ev as Body).id as string;
     const stories: OwRecordStory[] = (storiesOf.get(id) ?? []).map((s) => ({ ...s }));
     stories.sort((a, b) => cp(a.id, b.id));
