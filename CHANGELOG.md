@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.127.0] - 2026-11-02
+
 ### Added
 
 - **`landingOf(graph, options)`: the landing profile** (schema-dist `profiles/landing.md`, serial 103). A world's first picture at a door, read from the graph `worldGraph` answers for the visitor, so it holds only what that reader may see. The answer is `{ mode, size, clusters, unclustered, gaps }`, all five keys always present: `mode` is `gaps` when the graph has fewer nodes than `size` (default 24), else `graph`; `clusters` are the most-linked Characters (at most `heads`, default 5), each with the nodes within `hops` steps of it (default 1), a node joining its nearest head; `unclustered` is every node no head reaches; `gaps` are the orphans, the near-orphans, a Character whose `location` names no Location in the graph (`no_place`) and a Location no Character's `location` names (`nobody_here`). Counted in integers, ids in code point order, so the same graph and options give the same bytes. An unknown option, or one that is not a whole number of 1 or more, is refused by name. The fixture `profiles/landing.fixture.json` (30 cases) is the test. Types: `OwLanding`, `OwLandingCluster`, `OwLandingMember`, `OwLandingGap`, `OwLandingGapKind`, `OwLandingMode`, `OwLandingOptions`.
