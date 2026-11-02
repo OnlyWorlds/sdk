@@ -1,5 +1,5 @@
 /**
- * The map-space profile (schema-dist profiles/map-space.md, serial 105): every case of
+ * The map-space profile (schema-dist profiles/map-space.md, serial 106): every case of
  * codegen/schema-dist/profiles/map-space.fixture.json, vendored with the distribution, as its own test, the whole
  * answer of each case compared as a value and as bytes (key order held). Runs against the compiled public bundle (dist).
  */

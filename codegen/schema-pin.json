@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.34.0-dist.105",
-  "commit": "01b52f1e642731ae60e20541a249b2437cce79d7",
-  "manifest_sha256": "e3072b64ee8a1d7de423782d83c6a5755670049911bf792485a13d9ad4341a20",
+  "tag": "v0.34.0-dist.106",
+  "commit": "5f19fa720df9376352c14de1c7fd6b1eb8b99aa2",
+  "manifest_sha256": "4f13eddb81451999e15c591729b897681669b9343ce4f4f47187d6639cd881b3",
   "canonical_version": "00.34.00",
-  "dist_serial": 105,
+  "dist_serial": 106,
   "published": "2026-11-02",
   "pinned_at": "2026-11-02",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.34.0-dist.105",
+      "manifest_sha256": "e3072b64ee8a1d7de423782d83c6a5755670049911bf792485a13d9ad4341a20",
+      "note": "superseded by v0.34.0-dist.106 (the map-space profile's readings I to K and four sharpened rules, its fixture at 34 cases; no schema file moved)"
+    },
     {
       "tag": "v0.34.0-dist.104",
       "manifest_sha256": "7bd7e6ff835e04876fac4343e30d99a51d03f3524d57aa22d4cba1cd89b09166",
