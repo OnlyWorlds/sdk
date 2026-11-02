@@ -5,8 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **`landingOf(graph, options)`: the landing profile** (schema-dist `profiles/landing.md`, serial 103). A world's first picture at a door, read from the graph `worldGraph` answers for the visitor, so it holds only what that reader may see. The answer is `{ mode, size, clusters, unclustered, gaps }`, all five keys always present: `mode` is `gaps` when the graph has fewer nodes than `size` (default 24), else `graph`; `clusters` are the most-linked Characters (at most `heads`, default 5), each with the nodes within `hops` steps of it (default 1), a node joining its nearest head; `unclustered` is every node no head reaches; `gaps` are the orphans, the near-orphans, a Character whose `location` names no Location in the graph (`no_place`) and a Location no Character's `location` names (`nobody_here`). Counted in integers, ids in code point order, so the same graph and options give the same bytes. An unknown option, or one that is not a whole number of 1 or more, is refused by name. The fixture `profiles/landing.fixture.json` (30 cases) is the test. Types: `OwLanding`, `OwLandingCluster`, `OwLandingMember`, `OwLandingGap`, `OwLandingGapKind`, `OwLandingMode`, `OwLandingOptions`.
+- **`LocationV2.vehicle`**, from canonical 00.34.00: a single link to the Object a place is the inside of (a ship, a train, a walking city), for a place that moves with the thing; a place inside another place still uses `parent_location`. It is in `FIELD_SCHEMA`, `SINGLE_LINK_FIELDS`, the Location's Setting section (after `parent_location`) and `SCHEMA.md`.
+
 ### Changed
 
+- **Schema repinned to schema-dist `v0.34.0-dist.103`** (from dist.102), canonical **00.34.00**, so `ONLYWORLDS_VERSION` is now `'00.34.00'`. Serial 103 adds `vehicle` to Location, the landing profile, the lens profile graph section's degree and out-degree with the lens fixture's `degree` cases (196 cases in all; `degreeOf` and `outDegreeOf` answer the five new ones as they stood), and seven readings in the record profile (its fixture from 32 cases to 40).
+- **`recordsOf` reads a run or a story as proposed exactly when `proposedMarkOf` does.** An empty mark (`{}`, `""` or `[]`) is settled, so a run or story carrying one is now read; before, any value but null left it out.
+- **`recordsOf` never reads an Event or a Narrative whose `id` is not a string**: no entry without an id, and no error. Before, a run with a numeric id was returned with that number as its id. The record profile's other new cases (`played_at`'s upper-case `T` and `Z` and ASCII digits, a name that is not a string, ties by code point) pass as the reader stood.
 - **A reading builds its reverse link index only when a lens hop asks for it.** `worldGraph` without a lens, and every other reading that walks no hop, no longer pays for it; no answer changes. On a 20,573-element world, `worldGraph` for the owner went from a median 434 ms to 324 ms, both builds interleaved in one process.
 
 ## [4.126.0] - 2026-11-01
