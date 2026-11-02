@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { FIELD_SCHEMA, degreeOf, isLens, outDegreeOf, resolveLens, worldGraph } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/lens.fixture.json', import.meta.url));
-const KEY = { as_of: 'asOf', map_space: 'mapSpace' };
+const KEY = { as_of: 'asOf', map_space: 'mapSpace', reading_aids: 'readingAids' };
 
 const loadFixture = () => JSON.parse(readFileSync(FIXTURE, 'utf8'));
 const loadCases = () => loadFixture().cases.filter(c => c.kind === 'graph');
