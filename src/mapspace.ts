@@ -62,7 +62,8 @@ type Row = Record<string, unknown>;
 const isRow = (v: unknown): v is Row => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** A whole number by value: a JSON number with no fractional part (2.0 is 2). Never a boolean or a string. */
-const whole = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v);
+// Whole only where a double holds the number exactly (|v| <= 2^53 - 1): a value the parse had to round is not whole.
+const whole = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v);
 
 /** An id: a string that is not empty; anything else reads as none. */
 const idOf = (v: unknown): string | null => (typeof v === 'string' && v !== '' ? v : null);

@@ -52,3 +52,22 @@ test('mapSpace refuses what is not a list of elements, and passes over rows it c
   assert.deepEqual(mapSpace([]), empty);
   assert.deepEqual(mapSpace([null, 3, 'x', { id: 'a' }, { type: 7 }]), empty);
 });
+
+test('a number the parse had to round is not whole: a reader holds whole numbers only where a double holds them exactly', () => {
+  // Read from JSON text, as a reader is served it: -9223372036854775809 parses to exactly -2^63, and 2^53 + 1 to 2^53.
+  const elements = JSON.parse(`[
+    {"type": "map", "id": "m", "width": 10, "height": 10},
+    {"type": "zone", "id": "z"},
+    {"type": "marker", "id": "k1", "map": "m", "zone": "z", "x": 1, "y": 1, "z": 9007199254740991},
+    {"type": "marker", "id": "k2", "map": "m", "zone": "z", "x": -9223372036854775809, "y": 2},
+    {"type": "marker", "id": "k3", "map": "m", "zone": "z", "x": 3, "y": 3, "z": 9007199254740993},
+    {"type": "pin", "id": "p1", "map": "m", "x": 9007199254740992, "y": 1}
+  ]`);
+  const got = mapSpace(elements);
+  // 2^53 - 1 is the largest a double holds exactly: whole. k2's x and p1's x are past it: no point.
+  // k3's z is past it: read as 0, as any z that is not a whole number, and the point stays placed.
+  assert.deepEqual(got.zones, [{ zone: 'z', map: 'm', shape: 'polygon', points: [[1, 1, 9007199254740991], [3, 3, 0]] }]);
+  assert.deepEqual(got.pins, []);
+  assert.deepEqual(got.out, { no_point: 2 });
+  assert.equal(got.maps[0].z_max, 9007199254740991);
+});

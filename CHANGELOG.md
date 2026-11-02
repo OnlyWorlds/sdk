@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.129.2] - 2026-11-02
+
+### Fixed
+
+- **`mapSpace` reads a number past 2^53 as not whole** (schema-dist `profiles/map-space.md`, rule 1: a reader holds whole numbers within the range it holds exactly). JavaScript parses a larger integer to the nearest double, so `-9223372036854775809` arrived as -2^63 and was kept as a point at that rounded value. A coordinate, `order`, `width`, `height` or `depth` past 2^53 - 1 now reads as not a whole number, as one with a fraction does: an `x` or `y` leaves the row out (`no_point`), a `z` reads as 0. The profile's fixture keeps every number inside that range, so no fixture answer moves.
+
 ## [4.129.1] - 2026-11-02
 
 ### Fixed
