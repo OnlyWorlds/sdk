@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.33.0-dist.102** — canonical schema **00.33.00**, published 2026-11-01.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.34.0-dist.103** — canonical schema **00.34.00**, published 2026-11-02.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -320,6 +320,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 - `function` (text) — Main use, role, or purpose of the location within the world
 - `founding_date` (integer) — Date on which the location was founded, established, or designated
 - `parent_location` (single link → location) — Wider location that this location is part of
+- `vehicle` (single link → object) — The Object this place is the inside of: a ship, a train, an airship, a walking city, a station that moves. Set it when the place moves with the thing; a place inside another place uses parent_location instead
 - `populations` (multi link → collective) — Distinct collective groups or communities residing within the location
 
 ### Politics

@@ -14,6 +14,11 @@ const FIXTURE = process.env.OW_LANDING_FIXTURE ?? fileURLToPath(new URL('../code
 assert.ok(existsSync(FIXTURE), `no landing fixture at ${FIXTURE}`);
 const doc = JSON.parse(readFileSync(FIXTURE, 'utf8'));
 
+test('the fixture is the landing profile\'s', () => {
+  assert.equal(doc.profile, 'landing');
+  assert.equal(doc.cases.length, 30, `the fixture holds ${doc.cases.length} cases, serial 103 has 30`);
+});
+
 for (const c of doc.cases) {
   test(`landing fixture: ${c.name}`, () => {
     if (c.want.refused !== undefined) {

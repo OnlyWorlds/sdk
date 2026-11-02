@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.33.0-dist.102
-//         commit          05ff16d7171833940aed27a2811ef8c5e12a6c83
-//         MANIFEST sha256 953fe417315c870c31769b39b3eacd2cad1d4fde96fe93355e9349754eb34825
-//         canonical 00.33.00, dist serial 102, published 2026-11-01
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.103
+//         commit          989e8f55a31bca47099532a3d879e01faa7f641e
+//         MANIFEST sha256 0c83279627eef802c1b1bea19f89ed29b09f4585c365d228d9c581f42b6ecfca
+//         canonical 00.34.00, dist serial 103, published 2026-11-02
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -73,7 +73,7 @@ export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective
 
 /** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned
  *  distribution's VERSION file (see the provenance block at the top of this file). */
-export const ONLYWORLDS_VERSION = '00.33.00' as const;
+export const ONLYWORLDS_VERSION = '00.34.00' as const;
 
 /** The four colour groups, named by their colour. A visual aid for drawing the 22 types,
  *  not part of the standard: colour carries the group, ELEMENT_ICONS carries the type. */
@@ -231,7 +231,7 @@ export const ELEMENT_SECTIONS: Record<ElementType, SectionInfo[]> = {
     { name: 'World', order: 2, fields: ['author', 'locations', 'zones', 'prohibitions', 'adjudicators', 'enforcers'] },
   ],
   location: [
-    { name: 'Setting', order: 1, fields: ['form', 'function', 'founding_date', 'parent_location', 'populations'] },
+    { name: 'Setting', order: 1, fields: ['form', 'function', 'founding_date', 'parent_location', 'vehicle', 'populations'] },
     { name: 'Politics', order: 2, fields: ['political_climate', 'primary_power', 'governing_title', 'secondary_powers', 'zone', 'rival', 'partner'] },
     { name: 'World', order: 3, fields: ['customs', 'founders', 'cults', 'delicacies'] },
     { name: 'Production', order: 4, fields: ['extraction_methods', 'extraction_goods', 'industry_methods', 'industry_goods'] },
@@ -297,7 +297,7 @@ export const SINGLE_LINK_FIELDS: Record<ElementType, string[]> = {
   institution: ['parent_institution'],
   language: ['classification'],
   law: ['parent_law', 'author'],
-  location: ['parent_location', 'primary_power', 'governing_title', 'zone', 'rival', 'partner'],
+  location: ['parent_location', 'vehicle', 'primary_power', 'governing_title', 'zone', 'rival', 'partner'],
   map: ['parent_map', 'location'],
   marker: ['map', 'zone'],
   narrative: ['parent_narrative', 'protagonist', 'antagonist', 'narrator', 'conservator'],
@@ -893,6 +893,7 @@ export const FIELD_SCHEMA = {
     function: { type: 'text' },
     founding_date: { type: 'integer' },
     parent_location: { type: 'single_link', target: 'location' },
+    vehicle: { type: 'single_link', target: 'object' },
     populations: { type: 'multi_link', target: 'collective' },
     // Politics
     political_climate: { type: 'text' },
@@ -1594,6 +1595,8 @@ export interface LocationV2 extends OwElementBase {
   elevation: number | null;
   /** Wider location that this location is part of */
   parent_location: string | null;  // -> location
+  /** The Object this place is the inside of: a ship, a train, an airship, a walking city, a station that moves. Set it when the place moves with the thing; a place inside another place uses parent_location instead */
+  vehicle: string | null;  // -> object
   /** Institution that has the highest degree of political control over the location */
   primary_power: string | null;  // -> institution
   /** Governing figure assigned by the location's primary power */

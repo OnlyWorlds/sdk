@@ -18,7 +18,7 @@ test('the fixture is the record profile\'s, its mark the field recordMarkOf read
   assert.equal(doc.profile, 'record');
   assert.equal(doc.mark.field, RECORD_FIELD);
   assert.deepEqual(doc.mark.members, ['tool', 'played_at', 'version', 'seed', 'outcome', 'seats']);
-  assert.equal(doc.cases.length, 32, `the fixture holds ${doc.cases.length} cases, serial 102 has 32`);
+  assert.equal(doc.cases.length, 40, `the fixture holds ${doc.cases.length} cases, serial 103 has 40`);
 });
 
 for (const c of doc.cases) {
@@ -86,14 +86,6 @@ test('ties order by code point, never UTF-16: an id above the BMP sorts after U+
   const got = recordsOf(C, world);
   assert.deepEqual(got.map((r) => r.event.id), [bmp, hi]);
   assert.deepEqual(got[1].stories.map((s) => s.id), ['n\uFF00', 'n\u{1F600}']);
-});
-
-// Staged for serial 103 (an empty proposed mark is settled, as the review profile reads it); the fixture's own case
-// replaces this test at the repin.
-test('an empty proposed mark ({}, "", []) is settled: the runs and the story are read', () => {
-  const added = [{"id": "019a8000-0000-7000-8000-000000000223", "type": "event", "name": "A crossing with an empty proposed mark", "characters": ["019a8000-0000-7000-8000-000000000106"], "x_review_proposed": {}, "x_record": {"tool": "subs", "played_at": "2026-11-04T00:00:00Z"}}, {"id": "019a8000-0000-7000-8000-000000000224", "type": "event", "name": "A crossing with a blank proposed mark", "characters": ["019a8000-0000-7000-8000-000000000106"], "x_review_proposed": "", "x_record": {"tool": "subs", "played_at": "2026-11-02T00:00:00Z"}}, {"id": "019a8000-0000-7000-8000-000000000310", "type": "narrative", "name": "An account with an empty proposed mark", "narrator": "019a8000-0000-7000-8000-000000000106", "x_review_proposed": [], "events": ["019a8000-0000-7000-8000-000000000223"]}];
-  const harbour = Object.values(doc.worlds)[0].elements;
-  assert.deepEqual(recordsOf("019a8000-0000-7000-8000-000000000106", [...harbour, ...added]), [{"event": {"id": "019a8000-0000-7000-8000-000000000223", "name": "A crossing with an empty proposed mark"}, "tool": "subs", "played_at": "2026-11-04T00:00:00Z", "version": null, "seed": null, "outcome": null, "seat": null, "stories": [{"id": "019a8000-0000-7000-8000-000000000310", "name": "An account with an empty proposed mark", "as": "narrator"}]}, {"event": {"id": "019a8000-0000-7000-8000-000000000224", "name": "A crossing with a blank proposed mark"}, "tool": "subs", "played_at": "2026-11-02T00:00:00Z", "version": null, "seed": null, "outcome": null, "seat": null, "stories": []}]);
 });
 
 test('a played_at with seconds and a fraction orders as the instant it is', () => {

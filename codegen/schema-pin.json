@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.33.0-dist.102",
-  "commit": "05ff16d7171833940aed27a2811ef8c5e12a6c83",
-  "manifest_sha256": "953fe417315c870c31769b39b3eacd2cad1d4fde96fe93355e9349754eb34825",
-  "canonical_version": "00.33.00",
-  "dist_serial": 102,
-  "published": "2026-11-01",
-  "pinned_at": "2026-11-01",
+  "tag": "v0.34.0-dist.103",
+  "commit": "989e8f55a31bca47099532a3d879e01faa7f641e",
+  "manifest_sha256": "0c83279627eef802c1b1bea19f89ed29b09f4585c365d228d9c581f42b6ecfca",
+  "canonical_version": "00.34.00",
+  "dist_serial": 103,
+  "published": "2026-11-02",
+  "pinned_at": "2026-11-02",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.33.0-dist.102",
+      "manifest_sha256": "953fe417315c870c31769b39b3eacd2cad1d4fde96fe93355e9349754eb34825",
+      "note": "superseded by v0.34.0-dist.103 (canonical 00.34.00: Location gains vehicle, a single link to the Object the place is the inside of; profiles/landing.md and landing.fixture.json, the landing profile: a world's first picture at a door, read from its graph, 30 cases; the lens page's graph section gains degree and out-degree, lens.fixture.json's degree kind, 196 cases; record.md's seven readings, record.fixture.json 40 cases; schema.json and the example export carry the new field)"
+    },
     {
       "tag": "v0.33.0-dist.101",
       "manifest_sha256": "c42d43b385da46fcb4bb64df4072bb1a8b404ed028c9536eb9c37c50c33f5036",
