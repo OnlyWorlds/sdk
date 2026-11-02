@@ -15,6 +15,8 @@ export interface OwMapSpaceMap {
   height: number | null;
   /** The Map's `depth` when it is a whole number, else null. */
   depth: number | null;
+  /** The largest z among the Map's own outline and Pin points (kept as written, so it can pass `depth`); null with no point. */
+  z_max: number | null;
   /** Metres per pixel: `x_metres_per_pixel` when it is a positive number, else null. */
   scale: number | null;
   location: string | null;
@@ -59,7 +61,7 @@ type Row = Record<string, unknown>;
 
 const isRow = (v: unknown): v is Row => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-/** A whole number: a JSON number with no fractional part. Never a boolean or a string. */
+/** A whole number by value: a JSON number with no fractional part (2.0 is 2). Never a boolean or a string. */
 const whole = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v);
 
 /** An id: a string that is not empty; anything else reads as none. */
@@ -87,13 +89,15 @@ function largest(points: number[][], index: number): number | null {
  * A Zone's outline is the Markers that name the Zone and one Map, by `order` ascending; a Marker without a whole
  * `order` sorts after every ordered one, then by id. A Marker whose Zone or Map is not served is counted `dangling`
  * (checked first), one without a whole `x` and `y` `no_point`; a Zone without a placed Marker `no_markers`; a Pin whose
- * Map is not served `no_map`, one without a whole `x` and `y` `no_point`. A `z` past a Map's `depth` is kept as written.
+ * Map is not served `no_map`, one without a whole `x` and `y` `no_point`. A `z` past a Map's `depth` is kept as written
+ * and reported in the Map's `z_max`. A row without a non-empty string `id` is no element and is not counted.
  */
 export function mapSpace(elements: readonly unknown[]): OwMapSpace {
   if (!Array.isArray(elements)) throw new TypeError('mapSpace: elements is a list of elements.');
   const byType = new Map<string, Row[]>();
   for (const e of elements) {
-    if (!isRow(e) || typeof e.type !== 'string') continue;
+    // A row without a non-empty string id is no element: ignored, never counted.
+    if (!isRow(e) || typeof e.type !== 'string' || idOf(e.id) === null) continue;
     const list = byType.get(e.type);
     if (list) list.push(e); else byType.set(e.type, [e]);
   }
@@ -122,7 +126,7 @@ export function mapSpace(elements: readonly unknown[]): OwMapSpace {
     if (group) group.markers.push(mk); else placed.set(key, { zone: z, map: m, markers: [mk] });
   }
 
-  const rowId = (mk: Row): string => idOf(mk.id) ?? '';
+  const rowId = (r: Row): string => r.id as string;
   const markerOrder = (a: Row, b: Row): number => {
     const oa = whole(a.order);
     const ob = whole(b.order);
@@ -159,7 +163,7 @@ export function mapSpace(elements: readonly unknown[]): OwMapSpace {
     const mp = maps.get(mid)!;
     const own: number[][] = [];
     for (const o of outlines) if (o.map === mid) own.push(...o.points);
-    for (const q of pins) if (q.map === mid) own.push([q.x, q.y]);
+    for (const q of pins) if (q.map === mid) own.push([q.x, q.y, q.z]);
     let measured = false;
     const slot = (key: 'width' | 'height', i: number): number | null => {
       const v = mp[key];
@@ -175,6 +179,7 @@ export function mapSpace(elements: readonly unknown[]): OwMapSpace {
       width,
       height,
       depth: whole(mp.depth) ? mp.depth : null,
+      z_max: largest(own, 2),
       scale: typeof sc === 'number' && sc > 0 ? sc : null,
       location: idOf(mp.location),
       parent_map: idOf(mp.parent_map),

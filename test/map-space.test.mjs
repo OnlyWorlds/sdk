@@ -10,14 +10,14 @@ import { fileURLToPath } from 'node:url';
 import { mapSpace } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/map-space.fixture.json', import.meta.url));
-const FIXTURE_SHA256 = '06bdc30a84dde361bfba59e06fce8e6bbacb25c7164015e114118c1df25f3840';
+const FIXTURE_SHA256 = '0aff4e2317e317583750c977cd24463dc8ed56d67252e3cfcccb103ab8b6a2ec';
 const bytes = readFileSync(FIXTURE);
 const doc = JSON.parse(bytes.toString('utf8'));
 
 test('the fixture is the map-space profile\'s, held byte for byte', () => {
   assert.equal(createHash('sha256').update(bytes).digest('hex'), FIXTURE_SHA256);
   assert.equal(doc.profile, 'map-space');
-  assert.equal(doc.cases.length, 22);
+  assert.equal(doc.cases.length, 24);
 });
 
 for (const c of doc.cases) {

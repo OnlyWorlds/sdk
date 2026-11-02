@@ -1,6 +1,6 @@
 {
  "profile": "map-space",
- "profile_page": "draft 1 (Skeld, 2026-11-02)",
+ "profile_page": "draft 3 (Skeld, 2026-11-02)",
  "cases": [
   {
    "name": "order-then-id",
@@ -67,6 +67,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -157,6 +158,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -244,6 +246,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -343,6 +346,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -446,6 +450,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -599,6 +604,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -745,6 +751,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -754,6 +761,7 @@
       "width": 10,
       "height": 10,
       "depth": 5,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -858,6 +866,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -922,6 +931,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -1015,6 +1025,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 7,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -1089,6 +1100,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 40,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -1190,6 +1202,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -1287,6 +1300,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 3,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -1386,6 +1400,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -1459,6 +1474,7 @@
       "width": 90,
       "height": 50,
       "depth": null,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null,
@@ -1537,6 +1553,7 @@
       "width": 1,
       "height": 1,
       "depth": null,
+      "z_max": null,
       "scale": 0.01,
       "location": null,
       "parent_map": null
@@ -1546,6 +1563,7 @@
       "width": 1,
       "height": 1,
       "depth": null,
+      "z_max": null,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -1555,6 +1573,7 @@
       "width": 1,
       "height": 1,
       "depth": null,
+      "z_max": null,
       "scale": null,
       "location": "019a9000-0000-7000-8000-0000000e0001",
       "parent_map": "019a9000-0000-7000-8000-00000000aa01"
@@ -1625,6 +1644,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -1678,6 +1698,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": null,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -1752,6 +1773,7 @@
       "width": 100,
       "height": 50,
       "depth": 30,
+      "z_max": 0,
       "scale": null,
       "location": null,
       "parent_map": null
@@ -1807,6 +1829,181 @@
    }
   },
   {
+   "name": "whole-by-value",
+   "claim": "a whole number is read by value: 2.0 is 2, as x, z, order and width",
+   "elements": [
+    {
+     "type": "map",
+     "id": "019a9000-0000-7000-8000-00000000aa01",
+     "name": "deck",
+     "width": 100.0,
+     "height": 50,
+     "depth": 30
+    },
+    {
+     "type": "zone",
+     "id": "019a9000-0000-7000-8000-0000000b0001",
+     "name": "zone"
+    },
+    {
+     "type": "marker",
+     "id": "019a9000-0000-7000-8000-0000000c0001",
+     "name": "corner",
+     "map": "019a9000-0000-7000-8000-00000000aa01",
+     "zone": "019a9000-0000-7000-8000-0000000b0001",
+     "x": 2.0,
+     "y": 3,
+     "z": 4.0,
+     "order": 1.0
+    },
+    {
+     "type": "marker",
+     "id": "019a9000-0000-7000-8000-0000000c0002",
+     "name": "corner",
+     "map": "019a9000-0000-7000-8000-00000000aa01",
+     "zone": "019a9000-0000-7000-8000-0000000b0001",
+     "x": 5,
+     "y": 6,
+     "order": 0
+    },
+    {
+     "type": "pin",
+     "id": "019a9000-0000-7000-8000-0000000d0001",
+     "name": "pin",
+     "map": "019a9000-0000-7000-8000-00000000aa01",
+     "x": 7.0,
+     "y": 8.0,
+     "z": 1
+    }
+   ],
+   "want": {
+    "maps": [
+     {
+      "id": "019a9000-0000-7000-8000-00000000aa01",
+      "width": 100,
+      "height": 50,
+      "depth": 30,
+      "z_max": 4,
+      "scale": null,
+      "location": null,
+      "parent_map": null
+     }
+    ],
+    "zones": [
+     {
+      "zone": "019a9000-0000-7000-8000-0000000b0001",
+      "map": "019a9000-0000-7000-8000-00000000aa01",
+      "shape": "polygon",
+      "points": [
+       [
+        5,
+        6,
+        0
+       ],
+       [
+        2,
+        3,
+        4
+       ]
+      ]
+     }
+    ],
+    "pins": [
+     {
+      "pin": "019a9000-0000-7000-8000-0000000d0001",
+      "map": "019a9000-0000-7000-8000-00000000aa01",
+      "element_type": null,
+      "element_id": null,
+      "x": 7,
+      "y": 8,
+      "z": 1
+     }
+    ],
+    "out": {}
+   }
+  },
+  {
+   "name": "row-without-id-ignored",
+   "claim": "a row with no string id is no element: ignored, never counted",
+   "elements": [
+    {
+     "type": "map",
+     "id": "019a9000-0000-7000-8000-00000000aa01",
+     "name": "deck",
+     "width": 100,
+     "height": 50,
+     "depth": 30
+    },
+    {
+     "type": "zone",
+     "id": "019a9000-0000-7000-8000-0000000b0001",
+     "name": "zone"
+    },
+    {
+     "type": "marker",
+     "id": "019a9000-0000-7000-8000-0000000c0001",
+     "name": "corner",
+     "map": "019a9000-0000-7000-8000-00000000aa01",
+     "zone": "019a9000-0000-7000-8000-0000000b0001",
+     "x": 1,
+     "y": 1
+    },
+    {
+     "type": "marker",
+     "map": "019a9000-0000-7000-8000-00000000aa01",
+     "zone": "019a9000-0000-7000-8000-0000000b0001",
+     "x": 9,
+     "y": 9
+    },
+    {
+     "type": "pin",
+     "map": "019a9000-0000-7000-8000-00000000aa01",
+     "x": 3,
+     "y": 3
+    },
+    {
+     "type": "zone",
+     "name": "nameless"
+    },
+    {
+     "type": "map",
+     "id": "",
+     "width": 1
+    }
+   ],
+   "want": {
+    "maps": [
+     {
+      "id": "019a9000-0000-7000-8000-00000000aa01",
+      "width": 100,
+      "height": 50,
+      "depth": 30,
+      "z_max": 0,
+      "scale": null,
+      "location": null,
+      "parent_map": null
+     }
+    ],
+    "zones": [
+     {
+      "zone": "019a9000-0000-7000-8000-0000000b0001",
+      "map": "019a9000-0000-7000-8000-00000000aa01",
+      "shape": "polygon",
+      "points": [
+       [
+        1,
+        1,
+        0
+       ]
+      ]
+     }
+    ],
+    "pins": [],
+    "out": {}
+   },
+   "choice": "H"
+  },
+  {
    "name": "plan-airlock",
    "claim": "the plan of record's airlock: four corners in order, its outside door's Pin with its Object",
    "elements": [
@@ -1830,6 +2027,7 @@
       "5930befd-b504-5e5f-8c3b-71b4e351cf94"
      ],
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon"
     },
     {
@@ -1838,7 +2036,7 @@
      "name": "airlock, corner 0",
      "x": 2757,
      "y": 1219,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "10b00b33-1e52-5bf9-a021-52906154201e"
@@ -1849,7 +2047,7 @@
      "name": "airlock, corner 1",
      "x": 2900,
      "y": 1229,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "10b00b33-1e52-5bf9-a021-52906154201e"
@@ -1860,7 +2058,7 @@
      "name": "airlock, corner 2",
      "x": 2900,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "10b00b33-1e52-5bf9-a021-52906154201e"
@@ -1871,7 +2069,7 @@
      "name": "airlock, corner 3",
      "x": 2757,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "10b00b33-1e52-5bf9-a021-52906154201e"
@@ -1903,6 +2101,7 @@
       "width": 2900,
       "height": 1429,
       "depth": 300,
+      "z_max": 0,
       "scale": 0.01,
       "location": "8af3adf0-3421-59ef-9731-e4056b9f7135",
       "parent_map": null
@@ -1917,22 +2116,22 @@
        [
         2757,
         1219,
-        300
+        0
        ],
        [
         2900,
         1229,
-        300
+        0
        ],
        [
         2900,
         1417,
-        300
+        0
        ],
        [
         2757,
         1417,
-        300
+        0
        ]
       ]
      }
@@ -1953,7 +2152,7 @@
   },
   {
    "name": "plan-forge",
-   "claim": "the plan of record's forge: nine corners with two repeated, at z 400 above the Map's depth 300",
+   "claim": "the plan of record's forge: nine corners, three of them one point, kept as written",
    "elements": [
     {
      "type": "map",
@@ -1972,6 +2171,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 4.0,
      "atlas_shape": "polygon",
      "x_room": "9f3f1ffa-3db9-5a87-ab72-68a2c76c79fe",
      "x_key": "forge"
@@ -1982,7 +2182,7 @@
      "name": "forge, corner 0",
      "x": 2383,
      "y": 342,
-     "z": 400,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -1993,7 +2193,7 @@
      "name": "forge, corner 1",
      "x": 2383,
      "y": 164,
-     "z": 400,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -2004,7 +2204,7 @@
      "name": "forge, corner 2",
      "x": 2466,
      "y": 69,
-     "z": 400,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -2015,7 +2215,7 @@
      "name": "forge, corner 3",
      "x": 2577,
      "y": 69,
-     "z": 400,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -2026,7 +2226,7 @@
      "name": "forge, corner 4",
      "x": 2577,
      "y": 85,
-     "z": 400,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -2037,7 +2237,7 @@
      "name": "forge, corner 5",
      "x": 2568,
      "y": 345,
-     "z": 400,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -2048,7 +2248,7 @@
      "name": "forge, corner 6",
      "x": 2568,
      "y": 345,
-     "z": 400,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -2059,7 +2259,7 @@
      "name": "forge, corner 7",
      "x": 2568,
      "y": 345,
-     "z": 400,
+     "z": 0,
      "order": 7,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -2070,7 +2270,7 @@
      "name": "forge, corner 8",
      "x": 2385,
      "y": 342,
-     "z": 400,
+     "z": 0,
      "order": 8,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -2083,6 +2283,7 @@
       "width": 2900,
       "height": 1429,
       "depth": 300,
+      "z_max": 0,
       "scale": 0.01,
       "location": "8af3adf0-3421-59ef-9731-e4056b9f7135",
       "parent_map": null
@@ -2097,59 +2298,58 @@
        [
         2383,
         342,
-        400
+        0
        ],
        [
         2383,
         164,
-        400
+        0
        ],
        [
         2466,
         69,
-        400
+        0
        ],
        [
         2577,
         69,
-        400
+        0
        ],
        [
         2577,
         85,
-        400
+        0
        ],
        [
         2568,
         345,
-        400
+        0
        ],
        [
         2568,
         345,
-        400
+        0
        ],
        [
         2568,
         345,
-        400
+        0
        ],
        [
         2385,
         342,
-        400
+        0
        ]
       ]
      }
     ],
     "pins": [],
     "out": {}
-   },
-   "choice": "G"
+   }
   },
   {
    "name": "plan-of-record-whole",
-   "claim": "the whole ship, 304 elements as the owner is served them",
+   "claim": "the whole ship, 304 elements as the owner is served them (the plan of record at its git 21ebeda: z an elevation, 0 on every Marker, a room's height in x_height_m)",
    "elements": [
     {
      "type": "location",
@@ -2257,7 +2457,7 @@
      "name": "airlock, corner 0",
      "x": 2757,
      "y": 1219,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "10b00b33-1e52-5bf9-a021-52906154201e"
@@ -2268,7 +2468,7 @@
      "name": "airlock, corner 1",
      "x": 2900,
      "y": 1229,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "10b00b33-1e52-5bf9-a021-52906154201e"
@@ -2279,7 +2479,7 @@
      "name": "airlock, corner 2",
      "x": 2900,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "10b00b33-1e52-5bf9-a021-52906154201e"
@@ -2290,7 +2490,7 @@
      "name": "airlock, corner 3",
      "x": 2757,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "10b00b33-1e52-5bf9-a021-52906154201e"
@@ -2301,7 +2501,7 @@
      "name": "atelier / workdesk, corner 0",
      "x": 786,
      "y": 805,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d86a87-da53-5adb-9790-0a40c079ba1c"
@@ -2312,7 +2512,7 @@
      "name": "atelier / workdesk, corner 1",
      "x": 1194,
      "y": 805,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d86a87-da53-5adb-9790-0a40c079ba1c"
@@ -2323,7 +2523,7 @@
      "name": "atelier / workdesk, corner 2",
      "x": 1194,
      "y": 965,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d86a87-da53-5adb-9790-0a40c079ba1c"
@@ -2334,7 +2534,7 @@
      "name": "atelier / workdesk, corner 3",
      "x": 1180,
      "y": 965,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d86a87-da53-5adb-9790-0a40c079ba1c"
@@ -2345,7 +2545,7 @@
      "name": "atelier / workdesk, corner 4",
      "x": 820,
      "y": 970,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d86a87-da53-5adb-9790-0a40c079ba1c"
@@ -2356,7 +2556,7 @@
      "name": "atelier / workdesk, corner 5",
      "x": 784,
      "y": 939,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d86a87-da53-5adb-9790-0a40c079ba1c"
@@ -2367,7 +2567,7 @@
      "name": "atelier / workdesk, corner 6",
      "x": 786,
      "y": 822,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d86a87-da53-5adb-9790-0a40c079ba1c"
@@ -2378,7 +2578,7 @@
      "name": "bench, corner 0",
      "x": 2717,
      "y": 69,
-     "z": 400,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d535bd-eb64-5d8e-b79d-e13328bbe2dd"
@@ -2389,7 +2589,7 @@
      "name": "bench, corner 1",
      "x": 2900,
      "y": 69,
-     "z": 400,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d535bd-eb64-5d8e-b79d-e13328bbe2dd"
@@ -2400,7 +2600,7 @@
      "name": "bench, corner 2",
      "x": 2900,
      "y": 272,
-     "z": 400,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d535bd-eb64-5d8e-b79d-e13328bbe2dd"
@@ -2411,7 +2611,7 @@
      "name": "bench, corner 3",
      "x": 2898,
      "y": 272,
-     "z": 400,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d535bd-eb64-5d8e-b79d-e13328bbe2dd"
@@ -2422,7 +2622,7 @@
      "name": "bench, corner 4",
      "x": 2712,
      "y": 267,
-     "z": 400,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d535bd-eb64-5d8e-b79d-e13328bbe2dd"
@@ -2433,7 +2633,7 @@
      "name": "bench, corner 5",
      "x": 2709,
      "y": 261,
-     "z": 400,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d535bd-eb64-5d8e-b79d-e13328bbe2dd"
@@ -2444,7 +2644,7 @@
      "name": "bench, corner 6",
      "x": 2717,
      "y": 90,
-     "z": 400,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a0d535bd-eb64-5d8e-b79d-e13328bbe2dd"
@@ -2455,7 +2655,7 @@
      "name": "bench / figure, corner 0",
      "x": 1194,
      "y": 1087,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d6922bc3-ab4b-5b14-b9ce-167f1ede47be"
@@ -2466,7 +2666,7 @@
      "name": "bench / figure, corner 1",
      "x": 1194,
      "y": 1182,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d6922bc3-ab4b-5b14-b9ce-167f1ede47be"
@@ -2477,7 +2677,7 @@
      "name": "bench / figure, corner 2",
      "x": 1194,
      "y": 1429,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d6922bc3-ab4b-5b14-b9ce-167f1ede47be"
@@ -2488,7 +2688,7 @@
      "name": "bench / figure, corner 3",
      "x": 955,
      "y": 1429,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d6922bc3-ab4b-5b14-b9ce-167f1ede47be"
@@ -2499,7 +2699,7 @@
      "name": "bench / figure, corner 4",
      "x": 955,
      "y": 1419,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d6922bc3-ab4b-5b14-b9ce-167f1ede47be"
@@ -2510,7 +2710,7 @@
      "name": "bench / figure, corner 5",
      "x": 955,
      "y": 1092,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d6922bc3-ab4b-5b14-b9ce-167f1ede47be"
@@ -2521,7 +2721,7 @@
      "name": "bench / figure, corner 6",
      "x": 955,
      "y": 1087,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d6922bc3-ab4b-5b14-b9ce-167f1ede47be"
@@ -2532,7 +2732,7 @@
      "name": "bench / figure, corner 7",
      "x": 1084,
      "y": 1087,
-     "z": 300,
+     "z": 0,
      "order": 7,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d6922bc3-ab4b-5b14-b9ce-167f1ede47be"
@@ -2543,7 +2743,7 @@
      "name": "bench / figure, corner 8",
      "x": 1188,
      "y": 1087,
-     "z": 300,
+     "z": 0,
      "order": 8,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d6922bc3-ab4b-5b14-b9ce-167f1ede47be"
@@ -2554,7 +2754,7 @@
      "name": "board, corner 0",
      "x": 2900,
      "y": 350,
-     "z": 400,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "42beeab8-0721-532a-a631-67133fdee0df"
@@ -2565,7 +2765,7 @@
      "name": "board, corner 1",
      "x": 2900,
      "y": 603,
-     "z": 400,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "42beeab8-0721-532a-a631-67133fdee0df"
@@ -2576,7 +2776,7 @@
      "name": "board, corner 2",
      "x": 2710,
      "y": 603,
-     "z": 400,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "42beeab8-0721-532a-a631-67133fdee0df"
@@ -2587,7 +2787,7 @@
      "name": "board, corner 3",
      "x": 2710,
      "y": 596,
-     "z": 400,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "42beeab8-0721-532a-a631-67133fdee0df"
@@ -2598,7 +2798,7 @@
      "name": "board, corner 4",
      "x": 2717,
      "y": 359,
-     "z": 400,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "42beeab8-0721-532a-a631-67133fdee0df"
@@ -2609,7 +2809,7 @@
      "name": "board, corner 5",
      "x": 2729,
      "y": 352,
-     "z": 400,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "42beeab8-0721-532a-a631-67133fdee0df"
@@ -2620,7 +2820,7 @@
      "name": "board, corner 6",
      "x": 2899,
      "y": 350,
-     "z": 400,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "42beeab8-0721-532a-a631-67133fdee0df"
@@ -2631,7 +2831,7 @@
      "name": "cabin, corner 0",
      "x": 1194,
      "y": 1182,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "1ddc6f66-1d9c-5d30-ab16-bd529a6260b1",
@@ -2643,7 +2843,7 @@
      "name": "cabin, corner 1",
      "x": 1726,
      "y": 1182,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "1ddc6f66-1d9c-5d30-ab16-bd529a6260b1",
@@ -2655,7 +2855,7 @@
      "name": "cabin, corner 2",
      "x": 1726,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "1ddc6f66-1d9c-5d30-ab16-bd529a6260b1",
@@ -2667,7 +2867,7 @@
      "name": "cabin, corner 3",
      "x": 1562,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "1ddc6f66-1d9c-5d30-ab16-bd529a6260b1",
@@ -2679,7 +2879,7 @@
      "name": "cabin, corner 4",
      "x": 1449,
      "y": 1429,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "1ddc6f66-1d9c-5d30-ab16-bd529a6260b1",
@@ -2691,7 +2891,7 @@
      "name": "cabin, corner 5",
      "x": 1194,
      "y": 1429,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "1ddc6f66-1d9c-5d30-ab16-bd529a6260b1",
@@ -2703,7 +2903,7 @@
      "name": "cells, corner 0",
      "x": 2432,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8a07c495-f78e-5192-88da-7ba076de3d13"
@@ -2714,7 +2914,7 @@
      "name": "cells, corner 1",
      "x": 1947,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8a07c495-f78e-5192-88da-7ba076de3d13"
@@ -2725,7 +2925,7 @@
      "name": "cells, corner 2",
      "x": 1947,
      "y": 1197,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8a07c495-f78e-5192-88da-7ba076de3d13"
@@ -2736,7 +2936,7 @@
      "name": "cells, corner 3",
      "x": 1948,
      "y": 1197,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8a07c495-f78e-5192-88da-7ba076de3d13"
@@ -2747,7 +2947,7 @@
      "name": "cells, corner 4",
      "x": 2416,
      "y": 1207,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8a07c495-f78e-5192-88da-7ba076de3d13"
@@ -2758,7 +2958,7 @@
      "name": "cells, corner 5",
      "x": 2436,
      "y": 1207,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8a07c495-f78e-5192-88da-7ba076de3d13"
@@ -2769,7 +2969,7 @@
      "name": "cells, corner 6",
      "x": 2434,
      "y": 1314,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8a07c495-f78e-5192-88da-7ba076de3d13"
@@ -2780,7 +2980,7 @@
      "name": "cockpit, corner 0",
      "x": 0,
      "y": 512,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "23756722-e6f8-53cd-b23b-658149a6a7f8"
@@ -2791,7 +2991,7 @@
      "name": "cockpit, corner 1",
      "x": 410,
      "y": 426,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "23756722-e6f8-53cd-b23b-658149a6a7f8"
@@ -2802,7 +3002,7 @@
      "name": "cockpit, corner 2",
      "x": 410,
      "y": 560,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "23756722-e6f8-53cd-b23b-658149a6a7f8"
@@ -2813,7 +3013,7 @@
      "name": "cockpit, corner 3",
      "x": 410,
      "y": 805,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "23756722-e6f8-53cd-b23b-658149a6a7f8"
@@ -2824,7 +3024,7 @@
      "name": "cockpit, corner 4",
      "x": 410,
      "y": 944,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "23756722-e6f8-53cd-b23b-658149a6a7f8"
@@ -2835,7 +3035,7 @@
      "name": "cockpit, corner 5",
      "x": 0,
      "y": 844,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "23756722-e6f8-53cd-b23b-658149a6a7f8"
@@ -2846,7 +3046,7 @@
      "name": "commons, corner 0",
      "x": 1000,
      "y": 5,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2857,7 +3057,7 @@
      "name": "commons, corner 1",
      "x": 1001,
      "y": 2,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2868,7 +3068,7 @@
      "name": "commons, corner 10",
      "x": 2900,
      "y": 608,
-     "z": 300,
+     "z": 0,
      "order": 10,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2879,7 +3079,7 @@
      "name": "commons, corner 11",
      "x": 2900,
      "y": 831,
-     "z": 300,
+     "z": 0,
      "order": 11,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2890,7 +3090,7 @@
      "name": "commons, corner 12",
      "x": 2899,
      "y": 835,
-     "z": 300,
+     "z": 0,
      "order": 12,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2901,7 +3101,7 @@
      "name": "commons, corner 13",
      "x": 2895,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 13,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2912,7 +3112,7 @@
      "name": "commons, corner 14",
      "x": 1726,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 14,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2923,7 +3123,7 @@
      "name": "commons, corner 15",
      "x": 1726,
      "y": 1177,
-     "z": 300,
+     "z": 0,
      "order": 15,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2934,7 +3134,7 @@
      "name": "commons, corner 16",
      "x": 1724,
      "y": 1181,
-     "z": 300,
+     "z": 0,
      "order": 16,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2945,7 +3145,7 @@
      "name": "commons, corner 17",
      "x": 1199,
      "y": 1182,
-     "z": 300,
+     "z": 0,
      "order": 17,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2956,7 +3156,7 @@
      "name": "commons, corner 18",
      "x": 1195,
      "y": 1181,
-     "z": 300,
+     "z": 0,
      "order": 18,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2967,7 +3167,7 @@
      "name": "commons, corner 19",
      "x": 1194,
      "y": 1177,
-     "z": 300,
+     "z": 0,
      "order": 19,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2978,7 +3178,7 @@
      "name": "commons, corner 2",
      "x": 1005,
      "y": 0,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -2989,7 +3189,7 @@
      "name": "commons, corner 20",
      "x": 1194,
      "y": 805,
-     "z": 300,
+     "z": 0,
      "order": 20,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3000,7 +3200,7 @@
      "name": "commons, corner 21",
      "x": 415,
      "y": 805,
-     "z": 300,
+     "z": 0,
      "order": 21,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3011,7 +3211,7 @@
      "name": "commons, corner 22",
      "x": 410,
      "y": 802,
-     "z": 300,
+     "z": 0,
      "order": 22,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3022,7 +3222,7 @@
      "name": "commons, corner 23",
      "x": 410,
      "y": 565,
-     "z": 300,
+     "z": 0,
      "order": 23,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3033,7 +3233,7 @@
      "name": "commons, corner 24",
      "x": 413,
      "y": 560,
-     "z": 300,
+     "z": 0,
      "order": 24,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3044,7 +3244,7 @@
      "name": "commons, corner 25",
      "x": 1000,
      "y": 560,
-     "z": 300,
+     "z": 0,
      "order": 25,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3055,7 +3255,7 @@
      "name": "commons, corner 3",
      "x": 1447,
      "y": 0,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3066,7 +3266,7 @@
      "name": "commons, corner 4",
      "x": 1451,
      "y": 3,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3077,7 +3277,7 @@
      "name": "commons, corner 5",
      "x": 1518,
      "y": 164,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3088,7 +3288,7 @@
      "name": "commons, corner 6",
      "x": 2380,
      "y": 165,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3099,7 +3299,7 @@
      "name": "commons, corner 7",
      "x": 2383,
      "y": 169,
-     "z": 300,
+     "z": 0,
      "order": 7,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3110,7 +3310,7 @@
      "name": "commons, corner 8",
      "x": 2383,
      "y": 603,
-     "z": 300,
+     "z": 0,
      "order": 8,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3121,7 +3321,7 @@
      "name": "commons, corner 9",
      "x": 2897,
      "y": 603,
-     "z": 300,
+     "z": 0,
      "order": 9,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
@@ -3132,7 +3332,7 @@
      "name": "core, corner 0",
      "x": 2556,
      "y": 603,
-     "z": 400,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d5d72431-9bf9-51b6-966e-d0d33d0cdf03"
@@ -3143,7 +3343,7 @@
      "name": "core, corner 1",
      "x": 2383,
      "y": 603,
-     "z": 400,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d5d72431-9bf9-51b6-966e-d0d33d0cdf03"
@@ -3154,7 +3354,7 @@
      "name": "core, corner 2",
      "x": 2383,
      "y": 429,
-     "z": 400,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d5d72431-9bf9-51b6-966e-d0d33d0cdf03"
@@ -3165,7 +3365,7 @@
      "name": "core, corner 3",
      "x": 2383,
      "y": 429,
-     "z": 400,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d5d72431-9bf9-51b6-966e-d0d33d0cdf03"
@@ -3176,7 +3376,7 @@
      "name": "core, corner 4",
      "x": 2557,
      "y": 427,
-     "z": 400,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d5d72431-9bf9-51b6-966e-d0d33d0cdf03"
@@ -3187,7 +3387,7 @@
      "name": "core, corner 5",
      "x": 2556,
      "y": 593,
-     "z": 400,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "d5d72431-9bf9-51b6-966e-d0d33d0cdf03"
@@ -3198,7 +3398,7 @@
      "name": "crucible, corner 0",
      "x": 1726,
      "y": 1182,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "0f852939-7f06-56a5-824d-93c98936ba52"
@@ -3209,7 +3409,7 @@
      "name": "crucible, corner 1",
      "x": 1726,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "0f852939-7f06-56a5-824d-93c98936ba52"
@@ -3220,7 +3420,7 @@
      "name": "crucible, corner 2",
      "x": 1947,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "0f852939-7f06-56a5-824d-93c98936ba52"
@@ -3231,7 +3431,7 @@
      "name": "crucible, corner 3",
      "x": 1947,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "0f852939-7f06-56a5-824d-93c98936ba52"
@@ -3242,7 +3442,7 @@
      "name": "crucible, corner 4",
      "x": 1726,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "0f852939-7f06-56a5-824d-93c98936ba52"
@@ -3253,7 +3453,7 @@
      "name": "deploy, corner 0",
      "x": 2900,
      "y": 1057,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "58c1fa15-40a6-548e-94b8-0459e91b1479"
@@ -3264,7 +3464,7 @@
      "name": "deploy, corner 1",
      "x": 2900,
      "y": 1229,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "58c1fa15-40a6-548e-94b8-0459e91b1479"
@@ -3275,7 +3475,7 @@
      "name": "deploy, corner 2",
      "x": 2758,
      "y": 1219,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "58c1fa15-40a6-548e-94b8-0459e91b1479"
@@ -3286,7 +3486,7 @@
      "name": "deploy, corner 3",
      "x": 2759,
      "y": 1210,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "58c1fa15-40a6-548e-94b8-0459e91b1479"
@@ -3297,7 +3497,7 @@
      "name": "deploy, corner 4",
      "x": 2760,
      "y": 1149,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "58c1fa15-40a6-548e-94b8-0459e91b1479"
@@ -3308,7 +3508,7 @@
      "name": "deploy, corner 5",
      "x": 2762,
      "y": 1056,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "58c1fa15-40a6-548e-94b8-0459e91b1479"
@@ -3319,7 +3519,7 @@
      "name": "deploy, corner 6",
      "x": 2769,
      "y": 1057,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "58c1fa15-40a6-548e-94b8-0459e91b1479"
@@ -3330,7 +3530,7 @@
      "name": "deploy, corner 7",
      "x": 2874,
      "y": 1057,
-     "z": 300,
+     "z": 0,
      "order": 7,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "58c1fa15-40a6-548e-94b8-0459e91b1479"
@@ -3341,7 +3541,7 @@
      "name": "desk, corner 0",
      "x": 1000,
      "y": 259,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "94596f1e-06b9-57f2-ae0d-358057c87346"
@@ -3352,7 +3552,7 @@
      "name": "desk, corner 1",
      "x": 1000,
      "y": 560,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "94596f1e-06b9-57f2-ae0d-358057c87346"
@@ -3363,7 +3563,7 @@
      "name": "desk, corner 2",
      "x": 546,
      "y": 560,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "94596f1e-06b9-57f2-ae0d-358057c87346"
@@ -3374,7 +3574,7 @@
      "name": "desk, corner 3",
      "x": 546,
      "y": 551,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "94596f1e-06b9-57f2-ae0d-358057c87346"
@@ -3385,7 +3585,7 @@
      "name": "desk, corner 4",
      "x": 549,
      "y": 257,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "94596f1e-06b9-57f2-ae0d-358057c87346"
@@ -3396,7 +3596,7 @@
      "name": "desk, corner 5",
      "x": 551,
      "y": 251,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "94596f1e-06b9-57f2-ae0d-358057c87346"
@@ -3407,7 +3607,7 @@
      "name": "desk, corner 6",
      "x": 980,
      "y": 259,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "94596f1e-06b9-57f2-ae0d-358057c87346"
@@ -3418,7 +3618,7 @@
      "name": "fold, corner 0",
      "x": 410,
      "y": 426,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a423c3a2-904f-54bf-a132-575d55646b9e"
@@ -3429,7 +3629,7 @@
      "name": "fold, corner 1",
      "x": 732,
      "y": 0,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a423c3a2-904f-54bf-a132-575d55646b9e"
@@ -3440,7 +3640,7 @@
      "name": "fold, corner 2",
      "x": 1000,
      "y": 0,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a423c3a2-904f-54bf-a132-575d55646b9e"
@@ -3451,7 +3651,7 @@
      "name": "fold, corner 3",
      "x": 1000,
      "y": 560,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a423c3a2-904f-54bf-a132-575d55646b9e"
@@ -3462,7 +3662,7 @@
      "name": "fold, corner 4",
      "x": 410,
      "y": 560,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a423c3a2-904f-54bf-a132-575d55646b9e"
@@ -3473,7 +3673,7 @@
      "name": "forge, corner 0",
      "x": 2383,
      "y": 342,
-     "z": 400,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -3484,7 +3684,7 @@
      "name": "forge, corner 1",
      "x": 2383,
      "y": 164,
-     "z": 400,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -3495,7 +3695,7 @@
      "name": "forge, corner 2",
      "x": 2466,
      "y": 69,
-     "z": 400,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -3506,7 +3706,7 @@
      "name": "forge, corner 3",
      "x": 2577,
      "y": 69,
-     "z": 400,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -3517,7 +3717,7 @@
      "name": "forge, corner 4",
      "x": 2577,
      "y": 85,
-     "z": 400,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -3528,7 +3728,7 @@
      "name": "forge, corner 5",
      "x": 2568,
      "y": 345,
-     "z": 400,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -3539,7 +3739,7 @@
      "name": "forge, corner 6",
      "x": 2568,
      "y": 345,
-     "z": 400,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -3550,7 +3750,7 @@
      "name": "forge, corner 7",
      "x": 2568,
      "y": 345,
-     "z": 400,
+     "z": 0,
      "order": 7,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -3561,7 +3761,7 @@
      "name": "forge, corner 8",
      "x": 2385,
      "y": 342,
-     "z": 400,
+     "z": 0,
      "order": 8,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "af08ee95-2580-5c11-a831-d84cdcd9566b"
@@ -3572,7 +3772,7 @@
      "name": "gestation pool, corner 0",
      "x": 1726,
      "y": 1019,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8257641d-d2eb-5372-bf95-8538ee80d10d"
@@ -3583,7 +3783,7 @@
      "name": "gestation pool, corner 1",
      "x": 1726,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8257641d-d2eb-5372-bf95-8538ee80d10d"
@@ -3594,7 +3794,7 @@
      "name": "gestation pool, corner 2",
      "x": 1947,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8257641d-d2eb-5372-bf95-8538ee80d10d"
@@ -3605,7 +3805,7 @@
      "name": "gestation pool, corner 3",
      "x": 1947,
      "y": 1018,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8257641d-d2eb-5372-bf95-8538ee80d10d"
@@ -3616,7 +3816,7 @@
      "name": "gestation pool, corner 4",
      "x": 1944,
      "y": 1018,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "8257641d-d2eb-5372-bf95-8538ee80d10d"
@@ -3627,7 +3827,7 @@
      "name": "glass, corner 0",
      "x": 545,
      "y": 247,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a8fb193a-6178-54ab-bc6e-8fce7b402da7"
@@ -3638,7 +3838,7 @@
      "name": "glass, corner 1",
      "x": 732,
      "y": 0,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a8fb193a-6178-54ab-bc6e-8fce7b402da7"
@@ -3649,7 +3849,7 @@
      "name": "glass, corner 2",
      "x": 1000,
      "y": 0,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a8fb193a-6178-54ab-bc6e-8fce7b402da7"
@@ -3660,7 +3860,7 @@
      "name": "glass, corner 3",
      "x": 1000,
      "y": 259,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a8fb193a-6178-54ab-bc6e-8fce7b402da7"
@@ -3671,7 +3871,7 @@
      "name": "glass, corner 4",
      "x": 980,
      "y": 259,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a8fb193a-6178-54ab-bc6e-8fce7b402da7"
@@ -3682,7 +3882,7 @@
      "name": "glass, corner 5",
      "x": 551,
      "y": 251,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a8fb193a-6178-54ab-bc6e-8fce7b402da7"
@@ -3693,7 +3893,7 @@
      "name": "hearth, corner 0",
      "x": 546,
      "y": 560,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "b7b5860e-0df2-59c8-9ee0-64bdf9dbf39f"
@@ -3704,7 +3904,7 @@
      "name": "hearth, corner 1",
      "x": 410,
      "y": 560,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "b7b5860e-0df2-59c8-9ee0-64bdf9dbf39f"
@@ -3715,7 +3915,7 @@
      "name": "hearth, corner 2",
      "x": 410,
      "y": 426,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "b7b5860e-0df2-59c8-9ee0-64bdf9dbf39f"
@@ -3726,7 +3926,7 @@
      "name": "hearth, corner 3",
      "x": 545,
      "y": 247,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "b7b5860e-0df2-59c8-9ee0-64bdf9dbf39f"
@@ -3737,7 +3937,7 @@
      "name": "hearth, corner 4",
      "x": 551,
      "y": 251,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "b7b5860e-0df2-59c8-9ee0-64bdf9dbf39f"
@@ -3748,7 +3948,7 @@
      "name": "hearth, corner 5",
      "x": 549,
      "y": 257,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "b7b5860e-0df2-59c8-9ee0-64bdf9dbf39f"
@@ -3759,7 +3959,7 @@
      "name": "hearth, corner 6",
      "x": 546,
      "y": 551,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "b7b5860e-0df2-59c8-9ee0-64bdf9dbf39f"
@@ -3770,7 +3970,7 @@
      "name": "hold, corner 0",
      "x": 410,
      "y": 805,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a81e34d4-6c77-58fe-82ea-b886bb6b01d5"
@@ -3781,7 +3981,7 @@
      "name": "hold, corner 1",
      "x": 1194,
      "y": 805,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a81e34d4-6c77-58fe-82ea-b886bb6b01d5"
@@ -3792,7 +3992,7 @@
      "name": "hold, corner 2",
      "x": 1194,
      "y": 1182,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a81e34d4-6c77-58fe-82ea-b886bb6b01d5"
@@ -3803,7 +4003,7 @@
      "name": "hold, corner 3",
      "x": 1194,
      "y": 1429,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a81e34d4-6c77-58fe-82ea-b886bb6b01d5"
@@ -3814,7 +4014,7 @@
      "name": "hold, corner 4",
      "x": 778,
      "y": 1429,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a81e34d4-6c77-58fe-82ea-b886bb6b01d5"
@@ -3825,7 +4025,7 @@
      "name": "hold, corner 5",
      "x": 410,
      "y": 944,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a81e34d4-6c77-58fe-82ea-b886bb6b01d5"
@@ -3836,7 +4036,7 @@
      "name": "hull, corner 0",
      "x": 0,
      "y": 512,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3847,7 +4047,7 @@
      "name": "hull, corner 1",
      "x": 410,
      "y": 426,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3858,7 +4058,7 @@
      "name": "hull, corner 10",
      "x": 2900,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 10,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3869,7 +4069,7 @@
      "name": "hull, corner 11",
      "x": 2900,
      "y": 1229,
-     "z": 300,
+     "z": 0,
      "order": 11,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3880,7 +4080,7 @@
      "name": "hull, corner 12",
      "x": 2900,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 12,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3891,7 +4091,7 @@
      "name": "hull, corner 13",
      "x": 2607,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 13,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3902,7 +4102,7 @@
      "name": "hull, corner 14",
      "x": 2518,
      "y": 1427,
-     "z": 300,
+     "z": 0,
      "order": 14,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3913,7 +4113,7 @@
      "name": "hull, corner 15",
      "x": 2432,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 15,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3924,7 +4124,7 @@
      "name": "hull, corner 16",
      "x": 1947,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 16,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3935,7 +4135,7 @@
      "name": "hull, corner 17",
      "x": 1726,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 17,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3946,7 +4146,7 @@
      "name": "hull, corner 18",
      "x": 1562,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 18,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3957,7 +4157,7 @@
      "name": "hull, corner 19",
      "x": 1449,
      "y": 1429,
-     "z": 300,
+     "z": 0,
      "order": 19,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3968,7 +4168,7 @@
      "name": "hull, corner 2",
      "x": 732,
      "y": 0,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3979,7 +4179,7 @@
      "name": "hull, corner 20",
      "x": 1194,
      "y": 1429,
-     "z": 300,
+     "z": 0,
      "order": 20,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -3990,7 +4190,7 @@
      "name": "hull, corner 21",
      "x": 778,
      "y": 1429,
-     "z": 300,
+     "z": 0,
      "order": 21,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -4001,7 +4201,7 @@
      "name": "hull, corner 22",
      "x": 410,
      "y": 944,
-     "z": 300,
+     "z": 0,
      "order": 22,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -4012,7 +4212,7 @@
      "name": "hull, corner 23",
      "x": 0,
      "y": 844,
-     "z": 300,
+     "z": 0,
      "order": 23,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -4023,7 +4223,7 @@
      "name": "hull, corner 3",
      "x": 1000,
      "y": 0,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -4034,7 +4234,7 @@
      "name": "hull, corner 4",
      "x": 1450,
      "y": 0,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -4045,7 +4245,7 @@
      "name": "hull, corner 5",
      "x": 1518,
      "y": 164,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -4056,7 +4256,7 @@
      "name": "hull, corner 6",
      "x": 2383,
      "y": 164,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -4067,7 +4267,7 @@
      "name": "hull, corner 7",
      "x": 2466,
      "y": 69,
-     "z": 300,
+     "z": 0,
      "order": 7,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -4078,7 +4278,7 @@
      "name": "hull, corner 8",
      "x": 2900,
      "y": 69,
-     "z": 300,
+     "z": 0,
      "order": 8,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -4089,7 +4289,7 @@
      "name": "hull, corner 9",
      "x": 2900,
      "y": 603,
-     "z": 300,
+     "z": 0,
      "order": 9,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "9f94f344-2603-5bdc-83cc-bbc58958d1ca"
@@ -4100,7 +4300,7 @@
      "name": "quarters, corner 0",
      "x": 1947,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "96fd42ee-5b7a-554f-b2f3-ceafce7e3357"
@@ -4111,7 +4311,7 @@
      "name": "quarters, corner 1",
      "x": 2607,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "96fd42ee-5b7a-554f-b2f3-ceafce7e3357"
@@ -4122,7 +4322,7 @@
      "name": "quarters, corner 2",
      "x": 2607,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "96fd42ee-5b7a-554f-b2f3-ceafce7e3357"
@@ -4133,7 +4333,7 @@
      "name": "quarters, corner 3",
      "x": 2518,
      "y": 1427,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "96fd42ee-5b7a-554f-b2f3-ceafce7e3357"
@@ -4144,7 +4344,7 @@
      "name": "quarters, corner 4",
      "x": 2432,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "96fd42ee-5b7a-554f-b2f3-ceafce7e3357"
@@ -4155,7 +4355,7 @@
      "name": "quarters, corner 5",
      "x": 1947,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "96fd42ee-5b7a-554f-b2f3-ceafce7e3357"
@@ -4166,7 +4366,7 @@
      "name": "racks, corner 0",
      "x": 2758,
      "y": 1219,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "54c6bc09-bc52-53b7-93db-1cb5793e14c1"
@@ -4177,7 +4377,7 @@
      "name": "racks, corner 1",
      "x": 2757,
      "y": 1219,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "54c6bc09-bc52-53b7-93db-1cb5793e14c1"
@@ -4188,7 +4388,7 @@
      "name": "racks, corner 2",
      "x": 2757,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "54c6bc09-bc52-53b7-93db-1cb5793e14c1"
@@ -4199,7 +4399,7 @@
      "name": "racks, corner 3",
      "x": 2607,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "54c6bc09-bc52-53b7-93db-1cb5793e14c1"
@@ -4210,7 +4410,7 @@
      "name": "racks, corner 4",
      "x": 2607,
      "y": 1146,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "54c6bc09-bc52-53b7-93db-1cb5793e14c1"
@@ -4221,7 +4421,7 @@
      "name": "racks, corner 5",
      "x": 2607,
      "y": 1146,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "54c6bc09-bc52-53b7-93db-1cb5793e14c1"
@@ -4232,7 +4432,7 @@
      "name": "racks, corner 6",
      "x": 2618,
      "y": 1146,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "54c6bc09-bc52-53b7-93db-1cb5793e14c1"
@@ -4243,7 +4443,7 @@
      "name": "racks, corner 7",
      "x": 2752,
      "y": 1149,
-     "z": 300,
+     "z": 0,
      "order": 7,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "54c6bc09-bc52-53b7-93db-1cb5793e14c1"
@@ -4254,7 +4454,7 @@
      "name": "racks, corner 8",
      "x": 2760,
      "y": 1149,
-     "z": 300,
+     "z": 0,
      "order": 8,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "54c6bc09-bc52-53b7-93db-1cb5793e14c1"
@@ -4265,7 +4465,7 @@
      "name": "racks, corner 9",
      "x": 2759,
      "y": 1210,
-     "z": 300,
+     "z": 0,
      "order": 9,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "54c6bc09-bc52-53b7-93db-1cb5793e14c1"
@@ -4276,7 +4476,7 @@
      "name": "residence, corner 0",
      "x": 2218,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a6810f6e-b31b-526e-aa4d-9e5392c08db1"
@@ -4287,7 +4487,7 @@
      "name": "residence, corner 1",
      "x": 2607,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a6810f6e-b31b-526e-aa4d-9e5392c08db1"
@@ -4298,7 +4498,7 @@
      "name": "residence, corner 2",
      "x": 2607,
      "y": 1041,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a6810f6e-b31b-526e-aa4d-9e5392c08db1"
@@ -4309,7 +4509,7 @@
      "name": "residence, corner 3",
      "x": 2597,
      "y": 1041,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a6810f6e-b31b-526e-aa4d-9e5392c08db1"
@@ -4320,7 +4520,7 @@
      "name": "residence, corner 4",
      "x": 2225,
      "y": 1040,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a6810f6e-b31b-526e-aa4d-9e5392c08db1"
@@ -4331,7 +4531,7 @@
      "name": "residence, corner 5",
      "x": 2223,
      "y": 1032,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a6810f6e-b31b-526e-aa4d-9e5392c08db1"
@@ -4342,7 +4542,7 @@
      "name": "residence, corner 6",
      "x": 2218,
      "y": 858,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "a6810f6e-b31b-526e-aa4d-9e5392c08db1"
@@ -4353,7 +4553,7 @@
      "name": "rig, corner 0",
      "x": 2607,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5930befd-b504-5e5f-8c3b-71b4e351cf94"
@@ -4364,7 +4564,7 @@
      "name": "rig, corner 1",
      "x": 2900,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5930befd-b504-5e5f-8c3b-71b4e351cf94"
@@ -4375,7 +4575,7 @@
      "name": "rig, corner 2",
      "x": 2900,
      "y": 1229,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5930befd-b504-5e5f-8c3b-71b4e351cf94"
@@ -4386,7 +4586,7 @@
      "name": "rig, corner 3",
      "x": 2757,
      "y": 1219,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5930befd-b504-5e5f-8c3b-71b4e351cf94"
@@ -4397,7 +4597,7 @@
      "name": "rig, corner 4",
      "x": 2757,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5930befd-b504-5e5f-8c3b-71b4e351cf94"
@@ -4408,7 +4608,7 @@
      "name": "rig, corner 5",
      "x": 2607,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5930befd-b504-5e5f-8c3b-71b4e351cf94"
@@ -4419,7 +4619,7 @@
      "name": "suit up, corner 0",
      "x": 2767,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5763af8f-f399-53d3-8808-702c188ee983"
@@ -4430,7 +4630,7 @@
      "name": "suit up, corner 1",
      "x": 2900,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5763af8f-f399-53d3-8808-702c188ee983"
@@ -4441,7 +4641,7 @@
      "name": "suit up, corner 2",
      "x": 2900,
      "y": 1057,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5763af8f-f399-53d3-8808-702c188ee983"
@@ -4452,7 +4652,7 @@
      "name": "suit up, corner 3",
      "x": 2874,
      "y": 1057,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5763af8f-f399-53d3-8808-702c188ee983"
@@ -4463,7 +4663,7 @@
      "name": "suit up, corner 4",
      "x": 2769,
      "y": 1057,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5763af8f-f399-53d3-8808-702c188ee983"
@@ -4474,7 +4674,7 @@
      "name": "suit up, corner 5",
      "x": 2762,
      "y": 1056,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5763af8f-f399-53d3-8808-702c188ee983"
@@ -4485,7 +4685,7 @@
      "name": "suit up, corner 6",
      "x": 2767,
      "y": 853,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "5763af8f-f399-53d3-8808-702c188ee983"
@@ -4496,7 +4696,7 @@
      "name": "threshold, corner 0",
      "x": 1947,
      "y": 960,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "36ee8159-1df4-54d7-bd2a-e34aa4fa213c"
@@ -4507,7 +4707,7 @@
      "name": "threshold, corner 1",
      "x": 1947,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "36ee8159-1df4-54d7-bd2a-e34aa4fa213c"
@@ -4518,7 +4718,7 @@
      "name": "threshold, corner 2",
      "x": 2088,
      "y": 836,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "36ee8159-1df4-54d7-bd2a-e34aa4fa213c"
@@ -4529,7 +4729,7 @@
      "name": "threshold, corner 3",
      "x": 2087,
      "y": 959,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "36ee8159-1df4-54d7-bd2a-e34aa4fa213c"
@@ -4540,7 +4740,7 @@
      "name": "threshold, corner 4",
      "x": 2073,
      "y": 960,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "36ee8159-1df4-54d7-bd2a-e34aa4fa213c"
@@ -4551,7 +4751,7 @@
      "name": "threshold, corner 5",
      "x": 1966,
      "y": 960,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "36ee8159-1df4-54d7-bd2a-e34aa4fa213c"
@@ -4562,7 +4762,7 @@
      "name": "training room, corner 0",
      "x": 2607,
      "y": 1146,
-     "z": 300,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "83cb87a4-d9ed-518e-9442-a8d66cd46f91",
@@ -4574,7 +4774,7 @@
      "name": "training room, corner 1",
      "x": 2607,
      "y": 1417,
-     "z": 300,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "83cb87a4-d9ed-518e-9442-a8d66cd46f91",
@@ -4586,7 +4786,7 @@
      "name": "training room, corner 2",
      "x": 2518,
      "y": 1427,
-     "z": 300,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "83cb87a4-d9ed-518e-9442-a8d66cd46f91",
@@ -4598,7 +4798,7 @@
      "name": "training room, corner 3",
      "x": 2432,
      "y": 1321,
-     "z": 300,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "83cb87a4-d9ed-518e-9442-a8d66cd46f91",
@@ -4610,7 +4810,7 @@
      "name": "training room, corner 4",
      "x": 2434,
      "y": 1314,
-     "z": 300,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "83cb87a4-d9ed-518e-9442-a8d66cd46f91",
@@ -4622,7 +4822,7 @@
      "name": "training room, corner 5",
      "x": 2436,
      "y": 1207,
-     "z": 300,
+     "z": 0,
      "order": 5,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "83cb87a4-d9ed-518e-9442-a8d66cd46f91",
@@ -4634,7 +4834,7 @@
      "name": "training room, corner 6",
      "x": 2437,
      "y": 1159,
-     "z": 300,
+     "z": 0,
      "order": 6,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "83cb87a4-d9ed-518e-9442-a8d66cd46f91",
@@ -4646,7 +4846,7 @@
      "name": "training room, corner 7",
      "x": 2437,
      "y": 1146,
-     "z": 300,
+     "z": 0,
      "order": 7,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "83cb87a4-d9ed-518e-9442-a8d66cd46f91",
@@ -4658,7 +4858,7 @@
      "name": "training room, corner 8",
      "x": 2601,
      "y": 1146,
-     "z": 300,
+     "z": 0,
      "order": 8,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "83cb87a4-d9ed-518e-9442-a8d66cd46f91",
@@ -4670,7 +4870,7 @@
      "name": "workshop, corner 0",
      "x": 2383,
      "y": 164,
-     "z": 400,
+     "z": 0,
      "order": 0,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "f1f5acee-f8b2-54a5-8624-2060daed040f"
@@ -4681,7 +4881,7 @@
      "name": "workshop, corner 1",
      "x": 2466,
      "y": 69,
-     "z": 400,
+     "z": 0,
      "order": 1,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "f1f5acee-f8b2-54a5-8624-2060daed040f"
@@ -4692,7 +4892,7 @@
      "name": "workshop, corner 2",
      "x": 2900,
      "y": 69,
-     "z": 400,
+     "z": 0,
      "order": 2,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "f1f5acee-f8b2-54a5-8624-2060daed040f"
@@ -4703,7 +4903,7 @@
      "name": "workshop, corner 3",
      "x": 2900,
      "y": 603,
-     "z": 400,
+     "z": 0,
      "order": 3,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "f1f5acee-f8b2-54a5-8624-2060daed040f"
@@ -4714,7 +4914,7 @@
      "name": "workshop, corner 4",
      "x": 2383,
      "y": 603,
-     "z": 400,
+     "z": 0,
      "order": 4,
      "map": "441d4711-95df-5ec8-8196-a7e9ca310b94",
      "zone": "f1f5acee-f8b2-54a5-8624-2060daed040f"
@@ -5141,6 +5341,7 @@
       "5930befd-b504-5e5f-8c3b-71b4e351cf94"
      ],
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon"
     },
     {
@@ -5150,6 +5351,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "5da6dd92-f177-582b-834d-2dd2d7ea2abf",
      "x_key": "atelier-workdesk"
@@ -5161,6 +5363,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 4.0,
      "atlas_shape": "polygon",
      "x_room": "9f3f1ffa-3db9-5a87-ab72-68a2c76c79fe",
      "x_key": "bench"
@@ -5172,6 +5375,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "5da6dd92-f177-582b-834d-2dd2d7ea2abf",
      "x_key": "bench-figure"
@@ -5183,6 +5387,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 4.0,
      "atlas_shape": "polygon",
      "x_room": "9f3f1ffa-3db9-5a87-ab72-68a2c76c79fe",
      "x_key": "board"
@@ -5195,6 +5400,7 @@
      "role": "room",
      "linked_zones": [],
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "hidden": true
     },
@@ -5205,6 +5411,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "bca61772-aa99-5910-b408-ac77c148379c",
      "x_key": "cells"
@@ -5219,6 +5426,7 @@
       "a81e34d4-6c77-58fe-82ea-b886bb6b01d5"
      ],
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon"
     },
     {
@@ -5236,6 +5444,7 @@
       "f1f5acee-f8b2-54a5-8624-2060daed040f"
      ],
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon"
     },
     {
@@ -5245,6 +5454,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 4.0,
      "atlas_shape": "polygon",
      "x_room": "9f3f1ffa-3db9-5a87-ab72-68a2c76c79fe",
      "x_key": "core"
@@ -5260,6 +5470,7 @@
       "96fd42ee-5b7a-554f-b2f3-ceafce7e3357"
      ],
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon"
     },
     {
@@ -5269,6 +5480,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "ca525ab5-083d-5d67-ad0c-7cf31097224f",
      "x_key": "deploy"
@@ -5280,6 +5492,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "4633187e-3501-5d5d-982c-6e74f1666431",
      "x_key": "desk"
@@ -5294,6 +5507,7 @@
       "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
      ],
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon"
     },
     {
@@ -5303,6 +5517,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 4.0,
      "atlas_shape": "polygon",
      "x_room": "9f3f1ffa-3db9-5a87-ab72-68a2c76c79fe",
      "x_key": "forge"
@@ -5314,6 +5529,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "58b6ab4c-ab36-5b29-ab07-b0735e583eb8",
      "x_key": "gestation-pool"
@@ -5325,6 +5541,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "4633187e-3501-5d5d-982c-6e74f1666431",
      "x_key": "glass"
@@ -5336,6 +5553,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "4633187e-3501-5d5d-982c-6e74f1666431",
      "x_key": "hearth"
@@ -5351,6 +5569,7 @@
       "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
      ],
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon"
     },
     {
@@ -5360,6 +5579,7 @@
      "supertype": "polygon",
      "role": "hull",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_ship": "8af3adf0-3421-59ef-9731-e4056b9f7135"
     },
@@ -5375,6 +5595,7 @@
       "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
      ],
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon"
     },
     {
@@ -5384,6 +5605,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "ca525ab5-083d-5d67-ad0c-7cf31097224f",
      "x_key": "racks"
@@ -5395,6 +5617,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "bca61772-aa99-5910-b408-ac77c148379c",
      "x_key": "residence"
@@ -5411,6 +5634,7 @@
       "96fd42ee-5b7a-554f-b2f3-ceafce7e3357"
      ],
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon"
     },
     {
@@ -5420,6 +5644,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "ca525ab5-083d-5d67-ad0c-7cf31097224f",
      "x_key": "suit-up"
@@ -5431,6 +5656,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "bca61772-aa99-5910-b408-ac77c148379c",
      "x_key": "threshold"
@@ -5442,6 +5668,7 @@
      "supertype": "polygon",
      "role": "area",
      "shape": "polygon",
+     "x_height_m": 3.0,
      "atlas_shape": "polygon",
      "x_room": "bca61772-aa99-5910-b408-ac77c148379c",
      "x_key": "training-room",
@@ -5457,6 +5684,7 @@
       "6a903f4a-7052-5115-89e4-8cbc20e10ba0"
      ],
      "shape": "polygon",
+     "x_height_m": 4.0,
      "atlas_shape": "polygon"
     }
    ],
@@ -5467,6 +5695,7 @@
       "width": 2900,
       "height": 1429,
       "depth": 300,
+      "z_max": 0,
       "scale": 0.01,
       "location": "8af3adf0-3421-59ef-9731-e4056b9f7135",
       "parent_map": null
@@ -5481,27 +5710,27 @@
        [
         1726,
         1182,
-        300
+        0
        ],
        [
         1726,
         836,
-        300
+        0
        ],
        [
         1947,
         836,
-        300
+        0
        ],
        [
         1947,
         1321,
-        300
+        0
        ],
        [
         1726,
         1321,
-        300
+        0
        ]
       ]
      },
@@ -5513,22 +5742,22 @@
        [
         2757,
         1219,
-        300
+        0
        ],
        [
         2900,
         1229,
-        300
+        0
        ],
        [
         2900,
         1417,
-        300
+        0
        ],
        [
         2757,
         1417,
-        300
+        0
        ]
       ]
      },
@@ -5540,32 +5769,32 @@
        [
         1194,
         1182,
-        300
+        0
        ],
        [
         1726,
         1182,
-        300
+        0
        ],
        [
         1726,
         1321,
-        300
+        0
        ],
        [
         1562,
         1321,
-        300
+        0
        ],
        [
         1449,
         1429,
-        300
+        0
        ],
        [
         1194,
         1429,
-        300
+        0
        ]
       ]
      },
@@ -5577,32 +5806,32 @@
        [
         0,
         512,
-        300
+        0
        ],
        [
         410,
         426,
-        300
+        0
        ],
        [
         410,
         560,
-        300
+        0
        ],
        [
         410,
         805,
-        300
+        0
        ],
        [
         410,
         944,
-        300
+        0
        ],
        [
         0,
         844,
-        300
+        0
        ]
       ]
      },
@@ -5614,32 +5843,32 @@
        [
         1947,
         960,
-        300
+        0
        ],
        [
         1947,
         836,
-        300
+        0
        ],
        [
         2088,
         836,
-        300
+        0
        ],
        [
         2087,
         959,
-        300
+        0
        ],
        [
         2073,
         960,
-        300
+        0
        ],
        [
         1966,
         960,
-        300
+        0
        ]
       ]
      },
@@ -5651,37 +5880,37 @@
        [
         2900,
         350,
-        400
+        0
        ],
        [
         2900,
         603,
-        400
+        0
        ],
        [
         2710,
         603,
-        400
+        0
        ],
        [
         2710,
         596,
-        400
+        0
        ],
        [
         2717,
         359,
-        400
+        0
        ],
        [
         2729,
         352,
-        400
+        0
        ],
        [
         2899,
         350,
-        400
+        0
        ]
       ]
      },
@@ -5693,52 +5922,52 @@
        [
         2758,
         1219,
-        300
+        0
        ],
        [
         2757,
         1219,
-        300
+        0
        ],
        [
         2757,
         1417,
-        300
+        0
        ],
        [
         2607,
         1417,
-        300
+        0
        ],
        [
         2607,
         1146,
-        300
+        0
        ],
        [
         2607,
         1146,
-        300
+        0
        ],
        [
         2618,
         1146,
-        300
+        0
        ],
        [
         2752,
         1149,
-        300
+        0
        ],
        [
         2760,
         1149,
-        300
+        0
        ],
        [
         2759,
         1210,
-        300
+        0
        ]
       ]
      },
@@ -5750,37 +5979,37 @@
        [
         2767,
         836,
-        300
+        0
        ],
        [
         2900,
         836,
-        300
+        0
        ],
        [
         2900,
         1057,
-        300
+        0
        ],
        [
         2874,
         1057,
-        300
+        0
        ],
        [
         2769,
         1057,
-        300
+        0
        ],
        [
         2762,
         1056,
-        300
+        0
        ],
        [
         2767,
         853,
-        300
+        0
        ]
       ]
      },
@@ -5792,42 +6021,42 @@
        [
         2900,
         1057,
-        300
+        0
        ],
        [
         2900,
         1229,
-        300
+        0
        ],
        [
         2758,
         1219,
-        300
+        0
        ],
        [
         2759,
         1210,
-        300
+        0
        ],
        [
         2760,
         1149,
-        300
+        0
        ],
        [
         2762,
         1056,
-        300
+        0
        ],
        [
         2769,
         1057,
-        300
+        0
        ],
        [
         2874,
         1057,
-        300
+        0
        ]
       ]
      },
@@ -5839,32 +6068,32 @@
        [
         2607,
         836,
-        300
+        0
        ],
        [
         2900,
         836,
-        300
+        0
        ],
        [
         2900,
         1229,
-        300
+        0
        ],
        [
         2757,
         1219,
-        300
+        0
        ],
        [
         2757,
         1417,
-        300
+        0
        ],
        [
         2607,
         1417,
-        300
+        0
        ]
       ]
      },
@@ -5876,132 +6105,132 @@
        [
         1000,
         5,
-        300
+        0
        ],
        [
         1001,
         2,
-        300
+        0
        ],
        [
         1005,
         0,
-        300
+        0
        ],
        [
         1447,
         0,
-        300
+        0
        ],
        [
         1451,
         3,
-        300
+        0
        ],
        [
         1518,
         164,
-        300
+        0
        ],
        [
         2380,
         165,
-        300
+        0
        ],
        [
         2383,
         169,
-        300
+        0
        ],
        [
         2383,
         603,
-        300
+        0
        ],
        [
         2897,
         603,
-        300
+        0
        ],
        [
         2900,
         608,
-        300
+        0
        ],
        [
         2900,
         831,
-        300
+        0
        ],
        [
         2899,
         835,
-        300
+        0
        ],
        [
         2895,
         836,
-        300
+        0
        ],
        [
         1726,
         836,
-        300
+        0
        ],
        [
         1726,
         1177,
-        300
+        0
        ],
        [
         1724,
         1181,
-        300
+        0
        ],
        [
         1199,
         1182,
-        300
+        0
        ],
        [
         1195,
         1181,
-        300
+        0
        ],
        [
         1194,
         1177,
-        300
+        0
        ],
        [
         1194,
         805,
-        300
+        0
        ],
        [
         415,
         805,
-        300
+        0
        ],
        [
         410,
         802,
-        300
+        0
        ],
        [
         410,
         565,
-        300
+        0
        ],
        [
         413,
         560,
-        300
+        0
        ],
        [
         1000,
         560,
-        300
+        0
        ]
       ]
      },
@@ -6013,27 +6242,27 @@
        [
         1726,
         1019,
-        300
+        0
        ],
        [
         1726,
         836,
-        300
+        0
        ],
        [
         1947,
         836,
-        300
+        0
        ],
        [
         1947,
         1018,
-        300
+        0
        ],
        [
         1944,
         1018,
-        300
+        0
        ]
       ]
      },
@@ -6045,47 +6274,47 @@
        [
         2607,
         1146,
-        300
+        0
        ],
        [
         2607,
         1417,
-        300
+        0
        ],
        [
         2518,
         1427,
-        300
+        0
        ],
        [
         2432,
         1321,
-        300
+        0
        ],
        [
         2434,
         1314,
-        300
+        0
        ],
        [
         2436,
         1207,
-        300
+        0
        ],
        [
         2437,
         1159,
-        300
+        0
        ],
        [
         2437,
         1146,
-        300
+        0
        ],
        [
         2601,
         1146,
-        300
+        0
        ]
       ]
      },
@@ -6097,37 +6326,37 @@
        [
         2432,
         1321,
-        300
+        0
        ],
        [
         1947,
         1321,
-        300
+        0
        ],
        [
         1947,
         1197,
-        300
+        0
        ],
        [
         1948,
         1197,
-        300
+        0
        ],
        [
         2416,
         1207,
-        300
+        0
        ],
        [
         2436,
         1207,
-        300
+        0
        ],
        [
         2434,
         1314,
-        300
+        0
        ]
       ]
      },
@@ -6139,37 +6368,37 @@
        [
         1000,
         259,
-        300
+        0
        ],
        [
         1000,
         560,
-        300
+        0
        ],
        [
         546,
         560,
-        300
+        0
        ],
        [
         546,
         551,
-        300
+        0
        ],
        [
         549,
         257,
-        300
+        0
        ],
        [
         551,
         251,
-        300
+        0
        ],
        [
         980,
         259,
-        300
+        0
        ]
       ]
      },
@@ -6181,32 +6410,32 @@
        [
         1947,
         836,
-        300
+        0
        ],
        [
         2607,
         836,
-        300
+        0
        ],
        [
         2607,
         1417,
-        300
+        0
        ],
        [
         2518,
         1427,
-        300
+        0
        ],
        [
         2432,
         1321,
-        300
+        0
        ],
        [
         1947,
         1321,
-        300
+        0
        ]
       ]
      },
@@ -6218,122 +6447,122 @@
        [
         0,
         512,
-        300
+        0
        ],
        [
         410,
         426,
-        300
+        0
        ],
        [
         732,
         0,
-        300
+        0
        ],
        [
         1000,
         0,
-        300
+        0
        ],
        [
         1450,
         0,
-        300
+        0
        ],
        [
         1518,
         164,
-        300
+        0
        ],
        [
         2383,
         164,
-        300
+        0
        ],
        [
         2466,
         69,
-        300
+        0
        ],
        [
         2900,
         69,
-        300
+        0
        ],
        [
         2900,
         603,
-        300
+        0
        ],
        [
         2900,
         836,
-        300
+        0
        ],
        [
         2900,
         1229,
-        300
+        0
        ],
        [
         2900,
         1417,
-        300
+        0
        ],
        [
         2607,
         1417,
-        300
+        0
        ],
        [
         2518,
         1427,
-        300
+        0
        ],
        [
         2432,
         1321,
-        300
+        0
        ],
        [
         1947,
         1321,
-        300
+        0
        ],
        [
         1726,
         1321,
-        300
+        0
        ],
        [
         1562,
         1321,
-        300
+        0
        ],
        [
         1449,
         1429,
-        300
+        0
        ],
        [
         1194,
         1429,
-        300
+        0
        ],
        [
         778,
         1429,
-        300
+        0
        ],
        [
         410,
         944,
-        300
+        0
        ],
        [
         0,
         844,
-        300
+        0
        ]
       ]
      },
@@ -6345,37 +6574,37 @@
        [
         2717,
         69,
-        400
+        0
        ],
        [
         2900,
         69,
-        400
+        0
        ],
        [
         2900,
         272,
-        400
+        0
        ],
        [
         2898,
         272,
-        400
+        0
        ],
        [
         2712,
         267,
-        400
+        0
        ],
        [
         2709,
         261,
-        400
+        0
        ],
        [
         2717,
         90,
-        400
+        0
        ]
       ]
      },
@@ -6387,37 +6616,37 @@
        [
         786,
         805,
-        300
+        0
        ],
        [
         1194,
         805,
-        300
+        0
        ],
        [
         1194,
         965,
-        300
+        0
        ],
        [
         1180,
         965,
-        300
+        0
        ],
        [
         820,
         970,
-        300
+        0
        ],
        [
         784,
         939,
-        300
+        0
        ],
        [
         786,
         822,
-        300
+        0
        ]
       ]
      },
@@ -6429,27 +6658,27 @@
        [
         410,
         426,
-        300
+        0
        ],
        [
         732,
         0,
-        300
+        0
        ],
        [
         1000,
         0,
-        300
+        0
        ],
        [
         1000,
         560,
-        300
+        0
        ],
        [
         410,
         560,
-        300
+        0
        ]
       ]
      },
@@ -6461,37 +6690,37 @@
        [
         2218,
         836,
-        300
+        0
        ],
        [
         2607,
         836,
-        300
+        0
        ],
        [
         2607,
         1041,
-        300
+        0
        ],
        [
         2597,
         1041,
-        300
+        0
        ],
        [
         2225,
         1040,
-        300
+        0
        ],
        [
         2223,
         1032,
-        300
+        0
        ],
        [
         2218,
         858,
-        300
+        0
        ]
       ]
      },
@@ -6503,32 +6732,32 @@
        [
         410,
         805,
-        300
+        0
        ],
        [
         1194,
         805,
-        300
+        0
        ],
        [
         1194,
         1182,
-        300
+        0
        ],
        [
         1194,
         1429,
-        300
+        0
        ],
        [
         778,
         1429,
-        300
+        0
        ],
        [
         410,
         944,
-        300
+        0
        ]
       ]
      },
@@ -6540,32 +6769,32 @@
        [
         545,
         247,
-        300
+        0
        ],
        [
         732,
         0,
-        300
+        0
        ],
        [
         1000,
         0,
-        300
+        0
        ],
        [
         1000,
         259,
-        300
+        0
        ],
        [
         980,
         259,
-        300
+        0
        ],
        [
         551,
         251,
-        300
+        0
        ]
       ]
      },
@@ -6577,47 +6806,47 @@
        [
         2383,
         342,
-        400
+        0
        ],
        [
         2383,
         164,
-        400
+        0
        ],
        [
         2466,
         69,
-        400
+        0
        ],
        [
         2577,
         69,
-        400
+        0
        ],
        [
         2577,
         85,
-        400
+        0
        ],
        [
         2568,
         345,
-        400
+        0
        ],
        [
         2568,
         345,
-        400
+        0
        ],
        [
         2568,
         345,
-        400
+        0
        ],
        [
         2385,
         342,
-        400
+        0
        ]
       ]
      },
@@ -6629,37 +6858,37 @@
        [
         546,
         560,
-        300
+        0
        ],
        [
         410,
         560,
-        300
+        0
        ],
        [
         410,
         426,
-        300
+        0
        ],
        [
         545,
         247,
-        300
+        0
        ],
        [
         551,
         251,
-        300
+        0
        ],
        [
         549,
         257,
-        300
+        0
        ],
        [
         546,
         551,
-        300
+        0
        ]
       ]
      },
@@ -6671,32 +6900,32 @@
        [
         2556,
         603,
-        400
+        0
        ],
        [
         2383,
         603,
-        400
+        0
        ],
        [
         2383,
         429,
-        400
+        0
        ],
        [
         2383,
         429,
-        400
+        0
        ],
        [
         2557,
         427,
-        400
+        0
        ],
        [
         2556,
         593,
-        400
+        0
        ]
       ]
      },
@@ -6708,47 +6937,47 @@
        [
         1194,
         1087,
-        300
+        0
        ],
        [
         1194,
         1182,
-        300
+        0
        ],
        [
         1194,
         1429,
-        300
+        0
        ],
        [
         955,
         1429,
-        300
+        0
        ],
        [
         955,
         1419,
-        300
+        0
        ],
        [
         955,
         1092,
-        300
+        0
        ],
        [
         955,
         1087,
-        300
+        0
        ],
        [
         1084,
         1087,
-        300
+        0
        ],
        [
         1188,
         1087,
-        300
+        0
        ]
       ]
      },
@@ -6760,27 +6989,27 @@
        [
         2383,
         164,
-        400
+        0
        ],
        [
         2466,
         69,
-        400
+        0
        ],
        [
         2900,
         69,
-        400
+        0
        ],
        [
         2900,
         603,
-        400
+        0
        ],
        [
         2383,
         603,
-        400
+        0
        ]
       ]
      }
