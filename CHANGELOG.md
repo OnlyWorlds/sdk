@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+
+- **A reading builds its reverse link index only when a lens hop asks for it.** `worldGraph` without a lens, and every other reading that walks no hop, no longer pays for it; no answer changes. On a 20,573-element world, `worldGraph` for the owner went from a median 434 ms to 324 ms, both builds interleaved in one process.
+
 ## [4.126.0] - 2026-11-01
 
 ### Added

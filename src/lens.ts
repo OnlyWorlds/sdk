@@ -350,8 +350,9 @@ export class Reading {
   readonly members: readonly OwMessageMember[] | null;
   readonly asOf: number | null;
   private readonly served = new Map<string, Body>();
-  private readonly inView = new Map<string, string[]>();
-  private readonly inFull = new Map<string, string[]>();
+  /** Who links to each element, in the reader's view and in the owner's world: built on the first hop that asks,
+   *  since a reading with no lens (a graph, a menu's marks) never reads it. Everything it reads is set by the constructor. */
+  private incoming: { view: Map<string, string[]>; full: Map<string, string[]> } | null = null;
 
   constructor(world: Body, reader: OwLensReader, asOf: number | null) {
     const hidden = this.hidden;
@@ -398,18 +399,27 @@ export class Reading {
     }
     this.members = Array.isArray(world.members) ? (world.members as OwMessageMember[]) : null;
     this.asOf = asOf;
+  }
+
+  /** The reverse links, built once on first ask. */
+  private linkedFrom(): { view: Map<string, string[]>; full: Map<string, string[]> } {
+    if (this.incoming !== null) return this.incoming;
+    const view = new Map<string, string[]>();
+    const full = new Map<string, string[]>();
     for (const id of this.order) {
       for (const t of this.fullLinks(id)) {
         if (!this.byId.has(t)) continue;
-        if (!this.inFull.has(t)) this.inFull.set(t, []);
-        (this.inFull.get(t) as string[]).push(id);
+        if (!full.has(t)) full.set(t, []);
+        (full.get(t) as string[]).push(id);
       }
       if (!this.view.has(id)) continue;
       for (const t of this.links(id)) {
-        if (!this.inView.has(t)) this.inView.set(t, []);
-        (this.inView.get(t) as string[]).push(id);
+        if (!view.has(t)) view.set(t, []);
+        (view.get(t) as string[]).push(id);
       }
     }
+    this.incoming = { view, full };
+    return this.incoming;
   }
 
   /**
@@ -533,7 +543,7 @@ export class Reading {
     const landed = new Set<string>();
     for (const f of from) {
       if (this.stubs.has(f) || this.room.has(f) || (stops !== undefined && stops(f))) continue;
-      for (const t of [...this.links(f), ...(this.inView.get(f) ?? [])]) if (!excluded(t)) landed.add(t);
+      for (const t of [...this.links(f), ...(this.linkedFrom().view.get(f) ?? [])]) if (!excluded(t)) landed.add(t);
     }
     const reached = new Set(landed);
     const edges: string[] = [];
@@ -554,7 +564,7 @@ export class Reading {
     for (const f of from) {
       if (this.stubs.has(f) || this.room.has(f)) continue;
       for (const t of this.fullLinks(f)) consider(t);
-      for (const t of this.inFull.get(f) ?? []) consider(t);
+      for (const t of this.linkedFrom().full.get(f) ?? []) consider(t);
     }
     for (const r of landedRelations) for (const t of this.fullLinks(r)) consider(t);
     return out;
