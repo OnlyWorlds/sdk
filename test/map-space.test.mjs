@@ -15,7 +15,7 @@ const doc = JSON.parse(readFileSync(FIXTURE, 'utf8'));
 
 test('the fixture is the map-space profile\'s', () => {
   assert.equal(doc.profile, 'map-space');
-  assert.equal(doc.cases.length, 24, `the fixture holds ${doc.cases.length} cases, serial 105 has 24`);
+  assert.equal(doc.cases.length, 34, `the fixture holds ${doc.cases.length} cases, serial 106 has 34`);
 });
 
 for (const c of doc.cases) {

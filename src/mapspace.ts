@@ -90,26 +90,24 @@ function largest(points: number[][], index: number): number | null {
  * `order` sorts after every ordered one, then by id. A Marker whose Zone or Map is not served is counted `dangling`
  * (checked first), one without a whole `x` and `y` `no_point`; a Zone without a placed Marker `no_markers`; a Pin whose
  * Map is not served `no_map`, one without a whole `x` and `y` `no_point`. A `z` past a Map's `depth` is kept as written
- * and reported in the Map's `z_max`. A row without a non-empty string `id` is no element and is not counted.
+ * and reported in the Map's `z_max`. A row without a non-empty string `id` is no element and is not counted; two rows
+ * of one type with one id read as the last one served.
  */
 export function mapSpace(elements: readonly unknown[]): OwMapSpace {
   if (!Array.isArray(elements)) throw new TypeError('mapSpace: elements is a list of elements.');
-  const byType = new Map<string, Row[]>();
+  // One row per id within a type, the last served (reading I, serial 106): an element is its id. The type is read
+  // as written (reading K: "Map" is no Map).
+  const byType = new Map<string, Map<string, Row>>();
   for (const e of elements) {
     // A row without a non-empty string id is no element: ignored, never counted.
-    if (!isRow(e) || typeof e.type !== 'string' || idOf(e.id) === null) continue;
-    const list = byType.get(e.type);
-    if (list) list.push(e); else byType.set(e.type, [e]);
+    if (!isRow(e) || typeof e.type !== 'string') continue;
+    const id = idOf(e.id);
+    if (id === null) continue;
+    const rows = byType.get(e.type);
+    if (rows) rows.set(id, e); else byType.set(e.type, new Map([[id, e]]));
   }
-  const rowsOf = (type: string): Row[] => byType.get(type) ?? [];
-  const indexed = (type: string): Map<string, Row> => {
-    const m = new Map<string, Row>();
-    for (const r of rowsOf(type)) {
-      const id = idOf(r.id);
-      if (id !== null) m.set(id, r);
-    }
-    return m;
-  };
+  const indexed = (type: string): Map<string, Row> => byType.get(type) ?? new Map<string, Row>();
+  const rowsOf = (type: string): Row[] => [...indexed(type).values()];
   const maps = indexed('map');
   const zones = indexed('zone');
   const out = { no_point: 0, no_markers: 0, dangling: 0, no_map: 0 };
