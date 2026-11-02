@@ -1,23 +1,21 @@
 /**
- * The map-space profile (draft): mapSpace on every case of test/fixtures/map-space.fixture.json, the whole answer
- * of each case compared as a value and as bytes (key order held). Runs against the compiled public bundle (dist).
+ * The map-space profile (schema-dist profiles/map-space.md, serial 105): every case of
+ * codegen/schema-dist/profiles/map-space.fixture.json, vendored with the distribution, as its own test, the whole
+ * answer of each case compared as a value and as bytes (key order held). Runs against the compiled public bundle (dist).
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { mapSpace } from '../dist/index.js';
 
-const FIXTURE = fileURLToPath(new URL('./fixtures/map-space.fixture.json', import.meta.url));
-const FIXTURE_SHA256 = '0aff4e2317e317583750c977cd24463dc8ed56d67252e3cfcccb103ab8b6a2ec';
-const bytes = readFileSync(FIXTURE);
-const doc = JSON.parse(bytes.toString('utf8'));
+const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/map-space.fixture.json', import.meta.url));
+assert.ok(existsSync(FIXTURE), `no map-space fixture at ${FIXTURE}`);
+const doc = JSON.parse(readFileSync(FIXTURE, 'utf8'));
 
-test('the fixture is the map-space profile\'s, held byte for byte', () => {
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), FIXTURE_SHA256);
+test('the fixture is the map-space profile\'s', () => {
   assert.equal(doc.profile, 'map-space');
-  assert.equal(doc.cases.length, 24);
+  assert.equal(doc.cases.length, 24, `the fixture holds ${doc.cases.length} cases, serial 105 has 24`);
 });
 
 for (const c of doc.cases) {
