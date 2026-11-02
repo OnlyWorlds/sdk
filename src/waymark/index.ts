@@ -33,7 +33,7 @@ export interface OwWaymarkOptions {
   world: { id: string; name: string; [k: string]: unknown };
   /** The element, as the API serves it (`id`, `type`, `name`; a member's body carries `doors`); absent, the fan-out is the world's own. */
   element?: { id: string; type: string; name: string; [k: string]: unknown } | null;
-  /** `member`, `guest` or `public`. The public face shows the name line without the last door, the rows that need nothing first, and Copy link. */
+  /** `member`, `guest` or `public`. The public face shows the name line without the last door, the rows that need nothing, those that need an account as rows that open nothing ("Needs an account"), and Copy link. */
   reader: OwWaymarkReader;
   /** The client name of the surface's own tool; its row says "You are here". The site passes `onlyworlds`. */
   tool?: string | null;
@@ -86,6 +86,8 @@ const NOT_COPIED = 'Could not copy the link.';
 const HERE: OwOpenerState = 'You are here';
 /** The state word openersFor gives a web row when the device has no connection: the row is drawn disabled. */
 const OFFLINE: OwOpenerState = 'Needs a connection';
+/** The state word openersFor gives the public a row that needs an account: the row is drawn disabled. */
+const NO_ACCOUNT: OwOpenerState = 'Needs an account';
 /** A web address (`http:` or `https:`): its row opens in a new tab. */
 const WEB_LINK = /^https?:/i;
 let mounted = 0;
@@ -96,7 +98,7 @@ const fail = (what: string): never => {
 
 /** A state word that says the row cannot open now: drawn grey. The surface's own row is grey too, as where the reader is (its own class); the rest open (in the browser, at the world) and keep the text colour. */
 function cannotOpen(state: OwOpenerState | null): boolean {
-  return state !== null && (state.startsWith('Sign in to ') || state === 'Needs the world on this phone' || state === OFFLINE);
+  return state !== null && (state.startsWith('Sign in to ') || state === 'Needs the world on this phone' || state === OFFLINE || state === NO_ACCOUNT);
 }
 
 /** "12 Oct", with the year when it is not this year's, in the reader's own time zone. */
@@ -126,6 +128,10 @@ function shapedOn(at: string, now: Date): string {
  * `aria-disabled="true"`, still in the arrow and Tab order; pressing it (a click, Enter or Space) does
  * nothing and the fan-out stays open. While the fan-out is open, the window's `online` and `offline`
  * events redraw the rows in place, and focus on a row stays on that row. Copy link is unaffected.
+ *
+ * For the public reader, a tool that needs an account says "Needs an account" and is drawn the same
+ * way: grey, a link with no href, `aria-disabled="true"`, in the arrow and Tab order, doing nothing
+ * when pressed.
  *
  * Keyboard: the mark is a button and the fan-out a menu; Tab goes from the mark through the rows in
  * order, the arrow keys, Home and End move within it, Escape closes it and returns focus to what opened
@@ -324,7 +330,7 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
   // 2. Open with: the rows as openersFor gives them, each with its word. The surface's own row ("You are
   // here") leads nowhere: a button, not a link, drawn grey, that closes the fan-out and gives focus back. A
   // web row opens in a new tab (`target="_blank"`, `rel="noopener"`). A row that
-  // needs a connection the device lacks is a link with no href, aria-disabled: it stays in the arrow and
+  // needs a connection the device lacks, or (for the public) an account, is a link with no href, aria-disabled: it stays in the arrow and
   // Tab order and does nothing when pressed.
   const openWith = section('Open with');
   const rowNode = (r: OwOpener): HTMLElement => {
@@ -335,7 +341,7 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
       a.type = 'button';
       a.setAttribute('aria-current', 'page');
       a.dataset.here = '';
-    } else if (r.state === OFFLINE) {
+    } else if (r.state === OFFLINE || r.state === NO_ACCOUNT) {
       a = el('a', cls);
       a.tabIndex = 0;
       a.setAttribute('aria-disabled', 'true');
@@ -596,7 +602,8 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
       close(true);
     }
   };
-  // A disabled row (it needs a connection) does nothing: no link to follow, and the fan-out stays open.
+  // A disabled row (it needs a connection, or an account the visitor lacks) does nothing: no link to
+  // follow, and the fan-out stays open.
   const disabled = (n: HTMLElement): boolean => n.getAttribute('aria-disabled') === 'true';
   const onMenuKey = (e: KeyboardEvent): void => {
     pressedInside = false;

@@ -124,7 +124,7 @@ test('the name line: the element\'s name, its type word and its world; the world
   assert.equal(name.querySelector('[data-opener]').getAttribute('href'), elementAddress({ form: 'human', world: WORLD.id }));
 });
 
-test('the public face: the name and type, the rows that need nothing first, Copy link; no last door, no Through, no lens list', () => {
+test('the public face: the name and type, the rows that need nothing, those that need an account, Copy link; no last door, no Through, no lens list', () => {
   const { name } = page();
   mountWaymark(name, { world: WORLD, element: MEMBER_ELEMENT, reader: 'public', tools: TOOLS_ALL, lenses: LENSES, ...SURFACE });
   assert.ok(!name.querySelector('.ow-waymark__door'), 'no last door');
@@ -134,7 +134,8 @@ test('the public face: the name and type, the rows that need nothing first, Copy
   assert.equal(text(name.querySelector('.ow-waymark__type')), 'Character');
   const public_ = openersFor(TOOLS_ALL, 'element', { form: 'human', world: WORLD.id, type: ELEMENT.type, id: ELEMENT.id }, { audience: 'public', ...SURFACE });
   assert.deepEqual([...name.querySelectorAll('[data-opener]')].map((a) => a.dataset.opener), public_.map((r) => r.id));
-  assert.deepEqual(public_.map((r) => r.id), ['onlyworlds', 'obsidian']);
+  // Atlas is the surface (You are here); Lantern needs an account; Little Lens needs the device, which a visitor's holds no world on.
+  assert.deepEqual(public_.map((r) => [r.id, r.state]), [['onlyworlds', null], ['atlas', 'You are here'], ['lantern', 'Needs an account'], ['obsidian', 'Opens the world']]);
   name.querySelector('.ow-waymark__mark').click();
   const all = items(name);
   assert.equal(text(all[all.length - 1].querySelector('.ow-waymark__label')), 'Copy link');
@@ -851,6 +852,35 @@ test('offline at open: every web row says "Needs a connection", drawn with no hr
   assert.equal(name.querySelector('[data-opener="atlas"]').getAttribute('aria-current'), 'page', 'the surface\'s own row stays "You are here"');
   const grey = [...name.querySelectorAll('[data-opener]')].filter((a) => a.classList.contains('ow-waymark__row--cannot')).map((a) => a.dataset.opener);
   assert.deepEqual(grey, ['onlyworlds', 'lantern', 'little-lens']);
+});
+
+test('a visitor sees the tools that need an account greyed: "Needs an account", no href, aria-disabled, in the arrow order, a click does nothing; the device row is not there', () => {
+  const { window, doc, name } = page();
+  connection(window, true);
+  mountWaymark(name, { world: WORLD, element: ELEMENT, reader: 'public', tools: TOOLS_ALL, tool: 'onlyworlds', signedIn: false });
+  const mark = name.querySelector('.ow-waymark__mark');
+  const pop = name.querySelector('.ow-waymark__pop');
+  const expected = openersFor(TOOLS_ALL, 'element', ELEMENT_ADDRESS, { audience: 'public', tool: 'onlyworlds', signedIn: false });
+  assert.deepEqual(expected.map((r) => [r.id, r.state]), [['onlyworlds', 'You are here'], ['atlas', 'Needs an account'], ['lantern', 'Needs an account'], ['obsidian', 'Opens the world']]);
+  mark.click();
+  assert.deepEqual(drawnRows(name), expected.map((r) => (r.state === 'Needs an account' || r.state === 'You are here' ? { ...r, href: null } : r)));
+  for (const id of ['atlas', 'lantern']) {
+    const a = name.querySelector(`[data-opener="${id}"]`);
+    assert.equal(a.tagName, 'A', id);
+    assert.equal(a.hasAttribute('href'), false, `${id}: no href`);
+    assert.equal(a.getAttribute('aria-disabled'), 'true', id);
+    assert.equal(a.getAttribute('role'), 'menuitem', id);
+    assert.ok(a.classList.contains('ow-waymark__row--cannot'), `${id}: grey`);
+  }
+  assert.equal(name.querySelector('[data-opener="little-lens"]'), null, 'a row that needs the device is not there');
+  assert.equal(name.querySelector('[data-opener="obsidian"]').hasAttribute('aria-disabled'), false);
+  const atlas = name.querySelector('[data-opener="atlas"]');
+  atlas.focus();
+  atlas.click();
+  assert.equal(pop.hidden, false, 'the fan-out stays open');
+  assert.ok(doc.activeElement === atlas, 'focus stays on the row');
+  key(window, atlas, 'ArrowDown');
+  assert.ok(doc.activeElement === name.querySelector('[data-opener="lantern"]'), 'the arrows pass through the greyed rows');
 });
 
 test('a disabled row does nothing: a click, Enter or Space leaves the fan-out open and focus on it; it is in the arrow order; Copy link still copies', async () => {

@@ -12,8 +12,8 @@ import { fileURLToPath } from 'node:url';
 import { openersFor, parseOwLink, OwAddressError, TOOLS } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/openers.fixture.json', import.meta.url));
-const FIXTURE_SHA256 = '381b3ab03bbb19187a74e830c7236306f9ba1f6128020c8855515ce7a63bb6cc';
-const CASES = 90;
+const FIXTURE_SHA256 = 'b5c6afb76bf1ab2b95ee50641e2fd36344320d12fe0fd293d4f09fcf8cde7027';
+const CASES = 92;
 
 /** The fixture writes the surface's keys snake_case; this package spells one of them in camelCase. */
 const SPELLING = { signed_in: 'signedIn' };
@@ -68,5 +68,7 @@ test('TOOLS, the baked list, gives the site\'s row and then each listed tool wit
   assert.equal(member[0].href, `https://www.onlyworlds.com/w/${world}`);
   for (const r of member.slice(1)) assert.ok(r.href.startsWith('https://') && r.href.includes(world) && !r.href.includes('{'), r.href);
   const open = openersFor(TOOLS, 'world', { form: 'human', world }, { audience: 'public' });
-  assert.deepEqual(open.map((r) => r.id), ['onlyworlds', ...offered.filter((t) => t.open.needs === null).map((t) => t.id)]);
+  // The public: a tool that needs the device is not there; one that needs an account says so.
+  assert.deepEqual(open.map((r) => r.id), ['onlyworlds', ...offered.filter((t) => t.open.needs !== 'device').map((t) => t.id)]);
+  for (const r of open.slice(1)) assert.equal(r.state, offered.find((t) => t.id === r.id).open.needs === 'account' ? 'Needs an account' : null, r.id);
 });

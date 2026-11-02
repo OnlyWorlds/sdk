@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.130.0] - 2026-11-02
+
+### Changed
+
+- **A signed-out visitor sees the tools that need an account, greyed.** `openersFor` with `audience: 'public'` now gives a row for a tool whose `open.needs` is `account`, with the new state word `"Needs an account"` (whatever `signedIn` says: the public is the signed-out reader); before, the public saw no such row. A tool that needs the device is still not there for the public. The word comes after "You are here" and "Needs a connection", and before "Opens the world". `OwOpenerState` gains the word, so a `switch` over it that lists every case meets a new one. `mountWaymark` draws the row like one that needs a connection: grey, a link with no href, `aria-disabled="true"`, in the arrow and Tab order, doing nothing when pressed. The shared openers fixture has 92 cases (from 90): seven public cases gain their account rows, and two are new (a visitor outside a browser, a visitor on a tool that needs an account).
+
 ## [4.129.2] - 2026-11-02
 
 ### Fixed

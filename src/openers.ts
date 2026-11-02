@@ -29,7 +29,7 @@ export interface OwToolOpen {
   world: string | null;
   /** The link that opens one element, holding `{id}` and, if it needs them, `{world}` and `{type}` (the type word); null without one. */
   element: string | null;
-  /** What the person needs first; null for nothing, which is the one kind of row a public page offers. */
+  /** What the person needs first; null for nothing. A public page offers those rows, and an `account` row only as one that opens nothing ("Needs an account"). */
   needs: OwToolNeeds | null;
   /** What the element door does not open, in the graph section's words; [] or absent: it opens every element (a list older than the key has none). */
   element_skips?: readonly OwElementMark[];
@@ -72,6 +72,7 @@ export interface OwOpenerSurface {
 export type OwOpenerState =
   | 'You are here'
   | 'Needs a connection'
+  | 'Needs an account'
   | `Sign in to ${string} first`
   | 'Opens in your browser'
   | 'Needs the world on this phone'
@@ -94,6 +95,7 @@ const PLACEHOLDER = /\{(world|type|id)\}/g;
 /** A web address: its scheme is http or https. Read from the row's filled href. */
 const WEB = /^https?:/i;
 const OFFLINE: OwOpenerState = 'Needs a connection';
+const NO_ACCOUNT: OwOpenerState = 'Needs an account';
 
 const fail = (what: string): never => {
   throw new TypeError(`openersFor: ${what}`);
@@ -129,13 +131,16 @@ function templateOf(row: string, key: 'world' | 'element', v: unknown): string |
  * a world door is a row to its world door that says "Opens the world". On an element given as
  * `options.element`, a row whose `open.element_skips` names a mark the element carries (room, hidden,
  * proposed, map space, a reading aid, each read as `worldGraph` reads it) is not there: its door cannot
- * open it. A world door alone opens the world, so it stays. For the `public` audience only
- * rows whose `open.needs` is null are there: a row that needs anything does not exist for the public.
+ * open it. A world door alone opens the world, so it stays. For the `public` audience (the signed-out
+ * reader) a row whose `open.needs` is `device` is not there, since a visitor's device holds no world of
+ * this one's, and a row whose `needs` is `account` is there and says it needs one.
  *
  * Each row's `state`, the first that holds: "You are here" for the surface's own tool (its `client` is
  * `surface.tool`); then, when `surface.online` is false, "Needs a connection" for a row whose href is a
  * web address (scheme `http:` or `https:`; a row whose link opens an app on the device is unaffected,
- * and the href stays in the row either way); then what `needs` asks of this surface: `account` outside
+ * and the href stays in the row either way); then, for the `public` audience, "Needs an account" for a
+ * row whose `needs` is `account`, whatever `signedIn` says (the href stays in the row; a surface draws
+ * it as a row that opens nothing); then what `needs` asks of this surface: `account` outside
  * a browser "Opens in your browser", in a browser signed out "Sign in to <name> first" (none when
  * `signedIn` is null: a word shows only when the surface knows it is true), `device` on a phone "Needs
  * the world on this phone"; then
@@ -219,7 +224,7 @@ export function openersFor(
     }
     if (elementDoor === null && (skips as readonly unknown[]).length > 0) fail(`tool ${r.id}: open.element_skips names what an element door leaves out, and the row has none`);
     if (r.rung !== 'listed') continue;
-    if (audience === 'public' && needs !== null) continue;
+    if (audience === 'public' && needs === 'device') continue;
     const template = kind === 'element' ? elementDoor ?? worldDoor : worldDoor;
     if (template === null) continue;
     // An element door that cannot open this element is no door (a row with skips has one: refused above).
@@ -231,6 +236,7 @@ export function openersFor(
     let state: OwOpenerState | null = null;
     if (tool !== null && r.client === tool) state = 'You are here';
     else if (offline(href)) state = OFFLINE;
+    else if (audience === 'public' && needs === 'account') state = NO_ACCOUNT;
     else if (needs === 'account' && !browser) state = 'Opens in your browser';
     else if (needs === 'account' && signedIn === false) state = `Sign in to ${r.name} first`;
     else if (needs === 'device' && phone) state = 'Needs the world on this phone';
