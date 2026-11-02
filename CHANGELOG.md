@@ -7,11 +7,12 @@ earlier history lives in git log only.
 
 ### Added
 
-- **`worldGraph(..., { readingAids: true })` brings the reading aids back into an unlensed graph** (schema-dist serial 104): the charter, its guide and its domains, each by its pair and the mark `x_charter_of`, which are out by default and counted `reading_aid`. A node brought back carries the mark `reading_aid`, last in `marks`; an edge to it is an edge. Any signed reader may ask it; a public reader is refused by name, last in the refusal order after `mapSpace`. With a lens the flag adds nothing, as every flag.
+- **`worldGraph(world, reader, { readingAids: true })` brings the reading aids back into an unlensed graph** (schema-dist `profiles/lens.md`, serial 104). The reading aids are a world's charter, its guide and its domains, each recognised by its pair and the mark `x_charter_of` (the pair without the mark is lore and a node like any other). They are out of an unlensed graph by default and counted `reading_aid`; with the flag they are nodes, each marked `reading_aid` (last in `marks`), and a link to one is an edge. The flag is a boolean, false by default (null reads as false). Any signed reader may ask it; a public reader asking it is refused by name before anything is read, and of several refused flags `readingAids` is named last, after `hidden`, `proposed`, `rooms` and `mapSpace`. A flag never widens a lens: with a lens the flag adds nothing, and a lens that names the pair (`law/charter`) keeps the charter whatever the flag says. `OwGraphMark` gains `'reading_aid'`.
 
 ### Changed
 
-- **A reading aid a lens keeps carries the mark `reading_aid`**, as a room element a lens keeps carries `room`; it had no mark.
+- **A reading aid a lens keeps carries the mark `reading_aid`**, as a room element a lens keeps carries `room`; before, it carried no mark.
+- **Schema repinned to schema-dist `v0.34.0-dist.104`** (from dist.103); the standard stays canonical **00.34.00** and no schema field moved. Serial 104 adds the graph's `reading_aids` flag to the lens profile, with five graph cases in the lens fixture (201 cases in all), and two readings to the landing profile, with three cases (33 in all): `orphan` and `near_orphan` are degree 0 and degree 1 by the landing page's own degree, so a node whose only link is to itself is a near-orphan and a list naming one target twice counts degree 2; and a `heads` too large for the reader reads as the largest it holds, so `heads: 1e30` is taken, never refused, and every linked Character is a head. `landingOf` answers all three as it stood.
 
 ## [4.127.0] - 2026-11-02
 
