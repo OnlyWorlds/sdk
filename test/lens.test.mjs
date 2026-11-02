@@ -290,7 +290,9 @@ test('a marked Domain a hop reaches is cut as types unless types names construct
   assert.deepEqual(g.edgesCut, { reading_aid: 2 }); // the Desk's links to the Domain and the Guide
   assert.deepEqual(g.edges, [{ source: 'charter', field: 'author', target: 'desk', index: 0 }]);
   const lensed = worldGraph(AIDS, OWNER, { lens: lensOn({ institutions: ['desk'] }, { types: ['construct/domain', 'institution'] }) });
-  assert.deepEqual(lensed.nodes.map(n => [n.id, n.marks]), [['desk', undefined], ['domain', undefined]]);
+  // Staged for serial 104: a reading aid a lens keeps carries its mark, as a room element a lens keeps does (the
+  // profile owner's case settles it; until serial 104 this line read no mark).
+  assert.deepEqual(lensed.nodes.map(n => [n.id, n.marks]), [['desk', undefined], ['domain', ['reading_aid']]]);
 });
 
 test('an anchor that is a marked Guide is kept and followed, whatever types says', () => {

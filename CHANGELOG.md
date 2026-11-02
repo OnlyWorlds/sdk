@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **`worldGraph(..., { readingAids: true })` brings the reading aids back into an unlensed graph** (schema-dist serial 104): the charter, its guide and its domains, each by its pair and the mark `x_charter_of`, which are out by default and counted `reading_aid`. A node brought back carries the mark `reading_aid`, last in `marks`; an edge to it is an edge. Any signed reader may ask it; a public reader is refused by name, last in the refusal order after `mapSpace`. With a lens the flag adds nothing, as every flag.
+
+### Changed
+
+- **A reading aid a lens keeps carries the mark `reading_aid`**, as a room element a lens keeps carries `room`; it had no mark.
+
 ## [4.127.0] - 2026-11-02
 
 ### Added

@@ -29,11 +29,13 @@ export interface OwGraphOptions {
   proposed?: boolean | null;
   /** Bring back map space: Maps, Pins and Markers (a Zone is a node by default). Refused for a public reader. */
   mapSpace?: boolean | null;
+  /** Bring back the reading aids: the charter, its guide and its domains, each by its pair and the mark `x_charter_of`. Refused for a public reader. */
+  readingAids?: boolean | null;
 }
-const GRAPH_OPTION_KEYS = ['lens', 'asOf', 'clock', 'rooms', 'hidden', 'proposed', 'mapSpace'] as const;
+const GRAPH_OPTION_KEYS = ['lens', 'asOf', 'clock', 'rooms', 'hidden', 'proposed', 'mapSpace', 'readingAids'] as const;
 
 /** Why a node that is out by default is in. */
-export type OwGraphMark = 'room' | 'hidden' | 'proposed';
+export type OwGraphMark = 'room' | 'hidden' | 'proposed' | 'reading_aid';
 
 /**
  * Why an element is not a node, or an edge was left out: the lens's closed list, then the graph's own, in
@@ -55,7 +57,7 @@ export interface OwGraphNode {
   family: ElementGroup;
   /** The type's icon name, from the distribution's presentation defaults. */
   icon: string;
-  /** The out-by-default kinds the element belongs to, in this order: `room`, `hidden`, `proposed`; absent when none. */
+  /** The out-by-default kinds the element belongs to, in this order: `room`, `hidden`, `proposed`, `reading_aid`; absent when none. */
   marks?: OwGraphMark[];
   /** True on a guest's known-of element, a stub that has no edges out; absent otherwise. */
   known_of?: true;
@@ -89,9 +91,8 @@ const GRAPH_REASONS: readonly OwGraphCutReason[] = [...CUT_REASONS, 'room', 'hid
 const GRAPH_OWNER_ONLY: ReadonlySet<string> = new Set([...OWNER_ONLY, 'hidden', 'proposed']);
 
 type Body = Record<string, unknown>;
-/** The kinds out of an unlensed graph by default. A reading aid has no flag: only a lens that names its pair keeps one. */
+/** The kinds out of an unlensed graph by default, each brought back by its flag. */
 type Kind = 'room' | 'hidden' | 'proposed' | 'map_space' | 'reading_aid';
-type Flagged = Exclude<Kind, 'reading_aid'>;
 
 function flag(opts: Body, key: string): boolean {
   const v = valueOf(opts, key);
@@ -106,8 +107,8 @@ function flag(opts: Body, key: string): boolean {
  *
  * `world` and `reader` are what `resolveLens` takes. Without `options.lens` the nodes are every element
  * the reader sees less what is out by default: room elements, hidden ones, proposed ones and map space
- * (Map, Pin, Marker; a Zone is content and a node like any other), each brought back by its flag and then marked, and the reading aids (the charter,
- * its guide, its domains: `isCharterElement`), counted `reading_aid`, which no flag brings back. With a lens the nodes are
+ * (Map, Pin, Marker; a Zone is content and a node like any other) and the reading aids (the charter, its guide,
+ * its domains: `isCharterElement`), each brought back by its flag and then marked (map space carries no mark). With a lens the nodes are
  * exactly the lens's `kept`, its cut rides along unchanged, and a flag adds nothing. A lens whose `x_lens`
  * cannot be read gives an empty graph with `unreadable` naming the key, as `resolveLens` does.
  *
@@ -123,7 +124,8 @@ function flag(opts: Body, key: string): boolean {
  * reader does not see. A link to an id that is not in the world is left out and not counted.
  *
  * `hidden` or `proposed` from a reader that is not the owner, or any flag from a public reader, is refused
- * by name before anything is read. An owner reading `as` another reader is judged by that reader's rung.
+ * by name before anything is read; of several, the first in the order `hidden`, `proposed`, `rooms`, `mapSpace`,
+ * `readingAids`. An owner reading `as` another reader is judged by that reader's rung.
  */
 export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: OwGraphOptions): OwWorldGraph {
   if (options !== undefined && options !== null && !isBody(options)) {
@@ -135,15 +137,16 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
     throw new TypeError('worldGraph: world is an object with an elements list.');
   }
   checkReader(reader, 'worldGraph: reader');
-  const flags: Record<Flagged, boolean> = {
+  const flags: Record<Kind, boolean> = {
     room: flag(opts, 'rooms'), hidden: flag(opts, 'hidden'), proposed: flag(opts, 'proposed'), map_space: flag(opts, 'mapSpace'),
+    reading_aid: flag(opts, 'readingAids'),
   };
   const seenRung = reader.rung === 'owner' && reader.as != null ? reader.as.rung : reader.rung;
   for (const [kind, key] of [['hidden', 'hidden'], ['proposed', 'proposed']] as const) {
     if (flags[kind] && seenRung !== 'owner') throw new TypeError(`worldGraph: ${key} is the owner's alone; a ${seenRung} reader may not ask it.`);
   }
   if (seenRung === 'public') {
-    for (const [kind, key] of [['room', 'rooms'], ['map_space', 'mapSpace']] as const) {
+    for (const [kind, key] of [['room', 'rooms'], ['map_space', 'mapSpace'], ['reading_aid', 'readingAids']] as const) {
       if (flags[kind]) throw new TypeError(`worldGraph: a public reader takes no flag; it asked ${key}.`);
     }
   }
@@ -162,7 +165,7 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
     if (r.aid.has(id)) out.push('reading_aid');
     return out;
   };
-  const brought = (k: Kind): boolean => k !== 'reading_aid' && flags[k];
+  const brought = (k: Kind): boolean => flags[k];
   // What the reader could see as a node: its view, and for the owner what is written as proposed too.
   const candidate = (id: string): boolean => r.view.has(id) || (seenOwner && r.proposed.has(id));
 
@@ -196,7 +199,7 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
     const node: OwGraphNode = {
       id, type, name: valueOf(el, 'name') as string | null, family: ELEMENT_GROUPS[type], icon: ELEMENT_ICONS[type],
     };
-    const marks = kinds(id).filter((k): k is OwGraphMark => k !== 'map_space' && k !== 'reading_aid');
+    const marks = kinds(id).filter((k): k is OwGraphMark => k !== 'map_space');
     if (marks.length > 0) node.marks = marks;
     if (r.stubs.has(id)) node.known_of = true;
     return node;
