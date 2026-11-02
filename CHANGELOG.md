@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.128.0] - 2026-11-02
+
 ### Added
 
 - **`worldGraph(world, reader, { readingAids: true })` brings the reading aids back into an unlensed graph** (schema-dist `profiles/lens.md`, serial 104). The reading aids are a world's charter, its guide and its domains, each recognised by its pair and the mark `x_charter_of` (the pair without the mark is lore and a node like any other). They are out of an unlensed graph by default and counted `reading_aid`; with the flag they are nodes, each marked `reading_aid` (last in `marks`), and a link to one is an edge. The flag is a boolean, false by default (null reads as false). Any signed reader may ask it; a public reader asking it is refused by name before anything is read, and of several refused flags `readingAids` is named last, after `hidden`, `proposed`, `rooms` and `mapSpace`. A flag never widens a lens: with a lens the flag adds nothing, and a lens that names the pair (`law/charter`) keeps the charter whatever the flag says. `OwGraphMark` gains `'reading_aid'`.
