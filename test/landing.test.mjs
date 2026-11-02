@@ -16,7 +16,7 @@ const doc = JSON.parse(readFileSync(FIXTURE, 'utf8'));
 
 test('the fixture is the landing profile\'s', () => {
   assert.equal(doc.profile, 'landing');
-  assert.equal(doc.cases.length, 30, `the fixture holds ${doc.cases.length} cases, serial 103 has 30`);
+  assert.equal(doc.cases.length, 33, `the fixture holds ${doc.cases.length} cases, serial 104 has 33`);
 });
 
 for (const c of doc.cases) {

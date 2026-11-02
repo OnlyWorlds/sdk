@@ -148,12 +148,12 @@ test('the fixture\'s graph cases, each answer held to the invariants', () => {
   }
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 49, `the fixture holds ${cases.length} graph cases, serial 97 has 49`);
+  assert.equal(cases.length, 54, `the fixture holds ${cases.length} graph cases, serial 104 has 54`);
 });
 
 test('the fixture\'s graph tables, read back through the reader: flags, owner-only flags, edge reasons, declared links', () => {
   const doc = loadFixture();
-  assert.deepEqual(doc.graph_flags, ['rooms', 'hidden', 'proposed', 'map_space']);
+  assert.deepEqual(doc.graph_flags, ['rooms', 'hidden', 'proposed', 'map_space', 'reading_aids']);
   const empty = { elements: [] };
   for (const f of doc.graph_flags) {
     const opt = { [KEY[f] ?? f]: true };
@@ -182,6 +182,8 @@ test('a refused flag is refused before anything is read', () => {
   assert.throws(() => worldGraph(world, { rung: 'guest', whole: [] }, { proposed: true }), /proposed is the owner's alone/);
   assert.throws(() => worldGraph(world, { rung: 'public' }, { rooms: true }), /public reader takes no flag; it asked rooms/);
   assert.throws(() => worldGraph(world, { rung: 'public' }, { mapSpace: true }), /it asked mapSpace/);
+  assert.throws(() => worldGraph(world, { rung: 'public' }, { readingAids: true }), /it asked readingAids/);
+  assert.throws(() => worldGraph(world, { rung: 'public' }, { mapSpace: true, readingAids: true }), /it asked mapSpace/);
   assert.throws(() => worldGraph(world, { rung: 'owner', as: { rung: 'public' } }, { rooms: true }), /it asked rooms/);
   // The same world read without a refused flag does read the elements.
   assert.throws(() => worldGraph(world, { rung: 'owner' }, { hidden: true }), /read/);

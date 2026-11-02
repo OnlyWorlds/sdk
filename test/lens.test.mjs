@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { FIELD_SCHEMA, ROOM_PAIRS, degreeOf, isCharterElement, isLens, isTemplate, lensesInUse, outDegreeOf, resolveLens, worldGraph } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/lens.fixture.json', import.meta.url));
-const COUNTS = { shape: 6, keys: 25, resolve: 102, invariant: 4, uses: 5, graph: 49, degree: 5 };
+const COUNTS = { shape: 6, keys: 25, resolve: 102, invariant: 4, uses: 5, graph: 54, degree: 5 };
 
 function loadFixture() {
   assert.ok(existsSync(FIXTURE), `no lens fixture at ${FIXTURE}`);
@@ -124,7 +124,7 @@ test('the lens readers answer every case of the lens fixture', (t) => {
   t.diagnostic(`the lens fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   for (const line of wrong) t.diagnostic(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 196, `the fixture holds ${cases.length} cases, serial 103 has 196`);
+  assert.equal(cases.length, 201, `the fixture holds ${cases.length} cases, serial 104 has 201`);
   assert.deepEqual(counts, COUNTS);
 });
 
@@ -290,8 +290,8 @@ test('a marked Domain a hop reaches is cut as types unless types names construct
   assert.deepEqual(g.edgesCut, { reading_aid: 2 }); // the Desk's links to the Domain and the Guide
   assert.deepEqual(g.edges, [{ source: 'charter', field: 'author', target: 'desk', index: 0 }]);
   const lensed = worldGraph(AIDS, OWNER, { lens: lensOn({ institutions: ['desk'] }, { types: ['construct/domain', 'institution'] }) });
-  // Staged for serial 104: a reading aid a lens keeps carries its mark, as a room element a lens keeps does (the
-  // profile owner's case settles it; until serial 104 this line read no mark).
+  // Since serial 104 a reading aid a lens keeps carries its mark, as a room element a lens keeps does (the lens
+  // fixture's case 'a lens that names law/charter keeps the charter, marked reading_aid, whatever the flag says').
   assert.deepEqual(lensed.nodes.map(n => [n.id, n.marks]), [['desk', undefined], ['domain', ['reading_aid']]]);
 });
 
