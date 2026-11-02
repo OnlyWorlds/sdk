@@ -5,9 +5,15 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.129.0] - 2026-11-02
+
 ### Added
 
-- **`mapSpace(elements)`: the map-space profile's reader** (a draft profile, not released). It reads a world's map space from its elements as the reader is served them: `{ maps, zones, pins, out }`, all four keys always present. A Map reports its frame (`width`, `height`, `depth`, `z_max`, `scale`, `location`, `parent_map`; `z_max` is the largest z among its own points; a missing `width` or `height` is measured from the Map's own points and marked `extent: "points"`), a Zone one outline per Map it has Markers on (`order` ascending, a Marker without a whole `order` after the ordered ones, then by id in code point order), and a Pin its point with its element (both keys or both null). Rows left aside are counted in `out` by reason (`no_point`, `no_markers`, `dangling`, `no_map`). A number is whole by value (`2.0` is 2), and a row without a non-empty string `id` is no element. Tested against `test/fixtures/map-space.fixture.json` (24 cases). Types: `OwMapSpace`, `OwMapSpaceMap`, `OwMapSpaceOutline`, `OwMapSpacePin`, `OwMapSpacePoint`, `OwMapSpaceOutReason`.
+- **`mapSpace(elements)`: the map-space profile** (schema-dist `profiles/map-space.md`, serial 105). It reads a world's map space from its elements as the reader is served them: `{ maps, zones, pins, out }`, all four keys always present. Each Map reports its frame (`width`, `height`, `depth`, `z_max`, `scale`, `location`, `parent_map`; `z_max` is the largest z among its own points, and a missing `width` or `height` is measured from the Map's own points and marked `extent: "points"`). Each Zone has one outline per Map it has Markers on, its Markers in `order` ascending (a Marker without a whole `order` after the ordered ones, then by id in code point order). Each Pin reports its point and its element (both keys or both null). What the reading left aside is counted by reason in `out` (`no_point`, `no_markers`, `dangling`, `no_map`). A number is whole by value (`2.0` is 2), and a row without a non-empty string `id` is no element. The fixture `profiles/map-space.fixture.json` (24 cases) is the test. Types: `OwMapSpace`, `OwMapSpaceMap`, `OwMapSpaceOutline`, `OwMapSpacePin`, `OwMapSpacePoint`, `OwMapSpaceOutReason`.
+
+### Changed
+
+- **Schema repinned to schema-dist `v0.34.0-dist.105`** (from dist.104); the standard stays canonical **00.34.00** and no schema field moved. Serial 105 adds the map-space profile page and its fixture.
 
 ## [4.128.1] - 2026-11-02
 

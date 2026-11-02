@@ -1,5 +1,5 @@
 /**
- * The map-space profile (draft): how a reader turns a world's Map, Zone, Marker and Pin elements into geometry, a
+ * The map-space profile (schema-dist profiles/map-space.md): how a reader turns a world's Map, Zone, Marker and Pin elements into geometry, a
  * Map's frame, a Zone's outline from its Markers, a Pin's point. Structure and coordinates in the Map's own pixels;
  * looks, cameras and units are a drawing tool's. The profile's fixture is the test.
  */
@@ -81,7 +81,7 @@ function largest(points: number[][], index: number): number | null {
 }
 
 /**
- * A world's map space (the map-space profile, draft): `{maps, zones, pins, out}`, all four keys always present, from
+ * A world's map space (the map-space profile): `{maps, zones, pins, out}`, all four keys always present, from
  * the elements as the reader is served them (so a Zone the reader may not see is not in the input, and not brought
  * back). Everything is keyed by id and holds whole numbers in the Map's pixels; ids sort by code point, so the same
  * input gives the same bytes.
