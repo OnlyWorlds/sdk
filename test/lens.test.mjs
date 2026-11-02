@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { FIELD_SCHEMA, ROOM_PAIRS, isCharterElement, isLens, isTemplate, lensesInUse, resolveLens, worldGraph } from '../dist/index.js';
+import { FIELD_SCHEMA, ROOM_PAIRS, degreeOf, isCharterElement, isLens, isTemplate, lensesInUse, outDegreeOf, resolveLens, worldGraph } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/lens.fixture.json', import.meta.url));
 const COUNTS = { shape: 6, keys: 25, resolve: 102, invariant: 4, uses: 5, graph: 49 };
@@ -80,6 +80,7 @@ function answer(c, doc) {
       return { broken };
     }
     case 'uses': return { lenses: lensesInUse(c.membership, c.x_lens_uses) };
+    case 'degree': return { degree: degreeOf(c.graph), out_degree: outDegreeOf(c.graph) };
     default: throw new Error(`a case of unknown kind ${c.kind}`);
   }
 }
@@ -95,6 +96,7 @@ function want(c) {
     }
     case 'invariant': return { broken: [] };
     case 'uses': return { lenses: c.lenses };
+    case 'degree': return c.want;
     default: return { 'a reader for this kind': true };
   }
 }
