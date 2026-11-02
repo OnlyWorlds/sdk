@@ -226,14 +226,37 @@ test('client.ask: a world key is a TypeError before anything is sent', async () 
   assert.equal(f.calls.length, 0);
 });
 
-test('client.ask: the three refusals, by code', async () => {
-  for (const [status, code, getter] of [[429, 'quota_exceeded', 'isQuotaExceeded'], [503, 'ask_unavailable', 'isAskUnavailable'], [502, 'ask_failed', 'isAskFailed']]) {
-    const f = fake({ status, body: { error: { type: 'x', code, message: 'm' } }, headers: status === 429 ? { 'Retry-After': '3600' } : {} });
-    const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
-    await assert.rejects(c.ask({ worldId: 'w', question: 'q', context: ['x'] }), (e) => {
-      const others = ['isQuotaExceeded', 'isAskUnavailable', 'isAskFailed'].filter((g) => g !== getter);
-      return e instanceof OwApiError && e[getter] === true && others.every((g) => !e[g]) && (status !== 429 || e.retryAfter === 3600);
-    });
+test('client.ask and client.sort: the four refusals, by code', async () => {
+  const getters = ['isQuotaExceeded', 'isOwnKeyRefused', 'isAskUnavailable', 'isAskFailed'];
+  const calls = [(c) => c.ask({ worldId: 'w', question: 'q', context: ['x'] }), (c) => c.sort({ worldId: 'w', notes: ['n'], slice: [] })];
+  for (const [status, code, getter] of [[429, 'quota_exceeded', 'isQuotaExceeded'], [422, 'own_key_refused', 'isOwnKeyRefused'], [503, 'ask_unavailable', 'isAskUnavailable'], [502, 'ask_failed', 'isAskFailed']]) {
+    for (const call of calls) {
+      const f = fake({ status, body: { error: { type: 'x', code, message: 'm' } }, headers: status === 429 ? { 'Retry-After': '3600' } : {} });
+      const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+      await assert.rejects(call(c), (e) => {
+        const others = getters.filter((g) => g !== getter);
+        return e instanceof OwApiError && e[getter] === true && others.every((g) => !e[g]) && (status !== 429 || e.retryAfter === 3600);
+      });
+      assert.equal(f.calls.length, 1, `${code}: sent once, never retried`);
+    }
+  }
+  // another 422 is not the own key's refusal
+  const f = fake({ status: 422, body: { error: { type: 'invalid_request', code: 'invalid_request', param: 'question', message: 'm' } } });
+  await assert.rejects(new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch }).ask({ worldId: 'w', question: 'q', context: ['x'] }), (e) => e.isOwnKeyRefused === false);
+});
+
+test('client.ask, client.sort and client.allowance: who paid, and the own key, as keel sends them', async () => {
+  const meter = { model: 'claude-haiku-5-5', stop_reason: 'end_turn', usage: { input_tokens: 300, output_tokens: 12 }, remaining: 0, tokens_remaining: 0, token_rating: 50000 };
+  for (const paid_by of ['rating', 'own_key']) {
+    const a = fake({ status: 200, body: { answer: 'Mira Thel holds it.', ...meter, paid_by } });
+    assert.equal((await new OwV2Client({ apiKey: 'ow_a_acct', fetch: a.fetch }).ask({ worldId: 'w', question: 'q', context: ['x'] })).paid_by, paid_by);
+    const s = fake({ status: 200, body: { rows: [], not_proposed: [], ...meter, paid_by } });
+    assert.equal((await new OwV2Client({ apiKey: 'ow_a_acct', fetch: s.fetch }).sort({ worldId: 'w', notes: ['n'], slice: [] })).paid_by, paid_by);
+  }
+  for (const own_key of [null, { provider: 'anthropic' }, { provider: 'openai' }]) {
+    const body = { token_rating: 50000, tokens_used_today: 50000, tokens_remaining: 0, resets_at: '2026-11-04T00:00:00+00:00', own_key };
+    const g = fake({ status: 200, body });
+    assert.deepEqual(await new OwV2Client({ apiKey: 'ow_a_acct', fetch: g.fetch }).allowance(), body);
   }
 });
 

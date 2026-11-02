@@ -558,6 +558,9 @@ export interface OwRemovalTicket {
  */
 export type OwMemberRole = 'co_builder' | 'contributor' | 'guest' | (string & {});
 
+/** Who paid for an ask or a sort: the account's daily token rating, or its own AI key once the rating is spent. */
+export type OwPaidBy = 'rating' | 'own_key';
+
 /** POST /account/ask: keel's AI proxy's answer. */
 export interface OwAskAnswer {
   /** The answer, from the context only; "The world doesn't say." when it does not hold one. */
@@ -572,6 +575,9 @@ export interface OwAskAnswer {
   tokens_remaining: number;
   /** The account's token rating: its daily budget in tokens, one meter with the Council (since keel a6244db). */
   token_rating: number;
+  /** Who paid for this call: `rating`, the account's daily token rating; `own_key`, the account's own
+   *  AI key, once today's rating was spent (the rating's fields above are then as they were). */
+  paid_by: OwPaidBy;
   [k: string]: unknown;
 }
 
@@ -653,6 +659,9 @@ export interface OwSortAnswer {
   tokens_remaining: number;
   /** The account's token rating: its daily budget in tokens, one meter with the Council (since keel a6244db). */
   token_rating: number;
+  /** Who paid for this call: `rating`, the account's daily token rating; `own_key`, the account's own
+   *  AI key, once today's rating was spent (the rating's fields above are then as they were). */
+  paid_by: OwPaidBy;
   [k: string]: unknown;
 }
 
@@ -839,6 +848,9 @@ export interface OwAllowance {
   tokens_remaining: number;
   /** When the day's tokens reset: the next midnight UTC (ISO 8601). */
   resets_at: string;
+  /** The account's own AI key, saved on its account page, or null: once today's rating is spent, ask and
+   *  sort run on it, billed by its provider. Only the provider is shown; the counts above keep the rating's meaning. */
+  own_key: { provider: 'anthropic' | 'openai' } | null;
   [k: string]: unknown;
 }
 

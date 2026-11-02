@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.131.0] - 2026-11-03
+
+### Added
+
+- **Your own AI key.** An account can now save its own Anthropic or OpenAI key on its account page; once the day's token rating is spent, `ask` and `sort` run on that key, billed by its provider. `OwAskAnswer` and `OwSortAnswer` carry `paid_by` (`OwPaidBy`: `'rating'` or `'own_key'`), so a tool can say which paid. `OwAllowance` carries `own_key`: `{ provider: 'anthropic' | 'openai' }` when a key is saved, else `null`; the counts keep the rating's meaning.
+- **`isOwnKeyRefused`** on `OwApiError`: 422 `own_key_refused`, the own key's provider refused it (revoked, wrong, or out of credit). Nothing was counted and the call was not retried on the platform's key: send the person to the account page, and do not retry. A 429 `quota_exceeded` now means the rating is spent and no own key is saved.
+
 ## [4.130.0] - 2026-11-02
 
 ### Changed

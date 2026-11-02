@@ -296,6 +296,16 @@ export class OwApiError extends Error {
     return this.status === 403 && this.code === 'files_full';
   }
 
+  /**
+   * ask and sort: today's token rating is spent and the call ran on the account's own AI key, which its
+   * provider refused (422 `own_key_refused`: a key revoked, wrong or out of credit). Nothing was counted
+   * and nothing retried on the platform's key: send the person to the account page to check or replace
+   * the key, and do not retry.
+   */
+  get isOwnKeyRefused(): boolean {
+    return this.status === 422 && this.code === 'own_key_refused';
+  }
+
   /** ask: the proxy is switched off, or paused for the day by the server-wide cap (503 `ask_unavailable`). Not counted. */
   get isAskUnavailable(): boolean {
     return this.status === 503 && this.code === 'ask_unavailable';
