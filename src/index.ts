@@ -70,6 +70,9 @@ export type { OwGraphOptions, OwGraphMark, OwGraphCutReason, OwGraphNode, OwGrap
 // The landing profile (schema-dist profiles/landing.md): a world's first picture at a door, read from its graph.
 export { landingOf } from './landing';
 export type { OwLanding, OwLandingCluster, OwLandingGap, OwLandingGapKind, OwLandingMember, OwLandingMode, OwLandingOptions } from './landing';
+// The map-space profile (draft): a world's Maps, Zone outlines and Pins as geometry in the Map's pixels.
+export { mapSpace } from './mapspace';
+export type { OwMapSpace, OwMapSpaceMap, OwMapSpaceOutline, OwMapSpaceOutReason, OwMapSpacePin, OwMapSpacePoint } from './mapspace';
 // The names profile (schema-dist profiles/names.md): a world's own words for the types, x_names on the World.
 export { typeWord } from './names';
 export type { OwNamesMap, OwWordPair } from './names';
