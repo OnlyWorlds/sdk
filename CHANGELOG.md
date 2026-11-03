@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.132.1] - 2026-11-03
+
+### Changed
+
+- **`TOOLS` repinned at the tools list's `60a590e`: Tactical Tangle opens a world or a Character.** Its row gains a world door and an element door (`needs: "account"`, `element_types: ["character"]`, skipping rooms, hidden and proposed elements), so `openersFor` now offers it on a world's menu and on a Character's, and on no other type. No code changed.
+
 ## [4.132.0] - 2026-11-03
 
 ### Added
