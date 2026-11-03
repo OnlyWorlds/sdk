@@ -58,6 +58,22 @@ jobs:
       # compiled dist bundle — the same artifact npm publish ships.
       - run: npm test
 
+  live:
+    # A few writes to the production practice world (its key and PIN published on the docs, reset
+    # every night), each deleted again, through the built package. Red here with the test job green
+    # means the server moved under the client, not that a change broke it.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci || npm install
+      - run: npm run build
+      - run: node --test test/live-practice.test.mjs
+        env:
+          OW_LIVE: '1'
+
   schema:
     # The schema guards. Before 2026-07-28 these could not run here at all:
     # codegen read a sibling checkout of the PRIVATE keel repo, which does not
