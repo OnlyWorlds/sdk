@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.132.0] - 2026-11-03
+
+### Added
+
+- **A tool that opens one kind of element is offered only on that kind.** The tools list's `open` gains `element_types`, the element types its element door opens (type words such as `character`), or `null` for every type. On an element's menu, `openersFor` leaves out a row whose `element_types` does not hold the address's type word, whether or not the row has a world door: the tool opens other kinds, so its world is not offered from this element either. The type is read from the address, so no element body is needed; a world's menu reads no element types. `OwToolOpen.element_types` is typed. Refused by name, as a row that is not one: a word outside the 22, an empty list, a repeat, and `element_types` on a row with no element door. A list without the key reads as before.
+- `TOOLS` repinned at the tools list's `d0e52c4`, where every row carries `element_types: null`: no menu changes. The shared openers fixture has 100 cases (from 92), the same bytes as the Python package's.
+
 ### Tests
 
 - The shared openers fixture's 24 type refusals each name their kind beside the name: `unknown_key` (a key the object does not take, refused by name) or `bad_value` (a key it takes whose value it refuses). Each package's test tells the two apart by its own message, so a reader that refuses a known key as unknown, or the other way round, fails the case where before the name alone passed it. The same bytes in both packages; nothing shipped changes.
