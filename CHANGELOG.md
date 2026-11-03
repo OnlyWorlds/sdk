@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.132.2] - 2026-11-03
+
+### Changed
+
+- The schema pin moves to schema-dist `v0.34.0-dist.107` (canonical `00.34.00` unchanged, so `ONLYWORLDS_VERSION` is the same). Two profile sentences changed and no fixture: the charter profile names what open means to a public reader (the World's `public_read`), and the map-space profile's whole-number range sentence is dated. No reader changed.
+
 ## [4.132.1] - 2026-11-03
 
 ### Changed
