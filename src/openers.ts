@@ -8,6 +8,7 @@
 
 import { ADDRESS_KEYS, elementAddress, type OwAddress, type OwAddressReading } from './address';
 import { ELEMENT_MARKS, marksOf, type OwElementMark } from './marks';
+import { ELEMENT_TYPES } from './v2/types.generated';
 import { refuseUnknownOptions } from './options';
 
 export type { OwElementMark } from './marks';
@@ -33,6 +34,8 @@ export interface OwToolOpen {
   needs: OwToolNeeds | null;
   /** What the element door does not open, in the graph section's words; [] or absent: it opens every element (a list older than the key has none). */
   element_skips?: readonly OwElementMark[];
+  /** The element types the element door opens, as type words (`character`); null or absent: every type (a list older than the key has none). */
+  element_types?: readonly string[] | null;
 }
 
 /** The keys of one tools list row that `openersFor` reads; a row straight from `tools.json` carries more, and they are ignored. */
@@ -131,7 +134,10 @@ function templateOf(row: string, key: 'world' | 'element', v: unknown): string |
  * a world door is a row to its world door that says "Opens the world". On an element given as
  * `options.element`, a row whose `open.element_skips` names a mark the element carries (room, hidden,
  * proposed, map space, a reading aid, each read as `worldGraph` reads it) is not there: its door cannot
- * open it. A world door alone opens the world, so it stays. For the `public` audience (the signed-out
+ * open it. A world door alone opens the world, so it stays. On an element's menu, a row whose
+ * `open.element_types` is a list that does not hold the address's type word is not there either, world
+ * door or not: the tool opens other kinds of element (read from the address, so no element body is needed;
+ * a world's menu reads no element types). For the `public` audience (the signed-out
  * reader) a row whose `open.needs` is `device` is not there, since a visitor's device holds no world of
  * this one's, and a row whose `needs` is `account` is there and says it needs one.
  *
@@ -153,7 +159,8 @@ function templateOf(row: string, key: 'world' | 'element', v: unknown): string |
  * rest: a `kind` that is neither, an element's openers asked of an address with no element, an unknown
  * key on the address, the surface or the options, a missing or unknown `audience`, a surface value of the
  * wrong type, an element given for a world's menu or naming another element than the address, a tools row
- * that is not one (a `needs` or an `element_skips` word outside the list's format included).
+ * that is not one (a `needs`, an `element_skips` or an `element_types` word outside the list's format, an
+ * empty `element_types`, or `element_types` on a row with no element door, included).
  */
 export function openersFor(
   tools: readonly OwTool[],
@@ -223,12 +230,20 @@ export function openersFor(
       fail(`tool ${r.id}: open.element_skips is a list of ${ELEMENT_MARKS.join(', ')}; got ${JSON.stringify(o.element_skips)}`);
     }
     if (elementDoor === null && (skips as readonly unknown[]).length > 0) fail(`tool ${r.id}: open.element_skips names what an element door leaves out, and the row has none`);
+    const types = o.element_types === undefined ? null : o.element_types;
+    if (types !== null && (!Array.isArray(types) || types.length === 0 || new Set(types).size !== types.length
+      || types.some((t) => !(ELEMENT_TYPES as readonly unknown[]).includes(t)))) {
+      fail(`tool ${r.id}: open.element_types is null or a non-empty list of distinct type words (${ELEMENT_TYPES.join(', ')}); got ${JSON.stringify(o.element_types)}`);
+    }
+    if (elementDoor === null && types !== null) fail(`tool ${r.id}: open.element_types names what an element door opens, and the row has none`);
     if (r.rung !== 'listed') continue;
     if (audience === 'public' && needs === 'device') continue;
     const template = kind === 'element' ? elementDoor ?? worldDoor : worldDoor;
     if (template === null) continue;
     // An element door that cannot open this element is no door (a row with skips has one: refused above).
     if (kind === 'element' && marks.some((m) => (skips as readonly unknown[]).includes(m))) continue;
+    // A tool that opens other kinds of element is no door for this one, and offers no world fallback either.
+    if (kind === 'element' && types !== null && !(types as readonly unknown[]).includes(type)) continue;
     // The first that holds. A word the row needs (it cannot open now) comes before "Opens the world" (it
     // opens, somewhere else), so a world door alone that needs a sign-in says the sign-in. With no
     // connection a web link opens nothing, whatever else it needs.
