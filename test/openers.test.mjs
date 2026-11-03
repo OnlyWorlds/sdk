@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { openersFor, parseOwLink, OwAddressError, TOOLS } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/openers.fixture.json', import.meta.url));
-const FIXTURE_SHA256 = 'b5c6afb76bf1ab2b95ee50641e2fd36344320d12fe0fd293d4f09fcf8cde7027';
+const FIXTURE_SHA256 = '6b1911bd207220c6679ee9ac2e927e6b93f8cf54178aff115c60923ca5707eae';
 const CASES = 92;
 
 /** The fixture writes the surface's keys snake_case; this package spells one of them in camelCase. */
@@ -28,7 +28,9 @@ function answer(doc, c) {
     if (err instanceof OwAddressError) return { refuse: { error: 'address', reason: err.reason } };
     if (err instanceof TypeError && 'refuse' in c && c.refuse.error === 'type') {
       const names = spelt(c.refuse.names);
-      return { refuse: err.message.includes(names) ? c.refuse : { error: 'type', message: err.message } };
+      // This package's own words for a key it does not take; any other refusal is of a value.
+      const kind = err.message.includes(`unknown option '${names}'`) ? 'unknown_key' : 'bad_value';
+      return { refuse: err.message.includes(names) ? { error: 'type', names: c.refuse.names, kind } : { error: 'type', message: err.message } };
     }
     return { threw: String(err) };
   }
