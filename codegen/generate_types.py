@@ -305,6 +305,13 @@ def render_maps(all_fields: dict[str, list[dict]], groups: dict[str, str],
     lines.append(f"export const ELEMENT_TYPES: ElementType[] = [{arr}];")
     lines.append("")
 
+    # The walk's own order, which the other packages print the 22 in; internal (the barrel names its
+    # exports one by one and leaves this out), so ELEMENT_TYPES keeps its published order.
+    std = ", ".join(f"'{t}'" for t in ELEMENT_TYPES)
+    lines.append("/** The 22 in the standard's own order (the walk's list), for messages that name them as the other packages do. Not exported from the package. */")
+    lines.append(f"export const STANDARD_TYPE_ORDER: readonly ElementType[] = [{std}];")
+    lines.append("")
+
     lines.append("/** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned")
     lines.append(" *  distribution's VERSION file (see the provenance block at the top of this file). */")
     lines.append(f"export const ONLYWORLDS_VERSION = '{_schema_version}' as const;")

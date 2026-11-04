@@ -8,7 +8,7 @@
 
 import { ADDRESS_KEYS, elementAddress, type OwAddress, type OwAddressReading } from './address';
 import { ELEMENT_MARKS, marksOf, type OwElementMark } from './marks';
-import { ELEMENT_TYPES } from './v2/types.generated';
+import { ELEMENT_TYPES, STANDARD_TYPE_ORDER } from './v2/types.generated';
 import { refuseUnknownOptions } from './options';
 
 export type { OwElementMark } from './marks';
@@ -233,7 +233,7 @@ export function openersFor(
     const types = o.element_types === undefined ? null : o.element_types;
     if (types !== null && (!Array.isArray(types) || types.length === 0 || new Set(types).size !== types.length
       || types.some((t) => !(ELEMENT_TYPES as readonly unknown[]).includes(t)))) {
-      fail(`tool ${r.id}: open.element_types is null or a non-empty list of distinct type words (${ELEMENT_TYPES.join(', ')}); got ${JSON.stringify(o.element_types)}`);
+      fail(`tool ${r.id}: open.element_types is null or a non-empty list of distinct type words (${STANDARD_TYPE_ORDER.join(', ')}); got ${JSON.stringify(o.element_types)}`);
     }
     if (elementDoor === null && types !== null) fail(`tool ${r.id}: open.element_types names what an element door opens, and the row has none`);
     if (r.rung !== 'listed') continue;

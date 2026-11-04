@@ -125,7 +125,7 @@ export class OwV2Client {
 
   /**
    * PUT /me/lenses -- choose the lenses this key's holder starts with: lens ids in order, 0 to 20,
-   * repeats dropped by keel; an empty list is a choice too (the draught then adds no frame), and keeps
+   * repeats dropped by the server; an empty list is a choice too (the draught then adds no frame), and keeps
    * a seat off its Titles' lenses. `null` goes back to never chosen: a seat playing a Character then
    * starts with its Titles' lenses (`lenses_from` says where a list comes from); on the owner's own
    * keys `null` is the empty list. Any write
@@ -168,6 +168,14 @@ export class OwV2Client {
     return this.request('GET', `/world/${seg('worldId', worldId)}/lenses`, { query, accountToken: 'path' }) as Promise<OwWorldLenses>;
   }
 
+  /**
+   * GET /me -- who this key is in its world: the world, the key's scope, kind and role, its
+   * membership and Character, the lenses it starts with, the world's reading aids, and the front
+   * door (`front_door`: the sponsor and their Character, your own Character, the Charter and the
+   * Objects it names, the seats you sponsor). The client's PIN is sent here when it has one, so a
+   * wrong PIN shows on this call first, which makes it the connection test. An account token is
+   * refused before sending: it is not a member of one world.
+   */
   async me(): Promise<OwMe> {
     if (this.keyKind === 'account') {
       throw new TypeError('me needs a world key: an account token is not a member of one world');
@@ -178,7 +186,7 @@ export class OwV2Client {
   /**
    * GET /members -- the world's roster: each member's id (null for the owner), kind, role,
    * Character and status (`removed` rows stay, so their elements keep `created_by`). Returns
-   * the rows; keel sends them as `{ data }` with no paging. A world key reads its own world's
+   * the rows; the server sends them as `{ data }` with no paging. A world key reads its own world's
    * roster and sends no `world`. An account token reads the roster of the world the client's
    * `world` names (`world=<id>`, the Bearer token, no PIN), with the token's grant there: the
    * owner's token as the owner, a member's as its own member key; a world where it has none is a
@@ -1001,7 +1009,7 @@ export class OwV2Client {
    * POST /account/worlds/{worldId}/links -- a new invite link for a world this client's
    * `ow_a_` token owns: `reader` is required (`person`, accepted with acceptJoin;
    * `agent`, redeemed at POST /join; `player`, a friend with no account, redeemed with
-   * redeemJoin for a read key); `role`, when left out, is keel's default: guest for a
+   * redeemJoin for a read key); `role`, when left out, is the server's default: guest for a
    * person link, contributor for an agent link (a player link is guest, and refuses any other), `days` (1, 7 or 30) to 7; `withCharacter` (agent links
    * only) to true; `character` (player links only) a Character's id or `new` (the default):
    * whoever opens the link first reads as it, until removed. `preview` (person and player links)
@@ -1148,7 +1156,7 @@ export class OwV2Client {
 
   /**
    * PATCH /account/worlds/{worldId}/members/{memberId} with `lenses` alone -- set the lenses a row
-   * starts with: lens ids in order, 0 to 20, repeats dropped by keel; an empty list is a choice too,
+   * starts with: lens ids in order, 0 to 20, repeats dropped by the server; an empty list is a choice too,
    * and keeps a seat off its Titles' lenses, while `null` puts the row back to never chosen (a seat
    * playing a Character then starts with its Titles' lenses; for `'owner'`, `null` is the empty list).
    * A member sets its own row (any role), an agent's or a player's seat it answers for (its sponsor),
@@ -1530,7 +1538,7 @@ export class OwV2Client {
 
   /**
    * POST /account/ask -- a question about a world the account owns or is in, answered by
-   * keel's AI proxy from `context` only (build it with buildAskContext from the elements
+   * onlyworlds.com's AI proxy from `context` only (build it with buildAskContext from the elements
    * the user sees; it leaves proposed, hidden and room elements out unless asked). The answer is "The world doesn't say." when the context does not hold
    * it. Needs the client's `ow_a_` token (a world key is a TypeError before sending).
    * Once the day's token rating is spent, an account that saved its own AI key on its account page is
@@ -1576,7 +1584,7 @@ export class OwV2Client {
 
   /**
    * GET /account/allowance -- the account's token rating, the one daily meter ask, sort and
-   * the Council spend from (keel 872431f): the rating, what is used and left today, and
+   * the Council spend from: the rating, what is used and left today, and
    * when it resets (the next midnight UTC), and `own_key` (`{provider}` when the account saved its own
    * AI key, which ask and sort use once the rating is spent; else null). Spends nothing. Needs the
    * client's `ow_a_` token.

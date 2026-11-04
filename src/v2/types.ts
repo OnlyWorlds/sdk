@@ -838,7 +838,7 @@ export interface OwMember {
   [k: string]: unknown;
 }
 
-/** GET /account/allowance: the account's token rating and what is left of it today (keel 872431f, 2026-10-14). */
+/** GET /account/allowance: the account's token rating and what is left of it today. */
 export interface OwAllowance {
   /** The account's token rating: its daily budget in tokens. */
   token_rating: number;
@@ -1537,8 +1537,8 @@ export interface OwClientConfig {
   fetch?: typeof globalThis.fetch;
   /**
    * Declare this client an AI agent: every element write (create, upsert, patch, delete,
-   * editLinks, bulk) carries `X-OW-Agent`, the operations keel declares it on, and keel
-   * records its writes as agent-made (`changed_via: 'declared'`; keel stores that the header
+   * editLinks, bulk) carries `X-OW-Agent`, the operations the API document declares it on, and onlyworlds.com
+   * records its writes as agent-made (`changed_via: 'declared'`; the server stores that the header
    * was there, never its value). Off by default, and it must stay off in a tool people use:
    * it describes the caller, so only the caller can set it. An agent seat's key is recorded
    * as an agent without it.

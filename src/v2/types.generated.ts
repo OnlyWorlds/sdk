@@ -71,6 +71,9 @@ export type ElementType = 'ability' | 'character' | 'collective' | 'construct' |
 
 export const ELEMENT_TYPES: ElementType[] = ['ability', 'character', 'collective', 'construct', 'creature', 'event', 'family', 'institution', 'language', 'law', 'location', 'map', 'marker', 'narrative', 'object', 'phenomenon', 'pin', 'relation', 'species', 'title', 'trait', 'zone'];
 
+/** The 22 in the standard's own order (the walk's list), for messages that name them as the other packages do. Not exported from the package. */
+export const STANDARD_TYPE_ORDER: readonly ElementType[] = ['ability', 'collective', 'character', 'construct', 'creature', 'event', 'family', 'institution', 'language', 'law', 'location', 'map', 'marker', 'narrative', 'object', 'phenomenon', 'pin', 'relation', 'species', 'title', 'trait', 'zone'];
+
 /** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned
  *  distribution's VERSION file (see the provenance block at the top of this file). */
 export const ONLYWORLDS_VERSION = '00.34.00' as const;

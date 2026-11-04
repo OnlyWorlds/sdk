@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.132.3] - 2026-11-04
+
+### Changed
+
+- `openersFor`'s refusal of a bad `element_types` lists the 22 type words in the standard's own order, as the Python package and the game SDKs do (the message only; what is refused is unchanged).
+- `me()` has a doc comment: what `GET /me` answers, that the client's PIN is sent there (the connection test), and that an account token is refused before sending.
+- The doc comments of `agent`, `setMyLenses`, `setMemberLenses`, `createWorldLink`, `members`, `ask` and `allowance` name the server as onlyworlds.com or the server.
+
+### Tests
+
+- The openers fixture gains three refusals of `element_types` (103 cases): a type word given twice, a word in another case, and a word that is no string. The same bytes as the Python package's copy.
+
 ## [4.132.2] - 2026-11-03
 
 ### Changed
