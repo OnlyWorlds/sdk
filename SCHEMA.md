@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.34.0-dist.107** — canonical schema **00.34.00**, published 2026-11-03.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.34.0-dist.108** — canonical schema **00.34.00**, published 2026-11-04.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -25,7 +25,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 ### Mechanics
 
 - `activation` (text) — Method or conditions under which the ability is activated
-- `duration` (integer) — Length of time the ability remains active or its effects persist, measured in TIME units
+- `duration` (integer) — Length of time the ability remains active or its effects persist, in the world's time unit (World time_basic_unit)
 - `potency` (integer) — Relative measure of the ability's inherent potency or force, used for scaling or comparison purposes
 - `range` (integer) — Effective reach or distance at which the ability can be used, in the world's distance unit (World distance_unit)
 - `effects` (multi link → phenomenon) — Phenomena that result from the ability's use, such as environmental changes or sensory effects
@@ -60,7 +60,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 
 - `background` (text) — History, upbringing, or formative experiences of the character
 - `motivations` (text) — Core desires, goals, or values that drive the character's choices and behavior
-- `birth_date` (integer) — Moment of birth, expressed in the world's TIME units
+- `birth_date` (integer) — Moment of birth, in the world's time unit (World time_basic_unit)
 - `birthplace` (single link → location) — Location where the character was born
 - `languages` (multi link → language) — Languages the character can understand, speak, or use for communication
 
@@ -105,7 +105,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 
 - `composition` (text) — Internal structure or demographic makeup of the collective
 - `count` (integer) — Number of members in the collective (approximate or exact)
-- `formation_date` (integer) — Date the collective was formed, using world TIME units
+- `formation_date` (integer) — Date the collective was formed, in the world's time unit (World time_basic_unit)
 - `operator` (single link → institution) — Institution that manages or directs the collective
 - `equipment` (multi link → object) — Tools or gear in possession of and/or regularly used by the collective
 
@@ -134,7 +134,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 - `history` (text) — The historical development or ideation of the construct, and its place in wider historical contexts
 - `status` (text) — The present condition or operational status of the construct
 - `reach` (text) — The geographic, cultural, or political extent of the construct's influence
-- `start_date` (integer) — The point in time when the construct began or was first established (uses world's TIME definition)
+- `start_date` (integer) — The point in time when the construct began or was first established, in the world's time unit (World time_basic_unit)
 - `end_date` (integer) — The point in time when the construct ceased to function or lost its meaning
 - `founder` (single link → character) — Character who conceived or initiated the construct
 - `custodian` (single link → institution) — Institution maintaining, enforcing, or exploiting the construct
@@ -182,7 +182,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 ### World
 
 - `status` (text) — Current situation or classification of the creature
-- `birth_date` (integer) — The time of the creature's birth, recorded in the world's defined TIME unit
+- `birth_date` (integer) — The time of the creature's birth, in the world's time unit (World time_basic_unit)
 - `location` (single link → location) — Specific location where the creature is currently found or most associated with
 - `zone` (single link → zone) — Larger area or region commonly inhabited or currently claimed by the creature
 
@@ -224,7 +224,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 - `families` (multi link → family) — Families relevant to the event
 - `relations` (multi link → relation) — Interpersonal or political relations relevant to the event
 - `titles` (multi link → title) — Titles relevant to the event
-- `constructs` (multi link → construct) — Concepts, laws, or built entities relevant to the event
+- `constructs` (multi link → construct) — Concepts, systems or built entities relevant to the event
 
 
 ## family  ·  colour: blue  ·  icon: supervisor_account
@@ -255,7 +255,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 ### Foundation
 
 - `doctrine` (text) — Core belief, mission, or purpose that drives the institution
-- `founding_date` (integer) — Date when the institution was established, in the world's TIME format
+- `founding_date` (integer) — Date when the institution was established, in the world's time unit (World time_basic_unit)
 - `parent_institution` (single link → institution) — Institution that governs, embodies, or originated this one
 
 ### Claims
@@ -297,7 +297,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 
 - `declaration` (text) — The formal wording, expression, or decree of the law
 - `purpose` (text) — The intent, motivation, or justification for the law's creation
-- `date` (integer) — Date the law was formally established, in world TIME units
+- `date` (integer) — Date the law was formally established, in the world's time unit (World time_basic_unit)
 - `parent_law` (single link → law) — A law that this law derives from, modifies, or enhances
 - `penalties` (multi link → construct) — Consequences intended to be applied when the law is contravened
 
@@ -374,7 +374,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 ### Details
 
 - `background_color` (text) — Color of the space around the map when zoomed out
-- `hierarchy` (integer) — To associate or differentiate between maps with a common parent
+- `hierarchy` (integer) — An integer to order or group the maps that share a parent; how a tool reads it is the tool's own
 - `width` (integer) — In pixels
 - `height` (integer) — In pixels
 - `depth` (integer) — In pixels
@@ -402,8 +402,8 @@ the group, the icon carries the type): blue · green · pink · amber.
 
 - `story` (text) — Content of the narrative, as told or remembered
 - `consequences` (text) — Outcomes or legacy of the narrative
-- `start_date` (integer) — Date when the narrative is first told or recorded, measured in world TIME units; the span it recounts lives on its events
-- `end_date` (integer) — Date when the narrative stops being told, measured in world TIME units; empty while it is still told
+- `start_date` (integer) — Date when the narrative is first told or recorded, in the world's time unit (World time_basic_unit); the span it recounts lives on its events
+- `end_date` (integer) — Date when the narrative stops being told, in the world's time unit (World time_basic_unit); empty while it is still told
 - `order` (integer) — Position of this narrative within a parent narrative's sequence
 - `parent_narrative` (single link → narrative) — Larger narrative that this narrative takes place in
 - `protagonist` (single link → character) — Primary character of the narrative
@@ -467,7 +467,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 
 - `expression` (text) — How the phenomenon manifests or takes shape in the world
 - `effects` (text) — The primary outcomes or changes caused by the phenomenon
-- `duration` (integer) — The amount of time the phenomenon lasts, measured in world TIME units
+- `duration` (integer) — The amount of time the phenomenon lasts, in the world's time unit (World time_basic_unit)
 - `catalysts` (multi link → object) — Objects or materials that initiate or enhance the phenomenon
 - `empowerments` (multi link → ability) — Abilities that initiate or enhance the phenomenon, or are initiated or enhanced by it
 
@@ -498,8 +498,8 @@ the group, the icon carries the type): blue · green · pink · amber.
 ### Nature
 
 - `background` (text) — History and origin of the relation
-- `start_date` (integer) — Date when the relation began, defined in world TIME units
-- `end_date` (integer) — Date when the relation ended if any, defined in world TIME units
+- `start_date` (integer) — Date when the relation began, in the world's time unit (World time_basic_unit)
+- `end_date` (integer) — Date when the relation ended if any, in the world's time unit (World time_basic_unit)
 - `intensity` (integer) — Significance of the relation, on a relative scale of 0 to 100
 - `actor` (single link → character) — Primary character defining the relation
 - `events` (multi link → event) — Events where the relation is involved or relevant
@@ -530,7 +530,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 ### Biology
 
 - `appearance` (text) — Typical physical or form features of the species
-- `life_span` (integer) — Average or typical life expectancy of an individual, defined in world TIME units
+- `life_span` (integer) — Average or typical life expectancy of an individual, in the world's time unit (World time_basic_unit)
 - `weight` (integer) — Average or typical adult weight, in the world's mass unit (World mass_unit)
 - `nourishment` (multi link → species) — Other species consumed as food sources
 - `reproduction` (multi link → construct) — Reproductive method(s) of the species
@@ -561,8 +561,8 @@ the group, the icon carries the type): blue · green · pink · amber.
 
 - `authority` (text) — Rights or powers granted by the title
 - `eligibility` (text) — Conditions or qualifications for receiving or holding the title
-- `grant_date` (integer) — Date on which the title was created or first granted, defined in world TIME units; a holder's own span is a Relation, not this field
-- `revoke_date` (integer) — Date on which the title ended or was abolished, defined in world TIME units; a holder's own span is a Relation, not this field
+- `grant_date` (integer) — Date on which the title was created or first granted, in the world's time unit (World time_basic_unit); a holder's own span is a Relation, not this field
+- `revoke_date` (integer) — Date on which the title ended or was abolished, in the world's time unit (World time_basic_unit); a holder's own span is a Relation, not this field
 - `issuer` (single link → institution) — Institution that formally created or granted the title
 - `body` (single link → institution) — Institution in which the title functions or holds relevance
 - `superior_title` (single link → title) — Another title that has authority over this one
@@ -622,8 +622,8 @@ the group, the icon carries the type): blue · green · pink · amber.
 
 - `role` (text) — The operational function or intent of the zone
 - `shape` (text) — How the zone's markers are joined: polygon (a closed area: the last marker joins the first) or line (an open path, drawn in marker order). Lowercase. Empty, absent, or any other value means the shape is not stated, and a reader draws a polygon
-- `start_date` (integer) — Date when the zone becomes extant or relevant, defined in world TIME units
-- `end_date` (integer) — Date when the zone ceases to be meaningful or enforced, defined in world TIME units
+- `start_date` (integer) — Date when the zone becomes extant or relevant, in the world's time unit (World time_basic_unit)
+- `end_date` (integer) — Date when the zone ceases to be meaningful or enforced, in the world's time unit (World time_basic_unit)
 - `phenomena` (multi link → phenomenon) — Phenomena that affect, define, or occur within the zone
 - `linked_zones` (multi link → zone) — Other zones that are associated with the zone
 

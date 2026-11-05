@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.132.4] - 2026-11-05
+
+### Changed
+
+- The schema pin moves to schema-dist `v0.34.0-dist.108` (canonical `00.34.00` unchanged, so `ONLYWORLDS_VERSION` is the same). Three description fixes across 19 fields, no field added or removed: `Event.constructs` says concepts, systems or built entities (no longer laws); the seventeen time fields say in one phrasing that they count in the World's `time_basic_unit`; `Map.hierarchy` says it is an integer to order or group the maps that share a parent, read as each tool chooses; three map descriptions lose a trailing space. The generated types' field comments and `SCHEMA.md` carry the new words.
+
 ## [4.132.3] - 2026-11-04
 
 ### Changed

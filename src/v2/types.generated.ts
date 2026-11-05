@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.107
-//         commit          1d774b92002f5459d19a60b1f5499a0257504a22
-//         MANIFEST sha256 6b8917461a4af7100017845ec32dc196b4e03733b30547a9a06b30f2aa6a242d
-//         canonical 00.34.00, dist serial 107, published 2026-11-03
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.108
+//         commit          c618b9db474e9f77a9626cf55a1cc0b5256be154
+//         MANIFEST sha256 077a53b463e562b729ba96e941d8ba82403e7cd7184b95450ee57b7b6edbf6ed
+//         canonical 00.34.00, dist serial 108, published 2026-11-04
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -1204,7 +1204,7 @@ export interface AbilityV2 extends OwElementBase {
   type: "ability";
   /** Method or conditions under which the ability is activated */
   activation?: string;
-  /** Length of time the ability remains active or its effects persist, measured in TIME units */
+  /** Length of time the ability remains active or its effects persist, in the world's time unit (World time_basic_unit) */
   duration: number | null;
   /** Relative measure of the ability's inherent potency or force, used for scaling or comparison purposes */
   potency: number | null;
@@ -1238,7 +1238,7 @@ export interface CollectiveV2 extends OwElementBase {
   composition?: string;
   /** Number of members in the collective (approximate or exact) */
   count: number | null;
-  /** Date the collective was formed, using world TIME units */
+  /** Date the collective was formed, in the world's time unit (World time_basic_unit) */
   formation_date: number | null;
   /** Primary behaviors or actions the collective engages in */
   activity?: string;
@@ -1278,7 +1278,7 @@ export interface CharacterV2 extends OwElementBase {
   background?: string;
   /** Core desires, goals, or values that drive the character's choices and behavior */
   motivations?: string;
-  /** Moment of birth, expressed in the world's TIME units */
+  /** Moment of birth, in the world's time unit (World time_basic_unit) */
   birth_date: number | null;
   /** Brief summary of the character's current condition, role, or predicament */
   reputation?: string;
@@ -1344,7 +1344,7 @@ export interface ConstructV2 extends OwElementBase {
   status?: string;
   /** The geographic, cultural, or political extent of the construct's influence */
   reach?: string;
-  /** The point in time when the construct began or was first established (uses world's TIME definition) */
+  /** The point in time when the construct began or was first established, in the world's time unit (World time_basic_unit) */
   start_date: number | null;
   /** The point in time when the construct ceased to function or lost its meaning */
   end_date: number | null;
@@ -1404,7 +1404,7 @@ export interface CreatureV2 extends OwElementBase {
   demeanor?: string;
   /** Current situation or classification of the creature */
   status?: string;
-  /** The time of the creature's birth, recorded in the world's defined TIME unit */
+  /** The time of the creature's birth, in the world's time unit (World time_basic_unit) */
   birth_date: number | null;
   /** Difficulty or threat level of the creature in a gameplay context */
   challenge_rating: number | null;
@@ -1474,7 +1474,7 @@ export interface EventV2 extends OwElementBase {
   relations: string[];  // -> relation
   /** Titles relevant to the event */
   titles: string[];  // -> title
-  /** Concepts, laws, or built entities relevant to the event */
+  /** Concepts, systems or built entities relevant to the event */
   constructs: string[];  // -> construct
 }
 
@@ -1510,7 +1510,7 @@ export interface InstitutionV2 extends OwElementBase {
   type: "institution";
   /** Core belief, mission, or purpose that drives the institution */
   doctrine?: string;
-  /** Date when the institution was established, in the world's TIME format */
+  /** Date when the institution was established, in the world's time unit (World time_basic_unit) */
   founding_date: number | null;
   /** Current political, cultural, or functional standing of the institution in the world */
   status?: string;
@@ -1556,7 +1556,7 @@ export interface LawV2 extends OwElementBase {
   declaration?: string;
   /** The intent, motivation, or justification for the law's creation */
   purpose?: string;
-  /** Date the law was formally established, in world TIME units */
+  /** Date the law was formally established, in the world's time unit (World time_basic_unit) */
   date: number | null;
   /** A law that this law derives from, modifies, or enhances */
   parent_law: string | null;  // -> law
@@ -1648,7 +1648,7 @@ export interface MapV2 extends OwElementBase {
   type: "map";
   /** Color of the space around the map when zoomed out */
   background_color?: string;
-  /** To associate or differentiate between maps with a common parent */
+  /** An integer to order or group the maps that share a parent; how a tool reads it is the tool's own */
   hierarchy: number | null;
   /** In pixels */
   width: number | null;
@@ -1684,9 +1684,9 @@ export interface NarrativeV2 extends OwElementBase {
   story?: string;
   /** Outcomes or legacy of the narrative */
   consequences?: string;
-  /** Date when the narrative is first told or recorded, measured in world TIME units; the span it recounts lives on its events */
+  /** Date when the narrative is first told or recorded, in the world's time unit (World time_basic_unit); the span it recounts lives on its events */
   start_date: number | null;
-  /** Date when the narrative stops being told, measured in world TIME units; empty while it is still told */
+  /** Date when the narrative stops being told, in the world's time unit (World time_basic_unit); empty while it is still told */
   end_date: number | null;
   /** Position of this narrative within a parent narrative's sequence */
   order: number | null;
@@ -1776,7 +1776,7 @@ export interface PhenomenonV2 extends OwElementBase {
   expression?: string;
   /** The primary outcomes or changes caused by the phenomenon */
   effects?: string;
-  /** The amount of time the phenomenon lasts, measured in world TIME units */
+  /** The amount of time the phenomenon lasts, in the world's time unit (World time_basic_unit) */
   duration: number | null;
   /** Cultural, religious, or narrative meaning associated with the phenomenon */
   mythology?: string;
@@ -1814,9 +1814,9 @@ export interface RelationV2 extends OwElementBase {
   type: "relation";
   /** History and origin of the relation */
   background?: string;
-  /** Date when the relation began, defined in world TIME units */
+  /** Date when the relation began, in the world's time unit (World time_basic_unit) */
   start_date: number | null;
-  /** Date when the relation ended if any, defined in world TIME units */
+  /** Date when the relation ended if any, in the world's time unit (World time_basic_unit) */
   end_date: number | null;
   /** Significance of the relation, on a relative scale of 0 to 100 */
   intensity: number | null;
@@ -1862,7 +1862,7 @@ export interface SpeciesV2 extends OwElementBase {
   type: "species";
   /** Typical physical or form features of the species */
   appearance?: string;
-  /** Average or typical life expectancy of an individual, defined in world TIME units */
+  /** Average or typical life expectancy of an individual, in the world's time unit (World time_basic_unit) */
   life_span: number | null;
   /** Average or typical adult weight, in the world's mass unit (World mass_unit) */
   weight: number | null;
@@ -1902,9 +1902,9 @@ export interface TitleV2 extends OwElementBase {
   authority?: string;
   /** Conditions or qualifications for receiving or holding the title */
   eligibility?: string;
-  /** Date on which the title was created or first granted, defined in world TIME units; a holder's own span is a Relation, not this field */
+  /** Date on which the title was created or first granted, in the world's time unit (World time_basic_unit); a holder's own span is a Relation, not this field */
   grant_date: number | null;
-  /** Date on which the title ended or was abolished, defined in world TIME units; a holder's own span is a Relation, not this field */
+  /** Date on which the title ended or was abolished, in the world's time unit (World time_basic_unit); a holder's own span is a Relation, not this field */
   revoke_date: number | null;
   /** Current state or general condition of the title */
   status?: string;
@@ -1986,9 +1986,9 @@ export interface ZoneV2 extends OwElementBase {
   role?: string;
   /** How the zone's markers are joined: polygon (a closed area: the last marker joins the first) or line (an open path, drawn in marker order). Lowercase. Empty, absent, or any other value means the shape is not stated, and a reader draws a polygon */
   shape?: string;
-  /** Date when the zone becomes extant or relevant, defined in world TIME units */
+  /** Date when the zone becomes extant or relevant, in the world's time unit (World time_basic_unit) */
   start_date: number | null;
-  /** Date when the zone ceases to be meaningful or enforced, defined in world TIME units */
+  /** Date when the zone ceases to be meaningful or enforced, in the world's time unit (World time_basic_unit) */
   end_date: number | null;
   /** Historical and key knowledge about the zone */
   context?: string;
