@@ -36,6 +36,8 @@ export interface OwToolOpen {
   element_skips?: readonly OwElementMark[];
   /** The element types the element door opens, as type words (`character`); null or absent: every type (a list older than the key has none). */
   element_types?: readonly string[] | null;
+  /** True when the links open a public world for someone not signed in, though `needs` is `account` for a private one: a public page offers the row live. Only beside `needs: 'account'`; absent or false: as `needs` says. */
+  opens_public?: boolean;
 }
 
 /** The keys of one tools list row that `openersFor` reads; a row straight from `tools.json` carries more, and they are ignored. */
@@ -139,7 +141,9 @@ function templateOf(row: string, key: 'world' | 'element', v: unknown): string |
  * door or not: the tool opens other kinds of element (read from the address, so no element body is needed;
  * a world's menu reads no element types). For the `public` audience (the signed-out
  * reader) a row whose `open.needs` is `device` is not there, since a visitor's device holds no world of
- * this one's, and a row whose `needs` is `account` is there and says it needs one.
+ * this one's, and a row whose `needs` is `account` is there and says it needs one, unless its
+ * `open.opens_public` is true: its links open a public world with nothing signed in, so on a public page
+ * it needs nothing and reads as a live row. Anywhere else the row reads as its `needs` says.
  *
  * Each row's `state`, the first that holds: "You are here" for the surface's own tool (its `client` is
  * `surface.tool`); then, when `surface.online` is false, "Needs a connection" for a row whose href is a
@@ -160,7 +164,8 @@ function templateOf(row: string, key: 'world' | 'element', v: unknown): string |
  * key on the address, the surface or the options, a missing or unknown `audience`, a surface value of the
  * wrong type, an element given for a world's menu or naming another element than the address, a tools row
  * that is not one (a `needs`, an `element_skips` or an `element_types` word outside the list's format, an
- * empty `element_types`, or `element_types` on a row with no element door, included).
+ * empty `element_types`, `element_types` on a row with no element door, or an `opens_public` that is
+ * not true or false, or true beside a `needs` other than `account`, included).
  */
 export function openersFor(
   tools: readonly OwTool[],
@@ -225,6 +230,9 @@ export function openersFor(
     const elementDoor = templateOf(r.id, 'element', o.element);
     const needs = o.needs === undefined ? null : o.needs;
     if (!NEEDS.includes(needs)) fail(`tool ${r.id}: open.needs is 'account', 'device' or null; got ${JSON.stringify(needs)}`);
+    const opensPublic = o.opens_public === undefined ? false : o.opens_public;
+    if (typeof opensPublic !== 'boolean') fail(`tool ${r.id}: open.opens_public is true or false; got ${JSON.stringify(o.opens_public)}`);
+    if (opensPublic && needs !== 'account') fail(`tool ${r.id}: open.opens_public is true only beside needs 'account'; got needs ${JSON.stringify(needs)}`);
     const skips = o.element_skips === undefined || o.element_skips === null ? [] : o.element_skips;
     if (!Array.isArray(skips) || skips.some((s) => !ELEMENT_MARKS.includes(s as OwElementMark))) {
       fail(`tool ${r.id}: open.element_skips is a list of ${ELEMENT_MARKS.join(', ')}; got ${JSON.stringify(o.element_skips)}`);
@@ -248,13 +256,16 @@ export function openersFor(
     // opens, somewhere else), so a world door alone that needs a sign-in says the sign-in. With no
     // connection a web link opens nothing, whatever else it needs.
     const href = fill(template);
+    // What the row needs on this surface: a public page shows a public world, which a row that opens one
+    // opens with nothing signed in.
+    const need = audience === 'public' && opensPublic ? null : needs;
     let state: OwOpenerState | null = null;
     if (tool !== null && r.client === tool) state = 'You are here';
     else if (offline(href)) state = OFFLINE;
-    else if (audience === 'public' && needs === 'account') state = NO_ACCOUNT;
-    else if (needs === 'account' && !browser) state = 'Opens in your browser';
-    else if (needs === 'account' && signedIn === false) state = `Sign in to ${r.name} first`;
-    else if (needs === 'device' && phone) state = 'Needs the world on this phone';
+    else if (audience === 'public' && need === 'account') state = NO_ACCOUNT;
+    else if (need === 'account' && !browser) state = 'Opens in your browser';
+    else if (need === 'account' && signedIn === false) state = `Sign in to ${r.name} first`;
+    else if (need === 'device' && phone) state = 'Needs the world on this phone';
     else if (kind === 'element' && elementDoor === null) state = 'Opens the world';
     rows.push({ id: r.id, name: r.name, href, state });
   }

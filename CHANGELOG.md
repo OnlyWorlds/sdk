@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.133.0] - 2026-11-06
+
+### Added
+
+- `openersFor` reads a tools-list row's new `open.opens_public`: `true` when the tool's links open a public world for someone who is not signed in, although its `needs` is `account` for a private one. On a world's public page (the `public` audience) such a row is a live row with no word, instead of "Needs an account"; anywhere else it reads as its `needs` says, since only a public page knows the world is public. Absent or `false` reads as before, so a list without the key gives the same rows. The Waymark draws the row live there. `OwToolOpen` types the key.
+- `openersFor` refuses an `opens_public` that is not `true` or `false`, and `true` beside a `needs` other than `account` (a row that needs nothing already opens a public world, and a row that needs the device never reaches a public page), as the tools list's own check does. Seven new cases in the shared openers fixture (110 in all, the same bytes as the Python package's).
+
 ## [4.132.4] - 2026-11-05
 
 ### Changed

@@ -131,7 +131,8 @@ function shapedOn(at: string, now: Date): string {
  *
  * For the public reader, a tool that needs an account says "Needs an account" and is drawn the same
  * way: grey, a link with no href, `aria-disabled="true"`, in the arrow and Tab order, doing nothing
- * when pressed.
+ * when pressed. A tool whose row opens a public world with nothing signed in (`open.opens_public`) is
+ * a live row there.
  *
  * Keyboard: the mark is a button and the fan-out a menu; Tab goes from the mark through the rows in
  * order, the arrow keys, Home and End move within it, Escape closes it and returns focus to what opened
