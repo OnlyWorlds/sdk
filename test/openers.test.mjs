@@ -72,5 +72,5 @@ test('TOOLS, the baked list, gives the site\'s row and then each listed tool wit
   const open = openersFor(TOOLS, 'world', { form: 'human', world }, { audience: 'public' });
   // The public: a tool that needs the device is not there; one that needs an account says so.
   assert.deepEqual(open.map((r) => r.id), ['onlyworlds', ...offered.filter((t) => t.open.needs !== 'device').map((t) => t.id)]);
-  for (const r of open.slice(1)) assert.equal(r.state, offered.find((t) => t.id === r.id).open.needs === 'account' ? 'Needs an account' : null, r.id);
+  for (const r of open.slice(1)) assert.equal(r.state, ((o) => o.needs === 'account' && o.opens_public !== true)(offered.find((t) => t.id === r.id).open) ? 'Needs an account' : null, r.id);
 });

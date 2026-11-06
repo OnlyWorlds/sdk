@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.133.1] - 2026-11-06
+
+### Changed
+
+- `TOOLS` is the tools list at `9452529`: Atlas's row now says `opens_public: true` (its links open a public world with nothing signed in, and `needs` stays `account` for a private one), so `openersFor` with `TOOLS` offers Atlas as a live row on a world's public page.
+
 ## [4.133.0] - 2026-11-06
 
 ### Added
