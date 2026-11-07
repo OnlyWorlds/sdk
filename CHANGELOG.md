@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.133.2] - 2026-11-08
+
+### Changed
+
+- Schema repinned to schema-dist `v0.34.0-dist.109` (canonical 00.34.00 unchanged, no field moved). The calendar profile now refuses an era whose `year_base` is present and not 0 or 1, as its field table always said, and its fixture gains `refuse-year-base-five` (77 cases, 43 refusals). The calendar reader already refused such an era; the replayed fixture now holds it.
+
 ### Fixed
 
 - `mintWorldKey`'s comment said that without `keep`, revoking the token takes the keys it minted. That holds for a token a tool got through Sign in with OnlyWorlds; a token from `signInWithPassword` or one made by hand never takes its keys, as `revokeAccountToken`'s comment already said. Words only.
