@@ -8,6 +8,7 @@ earlier history lives in git log only.
 ### Fixed
 
 - `mintWorldKey`'s comment said that without `keep`, revoking the token takes the keys it minted. That holds for a token a tool got through Sign in with OnlyWorlds; a token from `signInWithPassword` or one made by hand never takes its keys, as `revokeAccountToken`'s comment already said. Words only.
+- `createAccountWorld`'s comments said an account with a PIN must leave `pin` out (a 422) and that the route takes no Idempotency-Key. Since 2026-11-07 the server checks a `pin` sent by an account that has one before it makes the world (a wrong one is a 401 with `param: 'pin'`, nothing made) and takes an Idempotency-Key, whose replay answers the world without its key. The call is unchanged: it sends `pin` as given and no Idempotency-Key. Words only.
 
 ## [4.133.1] - 2026-11-06
 

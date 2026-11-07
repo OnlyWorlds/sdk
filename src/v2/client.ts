@@ -1377,18 +1377,20 @@ export class OwV2Client {
 
   /**
    * POST /account/worlds -- make a world on the account, with its one write key. `name` is required
-   * (1 to 255 characters, not blank; keel trims it). `pin` only while the account has no PIN (4
-   * digits, 1000-9999): it becomes the account PIN and the write wall on every world of the
-   * account. An account with a PIN must leave it out. Either mistake is a 422 with `param: 'pin'`
-   * (`err.param`) and nothing made, so a tool that cannot tell which account it holds sends without
-   * `pin` first and, on that 422, again with it. `keyName` names the write key as the website's key
+   * (1 to 255 characters, not blank; keel trims it). `pin` is the account PIN, 4 digits. An account
+   * with no PIN must send one (1000-9999): it becomes the account PIN and the write wall on every
+   * world of the account; left out, a 422 with `param: 'pin'` (`err.param`) and nothing made. An
+   * account with a PIN may send it to have it checked before the world is made: a wrong one is a 401
+   * `invalid_credentials` with `param: 'pin'` and nothing made, counted toward the same lockout as a
+   * write's PIN (then 429 `rate_limited`); left out, the world takes the account's PIN. So a tool
+   * that holds the person's PIN can always send it. `keyName` names the write key as the website's key
    * list shows it (1 to 80 characters, trimmed; null or left out: no name). `source` and `producer`
    * are the folder format's provenance lines (spec 4.2), each an object or null, from a tool that
    * makes the world from a folder: kept on the World as given, served by getWorld() as `origin`.
    * Only the keys given are sent, `keyName` as `key_name`. 201: the world's row, as
-   * listAccountWorlds lists it, with the full write key once in `key`. Account token only; no
-   * Idempotency-Key (keel's document declares none): if the answer is lost, the world is in
-   * listAccountWorlds, and mintWorldKey gives it a key.
+   * listAccountWorlds lists it, with the full write key once in `key`. Account token only. Sends no
+   * Idempotency-Key (keel takes one since 2026-11-07, and a replay answers the world without `key`):
+   * if the answer is lost, the world is in listAccountWorlds, and mintWorldKey gives it a key.
    */
   async createAccountWorld(opts: OwCreateAccountWorldInput): Promise<OwCreatedAccountWorld> {
     only('createAccountWorld', opts, ['name', 'pin', 'keyName', 'source', 'producer']);

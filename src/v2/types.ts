@@ -1192,7 +1192,7 @@ export interface OwAccountWorld {
 export interface OwCreateAccountWorldInput {
   /** The world's name: 1 to 255 characters, not blank (keel trims it). */
   name: string;
-  /** Only for an account with no PIN yet: 4 digits, 1000-9999, which becomes the account PIN. An account with a PIN leaves it out. */
+  /** The account PIN, 4 digits. An account with no PIN yet must send one (1000-9999), which becomes the account PIN; an account with a PIN may send it to have it checked before the world is made (wrong: 401 with `param: 'pin'`, nothing made), or leave it out. */
   pin?: string | number;
   /** A name for the world's write key, as the website's key list shows it: 1 to 80 characters, trimmed. Left out or null: no name. */
   keyName?: string | null;
