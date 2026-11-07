@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Fixed
+
+- `mintWorldKey`'s comment said that without `keep`, revoking the token takes the keys it minted. That holds for a token a tool got through Sign in with OnlyWorlds; a token from `signInWithPassword` or one made by hand never takes its keys, as `revokeAccountToken`'s comment already said. Words only.
+
 ## [4.133.1] - 2026-11-06
 
 ### Changed

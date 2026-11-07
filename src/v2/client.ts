@@ -1415,7 +1415,9 @@ export class OwV2Client {
    * token only; no Idempotency-Key. `keep: true` keeps the key across a sign-out: revoking the token
    * that minted it leaves it live (a tool that stores a key on the device passes it), while
    * disconnecting the tool, or a replayed sign-in code, still takes it; the answer says `kept`.
-   * Without it, revoking the token revokes the keys it minted unless the tool holds another live token.
+   * Without it, revoking a token a tool got through Sign in with OnlyWorlds revokes the keys it minted,
+   * unless the person holds another live token of the same tool; a token made by hand or by a password
+   * sign-in (signInWithPassword), or one of a tool that asks each time, never takes its keys.
    */
   async mintWorldKey(worldId: string, opts: { scope?: 'read' | 'write'; name?: string | null; keep?: boolean } = {}): Promise<OwMintedKey> {
     only('mintWorldKey', opts, ['scope', 'name', 'keep']);
