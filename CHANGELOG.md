@@ -5,8 +5,11 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.134.1] - 2026-11-08
+
 ### Fixed
 
+- `OwWorldKeyRow` and `OwWorldKeyMember` are exported. 4.134.0 named them in `madeWorldKey`'s signature and in its notes, but left them out of the package's export list, so `import { type OwWorldKeyRow }` failed to compile. A test now reads each built entry's type declarations against its export list.
 - `mintWorldKey`'s comment now says to mint again with a new idempotency key after a lost answer. The same key sent again makes a second key, and `madeWorldKey` keeps naming the first, so the second could never be found. Words only.
 
 ## [4.134.0] - 2026-11-08
