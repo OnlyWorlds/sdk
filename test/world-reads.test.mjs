@@ -335,6 +335,7 @@ const METHODS = {
   listAccountWorlds: ['account', (c) => c.listAccountWorlds()],
   createAccountWorld: ['account', (c) => c.createAccountWorld({ name: 'W' })],
   mintWorldKey: ['account', (c) => c.mintWorldKey(W)],
+  madeWorldKey: ['account', (c) => c.madeWorldKey(W, 'mint-1')],
   revokeWorldKey: ['account', (c) => c.revokeWorldKey(W, 'k1')],
   listAccountTokens: ['account', (c) => c.listAccountTokens()],
   revokeAccountToken: ['account', (c) => c.revokeAccountToken('t1')],

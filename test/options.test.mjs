@@ -74,6 +74,7 @@ const FENCED = {
   'OwV2Client.worldLenses#1': () => world.worldLenses('w', U),
   'OwV2Client.declineProposal#3': () => world.declineProposal('character', 'x', 'p', U),
   'OwV2Client.mintWorldKey#1': () => account.mintWorldKey('w', U),
+  'OwV2Client.madeWorldKey#2': () => account.madeWorldKey('w', 'mint-1', U),
   'OwV2Client.revokeWorldKey#2': () => account.revokeWorldKey('w', 'k', U),
   'OwV2Client.revokeAccountToken#1': () => account.revokeAccountToken('t', U),
   'OwV2Client.createAccountWorld#0': () => account.createAccountWorld({ name: 'W', ...U }),

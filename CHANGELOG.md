@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.134.0] - 2026-11-08
+
+### Added
+
+- `madeWorldKey(worldId, idempotencyKey, { signal })`: the key a `mintWorldKey` call sent with that idempotency key made, as its row without the key itself (`OwWorldKeyRow`: id, name, last four, scope, last used, revoked, kept, and `member` on a member-bound key), or null when it made none. A revoked key still answers, with `revoked: true`. Null too from a server before the lookup, which answers that address 405.
+- `mintWorldKey` takes `idempotencyKey`, sent as the Idempotency-Key header, and `signal`. The mint is never replayed (a stored answer would keep the key), so a second mint with the same key makes a second key. The server remembers the idempotency key on the row instead. When an answer is lost: keep the idempotency key on the device before the send, ask `madeWorldKey` after a network error or a timeout, revoke the id it names, and mint again. A 4xx made no key, and "none made" is worth believing only a couple of minutes after the send. An `idempotencyKey` that is not a non-empty string is a TypeError before anything is sent.
+- `OwWorldKeyMember`, the membership a member-bound key is bound to; `OwMintedKey.member` is typed with it (it was a plain record).
+
 ## [4.133.2] - 2026-11-08
 
 ### Changed

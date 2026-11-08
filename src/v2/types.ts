@@ -1231,9 +1231,41 @@ export interface OwMintedKey {
   last_used_at: string | null;
   revoked: boolean;
   key: string;
-  member?: Record<string, unknown>;
+  member?: OwWorldKeyMember;
   /** True when minted with `keep: true`: no revoke of the token that minted it takes it (a sign-out keeps it). */
   kept?: boolean;
+}
+
+/**
+ * The membership a member-bound world key is bound to. A person's carries `username`; an agent
+ * seat's `agent_name` (its username null); a player seat's `kind` and `name` (its username null).
+ */
+export interface OwWorldKeyMember {
+  id: string;
+  username?: string | null;
+  agent_name?: string;
+  kind?: string;
+  name?: string;
+}
+
+/**
+ * A world key's row as GET /account/worlds/{id}/keys/made answers it (madeWorldKey): the key a
+ * mint sent with that Idempotency-Key made, without the key itself. A revoked key still answers,
+ * with `revoked: true`.
+ */
+export interface OwWorldKeyRow {
+  id: string;
+  /** The key's label, an empty string when it has none. */
+  name: string;
+  /** The key's last four characters; the key itself is shown once, at the mint. */
+  last4: string;
+  scope: 'READ' | 'WRITE';
+  last_used_at: string | null;
+  revoked: boolean;
+  /** True when the key is kept across a sign-out (`keep` at the mint). */
+  kept: boolean;
+  /** On a member-bound key only: the membership it is bound to. An owner key has none. */
+  member?: OwWorldKeyMember;
 }
 
 /** An account token as GET /account/tokens lists it: by name and last four, never the token itself. */

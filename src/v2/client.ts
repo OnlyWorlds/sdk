@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwWorldLenses,
-  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwAccountToken, OwMintedKey, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwAccountToken, OwMintedKey, OwWorldKeyRow, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
   OwWorldProposalList, OwReviewInput, OwReviewed, OwCreateAccountWorldInput, OwCreatedAccountWorld,
@@ -1414,17 +1414,34 @@ export class OwV2Client {
    * name). The full key comes back
    * once in `key`. The owner mints a world key; a member mints their own member key, 409
    * `pin_required` (`err.isPinRequired`) for a write key while the account has no PIN. Account
-   * token only; no Idempotency-Key. `keep: true` keeps the key across a sign-out: revoking the token
+   * token only. `keep: true` keeps the key across a sign-out: revoking the token
    * that minted it leaves it live (a tool that stores a key on the device passes it), while
    * disconnecting the tool, or a replayed sign-in code, still takes it; the answer says `kept`.
    * Without it, revoking a token a tool got through Sign in with OnlyWorlds revokes the keys it minted,
    * unless the person holds another live token of the same tool; a token made by hand or by a password
    * sign-in (signInWithPassword), or one of a tool that asks each time, never takes its keys.
+   *
+   * `idempotencyKey` is sent as the Idempotency-Key header. The mint is never replayed (a stored
+   * answer would keep the key): a second mint with the same key makes a second key. The server
+   * remembers the key on the row instead, so when an answer is lost, madeWorldKey finds the key this
+   * call made, and the tool revokes it by its id and mints again. `signal` (an AbortSignal) goes to
+   * fetch as given; an abort rejects with an OwNetworkError.
+   *
+   * When the answer may be lost: keep the idempotency key on the device before the send. A 4xx made
+   * no key. After a network error or a timeout, ask madeWorldKey, and revoke the id it names. Believe
+   * its "none made" only a couple of minutes after the send, since an abort stops the wait, not the
+   * server's work.
    */
-  async mintWorldKey(worldId: string, opts: { scope?: 'read' | 'write'; name?: string | null; keep?: boolean } = {}): Promise<OwMintedKey> {
-    only('mintWorldKey', opts, ['scope', 'name', 'keep']);
+  async mintWorldKey(
+    worldId: string,
+    opts: { scope?: 'read' | 'write'; name?: string | null; keep?: boolean; idempotencyKey?: string; signal?: AbortSignal } = {},
+  ): Promise<OwMintedKey> {
+    only('mintWorldKey', opts, ['scope', 'name', 'keep', 'idempotencyKey', 'signal']);
     if (opts.keep !== undefined && typeof opts.keep !== 'boolean') {
       throw new TypeError(`mintWorldKey: keep is true or false, got ${JSON.stringify(opts.keep)}. Nothing was sent.`);
+    }
+    if (opts.idempotencyKey !== undefined && (typeof opts.idempotencyKey !== 'string' || opts.idempotencyKey === '')) {
+      throw new TypeError(`mintWorldKey: idempotencyKey is a non-empty string, got ${JSON.stringify(opts.idempotencyKey)}. Nothing was sent.`);
     }
     if (this.keyKind !== 'account') {
       throw new TypeError('mintWorldKey needs an account token (ow_a_)');
@@ -1433,7 +1450,38 @@ export class OwV2Client {
     if (opts.scope !== undefined) body.scope = opts.scope;
     if (opts.name !== undefined) body.name = opts.name;
     if (opts.keep !== undefined) body.keep = opts.keep;
-    return this.request('POST', `/account/worlds/${seg('worldId', worldId)}/keys`, { body }) as Promise<OwMintedKey>;
+    return this.request('POST', `/account/worlds/${seg('worldId', worldId)}/keys`, {
+      body,
+      ...(opts.idempotencyKey !== undefined ? { idempotencyKey: opts.idempotencyKey } : {}),
+      ...withSignal(opts.signal),
+    }) as Promise<OwMintedKey>;
+  }
+
+  /**
+   * GET /account/worlds/{worldId}/keys/made?key= -- the key a mintWorldKey call sent with this
+   * `idempotencyKey` made, as a row without the key itself (`OwWorldKeyRow`), or null when it made
+   * none. A revoked key still answers, with `revoked: true`. The owner finds the keys they minted; a
+   * member only the keys bound to their seat; anything else is null (the server's one 404). Null also
+   * for a server from before the lookup, which answers this address 405. `signal` goes to fetch as
+   * given. Account token only.
+   */
+  async madeWorldKey(worldId: string, idempotencyKey: string, opts: { signal?: AbortSignal } = {}): Promise<OwWorldKeyRow | null> {
+    only('madeWorldKey', opts, ['signal']);
+    if (typeof idempotencyKey !== 'string' || idempotencyKey === '') {
+      throw new TypeError(`madeWorldKey: the idempotency key is a non-empty string, got ${JSON.stringify(idempotencyKey)}. Nothing was sent.`);
+    }
+    if (this.keyKind !== 'account') {
+      throw new TypeError('madeWorldKey needs an account token (ow_a_)');
+    }
+    try {
+      return await this.request('GET', `/account/worlds/${seg('worldId', worldId)}/keys/made`, {
+        query: `key=${encodeURIComponent(idempotencyKey)}`,
+        ...withSignal(opts.signal),
+      }) as OwWorldKeyRow;
+    } catch (err) {
+      if (err instanceof OwApiError && (err.status === 404 || err.status === 405)) return null;
+      throw err;
+    }
   }
 
   /**
