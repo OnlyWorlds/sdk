@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Fixed
+
+- `mintWorldKey`'s comment now says to mint again with a new idempotency key after a lost answer. The same key sent again makes a second key, and `madeWorldKey` keeps naming the first, so the second could never be found. Words only.
+
 ## [4.134.0] - 2026-11-08
 
 ### Added

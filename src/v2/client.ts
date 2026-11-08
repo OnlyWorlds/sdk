@@ -1428,9 +1428,10 @@ export class OwV2Client {
    * fetch as given; an abort rejects with an OwNetworkError.
    *
    * When the answer may be lost: keep the idempotency key on the device before the send. A 4xx made
-   * no key. After a network error or a timeout, ask madeWorldKey, and revoke the id it names. Believe
-   * its "none made" only a couple of minutes after the send, since an abort stops the wait, not the
-   * server's work.
+   * no key. After a network error or a timeout, ask madeWorldKey, revoke the id it names, and mint
+   * again with a new idempotency key: the same one sent again makes a key the lookup cannot find,
+   * since it keeps naming the first. Believe its "none made" only a couple of minutes after the send,
+   * since an abort stops the wait, not the server's work.
    */
   async mintWorldKey(
     worldId: string,
