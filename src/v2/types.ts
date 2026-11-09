@@ -1360,12 +1360,27 @@ export interface OwAccountToken {
   expires_at: string | null;
   /** How many live world keys this token minted. */
   keys_minted: number;
-  /** Who the token is for: empty for a token made by hand or a sign-in tool's; `mcp` for a hosted client's grant on the MCP server. */
+  /** Who the token is for: empty for a token made by hand or a sign-in tool's; `mcp` for a hosted client's grant on the MCP server; `ai` for an AI door token (mintAiToken, or the sign-in's `aiUses`). */
   audience: string;
+  /** On an `ai` token only: the AI uses it opens (`ai(use, …)`). */
+  ai_uses?: string[];
   /** On an `mcp` token only: the client's name, as it registered itself, or its id when it is no longer registered. */
   client?: string;
   /** On an `mcp` token only: the host the client returns the person to. */
   return_host?: string;
+}
+
+/**
+ * An AI door token as minted by mintAiToken (POST /account/tokens with `ai_uses`): its row, as the
+ * account's token list shows it, plus the token itself once in `token` (never shown again).
+ */
+export interface OwMintedAiToken extends OwAccountToken {
+  audience: 'ai';
+  ai_uses: string[];
+  /** When it stops working: midnight UTC at the latest. */
+  expires_at: string;
+  /** The `ow_a_` AI door token, shown only here. */
+  token: string;
 }
 
 export interface OwSeat {

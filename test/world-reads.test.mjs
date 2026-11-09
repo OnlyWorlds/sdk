@@ -339,6 +339,7 @@ const METHODS = {
   revokeWorldKey: ['account', (c) => c.revokeWorldKey(W, 'k1')],
   listAccountTokens: ['account', (c) => c.listAccountTokens()],
   revokeAccountToken: ['account', (c) => c.revokeAccountToken('t1')],
+  mintAiToken: ['account', (c) => c.mintAiToken(['ask'])],
   signInWithOnlyWorlds: ['local', (c) => c.signInWithOnlyWorlds({ clientId: 'c', redirectUri: 'https://t.example/cb', storage: storage(), navigate: false })],
   completeSignIn: ['open', async (c) => {
     const s = storage();

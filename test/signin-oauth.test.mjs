@@ -62,7 +62,7 @@ test('completeSignIn trades the code once with the five body keys and no credent
   const calls = [];
   const client = new OwV2Client({ fetch: fetchStub(200, { token: 'ow_a_new', token_id: 't1', token_type: 'bearer', account: { id: 'u1', username: 'ann' } }, calls) });
   const got = await client.completeSignIn({ clientId: 'atlas', storage, url: `https://atlas.onlyworlds.com/signin/callback?code=c1&state=${state}` });
-  assert.deepEqual(got, { token: 'ow_a_new', tokenId: 't1', expiresAt: null, tokenType: 'bearer', account: { id: 'u1', username: 'ann' }, resume: { open: 'w1' } });
+  assert.deepEqual(got, { token: 'ow_a_new', tokenId: 't1', expiresAt: null, tokenType: 'bearer', account: { id: 'u1', username: 'ann' }, resume: { open: 'w1' }, aiToken: null });
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, `${BASE}/auth/token`);
   assert.equal(calls[0].init.method, 'POST');

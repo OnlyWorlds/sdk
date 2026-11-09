@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.138.0] - 2026-11-10
+
+### Added
+
+- An AI door token: an `ow_a_` token that opens only `aiUses()` and the AI uses it names, as the person and on their token rating, until midnight UTC at the latest. Another use answers 403 `use_not_granted`, every other route 401 `wrong_audience`.
+- `completeSignIn({ ..., aiUses, aiLifetimeMinutes })` asks the sign-in's code exchange for one beside the account token; the result's new `aiToken` (`OwAiToken`: `token`, `tokenId`, `tokenType`, `audience`, `aiUses`, `expiresAt`) carries it, and is null when none was asked or the server answered none. The exchange spends its code whatever it answers, so a list the SDK can see is wrong (not 1 to 8 names, a name that is not one path segment, a lifetime outside 1 to 1440 minutes or without `aiUses`) is refused before anything is sent and before the pending sign-in is touched. A name the server does not run is its 422, and the code is then spent. Both options are optional, and every field the result had stays as it was.
+- `mintAiToken(uses, { lifetimeMinutes, name })`: `POST /account/tokens` with `ai_uses`, trading an account token down to an AI door token (`OwMintedAiToken`, the token's row with the token once). It belongs to the token that minted it: revoking that one revokes it too. The uses are required, so a call without them never reaches the route that would mint a full account token.
+- `OwApiError.isUseNotGranted` (403 `use_not_granted`) and `isWrongAudience` (401 `wrong_audience`).
+- `OwAccountToken.ai_uses`, on an `ai` token's row.
+
 ## [4.137.0] - 2026-11-09
 
 ### Added

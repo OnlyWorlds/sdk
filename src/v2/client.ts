@@ -16,7 +16,7 @@ import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwAiUse, OwAiMeter, OwAiAskAnswer, OwAiSortAnswer, OwAiAskBody, OwAiSortBody, OwMe, OwMember, OwWorldLenses,
-  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwAccountToken, OwMintedKey, OwWorldKeyRow, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
+  OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwAccountToken, OwMintedAiToken, OwMintedKey, OwWorldKeyRow, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
   OwWorldProposalList, OwReviewInput, OwReviewed, OwCreateAccountWorldInput, OwCreatedAccountWorld,
@@ -25,7 +25,7 @@ import { keyedId } from './keyed-id';
 import { unknownKey } from '../options';
 import { OwApiError, OwNetworkError, OwProposedError, OwSignInError, errorFromResponse, parseErrorEnvelope, parseRetryAfter } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
-import { beginSignIn, completeSignIn as completeOAuthSignIn, type OwSignInBegin, type OwSignInBegun, type OwSignInComplete, type OwSignInResult } from './oauth';
+import { beginSignIn, completeSignIn as completeOAuthSignIn, aiTokenParams, type OwSignInBegin, type OwSignInBegun, type OwSignInComplete, type OwSignInResult } from './oauth';
 
 const DEFAULT_BASE_URL = 'https://www.onlyworlds.com/api/v2';
 const DEFAULT_PAGE_SIZE = 100;
@@ -1551,6 +1551,37 @@ export class OwV2Client {
     await this.request('DELETE', `/account/tokens/${seg('tokenId', tokenId)}`, send);
   }
 
+  /**
+   * POST /account/tokens with `ai_uses` -- trade this client's account token down to an AI door
+   * token: an `ow_a_` token that opens only `aiUses()` and the uses named here (1 to 8, by slug, as
+   * `aiUses()` lists them), as this account and on its token rating. Another use answers 403
+   * `use_not_granted` (`err.isUseNotGranted`), every other route 401 `wrong_audience`
+   * (`err.isWrongAudience`). It ends at midnight UTC, or `lifetimeMinutes` (1 to 1440) after the mint
+   * if that comes first, then answers 401 `key_revoked`. It belongs to the token that minted it:
+   * revoking this client's token revokes it too, while revoking it leaves this one live. A client
+   * built on it revokes it with `revokeAccountToken(minted.id)`. The answer is the token's row with
+   * the token itself, shown only here. A name the server does not run is a 422 (`err.code` `invalid_request`, `err.param` `ai_uses`).
+   * Account token only; the AI door token itself mints nothing (401 `wrong_audience`).
+   */
+  async mintAiToken(
+    uses: string[],
+    opts: { lifetimeMinutes?: number; name?: string } = {},
+  ): Promise<OwMintedAiToken> {
+    only('mintAiToken', opts, ['lifetimeMinutes', 'name']);
+    if (this.keyKind !== 'account') {
+      throw new TypeError('mintAiToken needs an account token (ow_a_)');
+    }
+    // uses are required here: without them the same route mints a full account token
+    const body = aiTokenParams('mintAiToken', uses ?? null, opts.lifetimeMinutes);
+    if (opts.name !== undefined) {
+      if (typeof opts.name !== 'string' || opts.name.length > 255) {
+        throw new TypeError(`mintAiToken: name is a string of at most 255 characters, got ${JSON.stringify(opts.name)}. Nothing was sent.`);
+      }
+      body.name = opts.name;
+    }
+    return this.request('POST', '/account/tokens', { body }) as Promise<OwMintedAiToken>;
+  }
+
   // -- Sign in with OnlyWorlds (OAuth 2.1 code + PKCE) ----------------------
 
   /**
@@ -1583,7 +1614,7 @@ export class OwV2Client {
    * 400: used, expired, or another client's code), `rate_limited`, `offline`, `failed`.
    */
   async completeSignIn(opts: OwSignInComplete): Promise<OwSignInResult> {
-    only('completeSignIn', opts, ['clientId', 'storage', 'url']);
+    only('completeSignIn', opts, ['clientId', 'storage', 'url', 'aiUses', 'aiLifetimeMinutes']);
     return completeOAuthSignIn(this.baseUrl, this.fetchImpl, opts);
   }
 

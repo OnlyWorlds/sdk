@@ -56,6 +56,76 @@ export interface OwSignInComplete {
    * the window's history is left alone.
    */
   url?: string;
+  /**
+   * Also ask the exchange for an AI door token for these AI uses (their slugs, as `aiUses()` lists
+   * them): 1 to 8, each one path segment. It comes back as `aiToken`. The exchange spends the code
+   * whatever it answers, so a list the SDK can see is wrong is refused before anything is sent; a
+   * name the server does not run is its 422, and then the code is spent.
+   */
+  aiUses?: string[];
+  /** With `aiUses` only: the AI door token ends this many minutes after the exchange (1 to 1440), or at midnight UTC if that comes first. */
+  aiLifetimeMinutes?: number;
+}
+
+/**
+ * An AI door token: an `ow_a_` token that opens only `aiUses()` and the AI uses it names (`ai()`),
+ * as the person and on their token rating; another use answers 403 `use_not_granted`
+ * (`err.isUseNotGranted`), every other route 401 `wrong_audience` (`err.isWrongAudience`). It ends at
+ * `expiresAt` (midnight UTC at the latest), then answers 401 `key_revoked`. A client built on it may
+ * revoke it with `revokeAccountToken(tokenId)`; revoking it touches no other token, and revoking the
+ * account token beside it leaves it live.
+ */
+export interface OwAiToken {
+  /** The `ow_a_` AI door token, shown only here. */
+  token: string;
+  tokenId: string;
+  tokenType: 'bearer';
+  audience: 'ai';
+  /** The uses it opens, as the server took them (each once, in the order sent). */
+  aiUses: string[];
+  /** When it stops working (ISO 8601). */
+  expiresAt: string;
+}
+
+const AI_USES_MAX = 8;
+const AI_LIFETIME_MAX_MINUTES = 1440;
+/** A use's name as `ai()` takes it in its path: one segment, no slash, no escape, no dot first (client.ts's PATH_VALUE). */
+const AI_USE_SLUG = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
+
+/**
+ * The AI door token's two options as the server will read them, checked before sending (shared by
+ * completeSignIn and mintAiToken): `uses` 1 to 8 non-empty strings, each one path segment;
+ * `minutes` a whole number 1 to 1440, only with `uses`. Returns the body keys to send.
+ */
+export function aiTokenParams(method: string, uses: unknown, minutes: unknown): Record<string, unknown> {
+  if (uses === undefined) {
+    if (minutes !== undefined) throw new TypeError(`${method}: the AI token's lifetime goes with its uses: send aiUses too. Nothing was sent.`);
+    return {};
+  }
+  if (!Array.isArray(uses) || uses.length < 1 || uses.length > AI_USES_MAX) {
+    throw new TypeError(`${method}: the AI uses are a list of 1 to ${AI_USES_MAX} use names, got ${JSON.stringify(uses)}. Nothing was sent.`);
+  }
+  for (const u of uses) {
+    if (typeof u !== 'string' || !AI_USE_SLUG.test(u)) {
+      throw new TypeError(`${method}: ${JSON.stringify(u)} is not an AI use's name (one path segment, as aiUses() lists them). Nothing was sent.`);
+    }
+  }
+  const body: Record<string, unknown> = { ai_uses: [...uses] };
+  if (minutes !== undefined) {
+    if (typeof minutes !== 'number' || !Number.isInteger(minutes) || minutes < 1 || minutes > AI_LIFETIME_MAX_MINUTES) {
+      throw new TypeError(`${method}: the AI token's lifetime is a whole number of minutes, 1 to ${AI_LIFETIME_MAX_MINUTES}, got ${JSON.stringify(minutes)}. Nothing was sent.`);
+    }
+    body.ai_lifetime_minutes = minutes;
+  }
+  return body;
+}
+
+/** The answer's `ai_token`, or null when it is missing or not the shape the server documents. */
+function readAiToken(v: unknown): OwAiToken | null {
+  const t = v as { token?: unknown; token_id?: unknown; ai_uses?: unknown; expires_at?: unknown } | null;
+  if (!t || typeof t !== 'object' || typeof t.token !== 'string' || t.token === '' || typeof t.token_id !== 'string' || t.token_id === ''
+    || !Array.isArray(t.ai_uses) || !t.ai_uses.every((u) => typeof u === 'string') || typeof t.expires_at !== 'string' || t.expires_at === '') return null;
+  return { token: t.token, tokenId: t.token_id, tokenType: 'bearer', audience: 'ai', aiUses: [...t.ai_uses] as string[], expiresAt: t.expires_at };
 }
 
 /** What `completeSignIn` returns: the account token, shown only here, and what the tool parked. */
@@ -76,6 +146,11 @@ export interface OwSignInResult {
   account: { id: string; username: string };
   /** The `resume` given to `beginSignIn`, or null. */
   resume: unknown;
+  /**
+   * The AI door token, when `aiUses` asked for one; null when none was asked, and from a server that
+   * answered none (the account token above is good either way).
+   */
+  aiToken: OwAiToken | null;
 }
 
 const RECORD_PREFIX = 'ow_signin:';
@@ -236,6 +311,8 @@ export async function completeSignIn(
 ): Promise<OwSignInResult> {
   const { clientId } = opts ?? ({} as OwSignInComplete);
   if (typeof clientId !== 'string' || clientId === '') throw new TypeError('completeSignIn needs clientId');
+  // checked before the address bar or the pending record is touched: a refusal here spends nothing
+  const ai = aiTokenParams('completeSignIn', opts.aiUses, opts.aiLifetimeMinutes);
   const storage = opts.storage ?? defaultStorage('completeSignIn');
   const here = opts.url ?? (globalThis as { location?: Location }).location?.href;
   if (typeof here !== 'string') throw new TypeError('completeSignIn: no location here; pass url (the callback page\'s address)');
@@ -287,6 +364,7 @@ export async function completeSignIn(
         code_verifier: record.verifier,
         client_id: clientId,
         redirect_uri: record.redirectUri,
+        ...ai,
       }),
     });
   } catch {
@@ -304,7 +382,7 @@ export async function completeSignIn(
   if (res.status === 400 && errCode === 'invalid_grant') {
     throw new OwSignInError('invalid_grant', errMessage ?? 'The sign-in code could not be exchanged: it was used, expired, or made for another tool. Start again.', { status: 400, code: errCode });
   }
-  const ok = body as { token?: unknown; token_id?: unknown; expires_at?: unknown; token_type?: unknown; account?: { id?: unknown; username?: unknown } } | null;
+  const ok = body as { token?: unknown; token_id?: unknown; expires_at?: unknown; token_type?: unknown; account?: { id?: unknown; username?: unknown }; ai_token?: unknown } | null;
   if (!res.ok || typeof ok?.token !== 'string' || ok.token === '' || typeof ok.account?.id !== 'string') {
     throw new OwSignInError('failed', errMessage ?? `Signing in did not work (${res.status}).`, { status: res.status, code: errCode });
   }
@@ -315,5 +393,6 @@ export async function completeSignIn(
     tokenType: 'bearer',
     account: { id: ok.account.id, username: typeof ok.account.username === 'string' ? ok.account.username : '' },
     resume: record.resume ?? null,
+    aiToken: 'ai_uses' in ai ? readAiToken(ok.ai_token) : null,
   };
 }

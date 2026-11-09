@@ -327,6 +327,22 @@ export class OwApiError extends Error {
     return this.status === 429 && this.code === 'use_in_flight';
   }
 
+  /**
+   * ai: an AI door token called a use it was not minted for (403 `use_not_granted`, param `use`).
+   * Nothing was counted. Mint one that names this use (mintAiToken), or call with an account token.
+   */
+  get isUseNotGranted(): boolean {
+    return this.status === 403 && this.code === 'use_not_granted';
+  }
+
+  /**
+   * The account token works on some routes only (401 `wrong_audience`): an AI door token on any route
+   * but `aiUses()`, its uses and its own revoke, or a hosted MCP client's token anywhere but /mcp.
+   */
+  get isWrongAudience(): boolean {
+    return this.status === 401 && this.code === 'wrong_audience';
+  }
+
   /** ask: the model gave no answer (502 `ask_failed`). Not counted; try again in a moment. */
   get isAskFailed(): boolean {
     return this.status === 502 && this.code === 'ask_failed';
