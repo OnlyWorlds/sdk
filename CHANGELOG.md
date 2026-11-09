@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.135.0] - 2026-11-09
+
+### Added
+
+- `trailByPlace(input)`: the first layout method, a world laid out along a route on a ground map, answered as a layout in the standard's own fields: a Map frame (`width`, `height`, `depth`), one Pin per element (whole numbers in the Map's pixels, which `mapSpace` reads back), the route, and the recipe (`method: 'trail-by-place'` and the settings it ran with, so the same layout runs again from the Map alone). The places come in travel order, each at its own pin on the ground map plus a margin, evenly between two pinned places, or on a ring inside a parent place. Every other element hangs on one spiral round the place it belongs to (the mean of its places' points), the hero first, then by floor and id, at its floor's height. Nothing shares a place's own point, and no two Pins share a point: a taken point moves along x from its own point, one pixel right, one left, two right, and on, by element id order. Each Pin carries `by`, the caller's words followed by the method's own. The method places and does not read: which elements are in, the travel order and what hangs where are the caller's. Points round half to even. An input it cannot place is a TypeError naming what, an unknown key at any level included. `TRAIL_TIERS` is the default floors; `roundHalfEven` the rounding.
+
 ## [4.134.1] - 2026-11-08
 
 ### Fixed

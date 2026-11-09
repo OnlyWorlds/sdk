@@ -18,11 +18,12 @@ import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
   preparePhoto, parseDate, resolveCalendar, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
   isToEveryone, hasUnseenRecipients, readMarkOf,
-  elementAddress, resolveLens, worldGraph, openersFor, landingOf,
+  elementAddress, resolveLens, worldGraph, openersFor, landingOf, trailByPlace,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
 
 const U = { __unknown__: 1 };
+const trailInput = { ground: { width: 10, height: 10 }, depth: 10, places: [{ id: 'p', type: 'location', name: 'P', pin: [1, 1] }], hangers: [] };
 const calls = [];
 const fetchImpl = async (url, init) => {
   calls.push(url);
@@ -106,6 +107,8 @@ const FENCED = {
   'resolveLens#3': () => resolveLens({ elements: [] }, { type: 'construct', supertype: 'Lens', name: 'L' }, { rung: 'owner' }, U),
   'worldGraph#2': () => worldGraph({ elements: [] }, { rung: 'owner' }, U),
   'landingOf#1': () => landingOf({ nodes: [], edges: [] }, U),
+  // 4.135.0: a layout method's input, its settings and its places, fenced at every level.
+  'trailByPlace#0': () => trailByPlace({ ...trailInput, ...U }),
   // The Open with rows: the address as elementAddress fences it, and the surface's five keys.
   'openersFor#2': () => openersFor([], 'world', { form: 'human', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f', ...U }, { audience: 'member' }),
   'openersFor#3': () => openersFor([], 'world', { form: 'human', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f' }, { audience: 'member', ...U }),
@@ -180,6 +183,7 @@ test('the fenced calls work without the unknown key: a refusal is the key, not t
   const { __unknown__: _, ...none } = U;
   assert.equal(typeWord({ x_names: { version: 1, types: { character: { one: 'Employee' } } } }, 'character', none), 'Employee');
   assert.equal(parseDate(cfg, '12 Sowmarch 3 FT', { now: 0 }).error, undefined);
+  assert.equal(trailByPlace(trailInput).pins.length, 1);
   assert.equal(resolveCalendar(elements, undefined, { fallbackToOnly: true })?.id, 'c');
   assert.equal(lookupWorld(index, 'Eknomos', { limit: 1 }).length, 1);
   assert.match(renderElement(elements[0], index, { descMax: 10 }), /Eknomos/);
