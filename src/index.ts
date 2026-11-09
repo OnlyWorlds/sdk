@@ -76,7 +76,7 @@ export type { OwMapSpace, OwMapSpaceMap, OwMapSpaceOutline, OwMapSpaceOutReason,
 
 // A layout method: a world laid out along a route on a ground map, as a Map frame and its Pins (read back by mapSpace).
 export { trailByPlace, TRAIL_TIERS, roundHalfEven } from './layout-trail';
-export type { OwTrailHanger, OwTrailInput, OwTrailLayout, OwTrailPin, OwTrailPlace, OwTrailSettings, OwTrailSpiral, OwTrailTier } from './layout-trail';
+export type { OwTrailGround, OwTrailHanger, OwTrailInput, OwTrailLayout, OwTrailPin, OwTrailPlace, OwTrailSettings, OwTrailSpiral, OwTrailTier } from './layout-trail';
 // The names profile (schema-dist profiles/names.md): a world's own words for the types, x_names on the World.
 export { typeWord } from './names';
 export type { OwNamesMap, OwWordPair } from './names';

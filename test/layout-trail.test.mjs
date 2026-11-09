@@ -15,7 +15,7 @@ const FIXTURE = fileURLToPath(new URL('./fixtures/layout/trail-by-place.json', i
 const bytes = readFileSync(FIXTURE);
 const fx = JSON.parse(bytes.toString('utf8'));
 const clone = (v) => JSON.parse(JSON.stringify(v));
-const FIXTURE_SHA = 'da0c565f6a12debd';
+const FIXTURE_SHA = '546ca817f7f74f81';
 
 test('the fixture is the one both packages hold', () => {
   assert.equal(createHash('sha256').update(bytes).digest('hex').slice(0, 16), FIXTURE_SHA);
@@ -53,7 +53,16 @@ test('the recipe runs the layout again from the Map alone', () => {
   const { places, hangers, hero } = clone(fx.input);
   const again = trailByPlace({ ...clone(first.recipe.settings), places, hangers, hero });
   assert.equal(first.recipe.method, 'trail-by-place');
+  // the ground Map's id travels in the recipe, so a tool finds its picture
+  assert.deepEqual(first.recipe.settings.ground, fx.input.ground);
+  assert.equal(typeof first.recipe.settings.ground.map, 'string');
   assert.equal(JSON.stringify(again), JSON.stringify(first));
+});
+
+test('a ground without its map id carries none in the recipe', () => {
+  const i = clone(fx.input);
+  delete i.ground.map;
+  assert.deepEqual(Object.keys(trailByPlace(i).recipe.settings.ground), ['width', 'height']);
 });
 
 test('the order hangers come in does not move a point', () => {
@@ -98,6 +107,8 @@ test('an input it cannot place is refused by name, nothing placed', () => {
   const bad = (mut, re) => { const i = clone(fx.input); mut(i); assert.throws(() => trailByPlace(i), re); };
   bad((i) => { i.ground.widht = 1; }, /ground: unknown option 'widht'/);
   bad((i) => { i.spirall = {}; }, /unknown option 'spirall'/);
+  bad((i) => { i.ground.map = ''; }, /ground\.map is the ground Map's element id/);
+  bad((i) => { i.ground.map = 7; }, /ground\.map is the ground Map's element id/);
   bad((i) => { i.places[1].pinn = [0, 0]; }, /place 1: unknown option 'pinn'/);
   bad((i) => { i.hangers[0].where = 'x'; }, /hanger 0: unknown option 'where'/);
   bad((i) => { i.places[1].parent = i.places[0].id; }, /needs exactly one of pin, between, parent; it has pin, parent/);

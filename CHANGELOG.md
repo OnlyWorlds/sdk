@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.136.0] - 2026-11-09
+
+### Added
+
+- `trailByPlace`: the ground Map's element id, `ground.map`, travels in the recipe: given in the input, the recipe's `settings.ground` carries it back as `{map, width, height}`, so a tool reading a laid-out Map finds the picture its pins stand on. Optional; a ground given without it carries none. A `map` that is not a non-empty string is refused. The shared fixture's whole-world case now names its ground map. The type is `OwTrailGround`.
+
 ## [4.135.2] - 2026-11-09
 
 ### Fixed

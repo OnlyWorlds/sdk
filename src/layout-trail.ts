@@ -55,8 +55,11 @@ export interface OwTrailSpiral {
 
 /** The method's settings: what a Map's recipe carries, so the layout can be run again from the Map alone. */
 export interface OwTrailSettings {
-  /** The ground map's own frame; the layout's frame is it plus `margin` on every side. */
-  ground: { width: number; height: number };
+  /**
+   * The ground map's own frame; the layout's frame is it plus `margin` on every side. `map` is the ground Map's element
+   * id in the same world, so a tool reading the recipe finds its picture (left out when the caller gives none).
+   */
+  ground: OwTrailGround;
   margin: number;
   depth: number;
   tiers: OwTrailTier[];
@@ -65,8 +68,14 @@ export interface OwTrailSettings {
   parentRing: number;
 }
 
+export interface OwTrailGround {
+  map?: string;
+  width: number;
+  height: number;
+}
+
 export interface OwTrailInput extends Partial<Omit<OwTrailSettings, 'ground' | 'depth'>> {
-  ground: { width: number; height: number };
+  ground: OwTrailGround;
   depth: number;
   places: OwTrailPlace[];
   hangers: OwTrailHanger[];
@@ -158,7 +167,8 @@ export function trailByPlace(input: OwTrailInput): OwTrailLayout {
   const { places, hangers, hero } = input;
   const g = input.ground;
   if (!g || typeof g !== 'object') fail('no ground');
-  refuseUnknownOptions('trailByPlace: ground', g, ['width', 'height']);
+  refuseUnknownOptions('trailByPlace: ground', g, ['map', 'width', 'height']);
+  if (g.map !== undefined && (typeof g.map !== 'string' || !g.map)) fail("ground.map is the ground Map's element id, a non-empty string");
   if (!wholeAbove(g.width, 0) || !wholeAbove(g.height, 0)) fail('the ground\'s width and height are whole numbers above 0');
   const margin = input.margin ?? 0;
   if (!Number.isSafeInteger(margin) || margin < 0) fail('margin is a whole number, 0 or more');
@@ -312,7 +322,7 @@ export function trailByPlace(input: OwTrailInput): OwTrailLayout {
     recipe: {
       method: 'trail-by-place',
       settings: {
-        ground: { width: g.width, height: g.height },
+        ground: g.map !== undefined ? { map: g.map, width: g.width, height: g.height } : { width: g.width, height: g.height },
         margin: M,
         depth: D,
         tiers: tiers.map((t) => ({ name: t.name, z: t.z, kinds: [...t.kinds] })),
