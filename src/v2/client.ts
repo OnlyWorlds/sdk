@@ -15,7 +15,7 @@ import type { ElementType } from './types.generated';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
-  OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwMe, OwMember, OwWorldLenses,
+  OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwAiUse, OwAiMeter, OwAiAskAnswer, OwAiSortAnswer, OwAiAskBody, OwAiSortBody, OwMe, OwMember, OwWorldLenses,
   OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwAccountToken, OwMintedKey, OwWorldKeyRow, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
@@ -1649,6 +1649,74 @@ export class OwV2Client {
     return this.request('GET', '/account/allowance') as Promise<OwAllowance>;
   }
 
+  /**
+   * GET /account/ai -- the AI uses onlyworlds.com runs, each a named call a tool makes with ai():
+   * its owner, provider, model and effort, the hash of its system prompt, what its body may hold, its
+   * answer cap, its price, its daily ceiling, this account's calls left today, and whether it is on.
+   * Reading it spends nothing. Needs the client's `ow_a_` token.
+   */
+  async aiUses(opts: { signal?: AbortSignal } = {}): Promise<OwAiUse[]> {
+    only('aiUses', opts, ['signal']);
+    if (this.keyKind !== 'account') {
+      throw new TypeError('aiUses needs an account token (ow_a_): the uses and their calls left are per account');
+    }
+    const body = await this.request<{ uses: OwAiUse[] }>('GET', '/account/ai', { signal: opts.signal });
+    return body.uses;
+  }
+
+  /**
+   * POST /account/ai/{use} -- one call of an AI use (aiUses lists them), metered on the account's
+   * daily token rating, then its own saved AI key, as ask and sort are. `body` is the use's own body in
+   * its wire spelling, sent as given: `{world_id, question, context}` for `ask`, `{world_id, notes,
+   * slice}` for `sort`; another use's body is the one its listing describes. The answer is the use's
+   * own, its meter whole (`paid_by`, `model`, `usage`, `remaining`, `tokens_remaining`, `token_rating`),
+   * with `use_remaining` (null when the use has no daily ceiling) and `wasReplay`. The use's name is
+   * checked as one path segment before sending. Needs the client's `ow_a_` token.
+   *
+   * With an `idempotencyKey`, a retry is safe: the same key and body answer the first answer again
+   * (`wasReplay` true) and bill nothing; the same key with another body is 409 `idempotency_error`, and
+   * a key whose first call is still running is 409 `idempotency_in_flight` (retry after `retryAfter`).
+   * Retry with the same key and body, a few times at most, and never mint a new key to get past an
+   * in-flight answer: when the server cannot store an answer, the key is held for a day and keeps
+   * answering `idempotency_in_flight` although the call ran and was billed. The client never retries
+   * on its own.
+   *
+   * Refusals, none of them counted: 429 `use_ceiling` (`err.isUseCeiling`: the use's calls for the day
+   * are made), 429 `use_in_flight` (`err.isUseInFlight`: another call to this use is running; wait
+   * `retryAfter`), 429 `quota_exceeded` (`err.isQuotaExceeded`: the token rating is spent and no own key
+   * is saved), 422 `own_key_refused` (`err.isOwnKeyRefused`), 503 `ask_unavailable`
+   * (`err.isAskUnavailable`; with `param` `use`, this use is switched off or spent its own budget
+   * today), 502 `ask_failed` (`err.isAskFailed`), 404 `not_found` (a use that is not listed, `param`
+   * `use`, or a world the account is not in), 422 for a body past the use's limits (`param` names it).
+   */
+  async ai(use: 'ask', body: OwAiAskBody, opts?: { idempotencyKey?: string; signal?: AbortSignal }): Promise<OwAiAskAnswer>;
+  async ai(use: 'sort', body: OwAiSortBody, opts?: { idempotencyKey?: string; signal?: AbortSignal }): Promise<OwAiSortAnswer>;
+  async ai(use: string, body: Record<string, unknown>, opts?: { idempotencyKey?: string; signal?: AbortSignal }): Promise<Record<string, unknown> & OwAiMeter>;
+  async ai(
+    use: string,
+    body: OwAiAskBody | OwAiSortBody | Record<string, unknown>,
+    opts: { idempotencyKey?: string; signal?: AbortSignal } = {},
+  ): Promise<Record<string, unknown> & OwAiMeter> {
+    only('ai', opts, ['idempotencyKey', 'signal']);
+    if (this.keyKind !== 'account') {
+      throw new TypeError('ai needs an account token (ow_a_): every AI use is metered per account');
+    }
+    const path = `/account/ai/${seg('use', use)}`;
+    if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+      throw new TypeError(`ai: the body is the use's own object, got ${body === null ? 'null' : Array.isArray(body) ? 'an array' : typeof body}. Nothing was sent.`);
+    }
+    if (opts.idempotencyKey !== undefined && (typeof opts.idempotencyKey !== 'string' || opts.idempotencyKey === '' || opts.idempotencyKey.length > 200)) {
+      throw new TypeError(`ai: idempotencyKey is a string of 1 to 200 characters, got ${JSON.stringify(opts.idempotencyKey)}. Nothing was sent.`);
+    }
+    return this.request('POST', path, {
+      body,
+      idempotencyKey: opts.idempotencyKey,
+      signal: opts.signal,
+      elementWrite: true,
+      replayAware: true,
+    }) as Promise<Record<string, unknown> & OwAiMeter>;
+  }
+
   // -- Core request machinery ----------------------------------------------
 
   /**
@@ -1671,7 +1739,7 @@ export class OwV2Client {
       /** A `change_seq` to send as `If-Match`; a whole number, else TypeError before sending. */
       /** A write keel's document lists X-OW-Agent on (the element writes, the links route, bulk, adopt, the file ticket): where an agent client sends it. Hide, unhide, setMyCharacter and mintWorldKey are not, and keel reads no agent there. */
       write?: boolean;
-      /** One of the writes keel reads X-OW-Client on (create, put, patch, delete, links, bulk, adopt, propose, accept): where the client's name goes. */
+      /** One of the writes keel reads X-OW-Client on (create, put, patch, delete, links, bulk, adopt, propose, accept, review, and an AI use's call): where the client's name goes. */
       elementWrite?: boolean;
       /**
        * A write keel may answer 202 with `{proposal}` (put, patch, links): a 202 then
@@ -1761,7 +1829,7 @@ export class OwV2Client {
     // X-OW-Agent: presence is the declaration, the value is never stored. Opt-in only, and
     // on the element writes alone, the operations keel's document declares it on.
     if (this.agent && opts.write) headers['X-OW-Agent'] = '1';
-    // X-OW-Client: the client's own name, on the seven element writes keel reads it on, never on a
+    // X-OW-Client: the client's own name, on the element writes and the AI use's call, where keel reads it, never on a
     // read, nor on the other writes (hide, the file ticket, setMyCharacter, a key), where keel ignores it.
     if (opts.elementWrite) headers['X-OW-Client'] = this.clientName;
 

@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.137.0] - 2026-11-09
+
+### Added
+
+- `aiUses()`: `GET /account/ai`, the AI uses onlyworlds.com runs, each a named call a tool makes: its owner, provider, model and effort, the hash of its system prompt, what its body may hold, its answer cap, its price, its daily ceiling, this account's calls left today, and whether it is on (`OwAiUse`). Reading it spends nothing. Needs an account token.
+- `ai(use, body, { idempotencyKey, signal })`: `POST /account/ai/{use}`, one call of a listed use, metered on the account's token rating and then its own saved AI key, as `ask()` and `sort()` are. The body is the use's own, in its wire spelling, sent as given (`{world_id, question, context}` for `ask`, `{world_id, notes, slice}` for `sort`); typed for those two (`OwAiAskBody`, `OwAiSortBody`, answered as `OwAiAskAnswer` and `OwAiSortAnswer`) and open for any other use. The answer adds `use_remaining` (null when the use has no daily ceiling) and `wasReplay`, read from `Idempotent-Replay`. The use's name is checked as one path segment and the key as 1 to 200 characters before anything is sent; the client's name goes as `X-OW-Client`.
+- With an `idempotencyKey`, a retry is safe: the same key and body answer the first answer again and bill nothing. A key whose first call is still running answers 409 `idempotency_in_flight`; retry with the same key and body a few times at most, and never mint a new key to get past it, since a key whose answer could not be stored stays in flight for a day although the call ran and was billed. The client never retries on its own.
+- `OwApiError.isUseCeiling` (429 `use_ceiling`: the use's calls for the day are made) and `isUseInFlight` (429 `use_in_flight`: another call to this use is running; wait `retryAfter`). A 503 `ask_unavailable` with `param` `use` is still `isAskUnavailable`.
+- `ask()` and `sort()` keep calling their own routes, unchanged.
+
 ## [4.136.0] - 2026-11-09
 
 ### Added

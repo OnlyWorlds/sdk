@@ -348,6 +348,8 @@ const METHODS = {
   ask: ['account', (c) => c.ask({ worldId: W, question: 'q', context: [] })],
   sort: ['account', (c) => c.sort({ worldId: W, notes: [], slice: [] })],
   allowance: ['account', (c) => c.allowance()],
+  aiUses: ['account', (c) => c.aiUses()],
+  ai: ['account', (c) => c.ai('ask', { world_id: W, question: 'q', context: ['x'] })],
   request: ['account', (c) => c.request('GET', '/account/worlds')],
 };
 

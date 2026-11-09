@@ -311,6 +311,22 @@ export class OwApiError extends Error {
     return this.status === 503 && this.code === 'ask_unavailable';
   }
 
+  /**
+   * ai: this use's calls for the day are made (429 `use_ceiling`, param `use`): the use's own daily
+   * ceiling per account, not the token rating (isQuotaExceeded). Retry-After runs to midnight UTC.
+   */
+  get isUseCeiling(): boolean {
+    return this.status === 429 && this.code === 'use_ceiling';
+  }
+
+  /**
+   * ai: another call to this use is running for this account (429 `use_in_flight`, param `use`): a use
+   * with a ceiling runs one call at a time. Wait `retryAfter` seconds (a short wait) and send again.
+   */
+  get isUseInFlight(): boolean {
+    return this.status === 429 && this.code === 'use_in_flight';
+  }
+
   /** ask: the model gave no answer (502 `ask_failed`). Not counted; try again in a moment. */
   get isAskFailed(): boolean {
     return this.status === 502 && this.code === 'ask_failed';

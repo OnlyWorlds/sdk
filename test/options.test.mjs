@@ -84,6 +84,8 @@ const FENCED = {
   'OwV2Client.completeSignIn#0': () => world.completeSignIn({ clientId: 'c', storage, url: 'https://t.example/cb', ...U }),
   'OwV2Client.ask#0': () => account.ask({ worldId: 'w', question: 'q', context: [], ...U }),
   'OwV2Client.sort#0': () => account.sort({ worldId: 'w', notes: [], slice: [], ...U }),
+  'OwV2Client.ai#2': () => account.ai('ask', { world_id: 'w', question: 'q', context: ['x'] }, U),
+  'OwV2Client.aiUses#0': () => account.aiUses(U),
   // 4.64.0: the escape hatch, and every options object outside the client's typed methods.
   'OwV2Client.request#2': () => world.request('GET', '/character/', U),
   'TokenResource.consume#0': () => tokens.consume({ amount: 1, ...U }),
@@ -118,6 +120,7 @@ const FENCED = {
 /** The object parameters that are not options: data a caller hands over, by nature open or required. */
 const DATA = {
   'new TokenResource#0': 'the transport (a client), not settings',
+  'OwV2Client.ai#1': 'the use body, sent to the server as given (the server names an unknown key)',
 };
 for (const fn of ['absYearForEraYear', 'absoluteYear', 'approxYearLength', 'breakdownStep', 'displayYear', 'eraForStep',
   'formatDuration', 'formatMidLabel', 'formatStep', 'formatYearLabel', 'intercalaryInYear', 'monthStartSteps', 'parseDate',

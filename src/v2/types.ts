@@ -854,6 +854,84 @@ export interface OwAllowance {
   [k: string]: unknown;
 }
 
+/**
+ * One AI use, as GET /account/ai lists it: a named call a tool may make at POST /account/ai/{slug}.
+ * A tool calls a use by its name and sends the use's own body; it never sends a prompt.
+ */
+export interface OwAiUse {
+  /** The use's name in its route: POST /account/ai/{slug}. */
+  slug: string;
+  /** The tool that answers for its prompt and caps. */
+  owner: string;
+  provider: string;
+  /** The model a call on the platform's key runs. */
+  model: string;
+  effort: string;
+  /** The sha256 of the use's system prompt, hex: two calls with the same hash ran the same prompt. */
+  prompt_sha256: string;
+  /** The body names a world this account owns or is a member of. */
+  needs_world: boolean;
+  /** What the body may hold, by name. */
+  input_caps: Record<string, number>;
+  /** The most tokens one answer may take; a call needs at least this much rating left (or a saved own key). */
+  output_cap: number;
+  /** The answer is checked JSON, not text. */
+  structured: boolean;
+  /** A fixed price per call in rating tokens, or null: the call's actual tokens are spent. */
+  price_tokens: number | null;
+  /** Calls per account per UTC day, or null. Past it, 429 `use_ceiling` until midnight UTC; a use with a
+   *  ceiling runs one call at a time, and a second call while one runs is 429 `use_in_flight`. */
+  ceiling: number | null;
+  /** This account's calls left today, or null when the use has no ceiling. */
+  calls_left: number | null;
+  /** False while the use is switched off or has spent its own budget for today (its calls answer 503
+   *  `ask_unavailable` with param `use`). */
+  on: boolean;
+  [k: string]: unknown;
+}
+
+/** What every answer of an AI use adds to the use's own answer. */
+export interface OwAiMeter {
+  /** Calls to this use this account has left today; null when the use has no daily ceiling (the token
+   *  rating is then the only limit). */
+  use_remaining: number | null;
+  /** Read from the `Idempotent-Replay` header: true when this answer is the stored first answer for the
+   *  call's idempotency key, billed nothing this time. Set by the client, never sent by the server. */
+  wasReplay: boolean;
+}
+
+/** POST /account/ai/ask: the ask use's answer, the same as ask()'s, with the use's meter. */
+export interface OwAiAskAnswer extends OwAskAnswer {
+  /** Calls to this use this account has left today; null when the use has no daily ceiling. */
+  use_remaining: number | null;
+  /** True when this answer is the stored first answer for the call's idempotency key (billed nothing). */
+  wasReplay: boolean;
+}
+
+/** POST /account/ai/sort: the sort use's answer, the same as sort()'s, with the use's meter. */
+export interface OwAiSortAnswer extends OwSortAnswer {
+  /** Calls to this use this account has left today; null when the use has no daily ceiling. */
+  use_remaining: number | null;
+  /** True when this answer is the stored first answer for the call's idempotency key (billed nothing). */
+  wasReplay: boolean;
+}
+
+/** The `ask` use's body (POST /account/ai/ask), in its own wire spelling: the same fields as ask(). */
+export interface OwAiAskBody {
+  world_id: string;
+  /** 1 to 500 characters. */
+  question: string;
+  /** 1 to 8 elements as text, each up to 2,000 characters, 12,000 in all (buildAskContext makes it). */
+  context: string[];
+}
+
+/** The `sort` use's body (POST /account/ai/sort), in its own wire spelling: the same fields as sort(). */
+export interface OwAiSortBody {
+  world_id: string;
+  notes: OwSortNote[];
+  slice?: OwSortRef[];
+}
+
 /** POST /join/preview: what a join code holds, read without using it. */
 export interface OwJoinPreview {
   /** `person`: an invite link, accepted with acceptJoin. `agent`: redeemed by an AI agent at POST /join. `player`: a friend with no account redeems it with redeemJoin for a read key. */
