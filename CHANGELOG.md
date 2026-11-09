@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.135.2] - 2026-11-09
+
+### Fixed
+
+- A tool that never calls `trailByPlace` no longer carries its default floors. `TRAIL_TIERS` was built by a top-level call a bundler could not drop, so 4.135.0 and 4.135.1 added about 450 bytes to every bundle. Its freezes are now marked pure, and a bundle that imports only `mapSpace`, `worldGraph` or `OwV2Client` comes out the size it was on 4.134.1. The table is the same, frozen as before.
+
 ## [4.135.1] - 2026-11-09
 
 ### Fixed
