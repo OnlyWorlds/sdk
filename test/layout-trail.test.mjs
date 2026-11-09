@@ -15,7 +15,7 @@ const FIXTURE = fileURLToPath(new URL('./fixtures/layout/trail-by-place.json', i
 const bytes = readFileSync(FIXTURE);
 const fx = JSON.parse(bytes.toString('utf8'));
 const clone = (v) => JSON.parse(JSON.stringify(v));
-const FIXTURE_SHA = '49a4ad86a5c4da50';
+const FIXTURE_SHA = 'da0c565f6a12debd';
 
 test('the fixture is the one both packages hold', () => {
   assert.equal(createHash('sha256').update(bytes).digest('hex').slice(0, 16), FIXTURE_SHA);
@@ -31,6 +31,10 @@ test('Blood Meridian: frame, pins and route are the staged layout\'s, pin for pi
 
 for (const c of fx.cases) {
   test(`case: ${c.name}`, () => {
+    if (c.refuse) {
+      assert.throws(() => trailByPlace(clone(c.input)), (e) => e instanceof TypeError && e.message === `trailByPlace: ${c.refuse}`);
+      return;
+    }
     const got = trailByPlace(clone(c.input));
     const { recipe, ...rest } = got;
     assert.equal(JSON.stringify(rest), JSON.stringify(c.want));

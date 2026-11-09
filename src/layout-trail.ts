@@ -147,7 +147,7 @@ function checkElement(e: unknown, what: string, keys: readonly string[]): assert
  * `r0 + c * sqrt(n)` and `n * angle`), at its tier's height. Last, every point is rounded half to even, kept inside
  * the frame, and, by element id order, a point already taken moves along x from its own point (one pixel right, one
  * left, two right, two left, and on), so no two Pins share a point. Throws a TypeError, naming what, on an input it cannot place: an unknown key, a place with no one rule, a
- * reference to a place it does not hold, a kind with no tier, an id twice.
+ * reference to a place it does not hold, a kind with no tier, an id twice, a row of the frame with no free point left.
  */
 export function trailByPlace(input: OwTrailInput): OwTrailLayout {
   if (!input || typeof input !== 'object') fail('the input is not an object');
@@ -293,8 +293,10 @@ export function trailByPlace(input: OwTrailInput): OwTrailLayout {
       p[k] = c;
     }
     // From its own point: one pixel right, one left, two right, two left, and on, kept inside the frame.
+    // Every x on the row is tried within 2 * width + 2 steps; a row with none free is refused, never walked forever.
     const x0 = p.x;
     for (let step = 1; taken.has(`${p.x},${p.y},${p.z}`); step++) {
+      if (step > 2 * W + 2) fail(`no free point left for ${p.name} (${p.element_id}) on its row (y ${p.y}, z ${p.z}): the frame is ${W} wide`);
       p.x = Math.min(Math.max(x0 + (step % 2 ? 1 : -1) * Math.floor((step + 1) / 2), 0), W);
       nudged++;
     }

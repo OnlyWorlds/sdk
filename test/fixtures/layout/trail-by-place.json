@@ -1471,6 +1471,171 @@
     "nudged": 0,
     "clamped": 0
    }
+  },
+  {
+   "name": "a full row still fits: two on one point in a frame 1 wide",
+   "input": {
+    "ground": {
+     "width": 1,
+     "height": 1
+    },
+    "margin": 0,
+    "depth": 1,
+    "places": [
+     {
+      "id": "a",
+      "type": "location",
+      "name": "A",
+      "pin": [
+       0,
+       0
+      ]
+     },
+     {
+      "id": "b",
+      "type": "location",
+      "name": "B",
+      "pin": [
+       0,
+       0
+      ]
+     }
+    ],
+    "hangers": []
+   },
+   "want": {
+    "map": {
+     "width": 1,
+     "height": 1,
+     "depth": 1
+    },
+    "pins": [
+     {
+      "element_type": "location",
+      "element_id": "a",
+      "name": "A",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "by": "its pin on the ground (0, 0), plus the 0 px margin"
+     },
+     {
+      "element_type": "location",
+      "element_id": "b",
+      "name": "B",
+      "x": 1,
+      "y": 0,
+      "z": 0,
+      "by": "its pin on the ground (0, 0), plus the 0 px margin"
+     }
+    ],
+    "route": [
+     [
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0
+     ]
+    ],
+    "nudged": 1,
+    "clamped": 0
+   }
+  },
+  {
+   "name": "a row with no free point left is refused",
+   "input": {
+    "ground": {
+     "width": 1,
+     "height": 1
+    },
+    "margin": 0,
+    "depth": 1,
+    "places": [
+     {
+      "id": "a",
+      "type": "location",
+      "name": "A",
+      "pin": [
+       0,
+       0
+      ]
+     },
+     {
+      "id": "b",
+      "type": "location",
+      "name": "B",
+      "pin": [
+       0,
+       0
+      ]
+     },
+     {
+      "id": "c",
+      "type": "location",
+      "name": "C",
+      "pin": [
+       0,
+       0
+      ]
+     }
+    ],
+    "hangers": []
+   },
+   "refuse": "no free point left for C (c) on its row (y 0, z 0): the frame is 1 wide"
+  },
+  {
+   "name": "a pin of whole floats reads as whole numbers in its words",
+   "input": {
+    "ground": {
+     "width": 10,
+     "height": 10
+    },
+    "margin": 0,
+    "depth": 1,
+    "places": [
+     {
+      "id": "a",
+      "type": "location",
+      "name": "A",
+      "pin": [
+       7.0,
+       3.0
+      ]
+     }
+    ],
+    "hangers": []
+   },
+   "want": {
+    "map": {
+     "width": 10,
+     "height": 10,
+     "depth": 1
+    },
+    "pins": [
+     {
+      "element_type": "location",
+      "element_id": "a",
+      "name": "A",
+      "x": 7,
+      "y": 3,
+      "z": 0,
+      "by": "its pin on the ground (7, 3), plus the 0 px margin"
+     }
+    ],
+    "route": [
+     [
+      7,
+      3,
+      0
+     ]
+    ],
+    "nudged": 0,
+    "clamped": 0
+   }
   }
  ]
 }

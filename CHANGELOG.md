@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.135.1] - 2026-11-09
+
+### Fixed
+
+- `trailByPlace` no longer runs forever when a row of the frame has no free point left: more Pins on one row (one y and z) than the frame is wide plus one. It is refused with a TypeError naming the element, its row and the frame's width. A taken point tries every x on its row first, as before. The shared fixture gains the boundary pair (two on one point in a frame 1 wide fit; a third is refused) and a pin given as whole floats, whose words read as whole numbers.
+
 ## [4.135.0] - 2026-11-09
 
 ### Added
