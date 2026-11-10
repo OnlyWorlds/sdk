@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.148.0] - 2026-11-10
+
+### Added
+
+- **A file on an element can be an image**: `OwFileKind` gains `png`, `jpg`, `webp` and `avif`, and `FILE_EXTENSIONS` (so `fileKindOf`, `createFileTicket` and `uploadFile`) reads `.png`, `.jpg`, `.jpeg` (kind `jpg`), `.webp` and `.avif`, as onlyworlds.com now takes them. `uploadFile(type, id, file)` with `screen.png` sends instead of refusing before the request. An image file is private to the element's readers like every file, and is not the element's picture (`image_url`). `.svg` and `.gif` are still refused before sending.
+
 ## [4.147.0] - 2026-11-10
 
 ### Added
