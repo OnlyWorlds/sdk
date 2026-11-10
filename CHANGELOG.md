@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+
+- **`viewOf`'s `order` draws a Pin's `element`**: a generic link is one field of the order, under its schema name and at its place (a Pin's Details: `map`, `element`, `x`, `y`, `z`), read as the two keys a served Pin carries (`element_type`, `element_id`, from the walk); it is drawn only when both are strings with something left after trimming. 4.151.0 never drew it, since no key `element` is served.
+
 ## [4.152.0] - 2026-11-11
 
 ### Added

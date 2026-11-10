@@ -2,7 +2,7 @@
 // baked at codegen as VIEWS_TABLE. Presentation like the colour groups and the drag pairs, not part of
 // the standard, and nothing in it says who may see or do what: that is the server's, by what it serves.
 
-import { ELEMENT_SECTIONS, VIEWS_TABLE, type OwViewRow, type OwViewsTable } from './v2/types.generated';
+import { ELEMENT_SECTIONS, GENERIC_LINKS, VIEWS_TABLE, type OwViewRow, type OwViewsTable } from './v2/types.generated';
 import { fold, hasMark, isCharterElement, isRoomElement, trimWhiteSpace } from './room';
 
 export type { OwViewRow, OwViewsTable };
@@ -100,7 +100,14 @@ function drawOrder(row: OwViewRow | null, el: Record<string, unknown>): string[]
   const lead = row?.lead ?? [];
   const folds = (row?.fold ?? []).map((f) => f.field);
   const drawn: string[] = [];
-  const draw = (f: string) => { if (!drawn.includes(f) && holds(own(el, f))) drawn.push(f); };
+  // a generic link (a Pin's `element`) is one field of the order, read as its two keys: it holds something
+  // only when both are strings with something left after trimming
+  const generic = Object.prototype.hasOwnProperty.call(GENERIC_LINKS, slug) ? GENERIC_LINKS[slug] : {};
+  const fieldHolds = (f: string): boolean => {
+    if (!Object.prototype.hasOwnProperty.call(generic, f)) return holds(own(el, f));
+    return generic[f].every((k) => { const v = own(el, k); return typeof v === 'string' && trimWhiteSpace(v) !== ''; });
+  };
+  const draw = (f: string) => { if (!drawn.includes(f) && fieldHolds(f)) drawn.push(f); };
   lead.forEach(draw);
   sections.filter((f) => !lead.includes(f) && !folds.includes(f)).forEach(draw);
   folds.forEach(draw);

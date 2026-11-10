@@ -664,6 +664,10 @@ export const VIEWS_TABLE: OwViewsTable = {
   ]
 };
 
+/** Each type's generic links (Pin's `element`) and the two keys a served body carries for each,
+ *  `[type_key, id_key]`, from the walk's decode_schema. Read by viewOf; not exported. */
+export const GENERIC_LINKS: { readonly [type: string]: { readonly [field: string]: readonly [string, string] } } = {"pin": {"element": ["element_type", "element_id"]}};
+
 /** The review profile's label (schema-dist `profiles/review.md`, rule 1): the words a reader that
  *  hands a world on (a context for an AI, a pack, a share) puts on each proposed element it keeps,
  *  one whose `x_review_proposed` is present (a doubt, rule 4, included; an empty mark is settled).

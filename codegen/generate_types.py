@@ -1311,6 +1311,25 @@ def render_views(views: dict) -> str:
     return "\n".join(lines)
 
 
+def render_generic_links(schema_dir: Path) -> str:
+    """Each type's generic links and the two keys that carry each, from the walk's decode_schema (what
+    schema-dist ships as schema.json), never by naming convention: viewOf draws a generic link as one field
+    of the order that holds something only when both keys do (views.json's document layout)."""
+    decoded = walk.decode_schema(schema_dir)
+    out: dict[str, dict[str, list[str]]] = {}
+    for tslug, fields in decoded["types"].items():
+        for f in fields:
+            if f["kind"] == "generic":
+                out.setdefault(tslug, {})[f["name"]] = [f["type_key"], f["id_key"]]
+    body = json.dumps(out, sort_keys=True)
+    return "\n".join([
+        "/** Each type's generic links (Pin's `element`) and the two keys a served body carries for each,",
+        " *  `[type_key, id_key]`, from the walk's decode_schema. Read by viewOf; not exported. */",
+        f"export const GENERIC_LINKS: {{ readonly [type: string]: {{ readonly [field: string]: readonly [string, string] }} }} = {body};",
+        "",
+    ])
+
+
 def render_message_profile(pair: tuple[str, str], mark: dict[str, str], note: tuple[str, str]) -> str:
     lines = [
         "/** The message profile's pair (schema-dist `profiles/message.md`, a convention on the 22 types,",
@@ -1410,6 +1429,7 @@ def main() -> None:
     charter_pairs = load_charter_pairs(schema_dir, aid_pairs, aid_mark)
     parts.append(render_charter_pairs(charter_pairs))
     parts.append(render_views(load_views(schema_dir, all_fields, room_pairs, charter_pairs)))
+    parts.append(render_generic_links(schema_dir))
     parts.append(render_review_label(load_review_label(schema_dir)))
     parts.append(render_message_profile(*load_message_profile(schema_dir, room_pairs, all_fields)))
     parts.append(render_field_schema(all_fields, sections, required_sets))
