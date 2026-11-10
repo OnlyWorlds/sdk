@@ -15,7 +15,7 @@ const FIXTURE = fileURLToPath(new URL('./fixtures/layout/trail-by-place.json', i
 const bytes = readFileSync(FIXTURE);
 const fx = JSON.parse(bytes.toString('utf8'));
 const clone = (v) => JSON.parse(JSON.stringify(v));
-const FIXTURE_SHA = '546ca817f7f74f81';
+const FIXTURE_SHA = '73dd976db27891d7';
 
 test('the fixture is the one both packages hold', () => {
   assert.equal(createHash('sha256').update(bytes).digest('hex').slice(0, 16), FIXTURE_SHA);

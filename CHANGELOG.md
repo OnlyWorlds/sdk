@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.143.0] - 2026-11-10
+
+### Changed
+
+- `TRAIL_TIERS`, `trailByPlace`'s default floors: each default tier is named by its own kinds: `location, object, zone` at 0, `character, collective, creature, species` at 240, `event` at 480, and the other eleven kinds at 720. The heights and the kinds are unchanged, so every point is the same; what moves is the text a tier's name reaches, each hanging Pin's `by` (`tier event; 3 of 7 on the spiral round it`) and the recipe's `settings.tiers`. The old names were group names for sets of kinds that no source holds. A caller that passes its own `tiers` sees no change.
+
+### Tests
+
+- The shared trail fixture moves with it (the same bytes in both packages, its sha held in each); its main input passes these tiers, and the hero case runs on the default.
+
 ## [4.142.1] - 2026-11-10
 
 ### Fixed

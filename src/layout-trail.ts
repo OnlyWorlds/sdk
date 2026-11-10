@@ -111,12 +111,12 @@ export interface OwTrailLayout {
 // Literal entries, each freeze marked pure: a bundler drops the whole table from a tool that never reads it.
 const tier = (name: string, z: number, kinds: readonly string[]): OwTrailTier =>
   /* @__PURE__ */ Object.freeze({ name, z, kinds: /* @__PURE__ */ Object.freeze(kinds) as unknown as string[] });
-/** The default floors: places and things on the ground, the living above, what happened higher, what is told highest. */
+/** The default floors, each named by its own kinds: location, object and zone on the ground; character, collective, creature and species at 240; event at 480; the other eleven kinds at 720. */
 export const TRAIL_TIERS: readonly OwTrailTier[] = /* @__PURE__ */ Object.freeze([
-  /* @__PURE__ */ tier('ground: places and things', 0, ['location', 'object', 'zone']),
-  /* @__PURE__ */ tier('people and the living', 240, ['character', 'collective', 'creature', 'species']),
-  /* @__PURE__ */ tier('what happened', 480, ['event']),
-  /* @__PURE__ */ tier('told or abstract', 720, ['ability', 'construct', 'family', 'institution', 'language', 'law', 'narrative', 'phenomenon', 'relation', 'title', 'trait']),
+  /* @__PURE__ */ tier('location, object, zone', 0, ['location', 'object', 'zone']),
+  /* @__PURE__ */ tier('character, collective, creature, species', 240, ['character', 'collective', 'creature', 'species']),
+  /* @__PURE__ */ tier('event', 480, ['event']),
+  /* @__PURE__ */ tier('ability, construct, family, institution, language, law, narrative, phenomenon, relation, title, trait', 720, ['ability', 'construct', 'family', 'institution', 'language', 'law', 'narrative', 'phenomenon', 'relation', 'title', 'trait']),
 ]);
 
 const DEFAULT_SPIRAL: OwTrailSpiral = { r0: 140, c: 20, angle: 2.399963 };

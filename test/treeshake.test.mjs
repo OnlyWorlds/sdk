@@ -22,12 +22,12 @@ function bundle(name, { external = ['fflate'] } = {}) {
 
 for (const name of ['mapSpace', 'layoutOf', 'worldGraph', 'OwV2Client']) {
   test(`a bundle of ${name} alone leaves the layout method's floors out`, () => {
-    assert.ok(!bundle(name).includes('ground: places and things'));
+    assert.ok(!bundle(name).includes('location, object, zone'));
   });
 }
 
 test('the control: a bundle that reads the floors keeps them', () => {
-  assert.ok(bundle('TRAIL_TIERS').includes('ground: places and things'));
+  assert.ok(bundle('TRAIL_TIERS').includes('location, object, zone'));
 });
 
 // fflate's own error words survive minifying, where its function names do not.
