@@ -20,7 +20,7 @@ function bundle(name, { external = ['fflate'] } = {}) {
   }).outputFiles[0].text;
 }
 
-for (const name of ['mapSpace', 'worldGraph', 'OwV2Client']) {
+for (const name of ['mapSpace', 'layoutOf', 'worldGraph', 'OwV2Client']) {
   test(`a bundle of ${name} alone leaves the layout method's floors out`, () => {
     assert.ok(!bundle(name).includes('ground: places and things'));
   });
@@ -32,7 +32,7 @@ test('the control: a bundle that reads the floors keeps them', () => {
 
 // fflate's own error words survive minifying, where its function names do not.
 const FFLATE = /invalid block type|unexpected EOF|invalid zip data/;
-for (const name of ['trailByPlace', 'mapSpace']) {
+for (const name of ['trailByPlace', 'mapSpace', 'layoutOf']) {
   test(`a bundle of ${name} alone carries none of the zip library`, () => {
     assert.ok(!FFLATE.test(bundle(name, { external: [] })));
   });

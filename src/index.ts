@@ -73,6 +73,9 @@ export type { OwLanding, OwLandingCluster, OwLandingGap, OwLandingGapKind, OwLan
 // The map-space profile (schema-dist profiles/map-space.md): a world's Maps, Zone outlines and Pins as geometry in the Map's pixels.
 export { mapSpace } from './mapspace';
 export type { OwMapSpace, OwMapSpaceMap, OwMapSpaceOutline, OwMapSpaceOutReason, OwMapSpacePin, OwMapSpacePoint } from './mapspace';
+// Its layout reading (rules 8 to 10): one Map's layout method, the ground it stands on, and the Pins placed by hand.
+export { layoutOf } from './layout-of';
+export type { OwLayoutOf } from './layout-of';
 
 // A layout method: a world laid out along a route on a ground map, as a Map frame and its Pins (read back by mapSpace).
 export { trailByPlace, TRAIL_TIERS, roundHalfEven } from './layout-trail';
