@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+
+- Schema repinned to schema-dist v0.34.0-dist.110 (canonical 00.34.00 unchanged, no schema file moved): the map-space profile gains rules 8 to 10, `x_layout` on a Map, its ground and `x_hand` on a Pin, and a layout reading with its own fixture section, `layout_cases`. The map-space reading and its 34 cases do not change.
+
 ## [4.141.0] - 2026-11-10
 
 ### Added
