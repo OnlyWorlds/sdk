@@ -5,6 +5,20 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.144.0] - 2026-11-10
+
+### Added
+
+- `OwAiUse.can_pay`: true when a call by this account would be paid now, by the same check the call runs (`on`, the server's daily cap, today's token rating against `rating_need`, or a saved AI key that runs the use). Offer a use only when it is true. The server's fifth use, `lens` (a lens proposed from a sentence, served switched off), is called through `ai('lens', { world_id, sentence })` and answers as served; it is not typed yet.
+
+### Changed
+
+- Schema repinned to schema-dist v0.34.0-dist.111 (canonical 00.34.00 unchanged, no schema file moved): the map-space fixture gains four layout cases, 21 in all: an id above U+FFFF beside one in U+E000..U+FFFF, a repeated Pin id where the last row wins, a Pin row without a string id, and a Map row without a string id; the page says reading H holds for the Map row too. `layoutOf` already answered all four.
+
+### Tests
+
+- The layout cases are replayed by their `map` id, or, for a Map row with no string id, at each position the case's `map_index` lists, the answer the case's `want` for each; a case with neither fails by name. The count is held at 21.
+
 ## [4.143.0] - 2026-11-10
 
 ### Changed

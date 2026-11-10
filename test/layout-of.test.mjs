@@ -15,30 +15,47 @@ assert.ok(existsSync(FIXTURE), `no map-space fixture at ${FIXTURE}`);
 const doc = JSON.parse(readFileSync(FIXTURE, 'utf8'));
 const cases = doc.layout_cases ?? [];
 
-function read(c) {
+// The Map rows a case reads: the one its `map` id names, or, for a row with no string id, each position `map_index`
+// lists (serial 111); the answer is the case's `want` for each.
+function rowsRead(c) {
+  if (c.map_index !== undefined) {
+    assert.ok(c.map === undefined, `${c.name}: both map and map_index`);
+    assert.ok(Array.isArray(c.map_index) && c.map_index.length > 0, `${c.name}: map_index is a list of positions`);
+    return c.map_index.map((i) => {
+      const row = c.elements[i];
+      assert.ok(row && row.type === 'map', `${c.name}: map_index ${i} is no Map row`);
+      return row;
+    });
+  }
+  assert.ok(typeof c.map === 'string' && c.map !== '', `${c.name}: neither a map id nor map_index`);
   const map = c.elements.find((e) => e.type === 'map' && e.id === c.map);
   assert.ok(map, `${c.name}: no Map row with the case's id`);
-  return layoutOf(map, c.elements.filter((e) => e.type === 'map'), c.elements.filter((e) => e.type === 'pin'));
+  return [map];
+}
+
+function readAll(c) {
+  return rowsRead(c).map((map) => layoutOf(map, c.elements.filter((e) => e.type === 'map'), c.elements.filter((e) => e.type === 'pin')));
 }
 
 test('the fixture holds the layout reading\'s cases', () => {
   assert.equal(doc.profile, 'map-space');
-  assert.equal(cases.length, 17, `the fixture holds ${cases.length} layout cases, serial 110 has 17`);
+  assert.equal(cases.length, 21, `the fixture holds ${cases.length} layout cases, serial 111 has 21`);
   assert.equal(new Set(cases.map((c) => c.name)).size, cases.length, 'two layout cases share a name');
 });
 
 for (const c of cases) {
   test(`layout fixture: ${c.name}`, () => {
-    const got = read(c);
-    assert.deepStrictEqual(got, c.want);
-    // Byte for byte, key order included.
-    assert.equal(JSON.stringify(got), JSON.stringify(c.want));
+    for (const got of readAll(c)) {
+      assert.deepStrictEqual(got, c.want);
+      // Byte for byte, key order included.
+      assert.equal(JSON.stringify(got), JSON.stringify(c.want));
+    }
   });
 }
 
 test('every answer holds its three keys in order, and the map-space reading carries no layout key', () => {
   for (const c of cases) {
-    assert.deepEqual(Object.keys(read(c)), ['layout', 'ground', 'hand']);
+    for (const got of readAll(c)) assert.deepEqual(Object.keys(got), ['layout', 'ground', 'hand']);
     assert.deepEqual(Object.keys(mapSpace(c.elements)), ['maps', 'zones', 'pins', 'out']);
   }
 });
@@ -88,10 +105,10 @@ test('a ground named by a Map row the reader cannot read as an element is no gro
 test('layoutOf is pure: the rows are not moved, and the answer is the caller\'s own', () => {
   const c = cases.find((x) => x.name === 'board-every-pin-is-hand');
   const before = JSON.stringify(c.elements);
-  const got = read(c);
+  const [got] = readAll(c);
   got.hand.push('planted');
   assert.equal(JSON.stringify(c.elements), before);
-  assert.deepStrictEqual(read(c), c.want);
+  assert.deepStrictEqual(readAll(c)[0], c.want);
 });
 
 test('layoutOf refuses what is not a Map and two lists', () => {

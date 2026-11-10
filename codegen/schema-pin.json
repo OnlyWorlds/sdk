@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.34.0-dist.110",
-  "commit": "533a581f4ab3b3bd9a7e9212db657720dbd8709c",
-  "manifest_sha256": "cd20696a05a8e6e80367ec3ebcf1cc9a910cc77de65a840de89e39dec1edfbe6",
+  "tag": "v0.34.0-dist.111",
+  "commit": "bfc90b419b4f7e7de01f345f5e348a7b648c0bad",
+  "manifest_sha256": "b662309bf0c910b08bd530097ade51dc50a55eaef95b023c1cc57a720d63b8b7",
   "canonical_version": "00.34.00",
-  "dist_serial": 110,
+  "dist_serial": 111,
   "published": "2026-11-10",
   "pinned_at": "2026-11-10",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.34.0-dist.110",
+      "manifest_sha256": "cd20696a05a8e6e80367ec3ebcf1cc9a910cc77de65a840de89e39dec1edfbe6",
+      "note": "superseded by v0.34.0-dist.111 (canonical 00.34.00 unchanged, no schema file moved; map-space.fixture.json gains four layout_cases, an id above U+FFFF beside one in U+E000..U+FFFF, a repeated Pin id where the last row wins, a Pin row without a string id and a Map row without a string id, 21 in all, and map-space.md says reading H holds for the Map row too)"
+    },
     {
       "tag": "v0.34.0-dist.109",
       "manifest_sha256": "1aa35790618aa99ca22989bc07b4054f6e35f7fca18a435da48646533f6d3f1c",

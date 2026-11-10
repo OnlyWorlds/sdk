@@ -892,6 +892,10 @@ export interface OwAiUse {
   /** False while the use is switched off or has spent its own budget for today (its calls answer 503
    *  `ask_unavailable` with param `use`). */
   on: boolean;
+  /** True when a call by this account would be paid now, by the same check the call runs: `on`, the server's daily
+   *  cap not reached, and today's token rating holding `rating_need` (or, with the rating spent, a saved AI key that
+   *  runs this use). Offer the use only when this is true. Served since 2026-11-10. */
+  can_pay: boolean;
   [k: string]: unknown;
 }
 

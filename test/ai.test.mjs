@@ -20,7 +20,7 @@ function fake(script) {
 const USE = {
   slug: 'ask', owner: 'lantern', provider: 'anthropic', model: 'claude-haiku-5-5', effort: 'low',
   prompt_sha256: 'a'.repeat(64), needs_world: true, input_caps: { question: 500, context: 12000 }, output_cap: 600,
-  structured: false, price_tokens: null, ceiling: null, calls_left: null, on: true,
+  structured: false, price_tokens: null, ceiling: null, calls_left: null, on: true, can_pay: true,
 };
 const METER = { model: 'claude-haiku-5-5', stop_reason: 'end_turn', usage: { input_tokens: 300, output_tokens: 12 }, remaining: 49, tokens_remaining: 49000, token_rating: 50000, paid_by: 'rating', use_remaining: null };
 const ASK = { world_id: 'w1', question: 'Who holds Balkonon?', context: ['Mira Thel (character)'] };
