@@ -52,6 +52,7 @@ const FENCED = {
   'OwV2Client.listAll#1': () => drain(world.listAll('character', U)),
   'OwV2Client.draught#1': () => world.draught('x', U),
   'OwV2Client.get#2': () => world.get('character', 'x', U),
+  'OwV2Client.search#1': () => world.search('harbour', U),
   'OwV2Client.create#2': () => world.create('character', { name: 'A' }, U),
   'OwV2Client.patch#3': () => world.patch('character', 'x', { name: 'A' }, U),
   'OwV2Client.delete#2': () => world.delete('character', 'x', U),

@@ -230,6 +230,15 @@ A world's owner can have agent seats propose instead of write (`agent_writes_pro
 
 ## Finding elements in a world
 
+To ask onlyworlds.com, `search` finds the elements whose name or text holds every word you give, as whole words:
+
+```typescript
+const { results, truncated } = await client.search('APP-142', { limit: 200 });
+results[0].field; results[0].snippet;             // where the words were, and a piece of that field
+```
+
+A word is a run of letters, digits or underscores, so `APP-142` is two words; read an element before relying on a key it must hold whole. There are no pages: `truncated` means more matched than `limit` (at most 200) let through.
+
 When you hold a world's elements in memory (from a sync, or a world file), `lookupWorld` finds the ones a plain question is about, with no model and no network:
 
 ```typescript

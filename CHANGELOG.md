@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.150.0] - 2026-11-10
+
+### Added
+
+- **`search(q, { type, limit, viewAs })`**: the world's elements whose name or text fields hold every word of `q` as a whole word, ignoring case, as `GET /search` finds them (`OwSearchResults`: `query`, `results`, `count`, `truncated`; each `OwSearchResult` with its `type`, `id`, `name`, `supertype`, `subtype`, the `field` the words were found in, a `snippet` of it, and `known_of` on a row the reader knows of without seeing it whole). A word is a run of letters, digits or underscores, so `APP-142` is searched as two words; a snippet is a piece of one field, so read the element to keep only those that hold a key whole. No pages: `truncated` says more matched than `limit` (1 to 200) let through. On a client with `world` set it searches that world, like the other world reads. An unknown option or a `q` that is not a string sends nothing.
+
 ## [4.149.0] - 2026-11-10
 
 ### Changed

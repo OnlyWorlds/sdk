@@ -20,7 +20,7 @@ export { ELEMENT_TYPES, SPATIAL_TYPES, AGENT_DOORS, isAgentDoor, isKnownOf } fro
 export type {
   ElementType, OwElement, OwElementBase, ListParams, OwBulkItem, OwBulkResponse,
   OwBulkItemResult, OwErrorBody, OwChange, OwChangesPage, OwClientConfig,
-  OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwUploadedImage, OwWorldMeta, OwWorldPublicPage,
+  OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwSearchResult, OwSearchResults, OwUploadedImage, OwWorldMeta, OwWorldPublicPage,
   OwWorldOrigin, OwWorldSource, OwWorldProducer,
   OwFileKind, OwFileAddedBy, OwFileRow, OwWorldFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwPaidBy, OwAllowance, OwAiUse, OwAiMeter, OwAiRefusal, OwAiAskAnswer, OwAiSortAnswer, OwAiAskBody, OwAiSortBody, OwMe, OwFrontDoor, OwMySeat, OwReadingAids, OwServedReadingAids, OwReadingAidsCharter, OwReadingAidsGuide, OwReadingAidsDomain, OwReadingAidsHub, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwAccountToken, OwMintedAiToken, OwMintedKey, OwWorldKeyRow, OwWorldKeyMember, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwDraughtComponent, OwDraughtItem, OwDraughtLens, OwWorldLenses, OwWorldLens, OwWorldLensReading, OwJoined, OwAgentJoined, OwPlayerJoined, OwSignedIn,

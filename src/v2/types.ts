@@ -152,6 +152,32 @@ export interface OwPage<T = OwElement> {
   next_cursor: string | null;
 }
 
+/** One element `search()` found: where the words were, and a short plain-text piece around the first match. */
+export interface OwSearchResult {
+  type: ElementType;
+  id: string;
+  name: string;
+  supertype: string;
+  subtype: string;
+  /** Where the words were found: `name`, or the first text field (in the type's schema order) that holds them all, else the first that holds any. */
+  field: string;
+  /** Up to 160 characters of that field around the first match, as plain text. Never the whole field: read the element for its text. */
+  snippet: string;
+  /** Present, and true, only when the reader knows of the element without seeing it whole: it matched on what a known-of stub keeps. */
+  known_of?: true;
+}
+
+/** search()'s answer: every element whose name or text holds every word of `q` as a whole word, up to `limit`. */
+export interface OwSearchResults {
+  /** `q` as searched (trimmed). */
+  query: string;
+  results: OwSearchResult[];
+  /** How many results came back. */
+  count: number;
+  /** True when more elements matched than `limit` let through. There are no further pages: narrow `q` or `type`, or raise `limit`. */
+  truncated: boolean;
+}
+
 /** /changes feed -- discriminated union on `op`. Apply in order -> convergence. */
 export type OwChange = OwChangeUpsert | OwChangeDelete;
 
@@ -1670,7 +1696,7 @@ export interface OwClientConfig {
   /**
    * The key: an ow_w_ (write) or ow_r_ (read) world key, an ow_a_ account token (sent as a Bearer token, for the account routes, and with `world` set for that world's reads), or a 10-digit legacy key.
    * Leave it out for a client that holds none, such as a friend with only a link (since 4.30.0): it can call health,
-   * previewJoin, redeemJoin and signInWithPassword (and with `world` set, list, listAll, get, getWorld and draught), and any
+   * previewJoin, redeemJoin and signInWithPassword (and with `world` set, list, listAll, get, search, getWorld and draught), and any
    * other call is a TypeError before anything is sent.
    */
   apiKey?: string;

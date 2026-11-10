@@ -14,7 +14,7 @@
 import type { ElementType } from './types.generated';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
-  OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage,
+  OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwSearchResults,
   OwUploadedImage, OwWorldMeta, OwJoinPreview, OwJoinedMembership, OwAskAnswer, OwAllowance, OwAiUse, OwAiMeter, OwAiAskAnswer, OwAiSortAnswer, OwAiAskBody, OwAiSortBody, OwMe, OwMember, OwWorldLenses,
   OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwAccountToken, OwMintedAiToken, OwMintedKey, OwWorldKeyRow, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
@@ -295,6 +295,26 @@ export class OwV2Client {
     only('get', opts, ['expand', 'fields', 'viewAs', 'signal']);
     const query = buildQuery({ expand: opts.expand?.join(','), fields: opts.fields?.join(','), as: opts.viewAs });
     return this.request('GET', `/${seg('type', type)}/${seg('id', id)}/`, { query, worldRead: true, ...withSignal(opts.signal) }) as Promise<OwElement>;
+  }
+
+  /**
+   * GET /search -- the world's elements whose `name` or text fields (`description` and the type's other prose
+   * fields; never supertype, subtype or image_url) hold every word of `q` as a whole word, ignoring case. A word
+   * is a run of letters, digits or underscores, so `APP-142` is searched as the two words `APP` and `142`: a
+   * result's `snippet` is a piece of one field, so read the element to keep only those that hold the key whole.
+   * No stemming, no pages: `truncated` says more matched than `limit` (1 to 200, the server's default 50) let
+   * through. `type` searches one type; `viewAs` reads as another reader (the owner's keys). A guest's key finds
+   * only what it may read. On a client with `world` set (an account token or no key), it searches that world.
+   *
+   * ```ts
+   * const { results, truncated } = await client.search('APP-142', { limit: 200 });
+   * ```
+   */
+  async search(q: string, opts: { type?: ElementType; limit?: number; viewAs?: string; signal?: AbortSignal } = {}): Promise<OwSearchResults> {
+    only('search', opts, ['type', 'limit', 'viewAs', 'signal']);
+    if (typeof q !== 'string') throw new TypeError('search: `q` is the words to find, a string of 2 to 200 characters. Nothing was sent.');
+    const query = buildQuery({ q, type: opts.type, limit: opts.limit, as: opts.viewAs });
+    return this.request('GET', '/search', { query, worldRead: true, ...withSignal(opts.signal) }) as Promise<OwSearchResults>;
   }
 
   /**
@@ -1831,14 +1851,14 @@ export class OwV2Client {
     const worldRead = opts.auth !== false && opts.worldRead === true && method.toUpperCase() === 'GET';
     const accountToken = opts.auth !== false && this.keyKind === 'account' ? opts.accountToken : undefined;
     if (opts.auth !== false && this.keyKind === 'none' && !(worldRead && this.world !== undefined)) {
-      throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin, redeemJoin and signInWithPassword work, and list, listAll, get, getWorld and draught with \`world\` set`);
+      throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin, redeemJoin and signInWithPassword work, and list, listAll, get, search, getWorld and draught with \`world\` set`);
     }
     if (opts.auth !== false && this.keyKind === 'account' && !ACCOUNT_ROUTE.test(path)) {
       if (!worldRead && accountToken === undefined) {
-        throw new TypeError(`${method} ${path} needs a world key: an account token sends the /account routes, worldLenses, setMyLenses and members, and with \`world\` set reads a world through list, listAll, get, getWorld and draught only. Nothing was sent.`);
+        throw new TypeError(`${method} ${path} needs a world key: an account token sends the /account routes, worldLenses, setMyLenses and members, and with \`world\` set reads a world through list, listAll, get, search, getWorld and draught only. Nothing was sent.`);
       }
       if (worldRead && this.world === undefined) {
-        throw new TypeError(`${method} ${path}: an account token reads a world only with \`world\` set (new OwV2Client({ apiKey, world })), through list, listAll, get, getWorld and draught. Nothing was sent.`);
+        throw new TypeError(`${method} ${path}: an account token reads a world only with \`world\` set (new OwV2Client({ apiKey, world })), through list, listAll, get, search, getWorld and draught. Nothing was sent.`);
       }
       if (accountToken === 'world' && this.world === undefined) {
         throw new TypeError(`${method} ${path}: an account token names the world it sends to with \`world\`: set it (new OwV2Client({ apiKey, world })). Nothing was sent.`);
@@ -2249,10 +2269,10 @@ const CLIENT_CONFIG_KEYS = ['apiKey', 'apiPin', 'baseUrl', 'pageSize', 'changesP
 function worldOf(value: unknown, keyKind: OwKeyKind): string | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== 'string' || value.trim() === '') {
-    throw new TypeError(`OwV2Client: world is a world's id, a non-empty string; got ${JSON.stringify(value) ?? String(value)}. With it, an account token or no key reads that world through list, listAll, get, getWorld and draught.`);
+    throw new TypeError(`OwV2Client: world is a world's id, a non-empty string; got ${JSON.stringify(value) ?? String(value)}. With it, an account token or no key reads that world through list, listAll, get, search, getWorld and draught.`);
   }
   if (keyKind !== 'account' && keyKind !== 'none') {
-    throw new TypeError('OwV2Client: a world key reads its own world; `world` is for an account token or no key, which read the world it names through list, listAll, get, getWorld and draught.');
+    throw new TypeError('OwV2Client: a world key reads its own world; `world` is for an account token or no key, which read the world it names through list, listAll, get, search, getWorld and draught.');
   }
   return value;
 }
