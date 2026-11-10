@@ -24,6 +24,8 @@ const CASES = [
   ['zero: a value, a doubt', 0, null, true],
   ['an empty object: an empty mark, settled', {}, null, false],
   ['an object with no key the profile names: present, a mark', { x: null }, { by: null, expires: null, lapsed: false }, true],
+  ['rule 5: only a key the table does not name ({"note": "x"}), a mark that never lapses', { note: 'x' }, { by: null, expires: null, lapsed: false }, true],
+  ['rule 5: a named key whose value is null ({"by": null}), a mark, no proposer named', { by: null }, { by: null, expires: null, lapsed: false }, true],
   ['a whole mark, open', { by: 'm1', evidence: 'seen', expires: '2026-11-01' }, { by: 'm1', expires: '2026-11-01', lapsed: false }, true],
   ['trimmed by and expires', { by: '  m1 ', expires: ' 2026-11-01 ' }, { by: 'm1', expires: '2026-11-01', lapsed: false }, true],
   ['lapses on its own day', { by: 'm1', expires: TODAY }, { by: 'm1', expires: TODAY, lapsed: true }, true],

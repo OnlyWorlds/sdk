@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.151.0] - 2026-11-10
+
 ### Added
 
 - **`viewOf` returns `order`: the fields an element's page draws, in the order drawn** (`views.json` version 2): the row's `lead`, then the rest of the type's section fields in the schema's own order, then each `fold`; each field once, and only a field that holds something (not absent, null, a string with nothing after trimming, an empty list or an empty object), so an empty lead field is skipped and an empty fold draws no fold. The base fields are the page's head and appear only where a row names one. With no row, the type's section fields.
@@ -14,6 +16,8 @@ earlier history lives in git log only.
 - **The `x_served_trimmed` banner shows only when the list names a field**: at least one string with something left after trimming. A list of blanks, or of anything but strings, shows none (4.147.0 showed it for any non-empty list).
 - **`VIEWS.version` is `2`**, the version of `views.json` baked at this release; codegen reads version 2 only.
 - Where two rows match on one rung, the first in the table wins and the page is drawn, as before; the file now says so, and the fixture holds the case.
+- **A lens's short rows carry `supertype` and `subtype`**: a `name` or `first_line` row from `resolveLens` now holds each where the element as served holds it as a string with something left after trimming White_Space, as stored (never trimmed); absent, null, empty, White_Space alone or a value that is not a string adds no key. A known-of stub's row carries them too, since a stub is served both. Rows under `full` are unchanged.
+- **Schema repinned to schema-dist v0.34.0-dist.114** (from dist.113; same canonical 00.34.00, no schema file moved): `views.json` version 2 and its 41 cases; the lens fixture at 210 cases (nine for the short rows), all replayed; the review profile's rule 5 (an object with at least one key is a mark, whatever its keys: `proposedMarkOf` already read it so, and its tests now name the rule's two examples); the report profile's rule 8 (no reader here reads a report's `consequences`).
 
 ## [4.150.0] - 2026-11-10
 

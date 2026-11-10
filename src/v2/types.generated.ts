@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.113
-//         commit          e3e249912cb74cbdb7a60e701256bdcc69ab2ac5
-//         MANIFEST sha256 b645c8da0985ccedf538941218f31f922b62fe5ec2d5be14d4d6b2b52dca4478
-//         canonical 00.34.00, dist serial 113, published 2026-11-10
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.114
+//         commit          428227ab934c3aab35ca50cd92aebd36400faa46
+//         MANIFEST sha256 a42a1d57907f45b0c696db4b86731531903f0c91060b05f9cf7767d43bd5bbea
+//         canonical 00.34.00, dist serial 114, published 2026-11-10
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -539,7 +539,7 @@ export interface OwViewRow {
 
 /** views.json without its `_meta`: the banners every page shows, the layouts, the rows. */
 export interface OwViewsTable {
-  readonly version: 1;
+  readonly version: 2;
   readonly banners: readonly { readonly mark: string; readonly defined_by: string }[];
   readonly layouts: { readonly [name: string]: string };
   readonly rows: readonly OwViewRow[];
@@ -550,7 +550,7 @@ export interface OwViewsTable {
  *  council-governed OnlyWorlds standard, and nothing in it says who may see or do what. Read it with
  *  viewOf; the frozen copy is VIEWS. */
 export const VIEWS_TABLE: OwViewsTable = {
-  "version": 1,
+  "version": 2,
   "banners": [
     {
       "mark": "known_of",
@@ -574,8 +574,8 @@ export const VIEWS_TABLE: OwViewsTable = {
     }
   ],
   "layouts": {
-    "document": "the fields in the row's order: lead open, then the rest in the standard's sections, then fold; a kind with no row is a document",
-    "conversation": "the element within its chain by the named link, oldest first by created_at, stopping at an id already visited"
+    "document": "the fields in the row's order, each drawn once: lead open, then the rest, then fold; a field the row names in both lead and fold is drawn in the lead. The rest are the type's section fields in the schema's own order (schema/<type>.yaml: its sections as listed, and each section's fields as listed) that the row puts in neither lead nor fold. A field that holds nothing (absent, null, a string with nothing left after trimming, a list with no items, an object with no keys; a list of blank strings holds something here, whatever a banner reads of one) is not drawn: an empty lead field is skipped, and a fold whose field holds nothing draws no fold. A tool that draws empty fields to be filled draws them at their own place in this order; it never moves a field. The base fields outside every section (name, description, supertype, subtype, image_url) are the page's head, unless the row names one in lead or fold, where it is drawn, and only there. A row names only the type's base and section fields, never an extension key, and extension keys and a world's own fields are not in the order. A kind with no row is a document.",
+    "conversation": "the element within its chain by the named link, oldest first by created_at, stopping at an id already visited; each line's own fields drawn as a document draws them"
   },
   "rows": [
     {

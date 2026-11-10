@@ -84,7 +84,10 @@ export interface OwLensReading {
    * The kept elements as `show` makes them, in the same order; an anchor's row carries its `note`, and only an anchor
    * the reader can see: a note on one it cannot see (an id of another type than its field's too) goes with the
    * anchor, though another path keeps the element. Under `full` a row is the body as served to this reader, so the
-   * owner's row of a hidden element carries `hidden: true`; a `name` or `first_line` row never carries it.
+   * owner's row of a hidden element carries `hidden: true`; a `name` or `first_line` row never carries it. A `name`
+   * row is `id`, `type`, `name`, and `supertype` and `subtype` each where the served body holds it as a string with
+   * something left after trimming White_Space, as stored; a `first_line` row adds `description` up to its first line
+   * break.
    */
   rows: Record<string, unknown>[];
   /** The cut, counted by reason; a reason with no count is absent, and a reader that is not the owner never carries the owner's two. */
@@ -650,6 +653,12 @@ export class Reading {
     if (show === 'full') row = copy(b);
     else {
       row = { id: b.id, type: b.type, name: b.name ?? null };
+      // serial 114: a short row carries supertype and subtype where the served body holds one as a
+      // string with something left after trimming White_Space, as stored (never trimmed)
+      for (const k of ['supertype', 'subtype'] as const) {
+        const v = b[k];
+        if (typeof v === 'string' && trimWhiteSpace(v) !== '') row[k] = v;
+      }
       if (show === 'first_line' && typeof b.description === 'string') {
         const cut = b.description.search(/[\r\n]/);
         row.description = cut < 0 ? b.description : b.description.slice(0, cut);
