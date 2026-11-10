@@ -446,6 +446,16 @@ export class OwApiError extends Error {
   get isNotProposed(): boolean {
     return this.status === 422 && this.code === 'not_proposed';
   }
+
+  /**
+   * A write from a key below co-builder (a contributor's or a guest's, a person's or an AI seat's) set an
+   * `x_review_proposed` or `x_review_checked` mark whose `by` is not the writer's own membership id
+   * (403 `review_by_another`, `param` the mark; nothing written). Send your own membership id as `by`, or
+   * the mark exactly as the element holds it. A Character's id is refused too. Retrying will not help.
+   */
+  get isReviewByAnother(): boolean {
+    return this.status === 403 && this.code === 'review_by_another';
+  }
 }
 
 /**

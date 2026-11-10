@@ -324,13 +324,14 @@ test('bulk: a slot\'s 202 stays in its slot with its proposal; nothing is thrown
 
 // -- the five codes ----------------------------------------------------------
 
-test('the five proposal codes each have a predicate, true for their own status and code only', async () => {
+test('the five proposal codes and review_by_another each have a predicate, true for their own status and code only', async () => {
   const cases = [
     ['isFieldNotVisible', 422, 'invalid_request', 'field_not_visible'],
     ['isTooManyOpen', 422, 'invalid_request', 'too_many_open'],
     ['isStaleProposal', 409, 'invalid_request', 'stale_proposal'],
     ['isProposedOnly', 403, 'permission_error', 'proposed_only'],
     ['isOwnProposal', 403, 'permission_error', 'own_proposal'],
+    ['isReviewByAnother', 403, 'permission_error', 'review_by_another'],
   ];
   for (const [pred, status, type, code] of cases) {
     const err = await thrown({ status, body: envelope(type, code, code === 'stale_proposal' ? { conflicts: [], current: ELEMENT } : {}) },
