@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.149.0] - 2026-11-10
+
+### Changed
+
+- **`lenses_from` can be `none`** on `OwMe` and `OwMember`: a member or seat that never chose its lenses and that nothing brings a lens to (no Character, or Titles that name none), told apart from `chosen`, which an empty list chosen on purpose still reads. What a row reads is unchanged; the owner's row and a removed row are always `chosen`. A TypeScript switch over the field gains a case.
+
 ## [4.148.0] - 2026-11-10
 
 ### Added

@@ -698,8 +698,13 @@ export interface OwMe {
    * and no policy.
    */
   lenses: string[];
-  /** Where `lenses` comes from: `chosen` (your own list, empty for none) or `titles` (you chose none, and your Character's Titles bring these). Saving a list makes it your choice. */
-  lenses_from: 'chosen' | 'titles';
+  /**
+   * Where `lenses` comes from: `chosen` (your own list; an empty one is a choice of none), `titles`
+   * (you never chose, and your Character's Titles bring these) or `none` (you never chose and nothing
+   * brings you a lens: no Character, or Titles that name none; `lenses` is empty). The owner's is
+   * always `chosen`. Saving a list makes it your choice.
+   */
+  lenses_from: 'chosen' | 'titles' | 'none';
   /**
    * Served only, never written: present only when `lenses` was served with a lens left out, one this
    * key cannot see; then it names `lenses`. Saving the list you were shown keeps that lens where it stands.
@@ -836,8 +841,13 @@ export interface OwMember {
    * left out of what it is shown.
    */
   lenses: string[];
-  /** Where `lenses` comes from: `chosen` (the row's own list, empty for none) or `titles` (it chose none, and its Character's Titles bring these). */
-  lenses_from: 'chosen' | 'titles';
+  /**
+   * Where `lenses` comes from: `chosen` (the row's own list; an empty one is a choice of none),
+   * `titles` (it never chose, and its Character's Titles bring these) or `none` (it never chose and
+   * nothing brings it a lens: no Character, or Titles that name none; `lenses` is empty). The owner
+   * row and a removed row are always `chosen`.
+   */
+  lenses_from: 'chosen' | 'titles' | 'none';
   /**
    * Agent rows only: who answers for this AI, as the roster names them: the sponsor's membership id
    * (the `id` of their row here), `owner` when the world's owner answers for it, or null for a seat
