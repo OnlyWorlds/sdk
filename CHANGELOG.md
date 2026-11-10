@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.142.0] - 2026-11-10
+
 ### Added
 
 - `layoutOf(map, maps, pins)` and its answer type `OwLayoutOf`: the map-space profile's layout reading (rules 8 to 10) for one Map, `{ layout, ground, hand }`. `layout` is `x_layout.method` when `x_layout` is an object whose `method` is a non-empty string (`"hand"` for a board; a method no page names answers itself), else null. `ground`, only on a layout map, is the id in `x_layout.settings.ground.map` when it names a Map in `maps` other than this one, else null; its size is not returned. `hand` is the ids, in code point order, of this Map's Pins a new lay-out keeps: every Pin on a board, the Pins whose `x_hand` is exactly `true` on any other layout map, none on a plain Map. `pins` may hold every Pin the caller has: the reader keeps those whose `map` names this Map, reads a row without an id as no Pin and the last row served for an id, and counts a Pin whose element it cannot see. The method's own settings are never returned. `mapSpace` is unchanged.
