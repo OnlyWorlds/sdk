@@ -1174,6 +1174,136 @@ def render_drag_pairs(pairs: list[tuple[str, str, str, bool]]) -> str:
     return "\n".join(lines)
 
 
+VIEW_ROW_KEYS = {"id", "kind", "from", "sentence", "lead", "fold", "layout", "banner"}
+VIEW_PROFILES = ("room", "charter")
+
+
+def load_views(schema_dir: Path, all_fields: dict[str, list[dict]], room_pairs: list[tuple[str, str]],
+               charter_pairs: list[tuple[str, str, str]]) -> dict:
+    """How an element is shown by its kind (schema-dist serial 113 on, the `views.json` sidecar beside
+    pairs.json): presentation, held as the drag pairs are, with no fallback. Version 1 only. Each row's keys
+    are the ones this package reads (a new column is a new meaning, so it exits 1 until the reader knows
+    it); a row's kind is a type, a type with a supertype, or a profile's pair, and a pair must be one the
+    profile's own reader matches (ROOM_PAIRS for room, CHARTER_PAIRS for charter); every field a row names
+    is a field of its type by the walk, every layout one the file defines, every row id distinct. Returns
+    the file without `_meta`, plus `version`."""
+    p = schema_dir.parent / "views.json"
+    if not p.is_file():
+        raise SystemExit(f"{p}: the views come only from the distribution's views.json (serial 113 on); this tree has none.")
+    doc = json.loads(p.read_text(encoding="utf-8"))
+    meta = doc.get("_meta") if isinstance(doc, dict) else None
+    if not isinstance(meta, dict) or meta.get("version") != 1:
+        raise SystemExit(f"{p}: `_meta.version` is {meta.get('version') if isinstance(meta, dict) else meta!r}, expected 1.")
+    if set(doc) != {"_meta", "banners", "layouts", "rows"}:
+        raise SystemExit(f"{p}: the top-level keys are {sorted(doc)}, expected _meta, banners, layouts, rows.")
+    banners, layouts, rows = doc["banners"], doc["layouts"], doc["rows"]
+    if (not isinstance(banners, list) or not all(isinstance(b, dict) and set(b) == {"mark", "defined_by"}
+                                                and isinstance(b["mark"], str) and isinstance(b["defined_by"], str) for b in banners)
+            or len({b["mark"] for b in banners}) != len(banners)):
+        raise SystemExit(f"{p}: `banners` must be a list of distinct {{mark, defined_by}}.")
+    if not isinstance(layouts, dict) or not layouts or not all(isinstance(v, str) for v in layouts.values()):
+        raise SystemExit(f"{p}: `layouts` must be an object of layout names to their sentences.")
+    if not isinstance(rows, list) or not rows:
+        raise SystemExit(f"{p}: `rows` must be a non-empty list.")
+    fold = lambda s: s.strip().lower()  # noqa: E731 - the pairs here are ASCII, checked against the profiles' lists
+    room = {(fold(t), fold(s)) for t, s in room_pairs}
+    charter = {(fold(t), fold(s)) for t, s, _ in charter_pairs}
+    seen: set[str] = set()
+    for row in rows:
+        rid = row.get("id") if isinstance(row, dict) else None
+        if not isinstance(rid, str) or not rid or rid in seen:
+            raise SystemExit(f"{p}: a row's id is {rid!r}: each row needs its own non-empty id.")
+        seen.add(rid)
+        stray = sorted(set(row) - VIEW_ROW_KEYS)
+        if stray:
+            raise SystemExit(f"{p}: row {rid} carries {stray}, which this reader does not read. A new column is "
+                             "a new meaning: read it in viewOf, then add it here.")
+        kind = row.get("kind")
+        if isinstance(kind, dict) and set(kind) == {"profile", "pair"}:
+            prof, pair = kind["profile"], kind["pair"]
+            parts = pair.split("/") if isinstance(pair, str) else []
+            if prof not in VIEW_PROFILES or len(parts) != 2:
+                raise SystemExit(f"{p}: row {rid}'s kind {kind!r} names a profile outside {VIEW_PROFILES} or a pair not `type/Supertype`.")
+            if (fold(parts[0]), fold(parts[1])) not in (room if prof == "room" else charter):
+                raise SystemExit(f"{p}: row {rid}'s pair {pair!r} is not one the {prof} profile's reader matches. Route it to the schema-dist owner.")
+            tslug = parts[0]
+        elif isinstance(kind, dict) and set(kind) in ({"type"}, {"type", "supertype"}) and all(isinstance(v, str) for v in kind.values()):
+            tslug = kind["type"]
+        else:
+            raise SystemExit(f"{p}: row {rid}'s kind {kind!r} is neither a type, a type with a supertype, nor a profile's pair.")
+        if tslug not in all_fields:
+            raise SystemExit(f"{p}: row {rid} names the type {tslug!r}, not one of the 22 slugs as written.")
+        # A base field (name, description, supertype, subtype, image_url) is every type's, as the walk gives it.
+        names = {f["name"] for f in all_fields[tslug]} | (set(BASE_KEY_TO_WIRE.values()) - {"id"})
+        def field_list(key: str) -> list[str]:
+            v = row.get(key, [])
+            if not isinstance(v, list) or not all(isinstance(x, str) for x in v):
+                raise SystemExit(f"{p}: row {rid}'s `{key}` is {v!r}, expected a list of field names.")
+            return v
+        named = field_list("sentence") + field_list("lead")
+        folds = row.get("fold", [])
+        if not isinstance(folds, list) or not all(isinstance(f, dict) and set(f) == {"field", "label"}
+                                                 and isinstance(f["field"], str) and isinstance(f["label"], str) for f in folds):
+            raise SystemExit(f"{p}: row {rid}'s `fold` is {folds!r}, expected a list of {{field, label}}.")
+        named += [f["field"] for f in folds]
+        layout = row.get("layout")
+        if not isinstance(layout, dict) or layout.get("name") not in layouts or not set(layout) <= {"name", "by"}:
+            raise SystemExit(f"{p}: row {rid}'s layout {layout!r} is not {{name, by?}} with a name the file defines.")
+        if "by" in layout:
+            named.append(layout["by"])
+        unknown = sorted({n for n in named if n not in names})
+        if unknown:
+            raise SystemExit(f"{p}: row {rid} names {unknown}, which {tslug} does not have by the walk. Route it to the schema-dist owner.")
+        banner = row.get("banner", [])
+        if not isinstance(banner, list) or not all(isinstance(b, str) and b for b in banner):
+            raise SystemExit(f"{p}: row {rid}'s `banner` is {banner!r}, expected a list of mark names.")
+        if not isinstance(row.get("from"), str):
+            raise SystemExit(f"{p}: row {rid}'s `from` is {row.get('from')!r}, expected the page that defines the kind.")
+    return {"version": 1, "banners": banners, "layouts": layouts, "rows": rows}
+
+
+def render_views(views: dict) -> str:
+    body = json.dumps(views, ensure_ascii=False, indent=2)
+    lines = [
+        "/** A row of views.json: how elements of one kind are shown. */",
+        "export interface OwViewRow {",
+        "  /** The row's own name, distinct in the table. */",
+        "  readonly id: string;",
+        "  /** What the row matches: a type, a type with a supertype, or a profile's pair (`type/Supertype`), which",
+        "   *  matches only with that profile's mark, by its own reader (room: isRoomElement; charter: isCharterElement). */",
+        "  readonly kind: { readonly type: string; readonly supertype?: string } | { readonly profile: string; readonly pair: string };",
+        "  /** The page that defines the kind. */",
+        "  readonly from: string;",
+        "  /** The fields that give the one sentence, the first that holds something winning. */",
+        "  readonly sentence?: readonly string[];",
+        "  /** The fields shown open first, in order. */",
+        "  readonly lead?: readonly string[];",
+        "  /** The fields shown folded, each under its label. */",
+        "  readonly fold?: readonly { readonly field: string; readonly label: string }[];",
+        "  /** The layout, one of the table's `layouts`; `by` the link a conversation follows. */",
+        "  readonly layout: { readonly name: string; readonly by?: string };",
+        "  /** Marks this kind's page shows at its head after the table's own banners. */",
+        "  readonly banner?: readonly string[];",
+        "}",
+        "",
+        "/** views.json without its `_meta`: the banners every page shows, the layouts, the rows. */",
+        "export interface OwViewsTable {",
+        "  readonly version: 1;",
+        "  readonly banners: readonly { readonly mark: string; readonly defined_by: string }[];",
+        "  readonly layouts: { readonly [name: string]: string };",
+        "  readonly rows: readonly OwViewRow[];",
+        "}",
+        "",
+        "/** How an element is shown by its kind: the distribution's `views.json` sidecar (serial 113 on), checked",
+        " *  against the walk and the profiles' pairs at codegen, without its `_meta`. Presentation, NOT part of the",
+        " *  council-governed OnlyWorlds standard, and nothing in it says who may see or do what. Read it with",
+        " *  viewOf; the frozen copy is VIEWS. */",
+        f"export const VIEWS_TABLE: OwViewsTable = {body};",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def render_message_profile(pair: tuple[str, str], mark: dict[str, str], note: tuple[str, str]) -> str:
     lines = [
         "/** The message profile's pair (schema-dist `profiles/message.md`, a convention on the 22 types,",
@@ -1270,7 +1400,9 @@ def main() -> None:
     parts.append(render_room_pairs(room_pairs, load_room_mark(schema_dir)))
     aid_pairs, aid_mark = load_reading_aids(schema_dir)
     parts.append(render_reading_aids(aid_pairs, aid_mark))
-    parts.append(render_charter_pairs(load_charter_pairs(schema_dir, aid_pairs, aid_mark)))
+    charter_pairs = load_charter_pairs(schema_dir, aid_pairs, aid_mark)
+    parts.append(render_charter_pairs(charter_pairs))
+    parts.append(render_views(load_views(schema_dir, all_fields, room_pairs, charter_pairs)))
     parts.append(render_review_label(load_review_label(schema_dir)))
     parts.append(render_message_profile(*load_message_profile(schema_dir, room_pairs, all_fields)))
     parts.append(render_field_schema(all_fields, sections, required_sets))

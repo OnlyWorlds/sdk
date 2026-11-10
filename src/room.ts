@@ -43,7 +43,7 @@ export const fold = (text: string): string => simpleCaseFold(trimWhiteSpace(text
  * string counts only when something is left after the White_Space trim, and any other value (a number, an
  * object) counts as present. The value is never compared. Module-internal.
  */
-function hasMark(el: Record<string, unknown>, field: string): boolean {
+export function hasMark(el: Record<string, unknown>, field: string): boolean {
   const mark = Object.prototype.hasOwnProperty.call(el, field) ? el[field] : undefined;
   if (mark === undefined || mark === null) return false;
   return typeof mark !== 'string' || trimWhiteSpace(mark) !== '';

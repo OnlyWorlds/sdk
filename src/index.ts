@@ -105,6 +105,9 @@ export type { ElementGroup, ElementFamily } from './v2';
 // The link a drag between two types writes (the distribution's pairs.json, baked at this release), either order
 export { dragField } from './drag';
 export type { OwDragField } from './drag';
+// How an element is shown by its kind (the distribution's views.json, baked at this release)
+export { VIEWS, viewOf } from './views';
+export type { OwView, OwViewRow, OwViewsTable } from './views';
 
 // Field labels: a field name as the words a tool shows (sentence case, acronyms kept)
 export { FIELD_ACRONYMS, fieldLabel } from './v2';
