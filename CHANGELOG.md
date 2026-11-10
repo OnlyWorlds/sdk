@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.141.0] - 2026-11-10
+
+### Added
+
+- `OwSignInError.param`: the field the server named when it refused the code exchange, such as `ai_uses` or `ai_lifetime_minutes` on a 422 for an AI door token asked with `completeSignIn`, so that refusal can be told from any other 422 there.
+
 ## [4.140.0] - 2026-11-10
 
 ### Added

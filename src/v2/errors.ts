@@ -554,20 +554,24 @@ export class OwSignInError extends Error {
   readonly status?: number;
   /** keel's error code, when its answer carried one. */
   readonly code?: string;
+  /** The field the server's answer named, when it named one: `ai_uses` or `ai_lifetime_minutes` on a 422 that
+   *  refused the AI door token asked in the exchange (the code is spent either way). */
+  readonly param?: string;
   /** Seconds to wait before trying again, from `Retry-After` (on a 429). */
   readonly retryAfter?: number;
 
   constructor(
     reason: OwSignInReason,
     message: string,
-    opts: { status?: number; code?: string; retryAfter?: number } = {},
+    opts: { status?: number; code?: string; param?: string; retryAfter?: number } = {},
   ) {
-    refuseUnknownOptions('OwSignInError', opts, ['status', 'code', 'retryAfter']);
+    refuseUnknownOptions('OwSignInError', opts, ['status', 'code', 'param', 'retryAfter']);
     super(message);
     this.name = 'OwSignInError';
     this.reason = reason;
     if (opts.status !== undefined) this.status = opts.status;
     if (opts.code !== undefined) this.code = opts.code;
+    if (opts.param !== undefined) this.param = opts.param;
     if (opts.retryAfter !== undefined) this.retryAfter = opts.retryAfter;
   }
 }

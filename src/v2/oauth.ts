@@ -373,18 +373,19 @@ export async function completeSignIn(
   const retryAfter = parseRetryAfter(res.headers?.get?.('Retry-After') ?? null) ?? undefined;
   let body: unknown = null;
   try { body = await res.json(); } catch { body = null; }
-  const err = (body as { error?: { code?: unknown; message?: unknown } } | null)?.error;
+  const err = (body as { error?: { code?: unknown; message?: unknown; param?: unknown } } | null)?.error;
   const errCode = typeof err?.code === 'string' ? err.code : undefined;
+  const errParam = typeof err?.param === 'string' && err.param !== '' ? err.param : undefined;
   const errMessage = typeof err?.message === 'string' ? err.message : undefined;
   if (res.status === 429) {
-    throw new OwSignInError('rate_limited', errMessage ?? 'Too many sign-in attempts. Wait a while, then try again.', { status: 429, code: errCode, retryAfter });
+    throw new OwSignInError('rate_limited', errMessage ?? 'Too many sign-in attempts. Wait a while, then try again.', { status: 429, code: errCode, param: errParam, retryAfter });
   }
   if (res.status === 400 && errCode === 'invalid_grant') {
-    throw new OwSignInError('invalid_grant', errMessage ?? 'The sign-in code could not be exchanged: it was used, expired, or made for another tool. Start again.', { status: 400, code: errCode });
+    throw new OwSignInError('invalid_grant', errMessage ?? 'The sign-in code could not be exchanged: it was used, expired, or made for another tool. Start again.', { status: 400, code: errCode, param: errParam });
   }
   const ok = body as { token?: unknown; token_id?: unknown; expires_at?: unknown; token_type?: unknown; account?: { id?: unknown; username?: unknown }; ai_token?: unknown } | null;
   if (!res.ok || typeof ok?.token !== 'string' || ok.token === '' || typeof ok.account?.id !== 'string') {
-    throw new OwSignInError('failed', errMessage ?? `Signing in did not work (${res.status}).`, { status: res.status, code: errCode });
+    throw new OwSignInError('failed', errMessage ?? `Signing in did not work (${res.status}).`, { status: res.status, code: errCode, param: errParam });
   }
   return {
     token: ok.token,

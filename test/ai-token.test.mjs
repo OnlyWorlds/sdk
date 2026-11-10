@@ -115,14 +115,19 @@ test('completeSignIn refuses an AI token list it can see is wrong before sending
   }
 });
 
-test('completeSignIn: the server\'s 422 for a use it does not run reads as failed, with its status and code', async () => {
-  const storage = memory();
-  const state = await begun(storage);
-  const client = new OwV2Client({ fetch: fetchStub(422, { error: { type: 'invalid_request_error', code: 'invalid_request', message: "No AI use is named 'nope'", param: 'ai_uses' } }, []) });
-  const err = await client.completeSignIn({ clientId: 'subs', storage, url: `https://subs.onlyworlds.com/visit/?code=c1&state=${state}`, aiUses: ['nope'] }).catch((e) => e);
-  assert.equal(err.reason, 'failed');
-  assert.equal(err.status, 422);
-  assert.equal(err.code, 'invalid_request');
+test('completeSignIn: the server\'s 422 for a use it does not run reads as failed, with its status, code and param', async () => {
+  for (const [param, want] of [['ai_uses', 'ai_uses'], ['ai_lifetime_minutes', 'ai_lifetime_minutes'], [undefined, undefined], ['', undefined]]) {
+    const storage = memory();
+    const state = await begun(storage);
+    const error = { type: 'invalid_request_error', code: 'invalid_request', message: 'refused' };
+    if (param !== undefined) error.param = param;
+    const client = new OwV2Client({ fetch: fetchStub(422, { error }, []) });
+    const err = await client.completeSignIn({ clientId: 'subs', storage, url: `https://subs.onlyworlds.com/visit/?code=c1&state=${state}`, aiUses: ['nope'] }).catch((e) => e);
+    assert.equal(err.reason, 'failed', String(param));
+    assert.equal(err.status, 422, String(param));
+    assert.equal(err.code, 'invalid_request', String(param));
+    assert.equal(err.param, want, String(param));
+  }
 });
 
 const MINTED = { id: 't3', name: 'subs, AI uses', last4: 'abcd', last_used_at: null, revoked: false, expires_at: '2026-11-10T00:00:00+00:00', keys_minted: 0, audience: 'ai', ai_uses: ['ask'], token: 'ow_a_minted' };
