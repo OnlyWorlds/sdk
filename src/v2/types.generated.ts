@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.112
-//         commit          04ce83d4c6604319c730ad63683d5b3134b5c328
-//         MANIFEST sha256 8dc2266f011656225a3a4b61174c4afc6d34b71d6e685912ca357fd6c27f7e7a
-//         canonical 00.34.00, dist serial 112, published 2026-11-10
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.113
+//         commit          e3e249912cb74cbdb7a60e701256bdcc69ab2ac5
+//         MANIFEST sha256 b645c8da0985ccedf538941218f31f922b62fe5ec2d5be14d4d6b2b52dca4478
+//         canonical 00.34.00, dist serial 113, published 2026-11-10
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -515,6 +515,154 @@ export const CHARTER_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly
   { type: 'construct', supertype: 'Guide', aid: 'guide' },
   { type: 'construct', supertype: 'Domain', aid: 'domain' },
 ];
+
+/** A row of views.json: how elements of one kind are shown. */
+export interface OwViewRow {
+  /** The row's own name, distinct in the table. */
+  readonly id: string;
+  /** What the row matches: a type, a type with a supertype, or a profile's pair (`type/Supertype`), which
+   *  matches only with that profile's mark, by its own reader (room: isRoomElement; charter: isCharterElement). */
+  readonly kind: { readonly type: string; readonly supertype?: string } | { readonly profile: string; readonly pair: string };
+  /** The page that defines the kind. */
+  readonly from: string;
+  /** The fields that give the one sentence, the first that holds something winning. */
+  readonly sentence?: readonly string[];
+  /** The fields shown open first, in order. */
+  readonly lead?: readonly string[];
+  /** The fields shown folded, each under its label. */
+  readonly fold?: readonly { readonly field: string; readonly label: string }[];
+  /** The layout, one of the table's `layouts`; `by` the link a conversation follows. */
+  readonly layout: { readonly name: string; readonly by?: string };
+  /** Marks this kind's page shows at its head after the table's own banners. */
+  readonly banner?: readonly string[];
+}
+
+/** views.json without its `_meta`: the banners every page shows, the layouts, the rows. */
+export interface OwViewsTable {
+  readonly version: 1;
+  readonly banners: readonly { readonly mark: string; readonly defined_by: string }[];
+  readonly layouts: { readonly [name: string]: string };
+  readonly rows: readonly OwViewRow[];
+}
+
+/** How an element is shown by its kind: the distribution's `views.json` sidecar (serial 113 on), checked
+ *  against the walk and the profiles' pairs at codegen, without its `_meta`. Presentation, NOT part of the
+ *  council-governed OnlyWorlds standard, and nothing in it says who may see or do what. Read it with
+ *  viewOf; the frozen copy is VIEWS. */
+export const VIEWS_TABLE: OwViewsTable = {
+  "version": 1,
+  "banners": [
+    {
+      "mark": "known_of",
+      "defined_by": "onlyworlds.com, not the standard: a known-of stub, known_of: true (the API document, https://www.onlyworlds.com/api/v2/openapi.json)"
+    },
+    {
+      "mark": "hidden",
+      "defined_by": "onlyworlds.com, not the standard: hidden: true, served only to readers who still see the element (the API document, https://www.onlyworlds.com/api/v2/openapi.json)"
+    },
+    {
+      "mark": "x_review_proposed",
+      "defined_by": "profiles/review.md"
+    },
+    {
+      "mark": "x_review_checked",
+      "defined_by": "profiles/review.md"
+    },
+    {
+      "mark": "x_served_trimmed",
+      "defined_by": "onlyworlds.com, not the standard: ids the server left out of a list, the field named (the API document, https://www.onlyworlds.com/api/v2/openapi.json; profiles/message.md reads it)"
+    }
+  ],
+  "layouts": {
+    "document": "the fields in the row's order: lead open, then the rest in the standard's sections, then fold; a kind with no row is a document",
+    "conversation": "the element within its chain by the named link, oldest first by created_at, stopping at an id already visited"
+  },
+  "rows": [
+    {
+      "id": "report",
+      "kind": {
+        "profile": "room",
+        "pair": "narrative/Report"
+      },
+      "from": "profiles/report.md (serial 112)",
+      "sentence": [
+        "description",
+        "story"
+      ],
+      "lead": [
+        "description",
+        "consequences"
+      ],
+      "fold": [
+        {
+          "field": "story",
+          "label": "The full report"
+        }
+      ],
+      "layout": {
+        "name": "document"
+      }
+    },
+    {
+      "id": "charter",
+      "kind": {
+        "profile": "charter",
+        "pair": "law/Charter"
+      },
+      "from": "profiles/charter.md",
+      "sentence": [
+        "description"
+      ],
+      "lead": [
+        "description"
+      ],
+      "layout": {
+        "name": "document"
+      }
+    },
+    {
+      "id": "message",
+      "kind": {
+        "type": "narrative",
+        "supertype": "Message"
+      },
+      "from": "profiles/message.md",
+      "sentence": [
+        "description",
+        "story"
+      ],
+      "lead": [
+        "story"
+      ],
+      "layout": {
+        "name": "conversation",
+        "by": "parent_narrative"
+      }
+    },
+    {
+      "id": "room-line",
+      "kind": {
+        "profile": "room",
+        "pair": "narrative/Message"
+      },
+      "from": "profiles/room.md, profiles/message.md",
+      "sentence": [
+        "description",
+        "story"
+      ],
+      "lead": [
+        "story"
+      ],
+      "layout": {
+        "name": "conversation",
+        "by": "parent_narrative"
+      },
+      "banner": [
+        "x_room_of"
+      ]
+    }
+  ]
+};
 
 /** The review profile's label (schema-dist `profiles/review.md`, rule 1): the words a reader that
  *  hands a world on (a context for an AI, a pack, a share) puts on each proposed element it keeps,

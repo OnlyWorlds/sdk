@@ -5,8 +5,15 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.147.0] - 2026-11-10
+
+### Added
+
+- **`viewOf(element)` and `VIEWS`: how an element is shown by its kind**, from the distribution's new `views.json` (presentation, not the standard). `viewOf` returns the row that matches (a profile's pair with its mark, by that profile's own reader, then a type with a supertype, then a type alone; types and supertypes trimmed and folded as the room profile defines), the one sentence for a card, a list row or a hover (the first field the row names whose value is a string with something in it, trimmed, cut at its first line break, trimmed again), and the marks to show at the head of its page, in order (`known_of` and `hidden` when true, `x_served_trimmed` when it names a field, the review marks when an object with something in it, then the row's own). An element no row matches has no row and draws as its type; the banners still show. Today's rows: a report, a charter, a message and a line in a room. `VIEWS` is the table baked at this release, frozen; codegen refuses a row column this reader does not read, a pair its profile's reader does not match, a field its type lacks, an unknown layout and two rows holding one kind. The fixture's 28 cases are replayed.
+
 ### Changed
 
+- **Schema repinned to schema-dist v0.34.0-dist.113** (from dist.112; same canonical 00.34.00, no schema file moved): `views.json` and `views.fixture.json` new; the room profile says its pairs' order carries no meaning (no pair moved); two examples reworded. The room and checks fixtures are replayed unchanged.
 - `lensesInUse`'s notes say what a null membership means, in the lens profile's words since serial 112: there is no membership (a folder world), and then the Character's `x_lens_uses` is read. Behaviour unchanged.
 
 ## [4.146.0] - 2026-11-10
