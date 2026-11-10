@@ -1209,6 +1209,7 @@ def load_views(schema_dir: Path, all_fields: dict[str, list[dict]], room_pairs: 
     room = {(fold(t), fold(s)) for t, s in room_pairs}
     charter = {(fold(t), fold(s)) for t, s, _ in charter_pairs}
     seen: set[str] = set()
+    kinds_seen: set[tuple] = set()
     for row in rows:
         rid = row.get("id") if isinstance(row, dict) else None
         if not isinstance(rid, str) or not rid or rid in seen:
@@ -1233,6 +1234,11 @@ def load_views(schema_dir: Path, all_fields: dict[str, list[dict]], room_pairs: 
             raise SystemExit(f"{p}: row {rid}'s kind {kind!r} is neither a type, a type with a supertype, nor a profile's pair.")
         if tslug not in all_fields:
             raise SystemExit(f"{p}: row {rid} names the type {tslug!r}, not one of the 22 slugs as written.")
+        kind_key = (("profile", kind["profile"], fold(kind["pair"])) if "profile" in kind
+                    else ("type", fold(kind["type"]), fold(kind.get("supertype", "\0"))))
+        if kind_key in kinds_seen:
+            raise SystemExit(f"{p}: row {rid} holds a kind another row holds; the file's `match` says no two rows do.")
+        kinds_seen.add(kind_key)
         # A base field (name, description, supertype, subtype, image_url) is every type's, as the walk gives it.
         names = {f["name"] for f in all_fields[tslug]} | (set(BASE_KEY_TO_WIRE.values()) - {"id"})
         def field_list(key: str) -> list[str]:

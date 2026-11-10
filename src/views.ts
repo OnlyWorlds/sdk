@@ -54,12 +54,18 @@ function score(row: OwViewRow, el: Record<string, unknown>): number {
   return sameSupertype(kind.supertype) ? 2 : 0;
 }
 
-/** Whether the element carries a banner's mark: `hidden` and `known_of` when true, `x_served_trimmed` when it names a field, any other mark by presence as the profiles read one. */
+/**
+ * Whether the element carries a banner's mark: `hidden` and `known_of` when true, `x_served_trimmed` when it
+ * names a field, the two review marks when the value is an object with something in it (the review
+ * profile: an empty mark is settled, and a page ignores a value that is not an object), any other mark by
+ * presence as the room and charter profiles read one.
+ */
 function carries(el: Record<string, unknown>, mark: string): boolean {
-  if (mark === 'hidden' || mark === 'known_of') return own(el, mark) === true;
-  if (mark === 'x_served_trimmed') {
-    const v = own(el, mark);
-    return Array.isArray(v) && v.length > 0;
+  const v = own(el, mark);
+  if (mark === 'hidden' || mark === 'known_of') return v === true;
+  if (mark === 'x_served_trimmed') return Array.isArray(v) && v.length > 0;
+  if (mark === 'x_review_proposed' || mark === 'x_review_checked') {
+    return v !== null && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 0;
   }
   return hasMark(el, mark);
 }

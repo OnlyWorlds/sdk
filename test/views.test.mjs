@@ -25,7 +25,7 @@ test('the vendored table is version 1, and VIEWS is it: the banners, the layouts
 
 test('every case of views.fixture.json gives its row, its sentence and its banners', () => {
   assert.equal(FX.views, 'views.json');
-  assert.ok(FX.cases.length >= 18, `the fixture holds ${FX.cases.length} cases; serial 113's holds 18`);
+  assert.ok(FX.cases.length >= 28, `the fixture holds ${FX.cases.length} cases; serial 113's holds 28`);
   const rowsSeen = new Set();
   for (const c of FX.cases) {
     const got = viewOf(c.element);
