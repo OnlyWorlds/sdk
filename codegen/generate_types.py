@@ -1181,7 +1181,8 @@ VIEW_PROFILES = ("room", "charter")
 def load_views(schema_dir: Path, all_fields: dict[str, list[dict]], room_pairs: list[tuple[str, str]],
                charter_pairs: list[tuple[str, str, str]]) -> dict:
     """How an element is shown by its kind (schema-dist serial 113 on, the `views.json` sidecar beside
-    pairs.json): presentation, held as the drag pairs are, with no fallback. Version 1 only. Each row's keys
+    pairs.json): presentation, held as the drag pairs are, with no fallback. Version 2 only (serial 114: the
+    drawing order viewOf returns is version 2's sentence; a version-1 file never states it). Each row's keys
     are the ones this package reads (a new column is a new meaning, so it exits 1 until the reader knows
     it); a row's kind is a type, a type with a supertype, or a profile's pair, and a pair must be one the
     profile's own reader matches (ROOM_PAIRS for room, CHARTER_PAIRS for charter); every field a row names
@@ -1192,8 +1193,8 @@ def load_views(schema_dir: Path, all_fields: dict[str, list[dict]], room_pairs: 
         raise SystemExit(f"{p}: the views come only from the distribution's views.json (serial 113 on); this tree has none.")
     doc = json.loads(p.read_text(encoding="utf-8"))
     meta = doc.get("_meta") if isinstance(doc, dict) else None
-    if not isinstance(meta, dict) or meta.get("version") != 1:
-        raise SystemExit(f"{p}: `_meta.version` is {meta.get('version') if isinstance(meta, dict) else meta!r}, expected 1.")
+    if not isinstance(meta, dict) or meta.get("version") != 2:
+        raise SystemExit(f"{p}: `_meta.version` is {meta.get('version') if isinstance(meta, dict) else meta!r}, expected 2.")
     if set(doc) != {"_meta", "banners", "layouts", "rows"}:
         raise SystemExit(f"{p}: the top-level keys are {sorted(doc)}, expected _meta, banners, layouts, rows.")
     banners, layouts, rows = doc["banners"], doc["layouts"], doc["rows"]
@@ -1265,7 +1266,7 @@ def load_views(schema_dir: Path, all_fields: dict[str, list[dict]], room_pairs: 
             raise SystemExit(f"{p}: row {rid}'s `banner` is {banner!r}, expected a list of mark names.")
         if not isinstance(row.get("from"), str):
             raise SystemExit(f"{p}: row {rid}'s `from` is {row.get('from')!r}, expected the page that defines the kind.")
-    return {"version": 1, "banners": banners, "layouts": layouts, "rows": rows}
+    return {"version": 2, "banners": banners, "layouts": layouts, "rows": rows}
 
 
 def render_views(views: dict) -> str:
@@ -1294,7 +1295,7 @@ def render_views(views: dict) -> str:
         "",
         "/** views.json without its `_meta`: the banners every page shows, the layouts, the rows. */",
         "export interface OwViewsTable {",
-        "  readonly version: 1;",
+        "  readonly version: 2;",
         "  readonly banners: readonly { readonly mark: string; readonly defined_by: string }[];",
         "  readonly layouts: { readonly [name: string]: string };",
         "  readonly rows: readonly OwViewRow[];",

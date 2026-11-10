@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **`viewOf` returns `order`: the fields an element's page draws, in the order drawn** (`views.json` version 2): the row's `lead`, then the rest of the type's section fields in the schema's own order, then each `fold`; each field once, and only a field that holds something (not absent, null, a string with nothing after trimming, an empty list or an empty object), so an empty lead field is skipped and an empty fold draws no fold. The base fields are the page's head and appear only where a row names one. With no row, the type's section fields.
+
+### Changed
+
+- **The `x_served_trimmed` banner shows only when the list names a field**: at least one string with something left after trimming. A list of blanks, or of anything but strings, shows none (4.147.0 showed it for any non-empty list).
+- **`VIEWS.version` is `2`**, the version of `views.json` baked at this release; codegen reads version 2 only.
+- Where two rows match on one rung, the first in the table wins and the page is drawn, as before; the file now says so, and the fixture holds the case.
+
 ## [4.150.0] - 2026-11-10
 
 ### Added

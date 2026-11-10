@@ -1042,9 +1042,11 @@ test('the core stays DOM-free: its bundle never reaches the component, and src o
   for (const f of files) {
     const code = readFileSync(src + f, 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
     assert.doesNotMatch(code, /from ['"][./]*waymark/, `${f}: imports nothing from src/waymark`);
+    // Words inside a string are data, not a page reached: views.json's layouts say "is a document." (serial 114).
+    const bare = code.replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, '""');
     // photo.ts reaches for a canvas through globalThis when there is one (preparePhoto, in a browser): the one page the core touches.
     if (f === 'photo.ts') continue;
-    assert.doesNotMatch(code, /\b(document|window)\s*[.[]|globalThis\.(document|window)/, `${f}: no document or window`);
+    assert.doesNotMatch(bare, /\b(document|window)\s*[.[]|globalThis\.(document|window)/, `${f}: no document or window`);
   }
 });
 
