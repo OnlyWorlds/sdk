@@ -255,10 +255,12 @@ export function isTemplate(element: object | null | undefined): boolean {
 }
 
 /**
- * The lenses a seat reads, by id: its membership's choice when it has made one (a list, an empty list
- * included: a membership that chose no lenses has made a choice), otherwise its Character's
- * `x_lens_uses` (a folder world has no membership). Never both: the membership wins. Strings only, each
- * once, in the order given; anything that is not a list is no choice.
+ * The lenses a seat reads, by id: its membership's choice (a list, an empty list included: a membership
+ * that chose no lenses has made a choice), or, when `membership` is null, its Character's `x_lens_uses`.
+ * Null means there is no membership, as in a folder world. A membership that exists and never chose is
+ * not this reading's case: onlyworlds.com gives that seat its Titles' lenses and never reads
+ * `x_lens_uses`. Never both: the membership wins. Strings only, each once, in the order given; anything
+ * that is not a list is no choice.
  */
 export function lensesInUse(membership: readonly string[] | null | undefined, xLensUses: unknown): string[] {
   const list: unknown = Array.isArray(membership) ? membership : xLensUses;

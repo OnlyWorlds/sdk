@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+
+- `lensesInUse`'s notes say what a null membership means, in the lens profile's words since serial 112: there is no membership (a folder world), and then the Character's `x_lens_uses` is read. Behaviour unchanged.
+
 ## [4.146.0] - 2026-11-10
 
 ### Changed
