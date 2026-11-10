@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.142.1] - 2026-11-10
+
+### Fixed
+
+- `mintAiToken`'s `name` (at most 255) and `ai`'s `idempotencyKey` (1 to 200) are counted in code points, as the server counts them, not in UTF-16 units. A name of 255 characters outside the Basic Multilingual Plane (an emoji, say) was refused before sending, though the server takes it.
+
+### Tests
+
+- Both caps are held at their edge with characters above U+FFFF: 255 pass and 256 are refused for the name, 201 are refused for the key.
+
 ## [4.142.0] - 2026-11-10
 
 ### Added

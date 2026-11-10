@@ -1574,7 +1574,8 @@ export class OwV2Client {
     // uses are required here: without them the same route mints a full account token
     const body = aiTokenParams('mintAiToken', uses ?? null, opts.lifetimeMinutes);
     if (opts.name !== undefined) {
-      if (typeof opts.name !== 'string' || opts.name.length > 255) {
+      // keel counts code points (Python's len), not UTF-16 units
+      if (typeof opts.name !== 'string' || [...opts.name].length > 255) {
         throw new TypeError(`mintAiToken: name is a string of at most 255 characters, got ${JSON.stringify(opts.name)}. Nothing was sent.`);
       }
       body.name = opts.name;
@@ -1749,7 +1750,7 @@ export class OwV2Client {
     if (body === null || typeof body !== 'object' || Array.isArray(body)) {
       throw new TypeError(`ai: the body is the use's own object, got ${body === null ? 'null' : Array.isArray(body) ? 'an array' : typeof body}. Nothing was sent.`);
     }
-    if (opts.idempotencyKey !== undefined && (typeof opts.idempotencyKey !== 'string' || opts.idempotencyKey === '' || opts.idempotencyKey.length > 200)) {
+    if (opts.idempotencyKey !== undefined && (typeof opts.idempotencyKey !== 'string' || opts.idempotencyKey === '' || [...opts.idempotencyKey].length > 200)) {
       throw new TypeError(`ai: idempotencyKey is a string of 1 to 200 characters, got ${JSON.stringify(opts.idempotencyKey)}. Nothing was sent.`);
     }
     return this.request('POST', path, {

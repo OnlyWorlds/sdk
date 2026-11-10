@@ -160,6 +160,13 @@ test('mintAiToken refuses before sending: a wrong list, a lifetime out of range,
     const err = await client.mintAiToken(['ask'], { name }).catch((e) => e);
     assert.ok(err instanceof TypeError && /name/.test(err.message), String(name).slice(0, 10));
   }
+  // keel counts the name in code points: 255 astral characters (510 UTF-16 units) pass, 256 do not
+  const astral = String.fromCodePoint(0x1f30d);
+  await assert.rejects(client.mintAiToken(['ask'], { name: astral.repeat(256) }), /name/);
+  assert.equal(calls.length, 0);
+  await client.mintAiToken(['ask'], { name: astral.repeat(255) });
+  assert.equal(JSON.parse(calls[0].init.body).name, astral.repeat(255));
+  calls.length = 0;
   await assert.rejects(client.mintAiToken(['ask'], { lifetime: 60 }), TypeError);
   // no uses at all: never a POST that would mint a full account token
   await assert.rejects(client.mintAiToken(), /1 to 8/);

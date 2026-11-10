@@ -90,6 +90,11 @@ test('client.ai and aiUses: refused before sending', async () => {
   // the cap is the document's: 200 characters pass
   await acct.ai('ask', ASK, { idempotencyKey: 'x'.repeat(200) });
   assert.equal(f.calls.length, 1);
+  // counted in code points, as keel counts: 101 astral characters are 202 UTF-16 units and pass the cap
+  const astral = String.fromCodePoint(0x1f30d);
+  await assert.rejects(acct.ai('ask', ASK, { idempotencyKey: astral.repeat(201) }), TypeError);
+  const err = await acct.ai('ask', ASK, { idempotencyKey: astral.repeat(101) }).catch((e) => e);
+  assert.ok(!(err instanceof TypeError && /idempotencyKey/.test(err.message)), 'a key of 101 code points is not refused by the cap');
 });
 
 test('client.ai: each refusal by its code, thrown once, never retried', async () => {
