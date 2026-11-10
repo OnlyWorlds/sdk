@@ -375,7 +375,7 @@ The four colour groups (`ELEMENT_GROUPS`, `GROUP_ORDER`, `GROUP_COLORS`, from th
 
 ### The room
 
-A parlor (a chat room on a world) keeps its lines, board entries, work items, specs, hearts, votes, sittings and member cards in the world as ordinary elements, told apart by type and supertype and marked with `x_room_of` (the id of the world or sitting the room belongs to). `ROOM_PAIRS` is the room profile's list of those pairs, and `isRoomElement(el)` is true when an element matches one (type and supertype trimmed, case-blind, the whole word) and carries the mark (read by presence since 4.100.0: any value but null, a string only when something is left after trimming). A pair without the mark is lore: a novel's letters are Narratives with supertype Message.
+A parlor (a chat room on a world) keeps its lines, board entries, work items, specs, hearts, votes, sittings and member cards in the world as ordinary elements, and a world's working layer keeps its reports the same way (the report profile), told apart by type and supertype and marked with `x_room_of` (the id of the world or sitting the room belongs to). `ROOM_PAIRS` is the room profile's list of those pairs, and `isRoomElement(el)` is true when an element matches one (type and supertype trimmed, case-blind, the whole word) and carries the mark (read by presence since 4.100.0: any value but null, a string only when something is left after trimming). A pair without the mark is lore: a novel's letters are Narratives with supertype Message.
 
 ```typescript
 import { isRoomElement } from '@onlyworlds/sdk';

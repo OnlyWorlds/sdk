@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.111
-//         commit          bfc90b419b4f7e7de01f345f5e348a7b648c0bad
-//         MANIFEST sha256 b662309bf0c910b08bd530097ade51dc50a55eaef95b023c1cc57a720d63b8b7
-//         canonical 00.34.00, dist serial 111, published 2026-11-10
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.112
+//         commit          04ce83d4c6604319c730ad63683d5b3134b5c328
+//         MANIFEST sha256 8dc2266f011656225a3a4b61174c4afc6d34b71d6e685912ca357fd6c27f7e7a
+//         canonical 00.34.00, dist serial 112, published 2026-11-10
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -473,6 +473,7 @@ export const DRAG_PAIRS: { readonly [pair: string]: { readonly on: ElementType; 
 export const ROOM_PAIRS: ReadonlyArray<{ readonly type: ElementType; readonly supertype: string }> = [
   { type: 'narrative', supertype: 'Message' },
   { type: 'narrative', supertype: 'Board' },
+  { type: 'narrative', supertype: 'Report' },
   { type: 'relation', supertype: 'Work item' },
   { type: 'construct', supertype: 'Spec' },
   { type: 'relation', supertype: 'Heart' },

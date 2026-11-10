@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.34.0-dist.111",
-  "commit": "bfc90b419b4f7e7de01f345f5e348a7b648c0bad",
-  "manifest_sha256": "b662309bf0c910b08bd530097ade51dc50a55eaef95b023c1cc57a720d63b8b7",
+  "tag": "v0.34.0-dist.112",
+  "commit": "04ce83d4c6604319c730ad63683d5b3134b5c328",
+  "manifest_sha256": "8dc2266f011656225a3a4b61174c4afc6d34b71d6e685912ca357fd6c27f7e7a",
   "canonical_version": "00.34.00",
-  "dist_serial": 111,
+  "dist_serial": 112,
   "published": "2026-11-10",
   "pinned_at": "2026-11-10",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.34.0-dist.111",
+      "manifest_sha256": "b662309bf0c910b08bd530097ade51dc50a55eaef95b023c1cc57a720d63b8b7",
+      "note": "superseded by v0.34.0-dist.112 (canonical 00.34.00 unchanged, no schema file moved; the room profile's tenth pair narrative/Report with three cases, 35 in all; lens.fixture.json's room_pairs gains narrative/report; profiles/report.md new; packet.md gains x_packet_for)"
+    },
     {
       "tag": "v0.34.0-dist.110",
       "manifest_sha256": "cd20696a05a8e6e80367ec3ebcf1cc9a910cc77de65a840de89e39dec1edfbe6",

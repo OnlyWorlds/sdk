@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.146.0] - 2026-11-10
+
+### Changed
+
+- **Schema repinned to schema-dist v0.34.0-dist.112** (from dist.111; same canonical 00.34.00, no schema file moved). `ROOM_PAIRS` gains the room profile's tenth pair, `narrative`/`Report`: a report (the new report profile, `profiles/report.md`: what a session or a closed talk leaves behind, a Narrative with supertype `Report` and the room's mark) is a room element, so `isRoomElement` counts a marked report and every reader that leaves the room out of a lore view leaves it out too (`ask`, `ai`, the lens readers unless a lens's `types` names `narrative/report`, the Open with menu's `room` mark). A Narrative with supertype `Report` and no mark stays lore. The room fixture's 35 cases (3 new) and the lens fixture's 201 are replayed.
+
 ## [4.145.0] - 2026-11-10
 
 ### Added
