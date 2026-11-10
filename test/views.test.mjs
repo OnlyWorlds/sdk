@@ -15,9 +15,9 @@ const read = (name) => JSON.parse(readFileSync(new URL(`../codegen/schema-dist/$
 const DOC = read('views.json');
 const FX = read('views.fixture.json');
 
-test('the vendored table is version 2, and VIEWS is it: the banners, the layouts and every row', () => {
-  assert.equal(DOC._meta.version, 2);
-  assert.equal(VIEWS.version, 2);
+test('the vendored table is version 3, and VIEWS is it: the banners, the layouts and every row', () => {
+  assert.equal(DOC._meta.version, 3);
+  assert.equal(VIEWS.version, 3);
   assert.deepEqual(VIEWS.banners, DOC.banners);
   assert.deepEqual(VIEWS.layouts, DOC.layouts);
   assert.deepEqual(VIEWS.rows, DOC.rows);
