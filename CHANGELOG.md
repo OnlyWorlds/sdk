@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.145.0] - 2026-11-10
+
+### Added
+
+- `err.refusals` on an `OwApiError` that `isAnswerNotParsed`: when an AI use the server reads itself (`subs-captain`, `lens`) gives up with 422 `answer_not_parsed`, each answer it refused, in order, as an `OwAiRefusal` (`word`, the provider's `stop_reason`, `output_tokens`). An answer cut off at `max_tokens` now reads apart from one that finished in the wrong shape. Never the answer's text; a replay under the same idempotency key carries the same list. Undefined for any other error or when none is sent; a row not in that shape is left out.
+- `OwAiRefusal`, exported, and `refusals` on `OwErrorBody`, as the API document declares the error envelope (a `/bulk` slot's error included).
+
 ## [4.144.0] - 2026-11-10
 
 ### Added

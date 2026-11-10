@@ -97,6 +97,30 @@ test('client.ai and aiUses: refused before sending', async () => {
   assert.ok(!(err instanceof TypeError && /idempotencyKey/.test(err.message)), 'a key of 101 code points is not refused by the cap');
 });
 
+test('client.ai: answer_not_parsed carries the refused answers in order, rows out of shape left out', async () => {
+  const refusals = [
+    { word: 'not_json', stop_reason: 'end_turn', output_tokens: 212 },
+    { word: 'bogus', stop_reason: 7, output_tokens: 3 },
+    { word: 'empty', stop_reason: 'max_tokens', output_tokens: 1024 },
+    null,
+  ];
+  const body = { error: { type: 'invalid_request', code: 'answer_not_parsed', param: 'answer', message: 'm', refusals } };
+  const f = fake({ status: 422, body });
+  const err = await new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch }).ai('lens', { world_id: 'w', sentence: 's' }).catch((e) => e);
+  assert.ok(err instanceof OwApiError && err.isAnswerNotParsed);
+  assert.deepEqual(err.refusals, [
+    { word: 'not_json', stop_reason: 'end_turn', output_tokens: 212 },
+    { word: 'empty', stop_reason: 'max_tokens', output_tokens: 1024 },
+  ]);
+  // no list: undefined; another code carrying a list: undefined
+  const bare = await new OwV2Client({ apiKey: 'ow_a_acct', fetch: fake({ status: 422, body: { error: { type: 'x', code: 'answer_not_parsed', param: 'answer', message: 'm' } } }).fetch })
+    .ai('lens', { world_id: 'w', sentence: 's' }).catch((e) => e);
+  assert.equal(bare.refusals, undefined);
+  const other = await new OwV2Client({ apiKey: 'ow_a_acct', fetch: fake({ status: 422, body: { error: { type: 'x', code: 'invalid_request', message: 'm', refusals } } }).fetch })
+    .ai('lens', { world_id: 'w', sentence: 's' }).catch((e) => e);
+  assert.equal(other.refusals, undefined);
+});
+
 test('client.ai: each refusal by its code, thrown once, never retried', async () => {
   const getters = ['isUseCeiling', 'isUseInFlight', 'isQuotaExceeded', 'isRateLimited', 'isOwnKeyRefused', 'isAskUnavailable', 'isAskFailed', 'isAnswerNotParsed'];
   const cases = [

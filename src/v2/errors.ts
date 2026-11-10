@@ -9,7 +9,7 @@
  * surfaced on the thrown error.
  */
 
-import type { OwProposal, OwProposalConflict, OwResyncReason } from './types';
+import type { OwAiRefusal, OwProposal, OwProposalConflict, OwResyncReason } from './types';
 import { refuseUnknownOptions } from '../options';
 
 /**
@@ -351,6 +351,30 @@ export class OwApiError extends Error {
    */
   get isAnswerNotParsed(): boolean {
     return this.status === 422 && this.code === 'answer_not_parsed';
+  }
+
+  /**
+   * On a 422 `answer_not_parsed` from a use the server reads itself (`subs-captain`, `lens`): each answer it
+   * refused, in order, with its `word`, the provider's `stop_reason` and its `output_tokens`, so an answer
+   * cut off at `max_tokens` reads apart from one that finished in the wrong shape. Never the answer's text;
+   * a replay under the same idempotency key carries the same list. Undefined for any other error, or when the
+   * server sends none; a row not in that shape is left out.
+   */
+  get refusals(): OwAiRefusal[] | undefined {
+    if (!this.isAnswerNotParsed) return undefined;
+    const env = this.detail && typeof this.detail === 'object' ? (this.detail as { error?: unknown }) : undefined;
+    const nested = env?.error && typeof env.error === 'object' ? (env.error as { refusals?: unknown }) : undefined;
+    const list = nested?.refusals;
+    if (!Array.isArray(list)) return undefined;
+    const rows: OwAiRefusal[] = [];
+    for (const r of list) {
+      if (!r || typeof r !== 'object') continue;
+      const { word, stop_reason, output_tokens } = r as Record<string, unknown>;
+      if (typeof word === 'string' && typeof stop_reason === 'string' && Number.isSafeInteger(output_tokens)) {
+        rows.push({ word, stop_reason, output_tokens: output_tokens as number });
+      }
+    }
+    return rows;
   }
 
   /** ask: the model gave no answer (502 `ask_failed`). Not counted; try again in a moment. */

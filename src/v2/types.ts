@@ -287,6 +287,19 @@ export interface OwChangesPage {
  */
 export type OwResyncReason = 'role' | 'view';
 
+/**
+ * One answer the server refused before it gave up on an AI use it reads itself (`subs-captain`, `lens`),
+ * from a 422 `answer_not_parsed`'s `refusals`. It never carries the answer's text.
+ */
+export interface OwAiRefusal {
+  /** Why the server refused the answer (`empty`, `not_json`, ...). */
+  word: string;
+  /** How the provider says the answer ended: `max_tokens` means it ran out of room, unlike one that finished in the wrong shape. */
+  stop_reason: string;
+  /** The output tokens the answer spent. */
+  output_tokens: number;
+}
+
 export interface OwBulkItem {
   type: ElementType | string;
   element: OwElement | Record<string, unknown>;
@@ -324,6 +337,8 @@ export interface OwErrorBody {
   doc_url?: string;
   /** On a 409 `resync_required` only, while keel's hidden mark is on: why (see {@link OwResyncReason}). */
   reason?: OwResyncReason;
+  /** On a 422 `answer_not_parsed` only: each answer the server refused, in order (see {@link OwAiRefusal}). */
+  refusals?: OwAiRefusal[];
 }
 
 /**
