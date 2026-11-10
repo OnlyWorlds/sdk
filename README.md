@@ -243,14 +243,16 @@ renderElement(hits[0].element, index);            // a short text card, links by
 
 Names come first, then supertype and subtype, then one link step in either direction, then the elements' other text.
 
-To have an answer written from what you found, OnlyWorlds runs a small AI proxy for signed-in accounts (50 questions a day):
+To have an answer written from what you found, OnlyWorlds runs a small AI proxy for signed-in accounts, its AI uses (`aiUses()` lists them):
 
 ```typescript
 const shown = hits.slice(0, 8);                          // what your screen lists
 const { context, kept, leftOut } = buildAskContext(shown, index); // within the proxy's limits; kept = what was sent
-const reply = await account.ask({ worldId, question, context }); // account: a client with an ow_a_ token
+const reply = await account.ai('ask', { world_id: worldId, question, context }, { idempotencyKey: crypto.randomUUID() });
 reply.answer;                                            // from those elements only, or "The world doesn't say."
 ```
+
+`account` is a client with an `ow_a_` token. Keep the idempotency key until the answer lands: a retry under it is answered from the first call and billed nothing. (`account.ask({ worldId, question, context })` still works; it is deprecated since 4.139.0 and leaves in 5.0.)
 
 `buildAskContext` hands world elements to an AI, so it leaves three kinds out unless you ask (since 4.72.0): elements marked proposed (`x_review_proposed` present: an empty mark, `""`, white space only, `[]` or `{}`, reads as settled since 4.102.1), elements marked hidden (`hidden` anything but absent, null or false) and room elements (`isRoomElement`). Their ids come back in `leftOut.proposed`, `leftOut.hidden` and `leftOut.room`, so you can say how many were held back; an element both hidden and proposed is listed under `hidden` only. Pass `{ includeProposed: true }`, `{ includeHidden: true }` or `{ includeRoom: true }` to send them; a proposed element sent carries `[proposed, not yet reviewed]` (`REVIEW_PROPOSED_LABEL`) on its first line. A sent element's link to one left out reads as not present, never by its name. `dropped` stays the proxy's limits: past the 8th, or past the 12,000 characters, counted over what remains.
 
@@ -258,9 +260,11 @@ The same proxy sorts loose notes into changes for the user to review. Send the e
 
 ```typescript
 const slice = hits.slice(0, 100).map(({ element: e }) => ({ id: e.id, type: e.type, name: e.name }));
-const { rows, not_proposed } = await account.sort({ worldId, notes: ['Mira moved to Ostvik.'], slice });
+const { rows, not_proposed } = await account.ai('sort', { world_id: worldId, notes: ['Mira moved to Ostvik.'], slice });
 // rows: make (a new element), add_to (text for a field), link (one element to another), ask (which one?)
 ```
+
+(`account.sort({ worldId, notes, slice })` is deprecated the same way.)
 
 Asking and sorting spend tokens from the account's token rating, its daily budget, the same meter the Council uses. Each answer carries `tokens_remaining` and `token_rating`; `allowance()` reads the meter without spending anything (since 4.21.0):
 

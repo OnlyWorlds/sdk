@@ -1633,6 +1633,10 @@ export class OwV2Client {
    * account page), 503 `ask_unavailable` (`err.isAskUnavailable`: switched off, or paused for the
    * day), 502 `ask_failed` (`err.isAskFailed`); none of them counts. 422 for a question over 500
    * characters or context past its limits.
+   *
+   * @deprecated Since 4.139.0. Use `ai('ask', { world_id, question, context }, { idempotencyKey })`:
+   * the same answer, with the use's meter (`use_remaining`) and a retry under the same key is never billed twice.
+   * This name keeps working until 5.0.
    */
   async ask(req: { worldId: string; question: string; context: string[] }): Promise<OwAskAnswer> {
     only('ask', req, ['worldId', 'question', 'context']);
@@ -1655,6 +1659,10 @@ export class OwV2Client {
    * names the param: notes 1 to 8, each up to 4,000 characters and 16,000 in all (text
    * only), at most four pictures, each uploaded into this world; slice up to 100, names up
    * to 200 characters, anchors up to 120.
+   *
+   * @deprecated Since 4.139.0. Use `ai('sort', { world_id, notes, slice }, { idempotencyKey })`:
+   * the same answer, with the use's meter (`use_remaining`) and a retry under the same key is never billed twice.
+   * This name keeps working until 5.0.
    */
   async sort(req: { worldId: string; notes: OwSortNote[]; slice: OwSortRef[] }): Promise<OwSortAnswer> {
     only('sort', req, ['worldId', 'notes', 'slice']);

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.139.0] - 2026-11-10
+
+### Deprecated
+
+- `ask()` and `sort()`, in favour of `ai('ask', body)` and `ai('sort', body)` (since 4.137.0): the same answers, with the use's meter (`use_remaining`) and an idempotency key, under which a retry is answered from the first call and billed nothing. The body takes the wire's spelling: `world_id` where these took `worldId`. Both keep working, unchanged, until 5.0.
+
 ## [4.138.0] - 2026-11-10
 
 ### Added
