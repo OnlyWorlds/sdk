@@ -737,7 +737,7 @@ export class OwV2Client {
    * (the ticket's file is already stored: an earlier send with this ticket succeeded, so the
    * file is there), 413 `too_large`, 415 `unsupported_type` (the bytes are not the kind:
    * a pdf must start as one, a text file must be UTF-8 with no NUL in its first 8 KB, a zip
-   * must be a world's own bundle; nothing is stored and the ticket is still unspent), 502
+   * must be a world's own bundle, an image must be the kind its first bytes say; nothing is stored and the ticket is still unspent), 502
    * `write_failed` (nothing stored; the ticket is still unspent). A ticket is spent once the
    * upload succeeds: another file needs a new one.
    */
@@ -2110,13 +2110,14 @@ function mintUuid(now: number = Date.now()): string {
 }
 
 /**
- * Every extension a file on an element may end in, to the kind it gives: keel's NAME_EXTS
- * (files/service.py), `.yml` and `.markdown` included. A file picker's accept list is
+ * Every extension a file on an element may end in, to the kind it gives, as onlyworlds.com reads
+ * a name: `.yml`, `.markdown` and `.jpeg` included. A file picker's accept list is
  * `Object.keys(FILE_EXTENSIONS).map((e) => '.' + e)`.
  */
 export const FILE_EXTENSIONS: Readonly<Record<string, OwFileKind>> = Object.freeze({
   pdf: 'pdf', txt: 'txt', md: 'md', markdown: 'md', json: 'json',
   csv: 'csv', yaml: 'yaml', yml: 'yaml', toml: 'toml', zip: 'zip',
+  png: 'png', jpg: 'jpg', jpeg: 'jpg', webp: 'webp', avif: 'avif',
 });
 
 /**

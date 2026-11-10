@@ -1505,12 +1505,14 @@ export interface OwUploadedImage {
 // -- Files on elements ---------------------------------------------
 
 /**
- * What a file on an element can be (keel `FileKind`): text (`txt`, `md`, `json`, `csv`,
- * `yaml`, `toml`), `pdf`, and `zip` only as a world's own bundle. The upload host checks each
- * against the file's first bytes. A file's name ends in its kind's extension; `.yml` counts as
- * yaml and `.markdown` as md.
+ * What a file on an element can be: text (`txt`, `md`, `json`, `csv`, `yaml`, `toml`), `pdf`,
+ * `zip` only as a world's own bundle, and an image (`png`, `jpg`, `webp`, `avif`; no svg or gif).
+ * The upload host checks each against the file's first bytes. A file's name ends in its kind's
+ * extension; `.yml` counts as yaml, `.markdown` as md and `.jpeg` as jpg. An image file is private
+ * to the element's readers like any file and is served as a download, not as an element's
+ * picture (that is `image_url`).
  */
-export type OwFileKind = 'pdf' | 'txt' | 'md' | 'json' | 'csv' | 'yaml' | 'toml' | 'zip';
+export type OwFileKind = 'pdf' | 'txt' | 'md' | 'json' | 'csv' | 'yaml' | 'toml' | 'zip' | 'png' | 'jpg' | 'webp' | 'avif';
 
 /** Who added a file. */
 export interface OwFileAddedBy {

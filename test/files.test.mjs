@@ -97,6 +97,7 @@ test('the kind is read from the name as keel reads it: .yml is yaml, .markdown i
     ['rules.yml', 'yaml'], ['rules.yaml', 'yaml'], ['README.markdown', 'md'], ['notes.md', 'md'],
     ['MAP.PDF', 'pdf'], ['a.tar.zip', 'zip'], ['C:\\worlds\\lore.txt', 'txt'], ['data/table.csv', 'csv'],
     ['x.json', 'json'], ['Cargo.toml', 'toml'],
+    ['home.png', 'png'], ['shot.jpg', 'jpg'], ['Photo.JPEG', 'jpg'], ['mock.webp', 'webp'], ['frame.avif', 'avif'],
   ];
   for (const [name] of cases) await c.createFileTicket('character', EL, { name, size: 1 });
   assert.deepEqual(f.calls.map((x) => JSON.parse(x.init.body).kind), cases.map(([, k]) => k));
@@ -113,7 +114,7 @@ test('a kind passed is sent as passed, with no reading of the name', async () =>
 test('a name with no extension keel takes is a TypeError naming the ones it takes, before any request', async () => {
   const f = uploadFake();
   const c = client(f.fetch);
-  for (const name of ['report.docx', 'noextension', '.pdf', 'trailing.', 'image.png']) {
+  for (const name of ['report.docx', 'noextension', '.pdf', 'trailing.', 'image.gif', 'logo.svg']) {
     await assert.rejects(c.createFileTicket('character', EL, { name, size: 1 }),
       (e) => e instanceof TypeError && /\.pdf .*\.yml .*\.zip/.test(e.message), name);
     await assert.rejects(c.uploadFile('character', EL, pdf(), { name }), TypeError, name);
@@ -366,10 +367,13 @@ test('without onProgress the configured fetch is used even where XMLHttpRequest 
 });
 
 test('FILE_EXTENSIONS and fileKindOf are exported for a file picker', () => {
-  assert.deepEqual(Object.keys(FILE_EXTENSIONS).sort(), ['csv', 'json', 'markdown', 'md', 'pdf', 'toml', 'txt', 'yaml', 'yml', 'zip']);
+  assert.deepEqual(Object.keys(FILE_EXTENSIONS).sort(), ['avif', 'csv', 'jpeg', 'jpg', 'json', 'markdown', 'md', 'pdf', 'png', 'toml', 'txt', 'webp', 'yaml', 'yml', 'zip']);
   assert.ok(Object.isFrozen(FILE_EXTENSIONS));
   assert.equal(fileKindOf('Notes/Letters.PDF'), 'pdf');
   assert.equal(fileKindOf('rules.yml'), 'yaml');
-  assert.equal(fileKindOf('photo.png'), undefined);
+  assert.equal(fileKindOf('photo.png'), 'png');
+  assert.equal(fileKindOf('photo.jpeg'), 'jpg');
+  assert.equal(fileKindOf('anim.gif'), undefined);
+  assert.equal(fileKindOf('logo.svg'), undefined);
   assert.equal(fileKindOf('.md'), undefined);
 });
