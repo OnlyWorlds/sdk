@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.140.0] - 2026-11-10
+
+### Added
+
+- `OwAiUse.rating_need`: the rating tokens a call to the use needs left today to run, the output cap or the use's worst case when it is larger. `provider` names `anthropic` or `jev`.
+- `err.isAnswerNotParsed`: 422 `answer_not_parsed` (param `answer`), a use whose model answered off its promised shape twice; billed to the use's own budget, not the token rating.
+- `ai()`'s notes: a refusal the provider billed (`answer_not_parsed`, or a 502 after a billed answer) is kept under the idempotency key and replayed like an answer.
+
+### Tests
+
+- A layout-only bundle (`trailByPlace`, `mapSpace`) carries none of the zip library, with `readWorldFile` as the control.
+
 ## [4.139.0] - 2026-11-10
 
 ### Deprecated

@@ -93,7 +93,7 @@ test('client.ai and aiUses: refused before sending', async () => {
 });
 
 test('client.ai: each refusal by its code, thrown once, never retried', async () => {
-  const getters = ['isUseCeiling', 'isUseInFlight', 'isQuotaExceeded', 'isRateLimited', 'isOwnKeyRefused', 'isAskUnavailable', 'isAskFailed'];
+  const getters = ['isUseCeiling', 'isUseInFlight', 'isQuotaExceeded', 'isRateLimited', 'isOwnKeyRefused', 'isAskUnavailable', 'isAskFailed', 'isAnswerNotParsed'];
   const cases = [
     [429, 'use_ceiling', 'isUseCeiling', 'use', '7200'],
     [429, 'use_in_flight', 'isUseInFlight', 'use', '2'],
@@ -102,6 +102,7 @@ test('client.ai: each refusal by its code, thrown once, never retried', async ()
     [422, 'own_key_refused', 'isOwnKeyRefused', null, null],
     [503, 'ask_unavailable', 'isAskUnavailable', 'use', null],
     [502, 'ask_failed', 'isAskFailed', null, null],
+    [422, 'answer_not_parsed', 'isAnswerNotParsed', 'answer', null],
   ];
   for (const [status, code, getter, param, retry] of cases) {
     const f = fake({ status, body: { error: { type: 'x', code, param, message: 'm' } }, headers: retry ? { 'Retry-After': retry } : {} });

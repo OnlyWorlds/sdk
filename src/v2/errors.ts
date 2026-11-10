@@ -343,6 +343,16 @@ export class OwApiError extends Error {
     return this.status === 401 && this.code === 'wrong_audience';
   }
 
+  /**
+   * ai: the use's model answered, but not in the shape the use promises, and asked again gave no usable
+   * answer either (422 `answer_not_parsed`, param `answer`). The provider billed it to the use's own budget,
+   * not the token rating; under an idempotency key the same refusal is replayed. Fall back to the tool's
+   * own answer, and do not retry.
+   */
+  get isAnswerNotParsed(): boolean {
+    return this.status === 422 && this.code === 'answer_not_parsed';
+  }
+
   /** ask: the model gave no answer (502 `ask_failed`). Not counted; try again in a moment. */
   get isAskFailed(): boolean {
     return this.status === 502 && this.code === 'ask_failed';

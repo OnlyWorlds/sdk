@@ -863,7 +863,9 @@ export interface OwAiUse {
   slug: string;
   /** The tool that answers for its prompt and caps. */
   owner: string;
-  provider: string;
+  /** Who runs the model: `anthropic` (the platform's key, or the account's own saved key once its rating is
+   *  spent) or `jev` (a decisions gateway; an own key never runs it). */
+  provider: 'anthropic' | 'jev' | (string & {});
   /** The model a call on the platform's key runs. */
   model: string;
   effort: string;
@@ -873,8 +875,11 @@ export interface OwAiUse {
   needs_world: boolean;
   /** What the body may hold, by name. */
   input_caps: Record<string, number>;
-  /** The most tokens one answer may take; a call needs at least this much rating left (or a saved own key). */
+  /** The most tokens one answer may take. */
   output_cap: number;
+  /** The rating tokens a call needs left today to run (or a saved own key, for a use it can run): the
+   *  output cap, or the use's worst case when it is larger. */
+  rating_need: number;
   /** The answer is checked JSON, not text. */
   structured: boolean;
   /** A fixed price per call in rating tokens, or null: the call's actual tokens are spent. */

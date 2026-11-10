@@ -1717,16 +1717,19 @@ export class OwV2Client {
    * a key whose first call is still running is 409 `idempotency_in_flight` (retry after `retryAfter`).
    * Retry with the same key and body, a few times at most, and never mint a new key to get past an
    * in-flight answer: when the server cannot store an answer, the key is held for a day and keeps
-   * answering `idempotency_in_flight` although the call ran and was billed. The client never retries
-   * on its own.
+   * answering `idempotency_in_flight` although the call ran and was billed. A refusal the provider
+   * billed (422 `answer_not_parsed`, or a 502 after a billed answer) is kept under the key and replayed
+   * like an answer, so a retry never bills it twice. The client never retries on its own.
    *
-   * Refusals, none of them counted: 429 `use_ceiling` (`err.isUseCeiling`: the use's calls for the day
+   * Refusals, none of them counted against the rating: 429 `use_ceiling` (`err.isUseCeiling`: the use's calls for the day
    * are made), 429 `use_in_flight` (`err.isUseInFlight`: another call to this use is running; wait
    * `retryAfter`), 429 `quota_exceeded` (`err.isQuotaExceeded`: the token rating is spent and no own key
    * is saved), 422 `own_key_refused` (`err.isOwnKeyRefused`), 503 `ask_unavailable`
    * (`err.isAskUnavailable`; with `param` `use`, this use is switched off or spent its own budget
    * today), 502 `ask_failed` (`err.isAskFailed`), 404 `not_found` (a use that is not listed, `param`
-   * `use`, or a world the account is not in), 422 for a body past the use's limits (`param` names it).
+   * `use`, or a world the account is not in), 422 for a body past the use's limits (`param` names it),
+   * 422 `answer_not_parsed` (`err.isAnswerNotParsed`: the answer was off its shape twice; billed to the
+   * use's own budget).
    */
   async ai(use: 'ask', body: OwAiAskBody, opts?: { idempotencyKey?: string; signal?: AbortSignal }): Promise<OwAiAskAnswer>;
   async ai(use: 'sort', body: OwAiSortBody, opts?: { idempotencyKey?: string; signal?: AbortSignal }): Promise<OwAiSortAnswer>;
