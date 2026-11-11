@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.157.0] - 2026-11-11
+
+### Changed
+
+- **Six answer fields admit `null`, as the API document says they may**: a `/changes` upsert row's `updated_at` and a delete row's `deleted_at` (`OwChangeUpsert`, `OwChangeDelete`), a `/bulk` slot's `id`, `created_at` and `updated_at` (`OwBulkItemResult`: a failed slot carries no id), and a member row's `x_served_trimmed` (`OwMemberLenses`). The SDK typed them as never null; nothing at runtime changes, but code that reads one as a plain string now has to handle `null`.
+
 ## [4.156.0] - 2026-11-11
 
 ### Changed

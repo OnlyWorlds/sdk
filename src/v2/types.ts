@@ -183,7 +183,7 @@ export type OwChange = OwChangeUpsert | OwChangeDelete;
 
 /** A /changes item for an element written: the element whole, as GET returns it. */
 export interface OwChangeUpsert {
-  op: 'upsert'; id: string; type: string; element: OwElement; updated_at: string;
+  op: 'upsert'; id: string; type: string; element: OwElement; updated_at: string | null;
   /**
    * The change's place in the world's feed. On a hide's or an unhide's row (the one carrying
    * `changed_via`) it is that act's place; the element's own `change_seq`, in `element`, stays where it was.
@@ -204,7 +204,7 @@ export interface OwChangeUpsert {
 
 /** A /changes item for an element deleted. */
 export interface OwChangeDelete {
-  op: 'delete'; id: string; type: string; deleted_at: string;
+  op: 'delete'; id: string; type: string; deleted_at: string | null;
   /** The change's place in the world's feed. */
   change_seq: number;
   /** The membership whose write deleted it; null for the world's owner, and for deletes before writes recorded it. */
@@ -346,9 +346,9 @@ export interface OwBulkItem {
  */
 export interface OwBulkItemResult {
   status: number;
-  id?: string;
-  created_at?: string;
-  updated_at?: string;
+  id?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
   /** Only on a 202 slot: the proposal the write became. */
   proposal?: OwProposal;
   error?: OwErrorBody;
@@ -1480,7 +1480,7 @@ export interface OwMemberLenses {
    * Served only, never written: present only when the list keeps a lens you cannot see, which stays
    * in the list where it stands and is left out of `lenses`; then it names `lenses`.
    */
-  x_served_trimmed?: 'lenses'[];
+  x_served_trimmed?: 'lenses'[] | null;
   [k: string]: unknown;
 }
 
