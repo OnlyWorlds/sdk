@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.156.0] - 2026-11-11
+
+### Changed
+
+- **`OwProposedNewElement.evidence` and `.expires` are `unknown`**: the world's queue serves a new element's review mark's `evidence` and `expires` as stored, whatever JSON value they hold (a list of ids, a number, an object), where it served a non-string as its text before. A string still arrives as written and null as null; anything else arrives as itself. Code that read either as a string narrows first (`typeof row.evidence === 'string'`). Whether a row has lapsed is its `state`; an `expires` that is not a date or a date-time never lapses.
+
 ## [4.155.1] - 2026-11-11
 
 ### Changed

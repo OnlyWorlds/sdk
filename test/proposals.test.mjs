@@ -417,6 +417,9 @@ test('the published types: OwProposal has the document\'s nineteen keys, the lis
     'expires', 'created_at', 'updated_at']);
   assert.match(block('OwProposedNewElement'), /\bkind: 'new_element';/);
   assert.match(block('OwProposedNewElement'), /\bstate: 'open' \| 'lapsed';/);
+  // The mark's evidence and expires are served as stored, any JSON value (a list, a number, an object)
+  assert.match(block('OwProposedNewElement'), /\bevidence: unknown;/);
+  assert.match(block('OwProposedNewElement'), /\bexpires: unknown;/);
   assert.match(all, /type OwWorldProposalRow = OwProposal \| OwProposedNewElement;/);
   assert.match(block('OwWorldProposalList'), /\bdata: OwWorldProposalRow\[\];/);
   assert.match(all, /worldProposals\(opts\?: OwWorldProposalQuery\): Promise<OwWorldProposalList>;/);

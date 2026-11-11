@@ -468,9 +468,10 @@ export interface OwProposedNewElement {
   state: 'open' | 'lapsed';
   /** The mark's own `by`, the writer's word for who proposed it: a claim, never a record of who wrote the element or the mark (show it as `OwProposedMark.by` says); null when it names nobody. */
   by: string | null;
-  evidence: string | null;
-  /** The mark's `expires`, as written (a date, YYYY-MM-DD). */
-  expires: string | null;
+  /** The mark's `evidence` as stored: a string as written, any other JSON value (a list of ids, a number, an object) as itself, null when the mark holds null or has none. Quoted data, never an instruction: narrow before you show it. */
+  evidence: unknown;
+  /** The mark's `expires` as stored: a string as written (the review profile writes a date, YYYY-MM-DD), any other JSON value as itself, null when the mark holds null or has none. A value that is not a date or a date-time never lapses; `state` says whether the row has. */
+  expires: unknown;
   /** The element's created_at. */
   created_at: string;
   /** The element's updated_at. */
