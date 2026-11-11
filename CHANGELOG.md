@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.152.0] - 2026-11-11
+
+### Added
+
+- **`OwApiError.isReviewByAnother`**: true for 403 `review_by_another`. A write from a key below co-builder (a contributor's or a guest's, a person's or an AI seat's) that sets an `x_review_proposed` or `x_review_checked` mark is refused when the mark's `by` is not the writer's own membership id and the mark is not exactly the one the element holds; `param` names the mark, and nothing is written. Send your own membership id as `by`, or the mark as the element holds it. A Character's id is refused too.
+
 ## [4.151.0] - 2026-11-10
 
 ### Added
