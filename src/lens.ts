@@ -659,9 +659,11 @@ export class Reading {
         const v = b[k];
         if (typeof v === 'string' && trimWhiteSpace(v) !== '') row[k] = v;
       }
+      // serial 115: the first line (split at a carriage return or a line feed) with something left after
+      // trimming White_Space, carried as stored with its spaces; a description with no such line gives no key
       if (show === 'first_line' && typeof b.description === 'string') {
-        const cut = b.description.search(/[\r\n]/);
-        row.description = cut < 0 ? b.description : b.description.slice(0, cut);
+        const line = b.description.split(/[\r\n]/).find((l) => trimWhiteSpace(l) !== '');
+        if (line !== undefined) row.description = line;
       }
     }
     if (notes !== null && own(notes, id)) row.note = notes[id];

@@ -446,6 +446,27 @@ test('a full row of a hidden element carries hidden: true for a reader who sees 
   assert.equal(JSON.stringify(world), before);
 });
 
+test('a first_line row carries the first line holding something after trimming White_Space, as stored; none gives no description', () => {
+  // The lens profile's first-line rule (schema-dist serial 115): trimming decides which line is the first
+  // that holds something; the line itself is carried as stored, its leading spaces kept.
+  const cases = [
+    ['plain', 'One.\nTwo.', 'One.'],
+    ['a leading break, then spaces', '\n  Rung for every crossing.\nMore.', '  Rung for every crossing.'],
+    ['blank lines first, CRLF', '\r\n \t\r\n\u00a0\r\nThird.\r\nFourth.', 'Third.'],
+    ['a carriage return alone', '\rAfter the return.', 'After the return.'],
+    ['one line with spaces', '  Only line  ', '  Only line  '],
+    ['blank lines only', '\n \n\t\r\n', undefined],
+    ['White_Space alone', ' \u3000 ', undefined],
+    ['empty', '', undefined],
+  ];
+  for (const [label, description, expected] of cases) {
+    const world = { elements: [{ id: 'a', type: 'institution', name: 'Anchor', objects: ['o'] }, { id: 'o', type: 'object', name: 'Ledger', description }] };
+    const row = resolveLens(world, lensOn({ institutions: ['a'] }, { show: 'first_line' }), OWNER).rows.find(r => r.id === 'o');
+    assert.equal(row.description, expected, label);
+    assert.equal('description' in row, expected !== undefined, `${label}: the key`);
+  }
+});
+
 test('resolveLens refuses what is not a reading: a bad reader, world, lens, as_of or clock is a TypeError', () => {
   assert.throws(() => resolveLens({ elements: [] }, LENS, { rung: 'admin' }), TypeError);
   assert.throws(() => resolveLens({ elements: [] }, LENS, { rung: 'owner', as: { rung: 'x' } }), TypeError);
