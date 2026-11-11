@@ -5,8 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.153.0] - 2026-11-11
+
 ### Changed
 
+- **A lens's `first_line` row carries the first line that holds something**: the description is split at every carriage return and every line feed, and its first line with something left after trimming White_Space is the row's `description`, carried as stored with its own spaces. A description with no such line (empty, blank lines, White_Space alone) gets no `description` key. 4.152.0 cut at the first line break, so a description opening with a blank line gave an empty `description`, and one of White_Space alone was carried as it stood.
+- **Schema repinned to schema-dist v0.34.0-dist.115** (from dist.114; same canonical 00.34.00, no schema file moved): the lens fixture at 220 cases (ten new, all first-line rows), the charter fixture at 31 (four new), `views.json` version 3 and its 45 cases, all replayed.
 - **`VIEWS.version` is `3`**, the version of `views.json` baked at this release; codegen reads version 3 only, so a build on a version 2 file stops rather than drawing a Pin by the old rule.
 - **`viewOf`'s `order` draws a Pin's `element`**: a generic link is one field of the order, under its schema name and at its place (a Pin's Details: `map`, `element`, `x`, `y`, `z`), read as the two keys a served Pin carries (`element_type`, `element_id`, from the walk); it is drawn only when both are strings with something left after trimming. 4.151.0 never drew it, since no key `element` is served.
 

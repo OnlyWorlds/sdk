@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.34.0-dist.114",
-  "commit": "428227ab934c3aab35ca50cd92aebd36400faa46",
-  "manifest_sha256": "a42a1d57907f45b0c696db4b86731531903f0c91060b05f9cf7767d43bd5bbea",
+  "tag": "v0.34.0-dist.115",
+  "commit": "9652e1b8a7e50e58d72dfc30866b7a94a90dcdb7",
+  "manifest_sha256": "bd1cb0491222c928305463181da61e424beac08cc0bf35fafc85cff141ea1a80",
   "canonical_version": "00.34.00",
-  "dist_serial": 114,
-  "published": "2026-11-10",
-  "pinned_at": "2026-11-10",
+  "dist_serial": 115,
+  "published": "2026-11-11",
+  "pinned_at": "2026-11-11",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.34.0-dist.114",
+      "manifest_sha256": "a42a1d57907f45b0c696db4b86731531903f0c91060b05f9cf7767d43bd5bbea",
+      "note": "superseded by v0.34.0-dist.115 (canonical 00.34.00 unchanged, no schema file moved; a lens's first_line row is the first line holding something after trimming, carried as stored, the lens fixture at 220 cases; the charter page's proposed element by the review page's rule 1 and a Domain's sentence trimmed, cut, trimmed again, its fixture at 31 cases; report.md's keeper's one write and reader rule 4; packet.md's producer version; the folder lint reads the two review marks as warnings; views.json version 3 with 45 cases, a generic link one field of the order)"
+    },
     {
       "tag": "v0.34.0-dist.113",
       "manifest_sha256": "b645c8da0985ccedf538941218f31f922b62fe5ec2d5be14d4d6b2b52dca4478",

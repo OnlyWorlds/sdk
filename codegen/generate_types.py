@@ -1181,7 +1181,7 @@ VIEW_PROFILES = ("room", "charter")
 def load_views(schema_dir: Path, all_fields: dict[str, list[dict]], room_pairs: list[tuple[str, str]],
                charter_pairs: list[tuple[str, str, str]]) -> dict:
     """How an element is shown by its kind (schema-dist serial 113 on, the `views.json` sidecar beside
-    pairs.json): presentation, held as the drag pairs are, with no fallback. Version 3 only (the next serial: a
+    pairs.json): presentation, held as the drag pairs are, with no fallback. Version 3 only (serial 115: a
     generic link is one field of the drawing order, which changes a Pin's order for every reader of version 2;
     version 2 (serial 114) stated the order, version 1 never did). Each row's keys
     are the ones this package reads (a new column is a new meaning, so it exits 1 until the reader knows

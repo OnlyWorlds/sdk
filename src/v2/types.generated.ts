@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.114
-//         commit          428227ab934c3aab35ca50cd92aebd36400faa46
-//         MANIFEST sha256 a42a1d57907f45b0c696db4b86731531903f0c91060b05f9cf7767d43bd5bbea
-//         canonical 00.34.00, dist serial 114, published 2026-11-10
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.115
+//         commit          9652e1b8a7e50e58d72dfc30866b7a94a90dcdb7
+//         MANIFEST sha256 bd1cb0491222c928305463181da61e424beac08cc0bf35fafc85cff141ea1a80
+//         canonical 00.34.00, dist serial 115, published 2026-11-11
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -539,7 +539,7 @@ export interface OwViewRow {
 
 /** views.json without its `_meta`: the banners every page shows, the layouts, the rows. */
 export interface OwViewsTable {
-  readonly version: 2;
+  readonly version: 3;
   readonly banners: readonly { readonly mark: string; readonly defined_by: string }[];
   readonly layouts: { readonly [name: string]: string };
   readonly rows: readonly OwViewRow[];
@@ -550,7 +550,7 @@ export interface OwViewsTable {
  *  council-governed OnlyWorlds standard, and nothing in it says who may see or do what. Read it with
  *  viewOf; the frozen copy is VIEWS. */
 export const VIEWS_TABLE: OwViewsTable = {
-  "version": 2,
+  "version": 3,
   "banners": [
     {
       "mark": "known_of",
@@ -574,7 +574,7 @@ export const VIEWS_TABLE: OwViewsTable = {
     }
   ],
   "layouts": {
-    "document": "the fields in the row's order, each drawn once: lead open, then the rest, then fold; a field the row names in both lead and fold is drawn in the lead. The rest are the type's section fields in the schema's own order (schema/<type>.yaml: its sections as listed, and each section's fields as listed) that the row puts in neither lead nor fold. A field that holds nothing (absent, null, a string with nothing left after trimming, a list with no items, an object with no keys; a list of blank strings holds something here, whatever a banner reads of one) is not drawn: an empty lead field is skipped, and a fold whose field holds nothing draws no fold. A tool that draws empty fields to be filled draws them at their own place in this order; it never moves a field. The base fields outside every section (name, description, supertype, subtype, image_url) are the page's head, unless the row names one in lead or fold, where it is drawn, and only there. A row names only the type's base and section fields, never an extension key, and extension keys and a world's own fields are not in the order. A kind with no row is a document.",
+    "document": "the fields in the row's order, each drawn once: lead open, then the rest, then fold; a field the row names in both lead and fold is drawn in the lead. The rest are the type's section fields in the schema's own order (schema/<type>.yaml: its sections as listed, and each section's fields as listed) that the row puts in neither lead nor fold. A generic link (a Pin's `element`) is one field of the order, under its schema name and at its place, never its two keys as two entries: it is read as the two keys schema.json gives it (`type_key`, `id_key`), and it holds something only when both are strings with something left after trimming; one alone, or both empty, holds nothing. A field that holds nothing (absent, null, a string with nothing left after trimming, a list with no items, an object with no keys; a list of blank strings holds something here, whatever a banner reads of one) is not drawn: an empty lead field is skipped, and a fold whose field holds nothing draws no fold. A tool that draws empty fields to be filled draws them at their own place in this order; it never moves a field. The base fields outside every section (name, description, supertype, subtype, image_url) are the page's head, unless the row names one in lead or fold, where it is drawn, and only there. A row names only the type's base and section fields, never an extension key, and extension keys and a world's own fields are not in the order. A kind with no row is a document.",
     "conversation": "the element within its chain by the named link, oldest first by created_at, stopping at an id already visited; each line's own fields drawn as a document draws them"
   },
   "rows": [
