@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.157.1] - 2026-11-11
+
+### Changed
+
+- Schema repinned to schema-dist `v0.34.0-dist.118` (canonical 00.34.00 unchanged, no schema file moved, `views.json` still version 3). The views table's `conversation` layout now ends with the case of a tool that shows one element and no thread: it draws that element as a document, and the layout asks nothing of it; `VIEWS_TABLE.layouts.conversation` carries the new words, and no answer of `viewOf` moved. The checks profile gains two rules with eight cases (a work item and a report carry the room's mark, read by `present`) and now says that `present` trims by the room profile's White_Space set; the room profile says a sitting's own mark holds the world's id and that a sitting names its winning spec in `x_star`. The package has no checks reader, and `isRoomElement` reads as before.
+
 ## [4.157.0] - 2026-11-11
 
 ### Changed
