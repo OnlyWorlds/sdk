@@ -20,7 +20,17 @@ export const PROPOSED_MARK = 'x_review_proposed';
 
 /** A proposed element's mark as a reader shows it. */
 export interface OwProposedMark {
-  /** The membership or seat that proposed it, trimmed of Unicode White_Space as the room profile trims, when the mark names one. */
+  /**
+   * Who made the mark, in the writer's own word: a claim, with no format to rely on, and never proof of who wrote the
+   * mark or the element. Read as stored, never trimmed: a `by` that is not a string, or is White_Space alone, names
+   * nobody (null); White_Space around a word or an id makes it neither. Show it as the mark's word (for example "the
+   * mark names Ada"), in a form that keeps the name visibly the mark's, never as a fact ("proposed by Ada"). Put a
+   * name in its place in two cases only: your platform resolves it to a member on its roster or to the world's owner,
+   * comparing ids as ids, with the name it serves this reader (the id where it serves none) and the owner, an AI's seat
+   * or a player's seat said beside it; otherwise, it is the id of a Character of the same world this reader is served,
+   * said as that Character with its type, never as the member who plays it. Every other `by` is shown only as the raw
+   * value, apart, never where a name stands.
+   */
   by: string | null;
   /** The day it lapses (YYYY-MM-DD), trimmed, when the mark gives one in that shape. */
   expires: string | null;
@@ -62,7 +72,7 @@ export function proposedMarkOf(element: unknown, today?: string): OwProposedMark
   const v = (element as Record<string, unknown>)[PROPOSED_MARK];
   if (!isPresent(v) || typeof v !== 'object' || Array.isArray(v)) return null;
   const m = v as Record<string, unknown>;
-  const by = typeof m.by === 'string' && trimWhiteSpace(m.by) ? trimWhiteSpace(m.by) : null;
+  const by = typeof m.by === 'string' && trimWhiteSpace(m.by) ? m.by : null;
   const expires = typeof m.expires === 'string' && DAY.test(trimWhiteSpace(m.expires)) ? trimWhiteSpace(m.expires) : null;
   return { by, expires, lapsed: expires !== null && expires <= (today ?? todayDay()) };
 }

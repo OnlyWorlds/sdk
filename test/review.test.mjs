@@ -30,16 +30,19 @@ const CASES = [
   ['rule 5: only a key the table does not name ({"note": "x"}), a mark that never lapses', { note: 'x' }, { by: null, expires: null, lapsed: false }, true],
   ['rule 5: a named key whose value is null ({"by": null}), a mark, no proposer named', { by: null }, { by: null, expires: null, lapsed: false }, true],
   ['a whole mark, open', { by: 'm1', evidence: 'seen', expires: '2026-11-01' }, { by: 'm1', expires: '2026-11-01', lapsed: false }, true],
-  ['trimmed by and expires', { by: '  m1 ', expires: ' 2026-11-01 ' }, { by: 'm1', expires: '2026-11-01', lapsed: false }, true],
+  ['a by read as stored, never trimmed; expires trimmed', { by: '  m1 ', expires: ' 2026-11-01 ' }, { by: '  m1 ', expires: '2026-11-01', lapsed: false }, true],
+  ['a by of owner with White_Space around it is not the word owner', { by: ' owner\n' }, { by: ' owner\n', expires: null, lapsed: false }, true],
   ['lapses on its own day', { by: 'm1', expires: TODAY }, { by: 'm1', expires: TODAY, lapsed: true }, true],
   ['lapsed before today', { by: 'm1', expires: '2026-10-01' }, { by: 'm1', expires: '2026-10-01', lapsed: true }, true],
   ['an expires not shaped as a day', { by: 'm1', expires: '2026-1-1' }, { by: 'm1', expires: null, lapsed: false }, true],
   ['a blank or non-string by', { by: '   ', expires: 7 }, { by: null, expires: null, lapsed: false }, true],
+  ['a by that is not a string names nobody', { by: 7, expires: '2026-11-01' }, { by: null, expires: '2026-11-01', lapsed: false }, true],
 ];
 
 // The two languages' own defaults disagree here: JavaScript's trim() strips a byte order mark, Python's
 // strip() strips U+001C, and neither is White_Space; Python's \d matches non-ASCII digits. Both readers
-// trim by White_Space and read ASCII digits, so each of these is kept or refused the same in both.
+// test presence by White_Space, trim expires by it, read ASCII digits and keep a by as stored, so each of
+// these is kept or refused the same in both.
 const FS = String.fromCharCode(0x1c);
 const BOM = String.fromCharCode(0xfeff);
 const IDEOGRAPHIC_SPACE = String.fromCharCode(0x3000);
