@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.155.1] - 2026-11-11
+
+### Changed
+
+- Schema repinned to schema-dist `v0.34.0-dist.117` (canonical 00.34.00 unchanged, no schema file moved, `views.json` still version 3). The views table's own description now says that a tool's own words for a heading or a fold are its drawing, and that a fold's label is the word a tool uses where it has none of its own; `VIEWS` is baked without that description, so no value it holds moved. The views fixture gains a 46th case, a Pin whose generic link has one key holding and the other White_Space alone, which holds nothing; `viewOf` already read it so, and the replayed fixture now holds it.
+
 ## [4.155.0] - 2026-11-11
 
 ### Changed
