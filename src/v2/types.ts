@@ -466,7 +466,7 @@ export interface OwProposedNewElement {
   element_id: string;
   /** open; lapsed once the mark's `expires` has passed (it may still be accepted or declined). Never accepted or declined: a settled mark leaves the queue. */
   state: 'open' | 'lapsed';
-  /** The mark's `by`: the membership id of the seat that wrote it. */
+  /** The mark's own `by`, the writer's word for who proposed it: a claim, never a record of who wrote the element or the mark (show it as `OwProposedMark.by` says); null when it names nobody. */
   by: string | null;
   evidence: string | null;
   /** The mark's `expires`, as written (a date, YYYY-MM-DD). */

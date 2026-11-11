@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.34.0-dist.115",
-  "commit": "9652e1b8a7e50e58d72dfc30866b7a94a90dcdb7",
-  "manifest_sha256": "bd1cb0491222c928305463181da61e424beac08cc0bf35fafc85cff141ea1a80",
+  "tag": "v0.34.0-dist.116",
+  "commit": "51a2496f1505d4e18a26ac08a2ca5ecd7f16c486",
+  "manifest_sha256": "7e604e9c976500bd0d3b9781d947da8ed0785980ac92709861a48421f4af53c3",
   "canonical_version": "00.34.00",
-  "dist_serial": 115,
+  "dist_serial": 116,
   "published": "2026-11-11",
   "pinned_at": "2026-11-11",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.34.0-dist.115",
+      "manifest_sha256": "bd1cb0491222c928305463181da61e424beac08cc0bf35fafc85cff141ea1a80",
+      "note": "superseded by v0.34.0-dist.116 (canonical 00.34.00 unchanged, no schema file and no fixture moved; review.md gains Who by names: a by is the writer's own word for who made the mark, a claim, read as stored and never trimmed, one that is not a string or is White_Space alone names nobody, shown as the mark's word and never as a fact)"
+    },
     {
       "tag": "v0.34.0-dist.114",
       "manifest_sha256": "a42a1d57907f45b0c696db4b86731531903f0c91060b05f9cf7767d43bd5bbea",

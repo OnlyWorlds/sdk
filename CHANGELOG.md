@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.155.0] - 2026-11-11
+
+### Changed
+
+- **`proposedMarkOf`'s `by` is read as stored, never trimmed** (the review profile's Who `by` names, schema-dist serial 116): a `by` that is not a string, or is White_Space alone, names nobody (`null`), and White_Space around a word or an id makes it neither. 4.154.0 trimmed it, so `" owner "` came back as `owner`. `OwProposedMark.by` says how a reader shows it: as the mark's word ("the mark names Ada"), never as a fact ("proposed by Ada"); a name in its place only where the platform resolves it to a member on its roster or to the owner, comparing ids as ids, or where it is the id of a Character of the same world this reader is served, said as that Character; otherwise the raw value, apart.
+- **`OwProposedNewElement.by`'s words**: the mark's own `by`, the writer's word for who proposed it, a claim, null when it names nobody; never a record of who wrote the element or the mark.
+- **Schema repinned to schema-dist v0.34.0-dist.116** (from dist.115; same canonical 00.34.00, no schema file and no fixture moved; only `profiles/review.md`).
+
 ## [4.154.0] - 2026-11-11
 
 ### Added
