@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.154.0] - 2026-11-11
+
+### Added
+
+- **`OwFileAddedBy.owner`**: true when the world's current owner added the file, through any door (the site, the API, or an agent with the owner's own keys; a seat the owner sponsors is the seat's, false); false for everyone else, on every file of a world with no owner, and on a past owner's files once the world has another owner. onlyworlds.com serves it on every row of `listFiles` and `worldFiles`. `membership` is null both for the owner's files and for a file whose membership no longer exists, and `owner` tells the two apart: a null `membership` with `owner` false is a former member, and such a file's `name` is "a former member" (it was an empty string for a member whose account was deleted).
+
 ## [4.153.0] - 2026-11-11
 
 ### Changed

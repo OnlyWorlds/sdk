@@ -1550,14 +1550,23 @@ export interface OwUploadedImage {
  */
 export type OwFileKind = 'pdf' | 'txt' | 'md' | 'json' | 'csv' | 'yaml' | 'toml' | 'zip' | 'png' | 'jpg' | 'webp' | 'avif';
 
-/** Who added a file. */
+/**
+ * Who added a file. A removed member's file keeps its membership id and name; a file whose member's account was
+ * deleted keeps its membership id and is named "a former member".
+ */
 export interface OwFileAddedBy {
-  /** A member's or a seat's name; the owner's username for the owner's keys. */
+  /** A member's or a seat's name; the owner's username for the owner's keys; "a former member" where no one is left to name. */
   name: string;
-  /** Their membership id; null for the owner's keys. */
+  /** Their membership id; null for the owner's files and for a file whose membership no longer exists (`owner` tells the two apart). */
   membership: string | null;
   /** True when an agent added it: an agent seat, the MCP surface, or a key that declared an agent. */
   agent: boolean;
+  /**
+   * True when the world's current owner added the file, through any door (the site, the API, or an agent with the
+   * owner's own keys; a seat the owner sponsors is the seat's, false). False for everyone else, on every file of a world
+   * with no owner, and on a past owner's files once the world has another owner. Since 4.154.0.
+   */
+  owner: boolean;
 }
 
 /** One file on an element, as listFiles returns it. */

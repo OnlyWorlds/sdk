@@ -673,8 +673,8 @@ export class OwV2Client {
 
   /**
    * GET /{type}/{id}/files -- the element's files, newest first: each with its name, kind,
-   * size in bytes, label (or null), who added it (`added_by.agent` is true when an agent did)
-   * and when. Any key that may read the element; a file is seen by whoever may see its
+   * size in bytes, label (or null), who added it (`added_by.agent` is true when an agent did,
+   * `added_by.owner` when the world's current owner did) and when. Any key that may read the element; a file is seen by whoever may see its
    * element, and an element the key cannot see answers 404 `not_found`. Returns the rows
    * (keel sends them as `{ data }`, with no paging). Files never ride on the element: they
    * are not in its body, its `change_seq` or /changes.
