@@ -5,7 +5,7 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
-- The list filter's notes name the Pin list's  (served since 2026-11-12):  gives an element its maps in one call, and  lists the Pins placing nothing. It was already sent as given; only the words are new, and the unknown-key hint names a single link and a Pin's element.
+- The list filter's notes name the Pin list's `element=<id>` (served since 2026-11-12): `list('pin', { filter: { element: id }, expand: ['map'] })` gives an element its maps in one call, and `element: ''` lists the Pins placing nothing. It was already sent as given; only the words are new, and the unknown-key hint names a single link and a Pin's element.
 
 ## [4.157.2] - 2026-11-12
 
