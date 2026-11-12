@@ -5,8 +5,15 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
-- `reportThreadsOf(narratives)`, the report profile's rule 9 (serial 120): reports grouped into threads by the `parent_narrative` they name, read as written. For each report, what its parent is (`none`, `report`, `board`, `missing`, `other` or `self`; `none` when the field is absent, null, no string or empty once trimmed, and a parent with content read as written); only reports are read, so a message that names a report is in no part of the answer; one group per parent that is a report (its thread) or a board entry (the talks under it), its reports ordered by `created_at` as messages are (an instant; equal times keep the list's order; unreadable times last); and a lint on a report that names itself or whose parent names another report (a report that names itself reads as naming no parent, so one under it is no chain). A report and a board entry are each their pair and the room's mark; the reader never walks further up a chain and never orders by id. Its types `OwReportThreads`, `OwReportGroup`, `OwReportLint` and `OwReportParentKind`. The profile's fixture is its own test once the distribution ships it.
+## [4.158.0] - 2026-11-12
 
+### Added
+
+- **`reportThreadsOf(narratives)`**, the report profile's rule 9 (schema-dist serial 120): reports grouped into threads by the `parent_narrative` they name, read as written. For each report, what its parent is (`none`, `report`, `board`, `missing`, `other` or `self`; `none` when the field is absent, null, no string or empty once trimmed, and a parent with content read as written); only reports are read, so a message that names a report is in no part of the answer; one group per parent that is a report (its thread) or a board entry (the talks under it), its reports ordered by `created_at` as messages are (an instant; equal times keep the list's order; unreadable times last); and a lint on a report that names itself or whose parent names another report the reader holds (a report that names itself reads as naming no parent, so one under it is no chain). A report and a board entry are each their pair and the room's mark; the reader never walks further up a chain and never orders by id. Its types `OwReportThreads`, `OwReportGroup`, `OwReportLint` and `OwReportParentKind`. The profile's fixture, 20 thread cases, is its own test, with edges the fixture leaves out.
+
+### Changed
+
+- Schema repinned to schema-dist `v0.34.0-dist.120` (canonical 00.34.00 unchanged, no schema file moved, `views.json` still version 3). The report profile: a report that continues earlier work names the first report of that work in `parent_narrative`, and rule 9 tells a report's thread from a closed talk's by the parent's kind, a report or a board entry; its first fixture holds 20 thread cases, all read by `reportThreadsOf`. The views fixture's two references into the report page move down one line; its cases are replayed as before.
 - The list filter's notes name the Pin list's `element=<id>` (served since 2026-11-12): `list('pin', { filter: { element: id }, expand: ['map'] })` gives an element its maps in one call, and `element: ''` lists the Pins placing nothing. It was already sent as given; only the words are new, and the unknown-key hint names a single link and a Pin's element.
 
 ## [4.157.2] - 2026-11-12
