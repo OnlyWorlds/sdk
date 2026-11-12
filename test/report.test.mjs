@@ -25,7 +25,7 @@ test('the fixture is the report profile\'s: its pairs are room pairs, its mark t
   assert.deepEqual([doc.pair.supertype, doc.board_pair.supertype], ['Report', 'Board']);
   assert.equal(doc.mark.field, 'x_room_of');
   assert.ok(Array.isArray(doc.thread_cases), 'the fixture holds no thread_cases list');
-  assert.equal(doc.thread_cases.length, 16, `the fixture holds ${doc.thread_cases.length} thread cases, serial 120 has 16`);
+  assert.equal(doc.thread_cases.length, 20, `the fixture holds ${doc.thread_cases.length} thread cases, serial 120 has 20`);
 });
 
 for (const [i, c] of (doc.thread_cases ?? []).entries()) {
@@ -93,6 +93,37 @@ test('no chain through a parent that names itself: it reads self and still heads
     groups: [{ parent: 'b', kind: 'report', reports: ['c'] }],
     lints: [{ kind: 'self', report: 'b' }],
   });
+});
+
+test('a chain needs a report the reader holds: no chain when the parent names an id not held', () => {
+  const got = reportThreadsOf([report('b', { parent_narrative: 'gone' }), report('c', { parent_narrative: 'b' })]);
+  assert.deepEqual(got, { parents: { b: 'missing', c: 'report' }, groups: [{ parent: 'b', kind: 'report', reports: ['c'] }], lints: [] });
+});
+
+test('a chain needs a report the reader holds: no chain when the parent names a Report Narrative with no mark', () => {
+  const lore = report('x');
+  delete lore.x_room_of;
+  const got = reportThreadsOf([lore, report('b', { parent_narrative: 'x' }), report('c', { parent_narrative: 'b' })]);
+  assert.deepEqual(got, { parents: { b: 'other', c: 'report' }, groups: [{ parent: 'b', kind: 'report', reports: ['c'] }], lints: [] });
+});
+
+test('only reports are grouped: a message naming a report is in no part of the answer, with the mark or without', () => {
+  const message = (id, extra) => ({ id, type: 'narrative', supertype: 'Message', parent_narrative: 'r0', created_at: '2026-10-26T10:00:00Z', ...extra });
+  const got = reportThreadsOf([report('r0'), message('m1'), message('m2', { x_room_of: MARK })]);
+  assert.deepEqual(got, { parents: { r0: 'none' }, groups: [], lints: [] });
+});
+
+test('no parent: empty once trimmed of White_Space reads none; a parent with content is read as written, never trimmed', () => {
+  const got = reportThreadsOf([
+    report('r0'),
+    report('r1', { parent_narrative: '' }),
+    report('r2', { parent_narrative: '   ' }),
+    report('r3', { parent_narrative: '\t' + String.fromCodePoint(0x3000, 0xa0) + '\n' }),
+    report('r4', { parent_narrative: ' r0' }),
+    report('r5', { parent_narrative: 'r0' + String.fromCodePoint(0x200b) }),
+  ]);
+  assert.deepEqual(got.parents, { r0: 'none', r1: 'none', r2: 'none', r3: 'none', r4: 'missing', r5: 'missing' });
+  assert.deepEqual(got.groups, []);
 });
 
 test('of two elements with one id, the first is read', () => {

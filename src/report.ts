@@ -4,7 +4,7 @@
 // trim, the fold and the mark by presence), never a second copy. A thread is ordered by `created_at` as the message
 // profile orders messages (message.ts). The fixture, profiles/report.fixture.json, is this file's own test.
 
-import { fold, isRoomElement } from './room';
+import { fold, isRoomElement, trimWhiteSpace } from './room';
 import { inCreatedOrder } from './message';
 
 /** What a report's parent is: none served, a report, a board entry, an id whose element is not held, another element, or the report itself. */
@@ -52,10 +52,10 @@ function roomKindOf(el: Body | undefined): 'report' | 'board' | null {
   return null;
 }
 
-/** The parent's id as written: a non-empty string, else none. */
+/** The parent's id as written, never trimmed; none when it is no string or is empty once trimmed (room.ts's White_Space trim). */
 function parentOf(el: Body): string | null {
   const parent = el.parent_narrative;
-  return typeof parent === 'string' && parent !== '' ? parent : null;
+  return typeof parent === 'string' && trimWhiteSpace(parent) !== '' ? parent : null;
 }
 
 /**
@@ -63,17 +63,22 @@ function parentOf(el: Body): string | null {
  * in the order served. A report is a Narrative with supertype `Report` that carries the room's mark `x_room_of`
  * (`isRoomElement`); a board entry is one with supertype `Board` and the mark. Without the mark either is lore.
  *
- * `parents`: for each report, what its `parent_narrative` names: `none` (absent, null, empty or not a string),
+ * Only reports are read as children: a message or any other element that names a report is in no part of the answer.
+ *
+ * `parents`: for each report, what its `parent_narrative` names: `none` (absent, null, not a string, or empty once
+ * trimmed of White_Space, as the room profile trims; a parent with content is read as written, never trimmed),
  * `self`, `missing` (an id whose element is not in the list: a folder or an export without it, an id that dangles),
  * `report`, `board`, or `other` (any other element, a Narrative with supertype `Report` or `Board` and no mark
- * included; a stub, which serves no mark, reads `other` too). `groups`: one per parent that is a report or a board
- * entry, the reports that name it ordered by `created_at` as an instant (equal times keep the list's order; one
- * that cannot be read as a date and time after every one that can), never by id or by the text of the time. A
- * report with no parent, or whose parent is missing, other or itself, is a thread of one and in no group.
+ * included; a stub is read as it is served: one without the mark reads `other`). `groups`: one per parent that is
+ * a report or a board entry, the reports that name it ordered by `created_at` as an instant (equal times keep the
+ * list's order; one that cannot be read as a date and time after every one that can), never by id or by the text
+ * of the time. A report with no parent, or whose parent is missing, other or itself, is a thread of one and in no
+ * group.
  * `lints`: `self` on a report that names itself; `chain` on a report whose parent is a report that itself names
- * another report. A report that names itself reads as naming no parent: it still heads the group of the reports
- * that name it, and none of them is a chain. The reader never walks further up a chain: such a report is shown
- * under the parent it names. It never guesses a thread from names, days or text.
+ * another report the reader holds (with the mark). A report that names itself reads as naming no parent: it still
+ * heads the group of the reports that name it, and none of them is a chain; nor is a report whose parent names an
+ * id not held, or a Narrative with supertype `Report` and no mark. The reader never walks further up a chain:
+ * such a report is shown under the parent it names. It never guesses a thread from names, days or text.
  *
  * Groups and lints come in no rule order (compare them as sets); the order inside a group is the rule's. Elements
  * that are not objects, or carry no non-empty string `id`, are skipped; of two with one id, the first is read.
