@@ -86,6 +86,15 @@ test('the pair is trimmed and folded, the whole word; the mark is read by presen
   assert.deepEqual(got.groups, [{ parent: 'r0', kind: 'report', reports: ['r1', 'r4'] }]);
 });
 
+test('no chain through a parent that names itself: it reads self and still heads the group of the report under it', () => {
+  const got = reportThreadsOf([report('b', { parent_narrative: 'b' }), report('c', { parent_narrative: 'b', created_at: '2026-10-26T09:10:00Z' })]);
+  assert.deepEqual(got, {
+    parents: { b: 'self', c: 'report' },
+    groups: [{ parent: 'b', kind: 'report', reports: ['c'] }],
+    lints: [{ kind: 'self', report: 'b' }],
+  });
+});
+
 test('of two elements with one id, the first is read', () => {
   const got = reportThreadsOf([board('p'), report('p'), report('r1', { parent_narrative: 'p' }), report('r1', { parent_narrative: 'x' })]);
   assert.deepEqual(got, { parents: { r1: 'board' }, groups: [{ parent: 'p', kind: 'board', reports: ['r1'] }], lints: [] });

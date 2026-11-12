@@ -18,7 +18,7 @@ export interface OwReportGroup {
   reports: string[];
 }
 
-/** A lint: `chain` on a report whose parent is a report that itself names a report (itself included); `self` on a report that names itself. */
+/** A lint: `chain` on a report whose parent is a report that itself names another report; `self` on a report that names itself. */
 export interface OwReportLint {
   kind: 'chain' | 'self';
   report: string;
@@ -70,9 +70,10 @@ function parentOf(el: Body): string | null {
  * entry, the reports that name it ordered by `created_at` as an instant (equal times keep the list's order; one
  * that cannot be read as a date and time after every one that can), never by id or by the text of the time. A
  * report with no parent, or whose parent is missing, other or itself, is a thread of one and in no group.
- * `lints`: `self` on a report that names itself; `chain` on a report whose parent is a report that itself names a
- * report (itself included). The reader never walks further up a chain: such a report is shown under the parent it
- * names. It never guesses a thread from names, days or text.
+ * `lints`: `self` on a report that names itself; `chain` on a report whose parent is a report that itself names
+ * another report. A report that names itself reads as naming no parent: it still heads the group of the reports
+ * that name it, and none of them is a chain. The reader never walks further up a chain: such a report is shown
+ * under the parent it names. It never guesses a thread from names, days or text.
  *
  * Groups and lints come in no rule order (compare them as sets); the order inside a group is the rule's. Elements
  * that are not objects, or carry no non-empty string `id`, are skipped; of two with one id, the first is read.
@@ -112,9 +113,10 @@ export function reportThreadsOf(narratives: readonly object[]): OwReportThreads 
       else members.set(parent, [report]);
     }
     if (kind === 'self') lints.push({ kind: 'self', report: id });
-    if (kind === 'report') {
-      const up = parentOf(byId.get(parentOf(report) as string) as Body);
-      if (up !== null && roomKindOf(byId.get(up)) === 'report') lints.push({ kind: 'chain', report: id });
+    // A chain: the parent is a report whose own parent reads `report`. One that names itself reads `self`, as naming
+    // no parent, so a report under it is no chain.
+    if (kind === 'report' && kindOf(byId.get(parentOf(report) as string) as Body) === 'report') {
+      lints.push({ kind: 'chain', report: id });
     }
   }
   for (const [parent, list] of members) {
