@@ -2237,7 +2237,7 @@ function withSignal(signal: AbortSignal | undefined): { signal?: AbortSignal } {
 }
 /** listAll's: list()'s without `cursor`, which the walk sets itself. */
 const LIST_ALL_PARAM_KEYS: readonly (keyof ListParams)[] = LIST_PARAM_KEYS.filter(k => k !== 'cursor');
-const LIST_FILTER_HINT = 'A wire filter (name, name__icontains, supertype, subtype, characters) goes under filter: { ... }.';
+const LIST_FILTER_HINT = 'A wire filter (name, name__icontains, supertype, subtype, characters, a single link, a Pin\'s element) goes under filter: { ... }.';
 
 /** Every key `request()` reads; the escape hatch refuses any other like the typed methods (4.64.0). */
 const REQUEST_OPTION_KEYS = [
