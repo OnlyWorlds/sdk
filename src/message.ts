@@ -139,8 +139,8 @@ export function timeKey(value: unknown): [number, number] | null {
 /** Module-internal: not in the package's exports. */
 export const compareKeys = (a: [number, number], b: [number, number]): number => a[0] - b[0] || a[1] - b[1];
 
-/** By `created_at`; equal times keep the input's order (the server's list order); unreadable times last, in the input's order. Never by id. */
-function inCreatedOrder<T extends object>(items: readonly T[]): T[] {
+/** By `created_at`; equal times keep the input's order (the server's list order); unreadable times last, in the input's order. Never by id. Module-internal (the report reader orders a thread by it too): not in the package's exports. */
+export function inCreatedOrder<T extends object>(items: readonly T[]): T[] {
   return items
     .map((item, index) => ({ item, index, key: timeKey((item as Body).created_at) }))
     .sort((a, b) => {
@@ -367,6 +367,7 @@ export function unreadFor<T extends object>(
  * message whose chain leaves the given list is not in the thread unless its chain reached the root
  * first. A Note is in no thread: it is never listed, though a chain walks through its
  * `parent_narrative` like any other (a reply to a Note that answers the root is in the thread).
+ * It reads messages; reports group by `reportThreadsOf`, which never walks a chain.
  */
 export function threadOf<T extends object>(messages: readonly T[], rootId: string): T[] {
   if (!Array.isArray(messages) || typeof rootId !== 'string' || rootId === '') return [];

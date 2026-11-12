@@ -55,6 +55,9 @@ export type { OwRecord, OwRecordMark, OwRecordStory } from './record';
 export type { OwAddressingOptions } from './message';
 export { MESSAGE_PAIR, NOTE_PAIR, isMessage, isNote, recipientsOf, isAddressedTo, isToEveryone, hasUnseenRecipients, isSentBy, senderStatus, editedBy, readMarkOf, unreadFor, threadOf, noteOf } from './message';
 export type { OwSender, OwSenderStatus, OwEdited, OwMessageMember } from './message';
+// The report profile (schema-dist profiles/report.md, rule 9): reports grouped into threads by the parent they name.
+export { reportThreadsOf } from './report';
+export type { OwReportThreads, OwReportGroup, OwReportLint, OwReportParentKind } from './report';
 // The review profile (schema-dist profiles/review.md): an element written as proposed, as a reader that
 // shows a world shows the mark, and as a reader that hands a world on leaves it out.
 export { PROPOSED_MARK, proposedMarkOf, handsOnAsProposed } from './review';
