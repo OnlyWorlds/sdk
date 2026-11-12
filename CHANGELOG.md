@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.157.2] - 2026-11-12
+
+### Changed
+
+- Schema repinned to schema-dist `v0.34.0-dist.119` (canonical 00.34.00 unchanged, no schema file moved, `views.json` still version 3). The map-space profile gains rule 11: a layout map is never a candidate when a tool picks the Map that stands for the world's space, and a Pin or a Marker on a layout map is a place in that drawing, never in the world. `mapSpace` and `layoutOf` answer as before: they still read a layout map, its Pins and its Markers, and the rule is on the tool that picks or places from their answers. The fixture gains two layout cases (23) and one map-space case (35), all read the same by this release. Reading H now says a row's id is a non-empty string, as both readers already read it. The folder lint the distribution ships knows folder format 0.3.22.
+
 ## [4.157.1] - 2026-11-11
 
 ### Changed
