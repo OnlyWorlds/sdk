@@ -16,9 +16,10 @@ ride the base.
 declared in `render_element_base()`. It has to be a mapping rather than a copy: the wire base
 is not the schema base. TitleCase keys become snake_case; **`World` is dropped**, because the
 schema's `required: [Id, Name, World]` speaks storage truth while the v2 API rejects `world` in
-a request body (rulings.yaml: `required-world-wire-caveat`); ten server-managed fields
+a request body (rulings.yaml: `required-world-wire-caveat`); twelve server-managed fields
 (`WIRE_ONLY_BASE_FIELDS`: `type`, `created_at`, `updated_at`, `change_seq`, `created_by`,
-`changed_by`, `changed_via`, `changed_client`, `hidden`, `known_of`) are added, since they ride
+`changed_by`, `changed_via`, `changed_client`, `doors`, `hidden`, `known_of`,
+`x_served_trimmed`) are added, since they ride
 wire bodies and appear in no element YAML; and `type`, `id` and `name` are non-optional (`id`
 and `name` from `BASE_NON_OPTIONAL`, `type` from its own mapping row).
 
