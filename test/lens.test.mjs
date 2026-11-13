@@ -345,7 +345,26 @@ test('changed_within reads a folder element by the newer of its two sync stamps'
   assert.equal(kept({ updated_at: '2026-10-26T00:00:00Z', local_updated_at: 'soon' }), true);
 });
 
-test('rule 5 orders by the clock changed_within reads: a folder element edited locally is the newer under the budget (serial 123)', () => {
+test('the mail window cuts a message whose created_at cannot be read, counted window, never kept as the newest (serial 123 point 2)', () => {
+  const msg = (id, created_at) => ({ id, type: 'narrative', name: id, supertype: 'Message', narrator: null, characters: ['a'], ...(created_at === undefined ? {} : { created_at }) });
+  const world = { elements: [
+    { id: 'a', type: 'character', name: 'A' },
+    msg('n1', '2026-10-26T12:00:00Z'), msg('n2', 'yesterday'), msg('n3', '2026-10-26'), msg('n4', undefined), msg('n5', null),
+  ] };
+  const lens = { id: 'L', type: 'construct', name: 'L', supertype: 'Lens', x_lens: { types: ['character'], mail: 'unread_full_read_titles' } };
+  const r = resolveLens(world, lens, { rung: 'owner', character: 'a' }, { clock: '2026-10-27T12:00:00Z' });
+  assert.deepEqual(r.mail.unread, ['n1']);
+  assert.deepEqual(r.mail.cut, { window: 4 });
+});
+
+test('rule 5, then by id: ascending by code point, each id as written, no folding (serial 123 point 4)', () => {
+  const at = '2026-10-01T12:00:00Z';
+  const world = { elements: ['a1', 'B1', 'b0', 'A2'].map((id) => ({ id, type: 'character', name: id, updated_at: at })) };
+  const lens = { id: 'L', type: 'construct', name: 'L', supertype: 'Lens', x_lens: { types: ['character'] } };
+  assert.deepEqual(resolveLens(world, lens, OWNER).kept, ['A2', 'B1', 'a1', 'b0']);
+});
+
+test('rule 5 orders by the clock changed_within reads:a folder element edited locally is the newer under the budget (serial 123)', () => {
   const world = { elements: [
     { id: 'a', type: 'institution', name: 'Anchor', objects: ['x1', 'x2'] },
     // x1: the newer updated_at, nothing since. x2: the older updated_at, edited in the folder after both.
