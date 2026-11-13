@@ -204,14 +204,14 @@ export function dateOf(element: object | null | undefined): number | null {
 }
 
 /**
- * When an element last changed, as `changed_within` reads it: the newer of a folder element's
- * `server_updated_at` and `local_updated_at` where either reads as a time, else its `updated_at`; null when none
- * reads as one.
+ * An element's clock (lens rule 5, serial 123), which rule 5's order and `changed_within` both read: the newest of
+ * its `updated_at`, `server_updated_at` and `local_updated_at` that reads as a time, decided element by element (a
+ * wire `updated_at` newer than both folder stamps wins); a value that cannot be read is ignored; null when none reads.
  */
 function changedAt(el: Body): [number, number] | null {
-  const stamps = [timeKey(valueOf(el, 'server_updated_at')), timeKey(valueOf(el, 'local_updated_at'))]
+  const stamps = [timeKey(valueOf(el, 'updated_at')), timeKey(valueOf(el, 'server_updated_at')), timeKey(valueOf(el, 'local_updated_at'))]
     .filter((k): k is [number, number] => k !== null);
-  if (stamps.length === 0) return timeKey(valueOf(el, 'updated_at'));
+  if (stamps.length === 0) return null;
   return stamps.reduce((a, b) => (compareKeys(a, b) >= 0 ? a : b));
 }
 
@@ -597,8 +597,8 @@ export class Reading {
 
   /**
    * `changed_within`: changed longer ago than that many days before the reading's wall clock. The time read is the
-   * element's `updated_at`, or for a folder element (one carrying `server_updated_at` or `local_updated_at`) the
-   * newer of those two; an element with no readable time is never cut.
+   * element's clock (`changedAt`: the newest of its readable `updated_at`, `server_updated_at` and
+   * `local_updated_at`); an element with no readable clock is kept, never cut.
    */
   staleCut(id: string, recipe: Recipe, wall: [number, number]): OwLensCutReason | null {
     if (recipe.changedWithin === null) return null;
@@ -625,9 +625,9 @@ export class Reading {
   }
 
   /**
-   * Rule 5's order past the anchors: the schema's type order, then newest first by the clock `changed_within` reads
-   * (`changedAt`: a folder element's newer of `server_updated_at` and `local_updated_at` where either reads, else its
-   * `updated_at`; one clock per lens, serial 123), an element with no readable time last, then by id.
+   * Rule 5's order past the anchors: the schema's type order, then newest first by the element's clock, the one
+   * `changed_within` reads (`changedAt`: the newest of its readable `updated_at`, `server_updated_at` and
+   * `local_updated_at`; serial 123), an element with no readable clock last of its type, then by id.
    */
   sort(ids: Iterable<string>): string[] {
     const keyed = [...ids].map(id => ({ id, rank: TYPE_RANK.get(this.typeOf.get(id) as string) as number, at: changedAt(this.byId.get(id) as Body) }));
@@ -845,7 +845,8 @@ export function checkReader(reader: unknown, where: string): asserts reader is O
  * element; a reading aid (the charter, its guide, a domain: `isCharterElement`) a hop reaches is kept, and
  * hopped on from, only when `types` names its pair, while one the lens names as an anchor is kept and
  * followed; anchors first in link order, then by type in the schema's order, newest first by the clock
- * `changed_within` reads (a folder element's newer sync stamp, else `updated_at`), then by id;
+ * `changed_within` reads (the newest of its readable `updated_at`, `server_updated_at` and `local_updated_at`; none
+ * readable, last of its type), then by id;
  * an anchor the reader cannot see (an id naming no element, or one of another type than its field's, too)
  * is skipped and counted for the owner (`anchor_not_visible`, before any other reason), while for any other reader
  * it is not there at all, so a child lens's cut of the same element counts under the child's reason; a template

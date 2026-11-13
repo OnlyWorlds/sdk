@@ -329,7 +329,7 @@ test('changed_within: an element exactly that many days old is kept, a second ol
   assert.equal(resolveLens(world, lensOn({ institutions: ['a'] }, { changed_within: null }), OWNER, { clock }).unreadable, null);
 });
 
-test('changed_within reads a folder element by the newer of its two sync stamps', () => {
+test('changed_within reads a folder element by its clock, the newest of its readable stamps', () => {
   const clock = '2026-10-27T12:00:00Z';
   const at = (stamps) => ({ elements: [
     { id: 'a', type: 'institution', name: 'Anchor', objects: ['o'] },
@@ -340,9 +340,52 @@ test('changed_within reads a folder element by the newer of its two sync stamps'
   assert.equal(kept({ server_updated_at: '2026-09-01T00:00:00Z', local_updated_at: '2026-10-26T00:00:00Z' }), true);
   assert.equal(kept({ server_updated_at: '2026-10-26T00:00:00Z', local_updated_at: '2026-09-01T00:00:00Z' }), true);
   assert.equal(kept({ server_updated_at: '2026-09-01T00:00:00Z', local_updated_at: '2026-09-02T00:00:00Z' }), false);
-  // A folder stamp, where one reads, wins over updated_at; an unreadable one is no stamp.
-  assert.equal(kept({ updated_at: '2026-10-26T00:00:00Z', local_updated_at: '2026-09-02T00:00:00Z' }), false);
+  // The clock is the newest of the three, decided element by element (serial 123): an updated_at newer than the
+  // folder stamps wins, an older one loses; an unreadable value is ignored.
+  assert.equal(kept({ updated_at: '2026-10-26T00:00:00Z', local_updated_at: '2026-09-02T00:00:00Z' }), true);
+  assert.equal(kept({ updated_at: '2026-09-02T00:00:00Z', local_updated_at: '2026-10-26T00:00:00Z' }), true);
+  assert.equal(kept({ updated_at: '2026-09-02T00:00:00Z', server_updated_at: '2026-09-01T00:00:00Z' }), false);
   assert.equal(kept({ updated_at: '2026-10-26T00:00:00Z', local_updated_at: 'soon' }), true);
+  assert.equal(kept({ updated_at: '2026-09-02T00:00:00Z', server_updated_at: 'soon' }), false);
+  // No readable clock at all: kept, never cut stale.
+  assert.equal(kept({ updated_at: 'soon', server_updated_at: '2026-10-26 00:00:00Z', local_updated_at: null }), true);
+});
+
+// The clock (serial 123, amendments 6 and 8): an element's clock is the newest of its readable updated_at,
+// server_updated_at and local_updated_at, decided element by element; rule 5's order and changed_within both read
+// it. The two worlds are the second outside read's probes, each one a reader on the old clock (the newer readable
+// folder stamp, else updated_at) answers wrongly.
+test('the clock is the newest of the three: an updated_at newer than both folder stamps orders the budget (serial 123)', () => {
+  const world = { elements: [
+    { id: id(1000), type: 'family', name: 'The Peat Kin', languages: [id(1001), id(1002)], updated_at: '2026-11-01T12:00:00Z' },
+    { id: id(1001), type: 'language', name: 'Peatspeech', server_updated_at: '2026-10-01T12:00:00Z', local_updated_at: '2026-10-02T12:00:00Z', updated_at: '2026-11-05T12:00:00Z' },
+    { id: id(1002), type: 'language', name: 'Turfcant', updated_at: '2026-11-01T12:00:00Z' },
+  ] };
+  const lens = { id: id(1009), type: 'construct', name: 'A lens', supertype: 'Lens', subtype: '', families: [id(1000)], x_lens: { budget: 2 } };
+  const r = resolveLens(world, lens, OWNER);
+  assert.deepEqual([r.kept, r.cut], [[id(1000), id(1001)], { budget: 1 }]);
+});
+
+test('changed_within cuts by the clock: a local edit and a wire stamp, each newer than the other stamp, both kept (serial 123)', () => {
+  const world = { elements: [
+    { id: id(1010), type: 'family', name: 'The Moss Kin', languages: [id(1011), id(1012)], updated_at: '2026-11-01T12:00:00Z' },
+    { id: id(1011), type: 'language', name: 'Mossspeech', updated_at: '2026-10-01T12:00:00Z', local_updated_at: '2026-11-18T12:00:00Z' },
+    { id: id(1012), type: 'language', name: 'Lichencant', server_updated_at: '2026-10-01T12:00:00Z', updated_at: '2026-11-18T12:00:00Z' },
+  ] };
+  const lens = { id: id(1019), type: 'construct', name: 'A lens', supertype: 'Lens', subtype: '', families: [id(1010)], x_lens: { changed_within: 7 } };
+  const r = resolveLens(world, lens, OWNER, { clock: '2026-11-20T12:00:00Z' });
+  assert.deepEqual([r.kept, r.cut], [[id(1010), id(1011), id(1012)], {}]);
+});
+
+test('an element with no readable clock comes last of its type, not of the whole order (serial 123)', () => {
+  const world = { elements: [
+    { id: id(1020), type: 'family', name: 'The Rush Kin', abilities: [id(1021)], languages: [id(1022)], updated_at: '2026-11-01T12:00:00Z' },
+    { id: id(1021), type: 'ability', name: 'Rushweaving', local_updated_at: 'soon' },
+    { id: id(1022), type: 'language', name: 'Rushcant', updated_at: '2026-11-01T12:00:00Z' },
+  ] };
+  const lens = { id: id(1029), type: 'construct', name: 'A lens', supertype: 'Lens', subtype: '', families: [id(1020)], x_lens: { budget: 2 } };
+  const r = resolveLens(world, lens, OWNER);
+  assert.deepEqual([r.kept, r.cut], [[id(1020), id(1021)], { budget: 1 }]);
 });
 
 test('the mail window cuts a message whose created_at cannot be read, counted window, never kept as the newest (serial 123 point 2)', () => {
