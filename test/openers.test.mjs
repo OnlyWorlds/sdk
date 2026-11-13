@@ -12,8 +12,8 @@ import { fileURLToPath } from 'node:url';
 import { openersFor, parseOwLink, OwAddressError, TOOLS } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/openers.fixture.json', import.meta.url));
-const FIXTURE_SHA256 = '9df2b52916223969f8b48284c770f933673cef308b2f5158cb2007715e80c17b';
-const CASES = 110;
+const FIXTURE_SHA256 = 'ac14435bc287e92bd18e651871f39a0c66870bb041be0eb394d3eb868eb76978';
+const CASES = 111;
 
 /** The fixture writes the surface's keys snake_case; this package spells one of them in camelCase. */
 const SPELLING = { signed_in: 'signedIn' };
@@ -59,6 +59,20 @@ test('a reading from parseOwLink gives the same rows as the plain address', () =
   const plain = { form: 'text', world, type: 'character', id: element };
   const surface = { audience: 'member', signedIn: false };
   assert.deepEqual(openersFor(TOOLS, 'element', parseOwLink(link), surface), openersFor(TOOLS, 'element', plain, surface));
+});
+
+test('the element is matched as written against the address read in lowercase (the same-id rule, serial 122)', () => {
+  const world = '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f';
+  const id = '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e1a';
+  const surface = { audience: 'member', signedIn: true };
+  const at = (aid) => ({ form: 'text', world, type: 'location', id: aid });
+  const el = (eid) => ({ id: eid, type: 'location', name: 'The element' });
+  // An address is a door: its id in either case names the lowercase id.
+  assert.deepEqual(openersFor(TOOLS, 'element', at(id.toUpperCase()), surface, { element: el(id) }), openersFor(TOOLS, 'element', at(id), surface, { element: el(id) }));
+  // The element's own id is read as written: held in upper case it is not the element the address names.
+  for (const aid of [id, id.toUpperCase()]) {
+    assert.throws(() => openersFor(TOOLS, 'element', at(aid), surface, { element: el(id.toUpperCase()) }), /its id differs/);
+  }
 });
 
 test('TOOLS, the baked list, gives the site\'s row and then each listed tool with a door, in the list\'s order', () => {
