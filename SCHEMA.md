@@ -1,6 +1,6 @@
 # OnlyWorlds Schema Reference
 
-**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.34.0-dist.123** — canonical schema **00.34.00**, published 2026-11-13.
+**Source**: https://github.com/OnlyWorlds/schema-dist @ **v0.34.1-dist.124** — canonical schema **00.34.01**, published 2026-11-13.
 
 GENERATED from the canonical schema YAML — do not hand-edit (regenerate: `python codegen/generate_types.py`).
 Written for both humans and AI agents reading this package locally.
@@ -374,7 +374,7 @@ the group, the icon carries the type): blue · green · pink · amber.
 ### Details
 
 - `background_color` (text) — Color of the space around the map when zoomed out
-- `hierarchy` (integer) — An integer to order or group the maps that share a parent; how a tool reads it is the tool's own
+- `hierarchy` (integer) — Orders the maps that stand side by side (floors, decks, layers): the maps with the same parent_map; without one, the maps of the same location; without either, the maps of the world itself. Lower is deeper or earlier. Nesting is said by parent_map and location, not by this number
 - `width` (integer) — In pixels
 - `height` (integer) — In pixels
 - `depth` (integer) — In pixels

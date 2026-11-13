@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.162.0] - 2026-11-13
+
+### Changed
+
+- Schema repinned to schema-dist `v0.34.1-dist.124`, canonical **00.34.01**: `ONLYWORLDS_VERSION` is now `'00.34.01'`, a published literal type. One description moved and no field: Map's `hierarchy` orders the maps that stand side by side (floors, decks, layers), the maps with the same `parent_map`, without one the maps of the same `location`, without either the maps of the world itself; lower is deeper or earlier, and nesting is said by `parent_map` and `location`, not by the number. No reader in the package changes.
+
 ## [4.161.0] - 2026-11-13
 
 ### Added

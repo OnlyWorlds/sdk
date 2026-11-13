@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.123
-//         commit          6092c3966a90369df4131d6f69dd74c3f8b15606
-//         MANIFEST sha256 47f8a02d9647daf75fd66cfe17a0be73a0d1502c1907640155118a01ddf8063f
-//         canonical 00.34.00, dist serial 123, published 2026-11-13
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.1-dist.124
+//         commit          094107b304877216e8307afb364bd452d8c0920c
+//         MANIFEST sha256 9db0444a22a4a56ec08a8e78e429983b8e66cb2085de0f7e45410cd66ae16568
+//         canonical 00.34.01, dist serial 124, published 2026-11-13
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -77,7 +77,7 @@ export const STANDARD_TYPE_ORDER: readonly ElementType[] = ['ability', 'collecti
 
 /** Canonical OnlyWorlds schema version. Source: the `canonical:` value of the pinned
  *  distribution's VERSION file (see the provenance block at the top of this file). */
-export const ONLYWORLDS_VERSION = '00.34.00' as const;
+export const ONLYWORLDS_VERSION = '00.34.01' as const;
 
 /** The four colour groups, named by their colour. A visual aid for drawing the 22 types,
  *  not part of the standard: colour carries the group, ELEMENT_ICONS carries the type. */
@@ -1802,7 +1802,7 @@ export interface MapV2 extends OwElementBase {
   type: "map";
   /** Color of the space around the map when zoomed out */
   background_color?: string;
-  /** An integer to order or group the maps that share a parent; how a tool reads it is the tool's own */
+  /** Orders the maps that stand side by side (floors, decks, layers): the maps with the same parent_map; without one, the maps of the same location; without either, the maps of the world itself. Lower is deeper or earlier. Nesting is said by parent_map and location, not by this number */
   hierarchy: number | null;
   /** In pixels */
   width: number | null;
