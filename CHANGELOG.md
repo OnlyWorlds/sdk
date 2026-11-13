@@ -5,6 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.161.0] - 2026-11-13
+
+### Added
+
+- `readOwLinkAt(text, index)`: the address that starts exactly at `index` in a text, found in prose, and where it ends: `{ reading, end }`, or null when no address starts there. After `/w/` the run is read whole, once: exactly an id's form (36 characters, hex in either case, four hyphens) is the world's id, any other run is a slug if it is a legal one, else there is no address; it is never cut back to an id or a shorter slug. A run followed by a letter of any script, a combining mark or an underscore is cut inside a word and is no address. Past its path the address continues only with `@` and a moment and `?lens=` and a lens; any other query key, a fragment or a full stop is prose. `index` and `end` count JavaScript string indexes (UTF-16 code units), so they match `text.slice` and `indexOf`. `parseOwLink` is unchanged and still reads a string whole. Holds the address fixture's 57 prose cases.
+
+### Changed
+
+- Schema repinned to schema-dist `v0.34.0-dist.123` (canonical 00.34.00 unchanged, no schema file moved): times that are read and not ordered, and an address found in prose. Eighty-four new fixture cases across the address, lens, message, record, strand and checks profiles, each passing here (this package has no checks reader).
+- `readMarkOf`: a lone mark is the mark. Among several that count, the one with the newest readable `updated_at` is the mark, wherever it stands in the list; one whose time cannot be read never beats one that can. Among marks equal as instants, however each is written, or when none can be read, the higher id by code point, as written, is the mark, never the earlier one in the list.
+- The lens readers: an element's clock is the newest readable of its `updated_at`, `server_updated_at` and `local_updated_at`, decided element by element; a value that cannot be read is ignored. The budget orders newest first by that clock, an element with no readable clock comes last of its type, and ties by id go by code point, each id as written. `changed_within` cuts by the same clock and keeps an element with no readable clock rather than cutting it `stale`. A message whose `created_at` cannot be read is cut by the mail window, counted `window`.
+- The record readers read `played_at` by the message profile's time grammar: a lower-case `t` and `z`, an offset, no zone and the year 0000 now read; a time without its seconds does not, so a record written without seconds is no record. Records are still ordered to the millisecond.
+- `openersFor`: an element whose own id is held in upper case is one no address can name, so its menu now has no rows instead of throwing, and a surface still draws its mark. An id that differs from the address's by more than case still throws, and the empty answer comes after every other check, so a bad tools row is still refused. The shared openers fixture's held-upper case now wants no rows.
+- `TOOLS` is baked at the tools list's `aa00969`, which adds the OnlyWorlds mapper: its world and element rows need an account, open a public world without one, and skip map space.
+
 ## [4.160.3] - 2026-11-13
 
 ### Changed

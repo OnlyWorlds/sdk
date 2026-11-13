@@ -1,6 +1,6 @@
 # For AI agents using @onlyworlds/sdk
 
-**Current as of**: SDK **4.x** · schema-dist **v0.34.0-dist.122** (canonical 00.34.00).
+**Current as of**: SDK **4.x** · schema-dist **v0.34.0-dist.123** (canonical 00.34.00).
 This line is asserted by `codegen:check` in CI — if the pin moves and this file is not
 re-read against it, the check fails rather than letting this document rot quietly.
 
@@ -223,7 +223,9 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   type, id, lens?, moment? })`: `ow://<type>/<id>` in a text field of the same world,
   `ow://<world id>/<type>/<id>` for another world's, the site's address for a person. Read one
   with `parseOwLink(text)`; a refusal throws `OwAddressError` with the profile's `reason`. An
-  address in a field is text: never fetch it to show what it names.
+  address in a field is text: never fetch it to show what it names. To find one inside prose,
+  `readOwLinkAt(text, index)` reads the address starting at `index` and answers `{ reading, end }`
+  (null when none starts there): a full stop or a query key after it stays prose.
 - To offer a world or an element in other tools, `openersFor(TOOLS, kind, address, surface)` gives
   the "Open with" rows in order, each `{ id, name, href, state }` with its word ("Sign in to Atlas
   first") or null. Draw them as given; never word a row yourself. For an element, pass it as served
