@@ -349,11 +349,11 @@ const tieId = (body: Body): string => (typeof body.id === 'string' ? body.id : '
  * with `changed_by` but no `created_by` is ignored too (a writer with no creator is no hand). A
  * mark with neither key (a folder, an export) has no hand to check and counts. Of several that
  * count, the newest `updated_at` read as an instant (`instantOf`) is the mark wherever it stands in
- * the list; two equal as instants, however each is written (`10:00:00Z` and `11:00:00+01:00`), tie
- * by the higher `id`, by code point as written, never by list order (serial 123; an id that is not
- * a string is the lowest). One whose `updated_at` cannot be read (absent, a date alone, anything
- * `instantOf` refuses) is never the mark: when none that counts can be read, or the only one cannot,
- * there is no mark (null). A newer one in another's hand is ignored and the
+ * the list, and one whose `updated_at` cannot be read (absent, a date alone, anything `instantOf`
+ * refuses) never beats one that can, in either order. Among equal instants, however each is written
+ * (`10:00:00Z` and `11:00:00+01:00`), or when none can be read, the higher `id` by code point as
+ * written is the mark, never the first in the list (serial 123; an id that is not a string is the
+ * lowest). A lone mark is the mark, its time read or not. A newer one in another's hand is ignored and the
  * reader's own stands. Null for bodies read keyless (`{ keyless: true }`): the keyless public
  * reader is served no `created_by` or `changed_by` on any body, so its marks carry neither because
  * the hands were taken off, not because they are a folder's, and none counts.
@@ -369,9 +369,8 @@ export function readMarkOf<T extends object>(relations: readonly T[], characterI
     if (carries(rel, 'changed_by') && (!hasAuthor || rel.changed_by !== rel.created_by)) continue;
     if (hasAuthor && handOf(rel, members) !== characterId) continue;
     const key = timeKey(rel.updated_at);
-    if (key === null) continue;
-    const c = markKey === null ? 1 : compareKeys(key, markKey);
-    if (c > 0 || (c === 0 && byCodePoint(tieId(rel), tieId(mark as Body)) > 0)) {
+    const c = key !== null && markKey !== null ? compareKeys(key, markKey) : key !== null ? 1 : markKey !== null ? -1 : 0;
+    if (mark === null || c > 0 || (c === 0 && byCodePoint(tieId(rel), tieId(mark as Body)) > 0)) {
       mark = rel as T;
       markKey = key;
     }

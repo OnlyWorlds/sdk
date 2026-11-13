@@ -220,8 +220,8 @@ test('the newest read mark wins wherever it stands in the list (the fixture list
   // The fixture's mark-newest-updated-at-wins lists the newer mark first, so a reader that kept the
   // first mark that counts would pass it. Here the newest stands last; a readable time beats an
   // unreadable one in either order, and two equal as instants, however each is written, tie by the
-  // higher id by code point as written, never by list order; when none can be read there is no
-  // mark (serial 123).
+  // higher id by code point as written, never by list order, as do several none of which can be
+  // read; a lone mark is the mark (serial 123).
   const ADA = '019a3b10-0000-7000-8000-0000000000a1';
   const mark = (id, updatedAt) => ({ id, type: 'relation', supertype: 'Read', actor: ADA, narratives: [], ...(updatedAt ? { updated_at: updatedAt } : {}) });
   const older = mark('old', '2026-10-26T08:00:00Z');
@@ -240,15 +240,16 @@ test('the newest read mark wins wherever it stands in the list (the fixture list
   assert.equal(readMarkOf([lo, hi], ADA, null)?.id, hi.id);
   assert.equal(readMarkOf([hi, lo], ADA, null)?.id, hi.id);
   // By code point, never UTF-16 units: U+FF5E is below U+1F600, which UTF-16 puts first.
-  const bmp = mark('m～', '2026-11-13T10:00:00Z'), astral = mark('m\u{1F600}', '2026-11-13T10:00:00Z');
+  const bmp = mark('m\uFF5E', '2026-11-13T10:00:00Z'), astral = mark('m\u{1F600}', '2026-11-13T10:00:00Z');
   assert.equal(readMarkOf([astral, bmp], ADA, null)?.id, astral.id);
   assert.equal(readMarkOf([bmp, astral], ADA, null)?.id, astral.id);
-  // One whose updated_at cannot be read is never the mark: two such, or one alone, is no mark (serial 123).
-  const undated2 = mark('zz-undated', 'not a time');
-  assert.equal(readMarkOf([undated, undated2], ADA, null), null);
-  assert.equal(readMarkOf([undated2, undated], ADA, null), null);
-  assert.equal(readMarkOf([undated], ADA, null), null);
-  assert.equal(readMarkOf([mark('dated', '2026-11-13')], ADA, null), null, 'a date alone is no time');
+  // None can be read: the higher id, in either order (serial 123); a date alone is no time.
+  const undated2 = mark('zz-undated', '2026-11-13');
+  assert.equal(readMarkOf([undated, undated2], ADA, null)?.id, 'zz-undated');
+  assert.equal(readMarkOf([undated2, undated], ADA, null)?.id, 'zz-undated');
+  // A lone mark is the mark, its time unreadable or missing (a folder's mark may carry none).
+  assert.equal(readMarkOf([undated], ADA, null)?.id, 'undated');
+  assert.equal(readMarkOf([undated2], ADA, null)?.id, 'zz-undated');
   // The fixture's own case, its relations reversed: the owner's hand, checked on the members list.
   const doc = loadFixture();
   const c = doc.cases.find((x) => x.name === 'mark-newest-updated-at-wins');
