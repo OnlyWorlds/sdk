@@ -232,7 +232,7 @@ export function mountWaymark(target: Element, options: OwWaymarkOptions): OwWaym
     svg.setAttribute('focusable', 'false');
     const path = doc.createElementNS(SVG, 'path');
     path.setAttribute('fill', 'currentColor');
-    path.setAttribute('fill-rule', 'evenodd');
+    path.setAttribute('fill-rule', 'nonzero');
     path.setAttribute('d', MARK_PATH);
     svg.appendChild(path);
     return svg;

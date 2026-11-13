@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.160.1] - 2026-11-13
+
+### Changed
+
+- The Waymark draws the OnlyWorlds mark in true curves: `MARK_PATH` is the logo redrawn with exact arcs (the ring and parallels circular, the meridians and the W elliptical) in place of the traced outline of short straight lines, filled with `fill-rule="nonzero"`. It scales without faceting; at icon sizes it is the same mark.
+
 ## [4.160.0] - 2026-11-13
 
 ### Changed
