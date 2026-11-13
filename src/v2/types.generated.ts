@@ -13,9 +13,10 @@
 //
 // One interface per element type, extending OwElementBase. Field shapes are the v2
 // wire shapes: single-links are `string | null`, multi-links `string[]`, ints
-// `number | null`. Link fields use bare schema names (no `_ids` suffix). The eight
+// `number | null`. Link fields use bare schema names (no `_ids` suffix). The nine
 // server-managed fields (type, created_at, updated_at, change_seq, created_by, changed_by,
-// changed_via, changed_client), the stub marker `known_of` (present only on a stub), the served-only
+// changed_via, changed_client, doors), the hidden mark `hidden` (present only to a reader who
+// still sees a hidden element), the stub marker `known_of` (present only on a stub), the served-only
 // `x_served_trimmed` (present only on a message or a lens whose ids were left out) and the
 // extension index signature live on OwElementBase.
 
