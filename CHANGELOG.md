@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.160.0] - 2026-11-13
+
+### Changed
+
+- Schema repinned to schema-dist `v0.34.0-dist.122` (canonical 00.34.00 unchanged, no schema file moved). The address profile's "The same id": inside a world an id is written one way, lowercase, and two ids are the same id when they are written the same. A reader reads an id in either case, and takes it in lowercase, only at an address and in a text a profile searches for ids (the charter profile's Charter description). What it is matched against is read as written. The lens key in an address is `lens` exactly. Sixteen new fixture cases across the address, charter, checks, lens, record and report profiles, each passing here. `VIEWS`' conversation layout orders its lines as the message profile orders messages.
+- `openersFor` reads the element's own `id` as written, as the same-id rule says. The address's id is still read in either case. An element held in upper case is now refused (`its id differs`) whatever the address's case. An element held in lowercase opens under an address in either case. The shared openers fixture's id-case case is now two: `skips-id-case-held-upper` and `skips-id-case-address-upper`.
+- `TOOLS` is baked at the tools list's `53a05e4`, which adds Windrose, a map of one world in the browser. It only reads, so it offers no Open with row.
+
 ## [4.159.1] - 2026-11-13
 
 ### Changed

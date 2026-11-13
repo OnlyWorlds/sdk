@@ -1,6 +1,6 @@
 # For AI agents using @onlyworlds/sdk
 
-**Current as of**: SDK **4.x** · schema-dist **v0.34.0-dist.121** (canonical 00.34.00).
+**Current as of**: SDK **4.x** · schema-dist **v0.34.0-dist.122** (canonical 00.34.00).
 This line is asserted by `codegen:check` in CI — if the pin moves and this file is not
 re-read against it, the check fails rather than letting this document rot quietly.
 
@@ -229,6 +229,9 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   first") or null. Draw them as given; never word a row yourself. For an element, pass it as served
   (`openersFor(TOOLS, 'element', address, surface, { element })`): a tool that cannot open it (a
   room, hidden or proposed element, map space, a reading aid) then has no row.
+- Inside a world an id is one spelling: lowercase, hyphenated, compared as written. Write new ids
+  that way, and write a link exactly as its target's own id is written. Only an address and a text
+  a profile searches (a Charter's description) read an id in either case.
 - A string holding an unpaired surrogate (text cut mid-emoji) is a 422 naming the field.
   Slice strings by code point, not by UTF-16 unit.
 - Colour carries the element's colour group (`elementColor(type, mode)`, `groupOf(type)`: `blue`,

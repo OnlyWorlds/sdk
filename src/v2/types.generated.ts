@@ -1,9 +1,9 @@
 // GENERATED from OnlyWorlds canonical schema YAML -- do not hand-edit. Regenerate: python codegen/generate_types.py
 //
-// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.121
-//         commit          f8909749767411f81031a5630a54b6fc1a4373ea
-//         MANIFEST sha256 35e1f6d73cb99ee3a4683f3e78e8996e1a8ccc7357d597de000fab4f5c8df460
-//         canonical 00.34.00, dist serial 121, published 2026-11-13
+// SOURCE: https://github.com/OnlyWorlds/schema-dist @ v0.34.0-dist.122
+//         commit          2888214672ba06d07096c3f76f4db48cbe986a76
+//         MANIFEST sha256 067eeba68bb30d36e8d20e58f5a0dd575e84ee8488018e81507b78cf32b24b45
+//         canonical 00.34.00, dist serial 122, published 2026-11-13
 //
 // The distribution is vendored at codegen/schema-dist/ and verified two ways by
 // codegen/verify_dist.py: every file against MANIFEST.json, and MANIFEST.json
@@ -576,7 +576,7 @@ export const VIEWS_TABLE: OwViewsTable = {
   ],
   "layouts": {
     "document": "the fields in the row's order, each drawn once: lead open, then the rest, then fold; a field the row names in both lead and fold is drawn in the lead. The rest are the type's section fields in the schema's own order (schema/<type>.yaml: its sections as listed, and each section's fields as listed) that the row puts in neither lead nor fold. A generic link (a Pin's `element`) is one field of the order, under its schema name and at its place, never its two keys as two entries: it is read as the two keys schema.json gives it (`type_key`, `id_key`), and it holds something only when both are strings with something left after trimming; one alone, or both empty, holds nothing. A field that holds nothing (absent, null, a string with nothing left after trimming, a list with no items, an object with no keys; a list of blank strings holds something here, whatever a banner reads of one) is not drawn: an empty lead field is skipped, and a fold whose field holds nothing draws no fold. A tool that draws empty fields to be filled draws them at their own place in this order; it never moves a field. The base fields outside every section (name, description, supertype, subtype, image_url) are the page's head, unless the row names one in lead or fold, where it is drawn, and only there. A row names only the type's base and section fields, never an extension key, and extension keys and a world's own fields are not in the order. A kind with no row is a document.",
-    "conversation": "the element within its chain by the named link, oldest first by created_at, stopping at an id already visited; each line's own fields drawn as a document draws them; a tool that shows one element and no thread draws that element as a document, and this layout asks nothing of it"
+    "conversation": "the element within its chain by the named link, oldest first by created_at, read and ordered as profiles/message.md orders messages, stopping at an id already visited; each line's own fields drawn as a document draws them; a tool that shows one element and no thread draws that element as a document, and this layout asks nothing of it"
   },
   "rows": [
     {
@@ -585,7 +585,7 @@ export const VIEWS_TABLE: OwViewsTable = {
         "profile": "room",
         "pair": "narrative/Report"
       },
-      "from": "profiles/report.md (serial 112)",
+      "from": "profiles/report.md",
       "sentence": [
         "description",
         "story"

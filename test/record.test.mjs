@@ -18,7 +18,7 @@ test('the fixture is the record profile\'s, its mark the field recordMarkOf read
   assert.equal(doc.profile, 'record');
   assert.equal(doc.mark.field, RECORD_FIELD);
   assert.deepEqual(doc.mark.members, ['tool', 'played_at', 'version', 'seed', 'outcome', 'seats']);
-  assert.equal(doc.cases.length, 40, `the fixture holds ${doc.cases.length} cases, serial 103 has 40`);
+  assert.equal(doc.cases.length, 41, `the fixture holds ${doc.cases.length} cases, serial 122 has 41`);
 });
 
 for (const c of doc.cases) {
