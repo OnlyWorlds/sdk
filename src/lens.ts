@@ -11,7 +11,7 @@ import { FIELD_SCHEMA, PUBLIC_FIELDS } from './v2/types.generated';
 import { READING_AID_KEYS, ROOM_PAIRS, fold, isRoomElement, readingAidKey, trimWhiteSpace } from './room';
 import { handsOnAsProposed } from './review';
 import { isHiddenMark } from './marks';
-import { compareKeys, isMessage, readMarkOf, timeKey, unreadFor } from './message';
+import { byCodePoint, compareKeys, isMessage, readMarkOf, timeKey, unreadFor } from './message';
 import type { OwMessageMember } from './message';
 import { refuseUnknownOptions } from './options';
 
@@ -215,17 +215,9 @@ function changedAt(el: Body): [number, number] | null {
   return stamps.reduce((a, b) => (compareKeys(a, b) >= 0 ? a : b));
 }
 
-/** Strings by code point, as the Python package compares them (never UTF-16 units, never a locale). */
-export function byCodePoint(a: string, b: string): number {
-  const x = Array.from(a);
-  const y = Array.from(b);
-  const n = Math.min(x.length, y.length);
-  for (let i = 0; i < n; i++) {
-    const d = (x[i].codePointAt(0) as number) - (y[i].codePointAt(0) as number);
-    if (d !== 0) return d;
-  }
-  return x.length - y.length;
-}
+// Strings by code point (message.ts holds it, since this file imports that one); re-exported for the readers
+// that import it from here.
+export { byCodePoint };
 
 /** A plain JSON copy, so nothing a caller does to a reading reaches the world. */
 function copy<T>(v: T): T {
