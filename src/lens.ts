@@ -624,9 +624,13 @@ export class Reading {
     return aid !== undefined && !(recipe.types !== null && recipe.types.has(aid));
   }
 
-  /** Rule 5's order past the anchors: the schema's type order, newest `updated_at` first (an unreadable time last), then by id. */
+  /**
+   * Rule 5's order past the anchors: the schema's type order, then newest first by the clock `changed_within` reads
+   * (`changedAt`: a folder element's newer of `server_updated_at` and `local_updated_at` where either reads, else its
+   * `updated_at`; one clock per lens, serial 123), an element with no readable time last, then by id.
+   */
   sort(ids: Iterable<string>): string[] {
-    const keyed = [...ids].map(id => ({ id, rank: TYPE_RANK.get(this.typeOf.get(id) as string) as number, at: timeKey((this.byId.get(id) as Body).updated_at) }));
+    const keyed = [...ids].map(id => ({ id, rank: TYPE_RANK.get(this.typeOf.get(id) as string) as number, at: changedAt(this.byId.get(id) as Body) }));
     keyed.sort((a, b) => {
       if (a.rank !== b.rank) return a.rank - b.rank;
       if (a.at && b.at) {
@@ -840,7 +844,8 @@ export function checkReader(reader: unknown, where: string): asserts reader is O
  * compared exact against the 22 slugs); an umbrella enters each child lens once, each child keeping its own budget and mail rule, the rows made by the umbrella's `show`; a hop never crosses a room
  * element; a reading aid (the charter, its guide, a domain: `isCharterElement`) a hop reaches is kept, and
  * hopped on from, only when `types` names its pair, while one the lens names as an anchor is kept and
- * followed; anchors first in link order, then by type in the schema's order, newest first, then by id;
+ * followed; anchors first in link order, then by type in the schema's order, newest first by the clock
+ * `changed_within` reads (a folder element's newer sync stamp, else `updated_at`), then by id;
  * an anchor the reader cannot see (an id naming no element, or one of another type than its field's, too)
  * is skipped and counted for the owner (`anchor_not_visible`, before any other reason), while for any other reader
  * it is not there at all, so a child lens's cut of the same element counts under the child's reason; a template

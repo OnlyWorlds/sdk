@@ -345,6 +345,24 @@ test('changed_within reads a folder element by the newer of its two sync stamps'
   assert.equal(kept({ updated_at: '2026-10-26T00:00:00Z', local_updated_at: 'soon' }), true);
 });
 
+test('rule 5 orders by the clock changed_within reads: a folder element edited locally is the newer under the budget (serial 123)', () => {
+  const world = { elements: [
+    { id: 'a', type: 'institution', name: 'Anchor', objects: ['x1', 'x2'] },
+    // x1: the newer updated_at, nothing since. x2: the older updated_at, edited in the folder after both.
+    { id: 'x1', type: 'object', name: 'Stamped last week', updated_at: '2026-10-20T00:00:00Z', server_updated_at: '2026-10-20T00:00:00Z' },
+    { id: 'x2', type: 'object', name: 'Edited yesterday', updated_at: '2026-09-01T00:00:00Z', server_updated_at: '2026-09-01T00:00:00Z', local_updated_at: '2026-10-26T00:00:00Z' },
+  ] };
+  const r = resolveLens(world, lensOn({ institutions: ['a'] }, { budget: 2 }), OWNER);
+  assert.deepEqual([r.kept, r.cut], [['a', 'x2'], { budget: 1 }]);
+  assert.deepEqual(resolveLens(world, lensOn({ institutions: ['a'] }), OWNER).kept, ['a', 'x2', 'x1']);
+  // No folder stamp that reads: updated_at is the clock, and an element with no readable time still sorts last.
+  world.elements[2].local_updated_at = 'soon';
+  world.elements[2].server_updated_at = null;
+  world.elements.push({ id: 'x0', type: 'object', name: 'No time', local_updated_at: 'never' });
+  world.elements[0].objects.push('x0');
+  assert.deepEqual(resolveLens(world, lensOn({ institutions: ['a'] }), OWNER).kept, ['a', 'x1', 'x2', 'x0']);
+});
+
 test('a lens a guest knows only as a stub reads as nothing, by id, as keel reads it; whole, it reads', () => {
   const world = {
     elements: [
