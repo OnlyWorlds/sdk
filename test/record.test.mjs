@@ -37,7 +37,7 @@ const MOVED_BY_SERIAL_123 = process.env.OW_RECORD_FIXTURE || PIN_SERIAL !== 122 
   'order-by-the-instant-not-the-string': (want) => want.filter((r) => r.played_at !== '2026-11-01T00:30Z'),
 };
 
-test('the cases serial 123 moves are the vendored fixture\'s, each as serial 122 wrote it', { skip: Object.keys(MOVED_BY_SERIAL_123).length === 0 }, () => {
+test('four of serial 122\'s cases are expected to turn until the dist rewrites them (serial 123): each still as serial 122 wrote it',{ skip: Object.keys(MOVED_BY_SERIAL_123).length === 0 }, () => {
   const byName = new Map(doc.cases.map((c) => [c.name, c]));
   for (const name of Object.keys(MOVED_BY_SERIAL_123)) assert.ok(byName.has(name), `no case ${name} in the fixture`);
   assert.equal(byName.get('no-mark-played-offset').want, null);
@@ -48,15 +48,17 @@ test('the cases serial 123 moves are the vendored fixture\'s, each as serial 122
 
 for (const c of doc.cases) {
   const world = doc.worlds[c.world];
-  const want = MOVED_BY_SERIAL_123[c.name] ? MOVED_BY_SERIAL_123[c.name](c.want) : c.want;
+  const moved = Boolean(MOVED_BY_SERIAL_123[c.name]);
+  const want = moved ? MOVED_BY_SERIAL_123[c.name](c.want) : c.want;
+  const title = `record fixture: ${c.name}${moved ? ' (turned by serial 123: held to its answer, not serial 122\'s want)' : ''}`;
   if (c.kind === 'mark') {
-    test(`record fixture: ${c.name}`, () => {
+    test(title, () => {
       const el = world.elements.find((e) => e.id === c.element);
       assert.ok(el, `no element ${c.element}`);
       assert.deepEqual(recordMarkOf(el), want);
     });
   } else if (c.kind === 'records') {
-    test(`record fixture: ${c.name}`, () => assert.deepEqual(recordsOf(c.character, world.elements), want));
+    test(title, () => assert.deepEqual(recordsOf(c.character, world.elements), want));
   } else {
     test(`record fixture: ${c.name}`, () => assert.fail(`a case of unknown kind ${c.kind}`));
   }
