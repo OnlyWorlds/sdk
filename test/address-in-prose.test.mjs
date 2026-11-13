@@ -11,14 +11,14 @@ import * as sdk from '../dist/index.js';
 
 const { parseOwLink, readOwLinkAt } = sdk;
 const FILE = new URL('./fixtures/address-in-prose.json', import.meta.url);
-const SHA256 = 'ef71c4a19580c71a66020c2df5d48a894db872b6f65c8f780f9df3dabd0c253a';
+const SHA256 = '864f5e47f9faedb9dc1f378c04da74d41be8a17dd194c759e7940468ff458bfc';
 const bytes = readFileSync(FILE);
 const doc = JSON.parse(bytes.toString('utf8'));
 const fill = (s) => s.replace(/\{([WEL])\}/g, (_, k) => doc.ids[k]);
 
 test('the cases are the shared file, byte for byte', () => {
   assert.equal(createHash('sha256').update(bytes).digest('hex'), SHA256);
-  assert.equal(doc.cases.length, 23);
+  assert.equal(doc.cases.length, 39);
   assert.equal(typeof readOwLinkAt, 'function', 'readOwLinkAt is exported from the package');
 });
 
@@ -55,6 +55,10 @@ test('the moment and the lens are taken in the writer\'s order only, each whole 
   assert.equal(end(`ow://object/${E}@0123`), base);
   assert.equal(end(`ow://object/${E}@2147483648`), base);
   assert.equal(end(`ow://object/${E}@-2147483648.`), base + '@-2147483648'.length);
+  // a lens ends where its id ends, 36 characters: what runs on after it is prose
+  assert.equal(end(`ow://object/${E}?lens=${L}0`), base + `?lens=${L}`.length);
+  assert.equal(end(`ow://object/${E}?lens=${L}abc-d.`), base + `?lens=${L}`.length);
+  assert.equal(end(`ow://object/${E}?lens=${L.slice(0, 35)}`), base, 'an id one short is no lens');
   // the key is lens, lowercase, and nothing else
   assert.equal(end(`ow://object/${E}?Lens=${L}`), base);
   assert.equal(end(`ow://object/${E}?lens=${L.toUpperCase()}.`), base + `?lens=${L}`.length);

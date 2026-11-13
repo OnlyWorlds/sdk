@@ -265,9 +265,10 @@ export interface OwAddressAt {
 const PATH_CHAR = /[0-9A-Za-z\/-]/;
 /** No path the parser reads is longer: a world's id, the longest type word and an element's id, two slashes. */
 const PATH_MAX = 36 + 1 + Math.max(...ELEMENT_TYPES.map(t => t.length)) + 1 + 36;
-/** A moment's value as found in prose (the parser's step grammar decides whether it reads); a lens's value. */
+/** A moment's value as found in prose: its whole run of an optional minus and digits (the parser's step grammar decides whether it reads). */
 const STEP_RUN = /^-?[0-9]+/;
-const ID_RUN = /^[0-9A-Za-z-]+/;
+/** A lens's value as found in prose: an id is 36 characters, and the lens ends where its id ends. */
+const ID_LENGTH = 36;
 
 /** Whether the string parses whole as an address. */
 function parses(s: string): boolean {
@@ -284,9 +285,10 @@ function parses(s: string): boolean {
  * The address that starts exactly at `index` in a text, found in prose, and where it ends; null when the text there is
  * not an address. Both forms, `ow://` and `https://www.onlyworlds.com/w/`, the prefix as written (lowercase). The path
  * is the longest one `parseOwLink` reads; after it the address continues only with `@` and a moment (the parser's step
- * grammar) and then `?lens=` and a lens (an id). Any other query key or a fragment is not part of an address found in
- * prose: the address ends before its `?`, `&` or `#`, and a `@` or `?lens=` whose value does not read is not taken
- * (the address ends before it). What follows is prose, a full stop included (serial 123).
+ * grammar, its whole run of an optional minus and digits) and then `?lens=` and a lens (an id, which ends where its 36
+ * characters end). Any other query key or a fragment is not part of an address found in prose: the address ends
+ * before its `?`, `&` or `#`, and a `@` or `?lens=` whose value does not read is not taken (the address ends before
+ * it). What follows is prose, a full stop included (serial 123).
  *
  * `end` is the index just past the address and `reading` what `parseOwLink` answers for `text.slice(index, end)`,
  * which `parseOwLink` itself still reads whole, unchanged: `ow://object/<id>.` handed to it whole is refused.
@@ -322,8 +324,8 @@ export function readOwLinkAt(text: string, index: number = 0): OwAddressAt | nul
     if (step !== null && parses(text.slice(index, end + 1 + step[0].length))) end += 1 + step[0].length;
   }
   if (text.startsWith('?lens=', end)) {
-    const id = ID_RUN.exec(text.slice(end + 6));
-    if (id !== null && parses(text.slice(index, end + 6 + id[0].length))) end += 6 + id[0].length;
+    const lensEnd = end + 6 + ID_LENGTH;
+    if (lensEnd <= text.length && isUuid(text.slice(end + 6, lensEnd)) && parses(text.slice(index, lensEnd))) end = lensEnd;
   }
   return { reading: parseOwLink(text.slice(index, end)), end };
 }
