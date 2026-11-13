@@ -136,6 +136,46 @@ export function timeKey(value: unknown): [number, number] | null {
   return [seconds, Number(((m[7] ?? '') + '000000').slice(0, 6))];
 }
 
+/** An instant a `created_at` (or `updated_at`) names: whole seconds since 1970-01-01T00:00:00Z, and the fraction's first six digits as a number (0 to 999999). */
+export interface OwInstant {
+  readonly seconds: number;
+  readonly microseconds: number;
+}
+
+/**
+ * The instant a time names, or `null` when it cannot be read: the message profile's grammar, the one
+ * the message, report, charter and lens readers order by. The whole value must match
+ * `YYYY-MM-DDTHH:MM:SS`, an optional fraction after `.`, then `Z` or `+HH:MM` / `-HH:MM` or nothing
+ * (read as UTC); `T` and `Z` in either case; ASCII digits; nothing trimmed. Each part in its range:
+ * a month 1 to 12, a day that month has (Gregorian leap years), an hour to 23, a minute and a second
+ * to 59, an offset's hours to 23 and minutes to 59. A fraction counts to its sixth digit; later digits
+ * are dropped, never rounded. Not read: a date alone, a space for the `T`, a time without seconds, an
+ * offset without its colon, a trailing line break.
+ *
+ * ```ts
+ * instantOf('2026-11-12T10:00:00+02:00'); // { seconds: 1794470400, microseconds: 0 }
+ * instantOf('2026-11-12');                // null
+ * ```
+ */
+export function instantOf(value: unknown): OwInstant | null {
+  const key = timeKey(value);
+  return key === null ? null : { seconds: key[0], microseconds: key[1] };
+}
+
+/**
+ * Orders two instants from `instantOf`: earlier first, `null` (a time that cannot be read) after
+ * every readable one, and 0 for two equal instants or two `null`s, so a stable sort keeps the order
+ * given. This is the order the package's readers sort by.
+ *
+ * ```ts
+ * items.sort((a, b) => compareInstants(instantOf(a.created_at), instantOf(b.created_at)));
+ * ```
+ */
+export function compareInstants(a: OwInstant | null, b: OwInstant | null): number {
+  if (a === null || b === null) return a === null ? (b === null ? 0 : 1) : -1;
+  return a.seconds - b.seconds || a.microseconds - b.microseconds;
+}
+
 /** Module-internal: not in the package's exports. */
 export const compareKeys = (a: [number, number], b: [number, number]): number => a[0] - b[0] || a[1] - b[1];
 

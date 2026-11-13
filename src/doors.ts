@@ -48,7 +48,7 @@ function daysFromCivil(year: number, month: number, day: number): number {
 }
 
 /** The instant a time names, or null when it is not one: `YYYY-MM-DDTHH:MM:SS`, an optional fraction, then `Z` or `+HH:MM`/`-HH:MM`. */
-function instantOf(value: unknown): Instant | null {
+function doorTimeOf(value: unknown): Instant | null {
   if (typeof value !== 'string') return null;
   const m = TIME.exec(value);
   if (m === null) return null;
@@ -128,11 +128,11 @@ export function doorsOf(element: object, tools: readonly OwTool[] = TOOLS): OwDo
   const doors = e.doors;
   if (doors !== null && typeof doors === 'object' && !Array.isArray(doors)) {
     for (const [door, at] of Object.entries(doors as Record<string, unknown>)) {
-      const instant = instantOf(at);
+      const instant = doorTimeOf(at);
       if (door.length > 0 && instant !== null) found.push({ door, at: at as string, instant });
     }
   }
-  const updated = instantOf(e.updated_at);
+  const updated = doorTimeOf(e.updated_at);
   if (found.length === 0) {
     const door = nonEmpty(e.changed_client) ? e.changed_client : nonEmpty(e.changed_via) ? e.changed_via : null;
     if (door === null || updated === null) return [];

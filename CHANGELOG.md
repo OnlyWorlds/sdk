@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.159.0] - 2026-11-13
+
+### Added
+
+- **`instantOf(value)` and `compareInstants(a, b)`: the time reader the package's readers sort by, exported.** `instantOf` gives the instant a `created_at` (or `updated_at`) names, `{ seconds, microseconds }`, or `null` when it cannot be read. It follows the message profile's grammar: the whole value `YYYY-MM-DDTHH:MM:SS`, an optional fraction, then `Z`, `+HH:MM`, `-HH:MM` or nothing (read as UTC), `T` and `Z` in either case, each part in its range, and a fraction counted to its sixth digit, later digits dropped. A date alone, a space for the `T`, a time without seconds, an offset without its colon and a trailing line break are not read. `compareInstants` orders two of them earlier first, with `null` after every readable one and 0 for equal instants, so a stable sort keeps the order given. Both are the very function the message, report, charter and lens readers order by, so a tool that sorts with them orders exactly as those readers do.
+
 ## [4.158.1] - 2026-11-13
 
 ### Changed

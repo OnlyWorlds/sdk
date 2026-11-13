@@ -134,6 +134,8 @@ Object.assign(DATA, {
   'absYearForEraYear#1': 'a CalendarEra of the config',
   'displayYear#2': 'a CalendarEra of the config',
   'weekdayForStep#2': 'a step\'s position, computed by the kernel',
+  'compareInstants#0': 'an OwInstant from instantOf (or null)',
+  'compareInstants#1': 'an OwInstant from instantOf (or null)',
   'buildAskContext#1': 'the world index',
   'lookupWorld#0': 'the world index',
   'renderElement#1': 'the world index',
