@@ -110,6 +110,8 @@ test('the site\'s form: the run after /w/ is read whole, an id or a slug, or no 
   assert.equal(found(`${H}hyper_ion.`), null);
   assert.equal(found(`${H}${W}G.`), null);
   assert.equal(found(`${H}caf${String.fromCodePoint(0xe9)}.`), null);
+  // a combining mark counts with the letters: a decomposed cafe-acute is cut inside a word
+  assert.equal(found(`${H}cafe${String.fromCodePoint(0x301)}.`), null);
   // what follows a whole run is read as before: an element, a moment, a lens, or prose
   assert.equal(found(`${H}hyperion/object/${E}.`), `${H}hyperion/object/${E}`);
   assert.equal(found(`${H}hyperion/charcter/${E}.`), `${H}hyperion`);

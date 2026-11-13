@@ -269,8 +269,8 @@ const PATH_MAX = 36 + 1 + Math.max(...ELEMENT_TYPES.map(t => t.length)) + 1 + 36
 const ELEMENT_PATH_MAX = 1 + Math.max(...ELEMENT_TYPES.map(t => t.length)) + 1 + 36;
 /** The run after `/w/`: the slug's alphabet (lowercase letters, digits, hyphens) and the id's (hex in either case). */
 const WORLD_RUN_CHAR = /[0-9a-zA-F-]/;
-/** A run followed by one of these is cut inside a word: a letter (any script) or an underscore. */
-const IN_A_WORD = /^[\p{L}_]/u;
+/** A run followed by one of these is cut inside a word: a letter (any script), a combining mark or an underscore (Unicode L and M). */
+const IN_A_WORD = /^[\p{L}\p{M}_]/u;
 /** A moment's value as found in prose: its whole run of an optional minus and digits (the parser's step grammar decides whether it reads). */
 const STEP_RUN = /^-?[0-9]+/;
 /** A lens's value as found in prose: an id is 36 characters, and the lens ends where its id ends. */
@@ -293,8 +293,8 @@ function parses(s: string): boolean {
  * site's form the run after `/w/` is read whole, once, with no order between an id and a slug: it ends at the first
  * character outside the slug's alphabet (lowercase letters, digits, hyphens) or the id's (hex in either case); exactly
  * an id's form is the id, any other run `parseOwLink` reads as a slug is the slug (not a type word, no closing hyphen,
- * 3 to 40 characters), else no address; a run followed by a letter (any script) or an underscore is cut inside a word
- * and is no address (`/w/mopPetopia.`, `/w/hyper_ion.`). After the world, or in the text form from the prefix, the path
+ * 3 to 40 characters), else no address; a run followed by a letter (any script), a combining mark or an underscore
+ * is cut inside a word and is no address (`/w/mopPetopia.`, `/w/hyper_ion.`). After the world, or in the text form from the prefix, the path
  * is the longest one `parseOwLink` reads; after it the address continues only with `@` and a moment (the parser's step
  * grammar, its whole run of an optional minus and digits) and then `?lens=` and a lens (an id, which ends where its 36
  * characters end). Any other query key or a fragment is not part of an address found in prose: the address ends
