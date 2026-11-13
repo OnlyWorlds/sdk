@@ -21,16 +21,42 @@ test('the fixture is the record profile\'s, its mark the field recordMarkOf read
   assert.equal(doc.cases.length, 41, `the fixture holds ${doc.cases.length} cases, serial 122 has 41`);
 });
 
+// Serial 123 reads played_at by the message page's grammar, and four of serial 122's cases move with it: an offset
+// reads, a time without seconds does not. Until the pin moves past serial 122, the vendored fixture's cases are held to
+// serial 123's answers, written here by hand from the ruling; a staged fixture (OW_RECORD_FIXTURE) is read as written.
+const PIN_SERIAL = JSON.parse(readFileSync(new URL('../codegen/schema-pin.json', import.meta.url), 'utf8')).dist_serial;
+const OFFSET_RUN = { event: { id: '019a8000-0000-7000-8000-000000000215', name: 'Played with an offset' }, tool: 'subs', played_at: '2026-11-01T08:00:00+01:00', version: null, seed: null, outcome: null, seat: null, stories: [] };
+const MOVED_BY_SERIAL_123 = process.env.OW_RECORD_FIXTURE || PIN_SERIAL !== 122 ? {} : {
+  // 08:00+01:00 is 07:00Z: a mark.
+  'no-mark-played-offset': () => ({ tool: 'subs', played_at: '2026-11-01T08:00:00+01:00', version: null, seed: null, outcome: null, seats: {} }),
+  // 2028-02-29T00:00Z has no seconds: no mark.
+  'mark-leap-day-of-a-leap-year': () => null,
+  // The run played at 08:00+01:00 is Fluffington's too, between 11-02T21:00Z and 11-01T00:30Z.
+  'fluffington-two-games': (want) => [want[0], OFFSET_RUN, ...want.slice(1)],
+  // Half past with no seconds is no mark: the run with the fraction alone.
+  'order-by-the-instant-not-the-string': (want) => want.filter((r) => r.played_at !== '2026-11-01T00:30Z'),
+};
+
+test('the cases serial 123 moves are the vendored fixture\'s, each as serial 122 wrote it', { skip: Object.keys(MOVED_BY_SERIAL_123).length === 0 }, () => {
+  const byName = new Map(doc.cases.map((c) => [c.name, c]));
+  for (const name of Object.keys(MOVED_BY_SERIAL_123)) assert.ok(byName.has(name), `no case ${name} in the fixture`);
+  assert.equal(byName.get('no-mark-played-offset').want, null);
+  assert.equal(byName.get('mark-leap-day-of-a-leap-year').want.played_at, '2028-02-29T00:00Z');
+  assert.ok(!byName.get('fluffington-two-games').want.some((r) => r.event.id === OFFSET_RUN.event.id));
+  assert.deepEqual(byName.get('order-by-the-instant-not-the-string').want.map((r) => r.played_at), ['2026-11-01T00:30:00.500Z', '2026-11-01T00:30Z']);
+});
+
 for (const c of doc.cases) {
   const world = doc.worlds[c.world];
+  const want = MOVED_BY_SERIAL_123[c.name] ? MOVED_BY_SERIAL_123[c.name](c.want) : c.want;
   if (c.kind === 'mark') {
     test(`record fixture: ${c.name}`, () => {
       const el = world.elements.find((e) => e.id === c.element);
       assert.ok(el, `no element ${c.element}`);
-      assert.deepEqual(recordMarkOf(el), c.want);
+      assert.deepEqual(recordMarkOf(el), want);
     });
   } else if (c.kind === 'records') {
-    test(`record fixture: ${c.name}`, () => assert.deepEqual(recordsOf(c.character, world.elements), c.want));
+    test(`record fixture: ${c.name}`, () => assert.deepEqual(recordsOf(c.character, world.elements), want));
   } else {
     test(`record fixture: ${c.name}`, () => assert.fail(`a case of unknown kind ${c.kind}`));
   }
@@ -90,8 +116,42 @@ test('ties order by code point, never UTF-16: an id above the BMP sorts after U+
 
 test('a played_at with seconds and a fraction orders as the instant it is', () => {
   const mk = (id, at) => ({ id, type: 'event', name: id, characters: ['c'], x_record: { tool: 'subs', played_at: at } });
-  const got = recordsOf('c', [mk('a', '2026-11-01T00:30Z'), mk('b', '2026-11-01T00:30:00.500Z'), mk('c', '2026-11-01T00:29:59Z')]);
+  const got = recordsOf('c', [mk('a', '2026-11-01T00:30:00Z'), mk('b', '2026-11-01T00:30:00.500Z'), mk('c', '2026-11-01T00:29:59Z')]);
   assert.deepEqual(got.map((r) => r.event.id), ['b', 'a', 'c']);
+});
+
+// Serial 123: a record's played_at is read by the message page's grammar (instantOf), one grammar for a time.
+test('played_at reads by the message grammar: a lowercase t and z read, a mark', () => {
+  const mk = (at) => ({ id: 'e', type: 'event', characters: ['c'], x_record: { tool: 'subs', played_at: at } });
+  assert.deepEqual(recordMarkOf(mk('2026-11-01t00:30:00z')), { tool: 'subs', played_at: '2026-11-01t00:30:00z', version: null, seed: null, outcome: null, seats: {} });
+  assert.notEqual(recordMarkOf(mk('2026-11-01t00:30:00Z')), null);
+  assert.notEqual(recordMarkOf(mk('2026-11-01T00:30:00z')), null);
+  assert.deepEqual(recordsOf('c', [mk('2026-11-01t00:30:00z')]).map((r) => r.played_at), ['2026-11-01t00:30:00z']);
+});
+
+test('played_at reads by the message grammar: an offset reads, ordered as the instant it names', () => {
+  const mk = (id, at) => ({ id, type: 'event', name: id, characters: ['c'], x_record: { tool: 'subs', played_at: at } });
+  assert.notEqual(recordMarkOf(mk('e', '2026-11-01T01:30:00+01:00')), null);
+  assert.notEqual(recordMarkOf(mk('e', '2026-10-31T23:30:00-01:00')), null);
+  // 01:30+01:00 is 00:30Z, older than 00:45Z and newer than 00:15Z; one instant written two ways ties by id.
+  const got = recordsOf('c', [mk('b', '2026-11-01T01:30:00+01:00'), mk('d', '2026-11-01T00:15:00Z'), mk('c', '2026-11-01T00:45:00Z'), mk('a', '2026-11-01T00:30:00Z')]);
+  assert.deepEqual(got.map((r) => r.event.id), ['c', 'a', 'b', 'd']);
+  assert.equal(got[2].played_at, '2026-11-01T01:30:00+01:00', 'played_at as written');
+});
+
+test('played_at reads by the message grammar: a time without seconds is no mark', () => {
+  const mk = (id, at) => ({ id, type: 'event', name: id, characters: ['c'], x_record: { tool: 'subs', played_at: at } });
+  assert.equal(recordMarkOf(mk('e', '2026-11-01T00:30Z')), null);
+  assert.equal(recordMarkOf(mk('e', '2028-02-29T00:00Z')), null);
+  assert.deepEqual(recordsOf('c', [mk('e', '2026-11-01T00:30Z'), mk('f', '2026-11-01T00:30:00Z')]).map((r) => r.event.id), ['f']);
+});
+
+test('played_at reads by the message grammar: the year 0000 and a time with no zone (read as UTC) are marks', () => {
+  const mk = (id, at) => ({ id, type: 'event', name: id, characters: ['c'], x_record: { tool: 'subs', played_at: at } });
+  assert.notEqual(recordMarkOf(mk('e', '0000-01-01T00:00:00Z')), null);
+  assert.notEqual(recordMarkOf(mk('e', '2026-11-01T00:30:00')), null);
+  const got = recordsOf('c', [mk('a', '2026-11-01T00:30:00'), mk('b', '2026-11-01T00:29:59Z'), mk('z', '0000-01-01T00:00:00Z'), mk('c', '2026-11-01T00:30:01Z')]);
+  assert.deepEqual(got.map((r) => r.event.id), ['c', 'a', 'b', 'z']);
 });
 
 test('played_at orders to the millisecond, a finer fraction truncated (the Python package reads it the same)', () => {
@@ -102,8 +162,8 @@ test('played_at orders to the millisecond, a finer fraction truncated (the Pytho
 
 test('a played_at that is no real calendar instant is no mark (the Python package refuses the same)', () => {
   const mk = (at) => ({ id: 'e', type: 'event', characters: ['c'], x_record: { tool: 'subs', played_at: at } });
-  for (const at of ['2026-13-01T00:00Z', '2026-02-30T00:00Z', '2026-02-29T00:00Z', '2026-11-01T24:00Z', '2026-11-01T00:60Z', '2026-11-01T00:00:60Z', '0000-01-01T00:00Z', '2026-00-01T00:00Z', '2026-11-00T00:00Z']) {
+  for (const at of ['2026-13-01T00:00:00Z', '2026-02-30T00:00:00Z', '2026-02-29T00:00:00Z', '2026-11-01T24:00:00Z', '2026-11-01T00:60:00Z', '2026-11-01T00:00:60Z', '2026-00-01T00:00:00Z', '2026-11-00T00:00:00Z', '2026-11-01T00:00:00+24:00']) {
     assert.equal(recordMarkOf(mk(at)), null, at);
   }
-  for (const at of ['2028-02-29T00:00Z', '2000-02-29T23:59:59.999Z', '0001-01-01T00:00Z']) assert.notEqual(recordMarkOf(mk(at)), null, at);
+  for (const at of ['2028-02-29T00:00:00Z', '2000-02-29T23:59:59.999Z', '0001-01-01T00:00:00Z']) assert.notEqual(recordMarkOf(mk(at)), null, at);
 });

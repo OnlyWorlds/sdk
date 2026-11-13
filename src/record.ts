@@ -3,10 +3,11 @@
 // the game's own tally beside it under its own prefix; who took part is the Event's `characters` alone; a Narrative
 // that lists the Event in `events` and names a Character as protagonist or narrator is that Character's story of
 // it. A run or a story the review profile reads as proposed (proposedMarkOf: an empty mark is settled; serial 103) is
-// not read until a keeper settles it. `recordsOf` reads the elements as the reader is served them; the fixture,
+// not read until a keeper settles it. `played_at` is read by the message page's grammar (message.ts's timeKey, serial
+// 123), never a grammar of its own. `recordsOf` reads the elements as the reader is served them; the fixture,
 // profiles/record.fixture.json, is this file's own test. The Python package's `records_of` gives the same answers.
 
-import { byCodePoint } from './lens';
+import { byCodePoint, compareKeys, timeKey } from './message';
 import { proposedMarkOf } from './review';
 
 /** The Event's field that carries the record's mark. */
@@ -16,7 +17,7 @@ export const RECORD_FIELD = 'x_record';
 export interface OwRecordMark {
   /** The game, in the tools list's id form (`[a-z0-9-]`, 1 to 32). */
   tool: string;
-  /** When the run was played: RFC 3339 in UTC, real time (never world time). */
+  /** When the run was played, as written: real time (never world time), a time the message grammar reads (`instantOf`). */
   played_at: string;
   /** The engine's version; with `seed`, the replay. */
   version: string | null;
@@ -50,7 +51,6 @@ export interface OwRecord {
 }
 
 const TOOL = /^[a-z0-9-]{1,32}$/;
-const PLAYED_AT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?Z$/;
 const OUTCOME = /^[a-z]{1,24}$/;
 
 type Body = Record<string, unknown>;
@@ -60,30 +60,30 @@ const isString = (v: unknown): v is string => typeof v === 'string';
 const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 // Code point order, as the page says: JavaScript's < is UTF-16 order, which differs above the BMP.
 const cp = byCodePoint;
-/** A real calendar instant: month 1 to 12, the day within its month (leap years Gregorian), hour 0 to 23, minute and
- * second 0 to 59. Date.parse rolls 02-30 into March and takes 24:00, so the parts are checked here, as Python's are. */
-function isInstant(s: string): boolean {
-  const m = PLAYED_AT.exec(s);
-  if (!m) return false;
-  const [y, mo, d, h, mi, se] = [m[1], m[2], m[3], m[4], m[5], m[6] ?? '0'].map(Number);
-  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
-  return days !== undefined && d >= 1 && d <= days && h <= 23 && mi <= 59 && se <= 59 && y >= 1;
+/**
+ * `played_at` read by the message page's grammar (serial 123: one grammar for a time, `instantOf`'s), as [whole
+ * seconds, milliseconds] for the record's order to the millisecond (a fraction truncated past three digits); null
+ * when it cannot be read, which is no mark. Never Date.parse: it reads a time with no zone as local time.
+ */
+function playedKey(s: string): [number, number] | null {
+  const key = timeKey(s);
+  return key === null ? null : [key[0], Math.floor(key[1] / 1000)];
 }
 /** Proposed exactly when the review profile's reader says so (serial 103): an empty mark ({}, "", []) is settled. */
 const proposed = (el: Body): boolean => proposedMarkOf(el) !== null;
 
 /**
  * The record's mark on an element, read: the mark when the element is an Event whose `x_record` has the profile's
- * shape, else null. A broken writer never shows as a record: a missing or malformed `tool` or `played_at`, or an
- * optional member that is anything but its kind, null or absent, is no mark.
+ * shape, else null. A broken writer never shows as a record: a missing or malformed `tool`, a `played_at` the
+ * message page's grammar cannot read (`instantOf`'s, serial 123: seconds required, `T` and `Z` in either case, an
+ * offset or no zone read), or an optional member that is anything but its kind, null or absent, is no mark.
  */
 export function recordMarkOf(element: unknown): OwRecordMark | null {
   if (!isObject(element) || element.type !== 'event') return null;
   const m = element[RECORD_FIELD];
   if (!isObject(m)) return null;
   if (!isString(m.tool) || !TOOL.test(m.tool)) return null;
-  if (!isString(m.played_at) || !isInstant(m.played_at)) return null;
+  if (!isString(m.played_at) || playedKey(m.played_at) === null) return null;
   if (!unsetOr(m.version, isString)) return null;
   if (!unsetOr(m.seed, isString)) return null;
   if (!unsetOr(m.outcome, (v) => isString(v) && OUTCOME.test(v))) return null;
@@ -100,7 +100,8 @@ export function recordMarkOf(element: unknown): OwRecordMark | null {
 
 /**
  * A Character's records in a world: every Event with the record mark whose `characters` names them, newest first by
- * `played_at` (ties by the Event's id in code point order), each with the stories that are theirs. An id no record
+ * `played_at` read as an instant to the millisecond (a fraction truncated past three digits; ties by the Event's id in
+ * code point order), each with the stories that are theirs. An id no record
  * names, or one in no element, reads an empty list. `elements` is the world as this reader is served it.
  */
 export function recordsOf(characterId: string, elements: readonly unknown[]): OwRecord[] {
@@ -140,6 +141,6 @@ export function recordsOf(characterId: string, elements: readonly unknown[]): Ow
       stories,
     });
   }
-  out.sort((a, b) => Date.parse(b.played_at) - Date.parse(a.played_at) || cp(a.event.id, b.event.id));
+  out.sort((a, b) => compareKeys(playedKey(b.played_at) as [number, number], playedKey(a.played_at) as [number, number]) || cp(a.event.id, b.event.id));
   return out;
 }
