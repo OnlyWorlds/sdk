@@ -66,7 +66,19 @@ test('the moment and the lens are taken in the writer\'s order only, each whole 
   assert.equal(end('https://www.onlyworlds.com/w/moppetopia@3, then'), 'https://www.onlyworlds.com/w/moppetopia@3'.length);
 });
 
-test('a text that is not a string, or an index that is not a whole number from 0, is a TypeError; past the end, nothing', () => {
+test('index and end are JavaScript string indexes (UTF-16 code units): an emoji before the address, found by indexOf, still slices right', () => {
+  const address = `ow://object/${doc.ids.E}@4`;
+  const text = `Built ${String.fromCodePoint(0x1f6a2)} the gate: ${address}.`;
+  const index = text.indexOf('ow://');
+  assert.equal(index, 19, 'the emoji is two code units: 18 code points come before the address');
+  const got = readOwLinkAt(text, index);
+  assert.equal(got.end, index + address.length);
+  assert.equal(text.slice(index, got.end), address);
+  assert.equal(text[got.end], '.');
+  assert.deepEqual(got.reading, parseOwLink(address));
+});
+
+test('a text that is not a string,or an index that is not a whole number from 0, is a TypeError; past the end, nothing', () => {
   for (const v of [null, undefined, 42, ['ow://x']]) assert.throws(() => readOwLinkAt(v), TypeError, String(v));
   for (const i of [-1, 1.5, NaN, '0', null]) assert.throws(() => readOwLinkAt('ow://x', i), TypeError, String(i));
   assert.equal(readOwLinkAt('ow://x', 99), null);

@@ -292,7 +292,7 @@ function parses(s: string): boolean {
  *
  * `end` is the index just past the address and `reading` what `parseOwLink` answers for `text.slice(index, end)`,
  * which `parseOwLink` itself still reads whole, unchanged: `ow://object/<id>.` handed to it whole is refused.
- * Indexes are JavaScript string indexes (UTF-16 code units). A text that is not a string, or an index that is not a
+ * `index` and `end` count JavaScript string indexes (UTF-16 code units), so they match `text.slice` and `indexOf`. A text that is not a string, or an index that is not a
  * whole number from 0, is a TypeError; an index past the end reads nothing.
  *
  * ```ts
