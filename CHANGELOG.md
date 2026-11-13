@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.160.2] - 2026-11-13
+
 ### Changed
 
 - `list`'s doc comment names its parameters (`limit`, `cursor`, `filter`, `ids`, `createdBy`, `expand`, `fields`, `viewAs`, `signal`), so the reference built from it shows them.
