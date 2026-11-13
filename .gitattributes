@@ -16,3 +16,5 @@ test/fixtures/author-fields.fixture.json -text
 codegen/tools/tools.json -text
 # The layout methods' shared cases, the same bytes as the Python package's copy (both tests hold its sha256).
 test/fixtures/layout/** -text
+# The address-in-prose cases (serial 123), the same bytes as the Python package's copy (both tests hold its sha256).
+test/fixtures/address-in-prose.json -text

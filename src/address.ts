@@ -252,3 +252,78 @@ export function parseOwLink(text: string): OwAddressReading {
   const canonical = !worldIsSlug && text === write(form, world, type, id, moment, lens);
   return { form, world, worldIsSlug, type, id, lens, moment, canonical };
 }
+
+/** What `readOwLinkAt` answers: the address read, and the index just past it in the text. */
+export interface OwAddressAt {
+  /** What `parseOwLink` answers for `text.slice(index, end)`. */
+  reading: OwAddressReading;
+  /** The index just past the address: the text's first character that is not part of it, or its length. */
+  end: number;
+}
+
+/** The characters a path segment can hold (an id, a slug, a type word in any case) and the slash between them. */
+const PATH_CHAR = /[0-9A-Za-z\/-]/;
+/** No path the parser reads is longer: a world's id, the longest type word and an element's id, two slashes. */
+const PATH_MAX = 36 + 1 + Math.max(...ELEMENT_TYPES.map(t => t.length)) + 1 + 36;
+/** A moment's value as found in prose (the parser's step grammar decides whether it reads); a lens's value. */
+const STEP_RUN = /^-?[0-9]+/;
+const ID_RUN = /^[0-9A-Za-z-]+/;
+
+/** Whether the string parses whole as an address. */
+function parses(s: string): boolean {
+  try {
+    parseOwLink(s);
+    return true;
+  } catch (err) {
+    if (err instanceof OwAddressError) return false;
+    throw err;
+  }
+}
+
+/**
+ * The address that starts exactly at `index` in a text, found in prose, and where it ends; null when the text there is
+ * not an address. Both forms, `ow://` and `https://www.onlyworlds.com/w/`, the prefix as written (lowercase). The path
+ * is the longest one `parseOwLink` reads; after it the address continues only with `@` and a moment (the parser's step
+ * grammar) and then `?lens=` and a lens (an id). Any other query key or a fragment is not part of an address found in
+ * prose: the address ends before its `?`, `&` or `#`, and a `@` or `?lens=` whose value does not read is not taken
+ * (the address ends before it). What follows is prose, a full stop included (serial 123).
+ *
+ * `end` is the index just past the address and `reading` what `parseOwLink` answers for `text.slice(index, end)`,
+ * which `parseOwLink` itself still reads whole, unchanged: `ow://object/<id>.` handed to it whole is refused.
+ * Indexes are JavaScript string indexes (UTF-16 code units). A text that is not a string, or an index that is not a
+ * whole number from 0, is a TypeError; an index past the end reads nothing.
+ *
+ * ```ts
+ * const line = 'Built the gate: ow://object/01a1d4ef-0000-7000-8000-000000000084.';
+ * const found = readOwLinkAt(line, 16);
+ * found?.end;          // 64: line[64] is the full stop
+ * found?.reading.id;   // '01a1d4ef-0000-7000-8000-000000000084'
+ * ```
+ */
+export function readOwLinkAt(text: string, index: number = 0): OwAddressAt | null {
+  if (typeof text !== 'string') throw new TypeError('readOwLinkAt: text must be a string');
+  if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) throw new TypeError('readOwLinkAt: index must be a whole number from 0');
+  let start: number;
+  if (text.startsWith(HUMAN_PREFIX, index)) start = index + HUMAN_PREFIX.length;
+  else if (text.startsWith(TEXT_PREFIX, index)) start = index + TEXT_PREFIX.length;
+  else return null;
+  let run = start;
+  while (run < text.length && run - start <= PATH_MAX && PATH_CHAR.test(text[run])) run++;
+  let end = -1;
+  for (let p = run; p > start; p--) {
+    if (parses(text.slice(index, p))) {
+      end = p;
+      break;
+    }
+  }
+  if (end === -1) return null;
+  if (text[end] === '@') {
+    const step = STEP_RUN.exec(text.slice(end + 1));
+    if (step !== null && parses(text.slice(index, end + 1 + step[0].length))) end += 1 + step[0].length;
+  }
+  if (text.startsWith('?lens=', end)) {
+    const id = ID_RUN.exec(text.slice(end + 6));
+    if (id !== null && parses(text.slice(index, end + 6 + id[0].length))) end += 6 + id[0].length;
+  }
+  return { reading: parseOwLink(text.slice(index, end)), end };
+}

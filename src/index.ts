@@ -89,9 +89,10 @@ export type { OwTrailGround, OwTrailHanger, OwTrailInput, OwTrailLayout, OwTrail
 export { typeWord } from './names';
 export type { OwNamesMap, OwWordPair } from './names';
 // The address profile (schema-dist profiles/address.md): an element's three spellings (the site's address
-// and the two ow:// text forms) and a world's own, with an optional moment and lens, written and read.
-export { elementAddress, parseOwLink, OwAddressError } from './address';
-export type { OwAddress, OwAddressReading, OwAddressForm, OwAddressReason } from './address';
+// and the two ow:// text forms) and a world's own, with an optional moment and lens, written and read;
+// readOwLinkAt finds one in prose and says where it ends (serial 123).
+export { elementAddress, parseOwLink, readOwLinkAt, OwAddressError } from './address';
+export type { OwAddress, OwAddressAt, OwAddressReading, OwAddressForm, OwAddressReason } from './address';
 // The Open with menu: the rows that open a world or an element in a tool, each with its word, from the
 // OnlyWorlds tools list (baked at this release as TOOLS).
 export { openersFor } from './openers';
