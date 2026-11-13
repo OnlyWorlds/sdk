@@ -165,7 +165,9 @@ function templateOf(row: string, key: 'world' | 'element', v: unknown): string |
  * wrong type, an element given for a world's menu or naming another element than the address, a tools row
  * that is not one (a `needs`, an `element_skips` or an `element_types` word outside the list's format, an
  * empty `element_types`, `element_types` on a row with no element door, or an `opens_public` that is
- * not true or false, or true beside a `needs` other than `account`, included).
+ * not true or false, or true beside a `needs` other than `account`, included). An element whose own id is held
+ * in upper case, the address's lowercase id otherwise its own, is no refusal: no address can name it, so the
+ * answer is no rows (serial 123's release), and a surface draws its mark with an empty menu.
  */
 export function openersFor(
   tools: readonly OwTool[],
@@ -204,13 +206,18 @@ export function openersFor(
   if (options === null || typeof options !== 'object' || Array.isArray(options)) fail('the options are an object ({ element })');
   refuseUnknownOptions('openersFor', options, OPTION_KEYS);
   const element = options.element ?? null;
+  let unnamed = false;
   if (element !== null) {
     if (typeof element !== 'object' || Array.isArray(element)) fail('options.element is the element as served, an object, or null');
     if (kind !== 'element') fail("options.element is for an element's menu; a world's menu takes none");
     const eid = (element as Record<string, unknown>).id;
     // The address is a door, so its id is read in either case and taken in lowercase; the element's own id is
     // read as written (the address profile's same-id rule): an element held as 019A... is not the element 019a... names.
-    if (typeof eid !== 'string' || eid !== id) fail('options.element is the element the address names: its id differs');
+    if (typeof eid !== 'string' || eid.toLowerCase() !== id) fail('options.element is the element the address names: its id differs');
+    // An element held in upper case is one no address can name, so no door opens it: no rows (answered at the end,
+    // after every check has run), and a surface still draws its mark. Not a caller's mistake, so no refusal; only an
+    // id that differs by more than case is one.
+    unnamed = eid !== id;
   }
   const marks = element === null ? [] : marksOf(element as Record<string, unknown>);
 
@@ -271,5 +278,5 @@ export function openersFor(
     else if (kind === 'element' && elementDoor === null) state = 'Opens the world';
     rows.push({ id: r.id, name: r.name, href, state });
   }
-  return rows;
+  return unnamed ? [] : rows;
 }

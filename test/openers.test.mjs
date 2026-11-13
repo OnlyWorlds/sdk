@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { openersFor, parseOwLink, OwAddressError, TOOLS } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/openers.fixture.json', import.meta.url));
-const FIXTURE_SHA256 = 'ac14435bc287e92bd18e651871f39a0c66870bb041be0eb394d3eb868eb76978';
+const FIXTURE_SHA256 = '8af6f6daded20444184303a66c73ce72b76a5aa111f639ffc4a9e9072fb07c74';
 const CASES = 111;
 
 /** The fixture writes the surface's keys snake_case; this package spells one of them in camelCase. */
@@ -69,10 +69,15 @@ test('the element is matched as written against the address read in lowercase (t
   const el = (eid) => ({ id: eid, type: 'location', name: 'The element' });
   // An address is a door: its id in either case names the lowercase id.
   assert.deepEqual(openersFor(TOOLS, 'element', at(id.toUpperCase()), surface, { element: el(id) }), openersFor(TOOLS, 'element', at(id), surface, { element: el(id) }));
-  // The element's own id is read as written: held in upper case it is not the element the address names.
+  // The element's own id is read as written: held in upper case no address can name it, so the menu has no rows
+  // (serial 123's release; a surface still draws its mark), and that is no refusal.
   for (const aid of [id, id.toUpperCase()]) {
-    assert.throws(() => openersFor(TOOLS, 'element', at(aid), surface, { element: el(id.toUpperCase()) }), /its id differs/);
+    assert.deepEqual(openersFor(TOOLS, 'element', at(aid), surface, { element: el(id.toUpperCase()) }), []);
   }
+  // An id that differs by more than case is the caller's mistake, and still refused.
+  assert.throws(() => openersFor(TOOLS, 'element', at(id), surface, { element: el(id.replace('1a', '1b')) }), /its id differs/);
+  // The empty answer comes after every check: a bad tools row is refused for a held-upper element too.
+  assert.throws(() => openersFor([{ id: 'x', name: 'X', open: { needs: 'nope' } }], 'element', at(id), surface, { element: el(id.toUpperCase()) }), /open\.needs/);
 });
 
 test('TOOLS, the baked list, gives the site\'s row and then each listed tool with a door, in the list\'s order', () => {
