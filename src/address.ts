@@ -265,6 +265,12 @@ export interface OwAddressAt {
 const PATH_CHAR = /[0-9A-Za-z\/-]/;
 /** No path the parser reads is longer: a world's id, the longest type word and an element's id, two slashes. */
 const PATH_MAX = 36 + 1 + Math.max(...ELEMENT_TYPES.map(t => t.length)) + 1 + 36;
+/** No element path after a world is longer: a slash, the longest type word, a slash and an element's id. */
+const ELEMENT_PATH_MAX = 1 + Math.max(...ELEMENT_TYPES.map(t => t.length)) + 1 + 36;
+/** The run after `/w/`: the slug's alphabet (lowercase letters, digits, hyphens) and the id's (hex in either case). */
+const WORLD_RUN_CHAR = /[0-9a-zA-F-]/;
+/** A run followed by one of these is cut inside a word: a letter (any script) or an underscore. */
+const IN_A_WORD = /^[\p{L}_]/u;
 /** A moment's value as found in prose: its whole run of an optional minus and digits (the parser's step grammar decides whether it reads). */
 const STEP_RUN = /^-?[0-9]+/;
 /** A lens's value as found in prose: an id is 36 characters, and the lens ends where its id ends. */
@@ -283,7 +289,12 @@ function parses(s: string): boolean {
 
 /**
  * The address that starts exactly at `index` in a text, found in prose, and where it ends; null when the text there is
- * not an address. Both forms, `ow://` and `https://www.onlyworlds.com/w/`, the prefix as written (lowercase). The path
+ * not an address. Both forms, `ow://` and `https://www.onlyworlds.com/w/`, the prefix as written (lowercase). In the
+ * site's form the run after `/w/` is read whole, once, with no order between an id and a slug: it ends at the first
+ * character outside the slug's alphabet (lowercase letters, digits, hyphens) or the id's (hex in either case); exactly
+ * an id's form is the id, any other run `parseOwLink` reads as a slug is the slug (not a type word, no closing hyphen,
+ * 3 to 40 characters), else no address; a run followed by a letter (any script) or an underscore is cut inside a word
+ * and is no address (`/w/mopPetopia.`, `/w/hyper_ion.`). After the world, or in the text form from the prefix, the path
  * is the longest one `parseOwLink` reads; after it the address continues only with `@` and a moment (the parser's step
  * grammar, its whole run of an optional minus and digits) and then `?lens=` and a lens (an id, which ends where its 36
  * characters end). Any other query key or a fragment is not part of an address found in prose: the address ends
@@ -305,14 +316,27 @@ function parses(s: string): boolean {
 export function readOwLinkAt(text: string, index: number = 0): OwAddressAt | null {
   if (typeof text !== 'string') throw new TypeError('readOwLinkAt: text must be a string');
   if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) throw new TypeError('readOwLinkAt: index must be a whole number from 0');
+  const human = text.startsWith(HUMAN_PREFIX, index);
   let start: number;
-  if (text.startsWith(HUMAN_PREFIX, index)) start = index + HUMAN_PREFIX.length;
+  if (human) start = index + HUMAN_PREFIX.length;
   else if (text.startsWith(TEXT_PREFIX, index)) start = index + TEXT_PREFIX.length;
   else return null;
-  let run = start;
-  while (run < text.length && run - start <= PATH_MAX && PATH_CHAR.test(text[run])) run++;
   let end = -1;
-  for (let p = run; p > start; p--) {
+  let floor = start;
+  let run = start;
+  if (human) {
+    // The site's form: the run after `/w/` is read whole, once, with no order between an id and a slug (serial 123).
+    let w = start;
+    while (w < text.length && WORLD_RUN_CHAR.test(text[w])) w++;
+    if (IN_A_WORD.test(text.slice(w, w + 2))) return null;
+    const world = text.slice(start, w);
+    if (!isUuid(world) && !(isSlug(world) && !TYPES.has(world))) return null;
+    end = floor = run = w;
+    while (run < text.length && run - w <= ELEMENT_PATH_MAX && PATH_CHAR.test(text[run])) run++;
+  } else {
+    while (run < text.length && run - start <= PATH_MAX && PATH_CHAR.test(text[run])) run++;
+  }
+  for (let p = run; p > floor; p--) {
     if (parses(text.slice(index, p))) {
       end = p;
       break;

@@ -78,6 +78,48 @@ test('index and end are JavaScript string indexes (UTF-16 code units): an emoji 
   assert.deepEqual(got.reading, parseOwLink(address));
 });
 
+// The site's form after `/w/` (serial 123, amendments 6 and 8): the run is read whole, once, with no order between
+// an id and a slug. It ends at the first character outside the slug's alphabet (lowercase letters, digits, hyphens)
+// or the id's (either case of hex); exactly an id's form is the id, any other legal slug run is the slug, else no
+// address. A run followed by a letter or an underscore is cut inside a word and is no address.
+test('the site\'s form: the run after /w/ is read whole, an id or a slug, or no address', () => {
+  const H = 'https://www.onlyworlds.com/w/';
+  const W = doc.ids.W, E = doc.ids.E;
+  const found = (text) => {
+    const got = readOwLinkAt(text);
+    return got === null ? null : text.slice(0, got.end);
+  };
+  // the five slug cases of the profile's fixture (serial 123), by their names there
+  assert.equal(found(`${H}hyperion.`), `${H}hyperion`, 'slug-ends-at-its-alphabet-the-full-stop-is-prose');
+  assert.equal(found(`${H}event.`), null, 'slug-that-is-a-type-word-is-no-address');
+  assert.equal(found(`${H}my-world-.`), null, 'slug-run-ending-in-a-hyphen-is-no-address');
+  assert.equal(found(`${H}${'a'.repeat(41)}.`), null, 'slug-run-past-forty-characters-is-no-address');
+  assert.equal(found(`${H}Moppetopia.`), null, 'slug-starting-outside-its-alphabet-is-no-address');
+  // a run is the whole run, never a shorter slug inside it, and never an id that a slug run starts with
+  assert.equal(found(`${H}${'a'.repeat(40)}.`), `${H}${'a'.repeat(40)}`);
+  assert.equal(found(`${H}${W}-x.`), `${H}${W}-x`);
+  assert.equal(readOwLinkAt(`${H}${W}-x.`).reading.worldIsSlug, true);
+  assert.equal(found(`${H}${W}abc.`), `${H}${W}abc`);
+  assert.equal(readOwLinkAt(`${H}${W}abc.`).reading.worldIsSlug, true);
+  // exactly an id's form, in either case, is the id
+  assert.deepEqual(readOwLinkAt(`${H}${W.toUpperCase()}.`)?.reading.world, W);
+  assert.equal(found(`${H}${W.toUpperCase()}.`), `${H}${W.toUpperCase()}`);
+  assert.equal(found(`${H}${W.toUpperCase()}x.`), null, 'an upper-case id run on into slug letters is neither');
+  // cut inside a word: a run followed by a letter or an underscore is no address
+  assert.equal(found(`${H}mopPetopia.`), null);
+  assert.equal(found(`${H}hyper_ion.`), null);
+  assert.equal(found(`${H}${W}G.`), null);
+  assert.equal(found(`${H}caf${String.fromCodePoint(0xe9)}.`), null);
+  // what follows a whole run is read as before: an element, a moment, a lens, or prose
+  assert.equal(found(`${H}hyperion/object/${E}.`), `${H}hyperion/object/${E}`);
+  assert.equal(found(`${H}hyperion/charcter/${E}.`), `${H}hyperion`);
+  assert.equal(found(`${H}hyperion@3, then`), `${H}hyperion@3`);
+  assert.equal(found(`${H}${W}/object/${E}abc.`), `${H}${W}/object/${E}`);
+  // the longest slug with the longest type word still reads its element
+  const long = `${H}${'a'.repeat(40)}/institution/${E}`;
+  assert.equal(found(`${long}.`), long);
+});
+
 test('a text that is not a string,or an index that is not a whole number from 0, is a TypeError; past the end, nothing', () => {
   for (const v of [null, undefined, 42, ['ow://x']]) assert.throws(() => readOwLinkAt(v), TypeError, String(v));
   for (const i of [-1, 1.5, NaN, '0', null]) assert.throws(() => readOwLinkAt('ow://x', i), TypeError, String(i));
