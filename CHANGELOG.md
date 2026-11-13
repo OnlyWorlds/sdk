@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.160.3] - 2026-11-13
+
+### Changed
+
+- `list`'s parameters move into its doc comment's first sentence. The docs' reference takes only that sentence, so 4.160.2's wording never reached it.
+
 ## [4.160.2] - 2026-11-13
 
 ### Changed
