@@ -2,15 +2,16 @@
  * The address profile (schema-dist profiles/address.md, serial 77): elementAddress and parseOwLink on
  * every conformance case in codegen/schema-dist/profiles/address.fixture.json, vendored with the
  * distribution and hash-checked by schema:verify. The vendored copy is the only source: absent, the
- * test fails. A case of a kind this file does not know fails. Runs against the compiled bundle (dist).
+ * test fails. A case of a kind this file does not know fails; a prose case (serial 123) runs readOwLinkAt.
+ * OW_ADDRESS_FIXTURE points it at another copy (a staged branch before the serial). Runs against the compiled bundle (dist).
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { elementAddress, parseOwLink, OwAddressError, ELEMENT_TYPES } from '../dist/index.js';
+import { elementAddress, parseOwLink, readOwLinkAt, OwAddressError, ELEMENT_TYPES } from '../dist/index.js';
 
-const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/address.fixture.json', import.meta.url));
+const FIXTURE = process.env.OW_ADDRESS_FIXTURE ?? fileURLToPath(new URL('../codegen/schema-dist/profiles/address.fixture.json', import.meta.url));
 
 function loadFixture() {
   assert.ok(existsSync(FIXTURE), `no address fixture at ${FIXTURE}: re-vendor the pinned schema-dist`);
@@ -30,6 +31,11 @@ function answer(c) {
   switch (c.kind) {
     case 'parse': run = () => ({ expect: asFixture(parseOwLink(c.text)) }); break;
     case 'format': run = () => ({ expect: elementAddress(c.address) }); break;
+    // serial 123: the address that starts at `index` in prose, the slice it covers and parseOwLink's reading of it
+    case 'prose': run = () => {
+      const got = readOwLinkAt(c.text, c.index);
+      return { expect: got === null ? { address: null, reading: null } : { address: c.text.slice(c.index, got.end), reading: asFixture(got.reading) } };
+    }; break;
     default: throw new Error(`a case of unknown kind ${c.kind}`);
   }
   try {
