@@ -201,8 +201,10 @@ export class OwV2Client {
   // -- Element CRUD --------------------------------------------------------
 
   /**
-   * GET /{type}/ -- one cursor page. On a client with `world` set (an account token or no key), it
-   * reads that world, sending `world=<id>` beside the page's own parameters.
+   * GET /{type}/ -- one cursor page. `params`: `limit` (up to 1000), `cursor` (a page's `next_cursor`), `filter`
+   * (the wire filters), `ids`, `createdBy`, `expand`, `fields`, `viewAs` (an owner key) and `signal`; any other key is
+   * refused before anything is sent. On a client with `world` set (an account token or no key), it reads that world,
+   * sending `world=<id>` beside the page's own parameters.
    */
   async list(type: ElementType | string, params: ListParams = {}): Promise<OwPage> {
     only('list', params, LIST_PARAM_KEYS, LIST_FILTER_HINT);
