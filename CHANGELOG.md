@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.158.1] - 2026-11-13
+
+### Changed
+
+- **`TOOLS` carries Subs.** The tools list is repinned at `0a7539c` (from `9452529`): Subs, a convoy-escort game whose Character captains the lead escort, is a listed row with an element door for a Character (`needs: "account"`; it skips room, hidden and proposed elements), so `openersFor` offers it beside a Character, and on no other element and no world. The Python package bakes the same list.
+
 ## [4.158.0] - 2026-11-12
 
 ### Added
