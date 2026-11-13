@@ -148,7 +148,9 @@ export interface OwInstant {
  * `YYYY-MM-DDTHH:MM:SS`, an optional fraction after `.`, then `Z` or `+HH:MM` / `-HH:MM` or nothing
  * (read as UTC); `T` and `Z` in either case; ASCII digits; nothing trimmed. Each part in its range:
  * a month 1 to 12, a day that month has (Gregorian leap years), an hour to 23, a minute and a second
- * to 59, an offset's hours to 23 and minutes to 59. A fraction counts to its sixth digit; later digits
+ * to 59, an offset's hours to 23 and minutes to 59. A year is any four of the digits 0 to 9, 0000
+ * among them, on the Gregorian calendar run on in both directions, so 0000 is a leap year and an offset
+ * may carry an instant before 0000 or past the end of 9999. A fraction counts to its sixth digit; later digits
  * are dropped, never rounded. Not read: a date alone, a space for the `T`, a time without seconds, an
  * offset without its colon, a trailing line break.
  *

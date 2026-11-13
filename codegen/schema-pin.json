@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.34.0-dist.120",
-  "commit": "39d516326c6edea6e4b7f5141b19d78a7a6ff383",
-  "manifest_sha256": "e585dea71352d0d4ff6c71fa316a11510f0bf0c8fcf5801fbc30815d1bc0e6c3",
+  "tag": "v0.34.0-dist.121",
+  "commit": "f8909749767411f81031a5630a54b6fc1a4373ea",
+  "manifest_sha256": "35e1f6d73cb99ee3a4683f3e78e8996e1a8ccc7357d597de000fab4f5c8df460",
   "canonical_version": "00.34.00",
-  "dist_serial": 120,
-  "published": "2026-11-12",
-  "pinned_at": "2026-11-12",
+  "dist_serial": 121,
+  "published": "2026-11-13",
+  "pinned_at": "2026-11-13",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.34.0-dist.120",
+      "manifest_sha256": "e585dea71352d0d4ff6c71fa316a11510f0bf0c8fcf5801fbc30815d1bc0e6c3",
+      "note": "superseded by v0.34.0-dist.121 (canonical 00.34.00 unchanged, no schema file moved; the report profile says what rule 9 left unsaid: a parent that is no string, padded or given twice, a thread whose first report has a time that cannot be read, a ring of reports; a created_at with no offset is read as UTC, and the message page states the whole time grammar, years 0000 to 9999 included; report.fixture.json 27 thread cases, message.fixture.json 93)"
+    },
     {
       "tag": "v0.34.0-dist.119",
       "manifest_sha256": "7d00af2b9776f20ae5f1245a0f225e42d7425fc7c3e6f39df41d964da9ae60df",

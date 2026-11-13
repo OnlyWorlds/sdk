@@ -25,7 +25,7 @@ test('the fixture is the report profile\'s: its pairs are room pairs, its mark t
   assert.deepEqual([doc.pair.supertype, doc.board_pair.supertype], ['Report', 'Board']);
   assert.equal(doc.mark.field, 'x_room_of');
   assert.ok(Array.isArray(doc.thread_cases), 'the fixture holds no thread_cases list');
-  assert.equal(doc.thread_cases.length, 20, `the fixture holds ${doc.thread_cases.length} thread cases, serial 120 has 20`);
+  assert.equal(doc.thread_cases.length, 27, `the fixture holds ${doc.thread_cases.length} thread cases, serial 121 has 27`);
 });
 
 for (const [i, c] of (doc.thread_cases ?? []).entries()) {

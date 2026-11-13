@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.159.1] - 2026-11-13
+
+### Changed
+
+- Schema repinned to schema-dist `v0.34.0-dist.121` (canonical 00.34.00 unchanged, no schema file moved). The report profile states what rule 9 left unsaid: a parent that is no string, padded, or one id given twice; a thread whose report has a date alone; a ring of reports, which hides no report. The message profile states the whole time grammar, a `created_at` with no offset read as UTC and the years 0000 to 9999 included. `reportThreadsOf` and every message reader already answered each new case as ruled, so no reader changed: the report fixture's 27 thread cases and the message fixture's 93 cases are their own tests.
+- `instantOf`'s notes say what a year is: any four of the digits 0 to 9, 0000 among them, on the Gregorian calendar run on in both directions, so 0000 is a leap year and an offset may carry an instant past either end.
+- Comments only: the generated types' header and the codegen README name every server-managed field on the shared base (`doors` and `hidden` were left out of the header's list, `doors` and `x_served_trimmed` out of the README's).
+
 ## [4.159.0] - 2026-11-13
 
 ### Added
