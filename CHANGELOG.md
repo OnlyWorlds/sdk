@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+- (staged: ruled 2026-11-14, publishes with a later serial) `readOwLinkAt` answers null when the address would begin inside a word: after a letter of any script, a combining mark or an underscore (`elbow://object/<id>` is prose), the same set that cuts a run after it; a hyphen or a digit before `ow://` does not glue. A letter above U+FFFF before the index is read whole.
+
 ## [4.164.0] - 2026-11-14
 
 ### Added

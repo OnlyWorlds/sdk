@@ -128,3 +128,29 @@ test('a text that is not a string,or an index that is not a whole number from 0,
   assert.equal(readOwLinkAt('ow://x', 99), null);
   assert.equal(readOwLinkAt('', 0), null);
 });
+
+// What stands before ow:// (STAGED: ruled 2026-11-14, publishes with a later serial): a letter of any script, a combining mark or an
+// underscore glues the start into a word, the same set as the cut after a run; a hyphen or a digit does not.
+test('an address glued to a word before it is prose: the cut after a run, read from the other end', () => {
+  const E = '01a1d4ef-0000-7000-8000-000000000084';
+  for (const [name, before, found] of [
+    ['hyphen', 'x-', true],
+    ['digit', '3', true],
+    ['letter', 'elb', false],
+    ['non-ascii-letter', 'caf\u00E9', false],
+    ['combining-mark', 'cafe\u0301', false],
+    ['underscore', '_', false],
+    ['astral-letter', '\u{1D49C}', false],
+    ['space', 'a ', true],
+    ['opening-bracket', '(', true],
+    ['full-stop', 'end.', true],
+    ['quote', '"', true],
+    ['start-of-text', '', true],
+  ]) {
+    const text = `${before}ow://object/${E} then`;
+    const got = readOwLinkAt(text, before.length);
+    if (found) assert.equal(got?.reading.id, E, name);
+    else assert.equal(got, null, name);
+  }
+  assert.equal(readOwLinkAt('elbhttps://www.onlyworlds.com/w/hyperion.', 3), null, 'the site form glues too');
+});

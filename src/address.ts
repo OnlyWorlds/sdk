@@ -271,6 +271,15 @@ const ELEMENT_PATH_MAX = 1 + Math.max(...ELEMENT_TYPES.map(t => t.length)) + 1 +
 const WORLD_RUN_CHAR = /[0-9a-zA-F-]/;
 /** A run followed by one of these is cut inside a word: a letter (any script), a combining mark or an underscore (Unicode L and M). */
 const IN_A_WORD = /^[\p{L}\p{M}_]/u;
+/** Where the code point holding the unit at `i` starts: one unit back when `i` is the low half of a pair. */
+function codePointStart(text: string, i: number): number {
+  const c = text.charCodeAt(i);
+  if (c >= 0xdc00 && c <= 0xdfff && i > 0) {
+    const h = text.charCodeAt(i - 1);
+    if (h >= 0xd800 && h <= 0xdbff) return i - 1;
+  }
+  return i;
+}
 /** A moment's value as found in prose: its whole run of an optional minus and digits (the parser's step grammar decides whether it reads). */
 const STEP_RUN = /^-?[0-9]+/;
 /** A lens's value as found in prose: an id is 36 characters, and the lens ends where its id ends. */
@@ -299,7 +308,10 @@ function parses(s: string): boolean {
  * grammar, its whole run of an optional minus and digits) and then `?lens=` and a lens (an id, which ends where its 36
  * characters end). Any other query key or a fragment is not part of an address found in prose: the address ends
  * before its `?`, `&` or `#`, and a `@` or `?lens=` whose value does not read is not taken (the address ends before
- * it). What follows is prose, a full stop included (serial 123).
+ * it). What follows is prose, a full stop included (serial 123). An address begins at the start of the text or after
+ * a character that does not glue it to a word: after a letter (any script), a combining mark or an underscore the
+ * start is inside a word and this answers null (`elbow://object/<id>`); a hyphen or a digit before it does not glue
+ * (`x-ow://`, `3ow://`), the same set read from both ends.
  *
  * `end` is the index just past the address and `reading` what `parseOwLink` answers for `text.slice(index, end)`,
  * which `parseOwLink` itself still reads whole, unchanged: `ow://object/<id>.` handed to it whole is refused.
@@ -316,6 +328,9 @@ function parses(s: string): boolean {
 export function readOwLinkAt(text: string, index: number = 0): OwAddressAt | null {
   if (typeof text !== 'string') throw new TypeError('readOwLinkAt: text must be a string');
   if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) throw new TypeError('readOwLinkAt: index must be a whole number from 0');
+  // A start glued to a word is prose, the mirror of the cut after the run (STAGED: ruled 2026-11-14, publishes with a later serial):
+  // the character before is read whole, so a letter above U+FFFF (two code units) glues as any letter does.
+  if (index > 0 && index <= text.length && IN_A_WORD.test(String.fromCodePoint(text.codePointAt(codePointStart(text, index - 1))!))) return null;
   const human = text.startsWith(HUMAN_PREFIX, index);
   let start: number;
   if (human) start = index + HUMAN_PREFIX.length;
