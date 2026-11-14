@@ -39,7 +39,7 @@ function readAll(c) {
 
 test('the fixture holds the layout reading\'s cases', () => {
   assert.equal(doc.profile, 'map-space');
-  assert.equal(cases.length, 23, `the fixture holds ${cases.length} layout cases, serial 119 has 23`);
+  assert.equal(cases.length, 26, `the fixture holds ${cases.length} layout cases, serial 126 has 26`);
   assert.equal(new Set(cases.map((c) => c.name)).size, cases.length, 'two layout cases share a name');
 });
 

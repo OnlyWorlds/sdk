@@ -5,7 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
-- (staged for schema-dist serial 126, not yet ruled) A mark read by presence (`x_room_of`, `x_charter_of`, through `isRoomElement` and `isCharterElement`) reads an empty list or an empty object as absent, as the review mark already does: a compact read leaves both out, so a mark must not count in one served form and not the other.
+## [4.163.0] - 2026-11-14
+
+### Changed
+
+- Schema repinned to schema-dist `v0.34.1-dist.126` (canonical 00.34.01 unchanged, no schema file moved): six profile pages and five fixtures.
+- A mark read by presence (`x_room_of`, `x_charter_of`, through `isRoomElement` and `isCharterElement`) reads an empty list or an empty object as absent, as the review mark already does: a compact read leaves both out, so one element read in its full and its compact form must not count as marked in one and unmarked in the other. `false` is not null and still counts. If your code relied on `[]` or `{}` counting as a mark, it no longer does.
+- The fixtures' new cases pass as they came: three on each of the room and charter fixtures, seven on the layout profile's empty-string ids and links (a row without a non-empty string id is no element, an empty-string link is null; every reading here already answered so), and four prose cases in the address fixture (after a slug, and an upper-case type word, which names no element: the world's own address).
 
 ## [4.162.0] - 2026-11-13
 

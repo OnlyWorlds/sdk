@@ -25,7 +25,7 @@ test('CHARTER_PAIRS is the fixture\'s pairs, in its order, and its tables are wh
     .filter(([, f]) => f.type === 'single_link' || f.type === 'multi_link')
     .map(([field, f]) => ({ field, type: f.target }));
   assert.deepEqual(links, doc.hub_fields);
-  assert.equal(doc.cases.length, 38, `the fixture holds ${doc.cases.length} cases, serial 122 has 38`);
+  assert.equal(doc.cases.length, 41, `the fixture holds ${doc.cases.length} cases, serial 126 has 41`);
 });
 
 /** A case's world: one of the fixture's named worlds, or the case's own. */
