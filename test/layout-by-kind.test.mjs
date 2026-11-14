@@ -17,7 +17,7 @@ import { layoutByKind, layoutAround, worldGraph, GROUP_ORDER, ELEMENT_GROUPS } f
 const bytes = readFileSync(new URL('./fixtures/layout/by-kind.json', import.meta.url));
 const fx = JSON.parse(bytes.toString('utf8'));
 const clone = (v) => JSON.parse(JSON.stringify(v));
-const FIXTURE_SHA = 'eaabaed5bf9a160d';
+const FIXTURE_SHA = '06a023eace0f906e';
 const AROUND_TOLERANCE = 1e-12;
 
 test('the fixture is the one both packages hold', () => {
