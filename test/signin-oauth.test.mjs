@@ -62,7 +62,7 @@ test('completeSignIn trades the code once with the five body keys and no credent
   const calls = [];
   const client = new OwV2Client({ fetch: fetchStub(200, { token: 'ow_a_new', token_id: 't1', token_type: 'bearer', account: { id: 'u1', username: 'ann' } }, calls) });
   const got = await client.completeSignIn({ clientId: 'atlas', storage, url: `https://atlas.onlyworlds.com/signin/callback?code=c1&state=${state}` });
-  assert.deepEqual(got, { token: 'ow_a_new', tokenId: 't1', expiresAt: null, tokenType: 'bearer', account: { id: 'u1', username: 'ann' }, resume: { open: 'w1' }, aiToken: null });
+  assert.deepEqual(got, { token: 'ow_a_new', tokenId: 't1', expiresAt: null, tokenType: 'bearer', account: { id: 'u1', username: 'ann' }, scope: null, resume: { open: 'w1' }, aiToken: null });
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, `${BASE}/auth/token`);
   assert.equal(calls[0].init.method, 'POST');
@@ -294,4 +294,64 @@ test('a forged custom-scheme return does not cancel a sign-in in flight: the rea
   assert.equal(got.token, 'ow_a_new');
   assert.equal(calls.length, 1);
   assert.equal(storage.get('ow_signin:obsidian'), null);
+});
+
+// scope: 'world:read' (keel's read-only sign-in): on the authorize request, read back from the answer.
+async function begunReadOnly(storage) {
+  const client = new OwV2Client({ fetch: async () => { throw new Error('no fetch expected'); } });
+  const { url, state } = await client.signInWithOnlyWorlds({
+    clientId: 'maps', redirectUri: 'https://maps.onlyworlds.com/signin/callback', storage, navigate: false, scope: 'world:read',
+  });
+  return { url, state };
+}
+
+test('signInWithOnlyWorlds sends scope=world:read on the authorize request when asked, and none when left out', async () => {
+  const storage = memory();
+  const { url } = await begunReadOnly(storage);
+  assert.equal(new URL(url).searchParams.get('scope'), 'world:read');
+  assert.equal(JSON.parse(storage.get('ow_signin:maps')).scope, 'world:read');
+  const plain = memory();
+  const client = new OwV2Client({ fetch: async () => { throw new Error('no fetch expected'); } });
+  const { url: u2 } = await client.signInWithOnlyWorlds({ clientId: 'maps', redirectUri: 'https://maps.onlyworlds.com/signin/callback', storage: plain, navigate: false });
+  assert.equal(new URL(u2).searchParams.has('scope'), false);
+  assert.equal('scope' in JSON.parse(plain.get('ow_signin:maps')), false);
+});
+
+test('signInWithOnlyWorlds refuses any scope but world:read before anything is kept or sent', async () => {
+  for (const scope of ['read', 'world:write', 'World:Read', '', null, ['world:read'], 1]) {
+    const storage = memory();
+    const client = new OwV2Client({ fetch: async () => { throw new Error('no fetch expected'); } });
+    await assert.rejects(
+      client.signInWithOnlyWorlds({ clientId: 'maps', redirectUri: 'https://maps.onlyworlds.com/signin/callback', storage, navigate: false, scope }),
+      TypeError, JSON.stringify(scope));
+    assert.equal(storage.map.size, 0, JSON.stringify(scope));
+  }
+});
+
+test('completeSignIn answers the scope the server granted: world:read when the answer says so, else null; the exchange body carries no scope', async () => {
+  for (const [served, want] of [['world:read', 'world:read'], [undefined, null], ['world:write', null], ['', null]]) {
+    const storage = memory();
+    const { state } = await begunReadOnly(storage);
+    const calls = [];
+    const answer = { token: 'ow_a_ro', token_id: 't2', token_type: 'bearer', account: { id: 'u1', username: 'ann' } };
+    if (served !== undefined) answer.scope = served;
+    const client = new OwV2Client({ fetch: fetchStub(200, answer, calls) });
+    const got = await client.completeSignIn({ clientId: 'maps', storage, url: `https://maps.onlyworlds.com/signin/callback?code=c2&state=${state}` });
+    assert.equal(got.scope, want, String(served));
+    assert.deepEqual(Object.keys(JSON.parse(calls[0].init.body)).sort(), ['client_id', 'code', 'code_verifier', 'grant_type', 'redirect_uri']);
+  }
+});
+
+test('completeSignIn refuses aiUses beside a read-only sign-in before anything is spent, and the same return then completes without it', async () => {
+  const storage = memory();
+  const { state } = await begunReadOnly(storage);
+  const calls = [];
+  const client = new OwV2Client({ fetch: fetchStub(200, { token: 'ow_a_ro', token_id: 't3', token_type: 'bearer', scope: 'world:read', account: { id: 'u1', username: 'ann' } }, calls) });
+  const url = `https://maps.onlyworlds.com/signin/callback?code=c3&state=${state}`;
+  await assert.rejects(client.completeSignIn({ clientId: 'maps', storage, url, aiUses: ['ask'] }), TypeError);
+  assert.equal(calls.length, 0);
+  assert.notEqual(storage.get('ow_signin:maps'), null);
+  const got = await client.completeSignIn({ clientId: 'maps', storage, url });
+  assert.equal(got.scope, 'world:read');
+  assert.equal(calls.length, 1);
 });

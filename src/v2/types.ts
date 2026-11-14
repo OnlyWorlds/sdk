@@ -1429,6 +1429,8 @@ export interface OwAccountToken {
   client?: string;
   /** On an `mcp` token only: the host the client returns the person to. */
   return_host?: string;
+  /** Only on a token a sign-in with `scope: 'world:read'` minted: it reads, and every write but its own revoke is refused with 403 `permission_error`. Absent on every other token. */
+  scope?: 'world:read';
 }
 
 /**

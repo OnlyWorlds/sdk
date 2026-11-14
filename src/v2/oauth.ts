@@ -39,6 +39,14 @@ export interface OwSignInBegin {
   storage?: OwSignInStorage;
   /** How the browser is sent: a function taking the URL, or `false` to only return it. Default: `location.assign` where there is one. */
   navigate?: ((url: string) => void) | false;
+  /**
+   * `'world:read'` for a tool that only reads: the token the sign-in gives is read-only. It reads
+   * everything the account reads, and every write (a world key minted, a world made, another token
+   * minted, an AI call) is refused with 403 `permission_error`, except revoking the token itself.
+   * Left out, the token writes as the account does. The one value there is; any other is refused
+   * before anything is sent. `completeSignIn` answers the scope the server granted.
+   */
+  scope?: 'world:read';
 }
 
 export interface OwSignInBegun {
@@ -144,6 +152,13 @@ export interface OwSignInResult {
   expiresAt: string | null;
   tokenType: 'bearer';
   account: { id: string; username: string };
+  /**
+   * `'world:read'` when the server granted a read-only token (the sign-in asked `scope: 'world:read'`):
+   * every write but revoking the token itself is refused with 403 `permission_error`. Null when the
+   * answer carries no scope: the token writes as the account does, which is also what a server that
+   * does not know scopes answers, so a tool that asked for read-only reads it here.
+   */
+  scope: 'world:read' | null;
   /** The `resume` given to `beginSignIn`, or null. */
   resume: unknown;
   /**
@@ -264,6 +279,10 @@ function redirectProblem(uri: unknown): string | null {
 export async function beginSignIn(baseUrl: string, opts: OwSignInBegin): Promise<OwSignInBegun> {
   const { clientId, redirectUri, resume = null } = opts ?? ({} as OwSignInBegin);
   if (typeof clientId !== 'string' || clientId === '') throw new TypeError('signInWithOnlyWorlds needs clientId');
+  const scope = opts.scope;
+  if (scope !== undefined && scope !== 'world:read') {
+    throw new TypeError(`signInWithOnlyWorlds: scope is 'world:read' or left out, got ${JSON.stringify(scope)}. Nothing was sent.`);
+  }
   const why = redirectProblem(redirectUri);
   if (why !== null) {
     throw new TypeError(`signInWithOnlyWorlds: redirectUri ${why}. Pass the registered return address as a string: `
@@ -274,13 +293,14 @@ export async function beginSignIn(baseUrl: string, opts: OwSignInBegin): Promise
   const state = randomToken(32);
   const verifier = randomToken(32); // 43 characters of base64url: within PKCE's 43 to 128
   const challenge = await pkceChallenge(verifier);
-  storage.set(RECORD_PREFIX + clientId, JSON.stringify({ state, verifier, redirectUri, resume }));
+  storage.set(RECORD_PREFIX + clientId, JSON.stringify({ state, verifier, redirectUri, resume, ...(scope ? { scope } : {}) }));
   const url = new URL(sitePage(baseUrl, '/signin/authorize'));
   url.searchParams.set('client_id', clientId);
   url.searchParams.set('redirect_uri', redirectUri);
   url.searchParams.set('state', state);
   url.searchParams.set('code_challenge', challenge);
   url.searchParams.set('code_challenge_method', 'S256');
+  if (scope) url.searchParams.set('scope', scope);
   const href = url.toString();
   if (opts.navigate !== false) {
     const go = opts.navigate ?? (globalThis as { location?: Location }).location?.assign?.bind((globalThis as { location?: Location }).location);
@@ -333,7 +353,7 @@ export async function completeSignIn(
 
   const key = RECORD_PREFIX + clientId;
   const raw = storage.get(key);
-  let record: { state?: unknown; verifier?: unknown; redirectUri?: unknown; resume?: unknown } | null = null;
+  let record: { state?: unknown; verifier?: unknown; redirectUri?: unknown; resume?: unknown; scope?: unknown } | null = null;
   try { record = raw ? JSON.parse(raw) : null; } catch { record = null; }
   if (!record || typeof record.state !== 'string' || typeof record.verifier !== 'string' || typeof record.redirectUri !== 'string') {
     storage.remove(key);
@@ -344,6 +364,11 @@ export async function completeSignIn(
   // the sign-in that was started here has come back, and the record goes whatever happens next.
   if (state !== record.state) {
     throw new OwSignInError('state_mismatch', 'This page was not reached from the sign-in that was started here: start again.');
+  }
+  // A read-only sign-in gets no AI door token, and the server would spend the code refusing it: refused
+  // here, before the record goes, so the same return can be completed without aiUses.
+  if (record.scope === 'world:read' && 'ai_uses' in ai) {
+    throw new TypeError('completeSignIn: this sign-in asked for a read-only token (scope world:read), which gets no AI door token: leave aiUses out. Nothing was sent.');
   }
   storage.remove(key);
   if (!code) {
@@ -383,7 +408,7 @@ export async function completeSignIn(
   if (res.status === 400 && errCode === 'invalid_grant') {
     throw new OwSignInError('invalid_grant', errMessage ?? 'The sign-in code could not be exchanged: it was used, expired, or made for another tool. Start again.', { status: 400, code: errCode, param: errParam });
   }
-  const ok = body as { token?: unknown; token_id?: unknown; expires_at?: unknown; token_type?: unknown; account?: { id?: unknown; username?: unknown }; ai_token?: unknown } | null;
+  const ok = body as { token?: unknown; token_id?: unknown; expires_at?: unknown; token_type?: unknown; scope?: unknown; account?: { id?: unknown; username?: unknown }; ai_token?: unknown } | null;
   if (!res.ok || typeof ok?.token !== 'string' || ok.token === '' || typeof ok.account?.id !== 'string') {
     throw new OwSignInError('failed', errMessage ?? `Signing in did not work (${res.status}).`, { status: res.status, code: errCode, param: errParam });
   }
@@ -393,6 +418,7 @@ export async function completeSignIn(
     expiresAt: typeof ok.expires_at === 'string' && ok.expires_at !== '' ? ok.expires_at : null,
     tokenType: 'bearer',
     account: { id: ok.account.id, username: typeof ok.account.username === 'string' ? ok.account.username : '' },
+    scope: ok.scope === 'world:read' ? 'world:read' : null,
     resume: record.resume ?? null,
     aiToken: 'ai_uses' in ai ? readAiToken(ok.ai_token) : null,
   };

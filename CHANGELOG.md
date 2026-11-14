@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.164.0] - 2026-11-14
+
+### Added
+
+- `signInWithOnlyWorlds({ scope: 'world:read' })`: a read-only sign-in, for a tool that only reads. The token it gives reads everything the account reads, and every write (a world key minted, a world made, another token minted, an AI call) is refused with 403 `permission_error`, except revoking the token itself. Any other `scope` is refused before anything is kept or sent; left out, the token writes as the account does, as before.
+- `completeSignIn` answers `scope`: `'world:read'` when the server granted a read-only token, null when its answer carries none, so a tool that asked for read-only reads what it holds. A read-only sign-in gets no AI door token: `aiUses` beside one is refused before the code is spent, and the same return then completes without it.
+- `OwAccountToken` (and `OwMintedAiToken`) declare `scope`, present only on a token a read-only sign-in minted, as `GET /account/tokens` lists it.
+
 ## [4.163.1] - 2026-11-14
 
 ### Fixed

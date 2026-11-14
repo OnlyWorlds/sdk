@@ -1617,10 +1617,12 @@ export class OwV2Client {
    * bound for this sign-in (`http://127.0.0.1:<port>/<path>` or `http://[::1]:<port>/<path>`,
    * registered without the port) or its own scheme as registered (`obsidian://onlyworlds-signin`),
    * and opens the URL in the system browser with `navigate`. `resume` is small JSON handed back by
-   * `completeSignIn`. No request is sent; any client, keyless included.
+   * `completeSignIn`. `scope: 'world:read'` asks for a read-only token, for a tool that only reads:
+   * every write but revoking it is refused with 403 `permission_error`, and `completeSignIn` answers
+   * the scope granted. No request is sent; any client, keyless included.
    */
   async signInWithOnlyWorlds(opts: OwSignInBegin): Promise<OwSignInBegun> {
-    only('signInWithOnlyWorlds', opts, ['clientId', 'redirectUri', 'resume', 'storage', 'navigate']);
+    only('signInWithOnlyWorlds', opts, ['clientId', 'redirectUri', 'resume', 'storage', 'navigate', 'scope']);
     return beginSignIn(this.baseUrl, opts);
   }
 
