@@ -70,7 +70,7 @@ export type { OwProposedMark } from './review';
 export { isLens, isTemplate, lensesInUse, resolveLens, DATE_FIELD, dateOf } from './lens';
 export type { OwLensReader, OwLensWorld, OwLensOptions, OwLensReading, OwLensMail, OwLensCutReason } from './lens';
 // The lens profile's graph section: a reading of a world as nodes and edges, for the same reader.
-export { worldGraph, degreeOf, outDegreeOf } from './graph';
+export { worldGraph, degreeOf, outDegreeOf, DECLARED_LINKS } from './graph';
 export type { OwGraphOptions, OwGraphMark, OwGraphCutReason, OwGraphNode, OwGraphEdge, OwWorldGraph } from './graph';
 // The landing profile (schema-dist profiles/landing.md): a world's first picture at a door, read from its graph.
 export { landingOf } from './landing';

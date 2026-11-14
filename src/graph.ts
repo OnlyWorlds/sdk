@@ -85,8 +85,13 @@ export interface OwWorldGraph {
   unreadable: string | null;
 }
 
-/** The extension fields a published profile declares a link, each a list of ids: the lens profile's and the spine profile's. */
-const DECLARED_LINKS: readonly string[] = ['x_lens_leads_to', 'x_spine_depends_on'];
+/**
+ * The extension fields a published profile reads as links, each a list of ids in this world: the lens profile's
+ * closed table of declared links (`x_lens_leads_to`, and the spine profile's `x_spine_depends_on`). A reader reads each as
+ * a multi-link (`worldGraph` draws its edges), and a writer that builds one names each element once, as the folder
+ * format says of a multi-link. The same list as schema-dist's folder lint (`LINK_EXTENSIONS`).
+ */
+export const DECLARED_LINKS: readonly string[] = Object.freeze(['x_lens_leads_to', 'x_spine_depends_on']);
 const GRAPH_REASONS: readonly OwGraphCutReason[] = [...CUT_REASONS, 'room', 'hidden', 'proposed', 'map_space', 'reading_aid', 'outside_lens'];
 const GRAPH_OWNER_ONLY: ReadonlySet<string> = new Set([...OWNER_ONLY, 'hidden', 'proposed']);
 

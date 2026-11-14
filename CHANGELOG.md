@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.168.0] - 2026-11-14
+
+### Added
+
+- `DECLARED_LINKS`: the extension fields a published profile reads as links, each a list of ids in this world (`x_lens_leads_to`, `x_spine_depends_on`), the list `worldGraph` draws edges from. A writer that builds one of these lists names each element once, as the folder format 0.3.24 says of a multi-link, and can read the fields from here rather than copy them. A test holds it to the list schema-dist's own folder lint reads (`LINK_EXTENSIONS`), so a serial that grows the list reaches the package at its repin.
+
 ## [4.167.1] - 2026-11-14
 
 ### Fixed
