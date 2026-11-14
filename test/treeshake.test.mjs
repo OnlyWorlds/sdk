@@ -30,6 +30,18 @@ test('the control: a bundle that reads the floors keeps them', () => {
   assert.ok(bundle('TRAIL_TIERS').includes('location, object, zone'));
 });
 
+// The by-kind layout's anchor table (253 points): one anchor's digits, which survive minifying whatever its form.
+const ANCHOR_DIGITS = '8660254037844387';
+for (const name of ['mapSpace', 'layoutOf', 'worldGraph', 'trailByPlace', 'layoutAround', 'OwV2Client']) {
+  test(`a bundle of ${name} alone leaves the by-kind anchor table out`, () => {
+    assert.ok(!bundle(name).includes(ANCHOR_DIGITS));
+  });
+}
+
+test('the control: a bundle that lays out by kind keeps the anchor table', () => {
+  assert.ok(bundle('layoutByKind').includes(ANCHOR_DIGITS));
+});
+
 // fflate's own error words survive minifying, where its function names do not.
 const FFLATE = /invalid block type|unexpected EOF|invalid zip data/;
 for (const name of ['trailByPlace', 'mapSpace', 'layoutOf']) {

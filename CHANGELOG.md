@@ -5,6 +5,11 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- `layoutByKind(graph)`: a world nobody laid out, laid out from its graph as `worldGraph` answers it. Each kind gets a point on a circle, links pull, neighbours push apart, for 320 seeded steps (160 past 2,000 elements), and the points are fitted into a frame of -1 to 1 on the longer axis. Answers `{ method: 'by-kind', version: 1, points }`, one `{ id, x, y }` per node in node order (`OwLayoutByKind`). The kinds' points on the circle are a table of numbers baked into the package, never computed, so the same graph gives the same points to the last bit in every browser and in the Python package; the shared fixture `test/fixtures/layout/by-kind.json` (11 cases, 2,832 points) is compared exactly.
+- `layoutAround(graph, focus, { steps })`: one element at the centre, its neighbours on rings round it in kind order and then by name in code point order (never by locale), up to 60 on the first ring, and with `steps: 2` their own neighbours further out, near the neighbour that reached them. Answers `{ method: 'around', version: 1, points }`, one `{ id, depth, x, y }` per element within the steps, in node order (`OwLayoutAround`). A focus that is not a node, a `steps` that is not 1 or 2, or an unknown option is refused with a TypeError.
+
 ## [4.166.0] - 2026-11-14
 
 schema-dist v0.34.1-dist.128 (canonical 00.34.01 unchanged; `ONLYWORLDS_VERSION` unchanged, no schema file moved). The fixtures' new cases pass: the lens fixture's 235, the message fixture's 102 (its two `recipients` cases), the address fixture's two `prose-all` cases, the landing fixture's 33.

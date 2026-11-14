@@ -18,7 +18,7 @@ import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
   preparePhoto, parseDate, resolveCalendar, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
   isToEveryone, hasUnseenRecipients, readMarkOf,
-  elementAddress, resolveLens, worldGraph, openersFor, landingOf, trailByPlace,
+  elementAddress, resolveLens, worldGraph, openersFor, landingOf, trailByPlace, layoutAround,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
 
@@ -113,6 +113,7 @@ const FENCED = {
   'landingOf#1': () => landingOf({ nodes: [], edges: [] }, U),
   // 4.135.0: a layout method's input, its settings and its places, fenced at every level.
   'trailByPlace#0': () => trailByPlace({ ...trailInput, ...U }),
+  'layoutAround#2': () => layoutAround({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, 'a', U),
   // The Open with rows: the address as elementAddress fences it, and the surface's five keys.
   'openersFor#2': () => openersFor([], 'world', { form: 'human', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f', ...U }, { audience: 'member' }),
   'openersFor#3': () => openersFor([], 'world', { form: 'human', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f' }, { audience: 'member', ...U }),
@@ -151,6 +152,8 @@ Object.assign(DATA, {
   'degreeOf#0': 'the graph worldGraph answered',
   'outDegreeOf#0': 'the graph worldGraph answered',
   'landingOf#0': 'the graph worldGraph answered',
+  'layoutByKind#0': 'the graph worldGraph answered',
+  'layoutAround#0': 'the graph worldGraph answered',
   'charterOf#0': 'the world snapshot, as resolveLens takes it, and whether it is open',
   'charterOf#1': 'the reader, as resolveLens takes it',
   'strandOf#0': 'the world snapshot, as resolveLens takes it, with its x_strand and whether it is open',
@@ -191,6 +194,7 @@ test('the fenced calls work without the unknown key: a refusal is the key, not t
   assert.equal(typeWord({ x_names: { version: 1, types: { character: { one: 'Employee' } } } }, 'character', none), 'Employee');
   assert.equal(parseDate(cfg, '12 Sowmarch 3 FT', { now: 0 }).error, undefined);
   assert.equal(trailByPlace(trailInput).pins.length, 1);
+  assert.equal(layoutAround({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, 'a', { steps: 2 }).points.length, 1);
   assert.equal(resolveCalendar(elements, undefined, { fallbackToOnly: true })?.id, 'c');
   assert.equal(lookupWorld(index, 'Eknomos', { limit: 1 }).length, 1);
   assert.match(renderElement(elements[0], index, { descMax: 10 }), /Eknomos/);

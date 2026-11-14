@@ -85,6 +85,9 @@ export type { OwLayoutOf } from './layout-of';
 // A layout method: a world laid out along a route on a ground map, as a Map frame and its Pins (read back by mapSpace).
 export { trailByPlace, TRAIL_TIERS, roundHalfEven } from './layout-trail';
 export type { OwTrailGround, OwTrailHanger, OwTrailInput, OwTrailLayout, OwTrailPin, OwTrailPlace, OwTrailSettings, OwTrailSpiral, OwTrailTier } from './layout-trail';
+// Two layout methods for a world nobody laid out, from its graph: by kind (the whole world) and around one element.
+export { layoutByKind, layoutAround } from './layout-by-kind';
+export type { OwLayoutGraph, OwLayoutPoint, OwLayoutByKind, OwLayoutAround, OwLayoutAroundPoint, OwLayoutAroundOptions } from './layout-by-kind';
 // The names profile (schema-dist profiles/names.md): a world's own words for the types, x_names on the World.
 export { typeWord } from './names';
 export type { OwNamesMap, OwWordPair } from './names';

@@ -18,3 +18,5 @@ codegen/tools/tools.json -text
 test/fixtures/layout/** -text
 # The address-in-prose cases (serial 123), the same bytes as the Python package's copy (both tests hold its sha256).
 test/fixtures/address-in-prose.json -text
+# The by-kind layout's anchor table, the same bytes as the Python package's copy and the shared fixture's anchors (codegen/layout_anchors.mjs bakes it).
+codegen/layout/anchors.json -text
