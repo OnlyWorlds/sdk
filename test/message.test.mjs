@@ -54,6 +54,8 @@ function answer(c, doc) {
       return { edited: e.edited, edited_by: e.by };
     }
     case 'note': return { line: noteOf(c.notes, c.character, members) };
+    // STAGED: serial 128: each Character once, in the order of its first place
+    case 'recipients': return { recipients: recipientsOf(c.message) };
     default: throw new Error(`a case of unknown kind ${c.kind}`);
   }
 }
@@ -62,6 +64,7 @@ const EXPECTED_KEYS = {
   pair: ['is_message'], addressed: ['addressed'], sent_by: ['sent_by'], sender: ['status', 'claimed', 'written_by'],
   mark: ['mark'], unread: ['unread'], thread: ['thread'], unseen: ['addressed', 'unseen_recipients'],
   everyone: ['to_everyone', 'unseen_recipients'], edited: ['edited', 'edited_by'], note: ['line'],
+  recipients: ['recipients'], // STAGED: serial 128
 };
 
 test('MESSAGE_PAIR is the fixture\'s pair, and one of the room profile\'s pairs', () => {
