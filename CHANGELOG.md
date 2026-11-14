@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.163.1] - 2026-11-14
+
+### Fixed
+
+- The descriptions of `isRoomElement` and `isCharterElement` say what 4.163.0 reads: an empty list or an empty object is no mark. They still said any value but null counted, and the API reference is generated from them. No code changes.
+
 ## [4.163.0] - 2026-11-14
 
 ### Changed

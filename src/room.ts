@@ -40,13 +40,14 @@ export const fold = (text: string): string => simpleCaseFold(trimWhiteSpace(text
 
 /**
  * A mark read by presence (room.md and charter.md, serial 83): it counts when its value is not null; a
- * string counts only when something is left after the White_Space trim, and any other value (a number, an
- * object) counts as present. The value is never compared. Module-internal.
+ * string counts only when something is left after the White_Space trim, an empty list or an empty object is
+ * absent (serial 126), and any other value (a number, a boolean) counts as present. The value is never
+ * compared. Module-internal.
  */
 export function hasMark(el: Record<string, unknown>, field: string): boolean {
   const mark = Object.prototype.hasOwnProperty.call(el, field) ? el[field] : undefined;
   if (mark === undefined || mark === null) return false;
-  // An empty list or an empty object is absent too: STAGED for serial 126, not ruled.
+  // An empty list or an empty object is absent too (serial 126).
   if (Array.isArray(mark)) return mark.length > 0;
   if (typeof mark === 'object') return Object.keys(mark).length > 0;
   return typeof mark !== 'string' || trimWhiteSpace(mark) !== '';
@@ -56,7 +57,7 @@ export function hasMark(el: Record<string, unknown>, field: string): boolean {
  * True when the element is a room element: its type and supertype, each trimmed and compared
  * without regard to case, match one of ROOM_PAIRS, AND it carries the mark `x_room_of` (the id of
  * the world or the sitting the room belongs to), read by presence: any value but null, a string only
- * when something is left after trimming, the value never compared. Both, always:
+ * when something is left after trimming, an empty list or object never, the value never compared. Both, always:
  * a pair without the mark is lore (a novel's letters are Narratives with supertype Message),
  * and a mark without a pair is not a room element (a malformed mark: report it, never hide it).
  * The pair match is the whole word: a Narrative with supertype `Messages` is lore. The charter
@@ -106,7 +107,7 @@ export function readingAidKey(element: unknown): string | null {
  * domains (`construct`, supertype `Domain`), the type and supertype each trimmed and compared without
  * regard to case, the whole word, AND the mark `x_charter_of`, the id of the world the aid belongs to. The
  * mark counts when it is present and not null; a string mark counts only when something is left after
- * trimming. Both, always: the pair without the mark is lore, and stays in every view (a kingdom's Charter
+ * trimming, and an empty list or object never. Both, always: the pair without the mark is lore, and stays in every view (a kingdom's Charter
  * in a novel's world is a Law like any other).
  *
  * What it is for: a tool's front door shows the aids first; a lore view (a list, a graph, a story's
