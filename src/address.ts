@@ -93,6 +93,9 @@ export const ADDRESS_KEYS: readonly string[] = ['form', 'world', 'type', 'id', '
 /** A to Z lowered, nothing else: the profile's case is ASCII's, so no runtime's Unicode tables decide it. */
 const asciiLower = (s: string): string => s.replace(/[A-Z]/g, c => String.fromCharCode(c.charCodeAt(0) + 32));
 const isUuid = (s: string): boolean => UUID.test(s);
+/** An id's four hyphens at their places in `text` from `at`: checked before a slice, so an end that holds no id costs four reads. */
+const hyphensAt = (text: string, at: number): boolean =>
+  text.charCodeAt(at + 8) === 45 && text.charCodeAt(at + 13) === 45 && text.charCodeAt(at + 18) === 45 && text.charCodeAt(at + 23) === 45;
 const isSlug = (s: string): boolean => s.length >= 3 && s.length <= 40 && SLUG.test(s);
 
 /** The type word as given, or the refusal: `uppercase` for one of the 22 in another case, else `unknown_type`. */
@@ -364,7 +367,7 @@ export function readOwLinkAt(text: string, index: number = 0): OwAddressAt | nul
   // Every path the parser takes here ends in an id (a world's in the text form, an element's after a world), so an
   // end whose last 36 characters are not an id is passed over without a parse: a refused parse costs an exception.
   for (let p = run; p > floor; p--) {
-    if (p - ID_LENGTH >= start && isUuid(text.slice(p - ID_LENGTH, p)) && parses(text.slice(index, p))) {
+    if (p - ID_LENGTH >= start && hyphensAt(text, p - ID_LENGTH) && isUuid(text.slice(p - ID_LENGTH, p)) && parses(text.slice(index, p))) {
       end = p;
       break;
     }

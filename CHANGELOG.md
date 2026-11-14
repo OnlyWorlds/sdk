@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.165.1] - 2026-11-14
+
+### Fixed
+
+- `findOwLinks` and `readOwLinkAt` read a start that holds no address faster: an end is tested for an id only where an id's four hyphens stand, so a long line of `ow://` starts and no ids (200 KB) reads in about 5 ms where it took about 8 to 18. No answer changes: 40,000 random texts answer the same as 4.165.0.
+
 ## [4.165.0] - 2026-11-14
 
 schema-dist v0.34.1-dist.127 (canonical 00.34.01 unchanged; `ONLYWORLDS_VERSION` unchanged, no schema file moved). The fixtures' new cases pass: the address profile's glued starts (216 cases), the views fixture's own-banner table, three layout-mark cases and four presence cases.
