@@ -65,7 +65,7 @@ test('refused before reading: not a graph, options not an object', () => {
   assert.throws(() => landingOf({ nodes: [], edges: [] }, 5), TypeError);
 });
 
-test('a list naming one target twice reads, through worldGraph, as one edge: degree 1 at both ends, both near orphans (STAGED serial 128)', () => {
+test('a list naming one target twice reads, through worldGraph, as one edge: degree 1 at both ends, both near orphans (since serial 128)', () => {
   const world = { elements: [
     { id: 'ev', type: 'event', name: 'Feast', characters: ['mara', 'mara'] },
     { id: 'mara', type: 'character', name: 'Mara' },

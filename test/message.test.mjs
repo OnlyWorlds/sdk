@@ -14,7 +14,7 @@ import {
 } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/message.fixture.json', import.meta.url));
-const COUNTS = { pair: 10, addressed: 11, sent_by: 3, sender: 14, unread: 22, mark: 18, thread: 4, unseen: 3, everyone: 3, edited: 4, note: 8 };
+const COUNTS = { pair: 10, addressed: 11, recipients: 2, sent_by: 3, sender: 14, unread: 22, mark: 18, thread: 4, unseen: 3, everyone: 3, edited: 4, note: 8 };
 
 function loadFixture() {
   assert.ok(existsSync(FIXTURE), `no message fixture at ${FIXTURE}`);
@@ -54,7 +54,7 @@ function answer(c, doc) {
       return { edited: e.edited, edited_by: e.by };
     }
     case 'note': return { line: noteOf(c.notes, c.character, members) };
-    // STAGED: serial 128: each Character once, in the order of its first place
+    // Since serial 128: each Character once, in the order of its first place
     case 'recipients': return { recipients: recipientsOf(c.message) };
     default: throw new Error(`a case of unknown kind ${c.kind}`);
   }
@@ -64,7 +64,7 @@ const EXPECTED_KEYS = {
   pair: ['is_message'], addressed: ['addressed'], sent_by: ['sent_by'], sender: ['status', 'claimed', 'written_by'],
   mark: ['mark'], unread: ['unread'], thread: ['thread'], unseen: ['addressed', 'unseen_recipients'],
   everyone: ['to_everyone', 'unseen_recipients'], edited: ['edited', 'edited_by'], note: ['line'],
-  recipients: ['recipients'], // STAGED: serial 128
+  recipients: ['recipients'], // since serial 128
 };
 
 test('MESSAGE_PAIR is the fixture\'s pair, and one of the room profile\'s pairs', () => {
@@ -104,7 +104,7 @@ test('the message readers answer every case of the message fixture', (t) => {
   }
   t.diagnostic(`the message fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 100, `the fixture holds ${cases.length} cases, serial 123 has 100`);
+  assert.equal(cases.length, 102, `the fixture holds ${cases.length} cases, serial 128 has 102`);
   assert.deepEqual(counts, COUNTS);
 });
 
@@ -348,7 +348,7 @@ test('keyless is an options object with a boolean: a bare true or a string is a 
   assert.equal(isToEveryone({ type: 'narrative', supertype: 'Message', characters: [] }, {}), true);
 });
 
-test('recipientsOf answers each recipient once, in its first place; ids compare as written (STAGED serial 128)', () => {
+test('recipientsOf answers each recipient once, in its first place; ids compare as written (since serial 128)', () => {
   assert.deepEqual(recipientsOf({ type: 'narrative', supertype: 'Message', characters: ['b', 'a', 'b', 'c', 'a'] }), ['b', 'a', 'c']);
   assert.deepEqual(recipientsOf({ type: 'narrative', supertype: 'Message', characters: ['a', 'A', 'a'] }), ['a', 'A']);
   assert.deepEqual(recipientsOf({ type: 'narrative', supertype: 'Message', characters: ['a', '', 'a', 7] }), ['a']);
@@ -358,7 +358,7 @@ test('recipientsOf answers each recipient once, in its first place; ids compare 
   assert.equal(isToEveryone(repeat), false);
 });
 
-test('a Narrative that is not a message has no recipients and is addressed to nobody (STAGED serial 128)', () => {
+test('a Narrative that is not a message has no recipients and is addressed to nobody (since serial 128)', () => {
   const story = { type: 'narrative', supertype: 'Story', characters: ['a'] };
   assert.equal(isMessage(story), false);
   assert.deepEqual(recipientsOf(story), []);

@@ -63,7 +63,7 @@ export interface OwGraphNode {
   known_of?: true;
 }
 
-/** One link: one source, one field, one target, at its place in the field's list as served (0 for a single link); a target the list names twice is one edge, at its first place (STAGED: serial 128). */
+/** One link: one source, one field, one target, at its place in the field's list as served (0 for a single link); a target the list names twice is one edge, at its first place (since serial 128). */
 export interface OwGraphEdge {
   source: string;
   field: string;
@@ -118,7 +118,7 @@ function flag(opts: Body, key: string): boolean {
  * and keeps a proposed id its rung sees); a link held on both ends is two edges. A multi-link names each
  * element once: a list that names one element twice gives one edge, or one count in `edgesCut`, at its first
  * entry, and the entries after the repeat keep their own places (in `[c1, c1, c2]` the edge to `c1` has index 0
- * and the edge to `c2` index 2); ids compare as written, so `a` and `A` are two (STAGED: serial 128). A Pin's generic pair
+ * and the edge to `c2` index 2); ids compare as written, so `a` and `A` are two (since serial 128). A Pin's generic pair
  * (`element_type`, `element_id`) is its placement, never an edge; its `map` link is. A guest's known-of
  * element has no edges out. A link to an element of another type than its field's target draws no edge and
  * is not counted. A link to an element that is not a node is counted in `edgesCut` by that element's reason: the
@@ -231,7 +231,7 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
       const v = el[field];
       const to = linkTarget(el, field, target);
       const list: unknown[] = many ? (Array.isArray(v) ? v : []) : [v];
-      // (STAGED: serial 128) An element the list names again is read once, at its first entry; the repeat
+      // (since serial 128) An element the list names again is read once, at its first entry; the repeat
       // keeps its place in the served list, so the entries after it keep theirs.
       const read = new Set<string>();
       let served = 0;
@@ -243,7 +243,7 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
       }
     }
     // A declared extension link is served as stored to every reader; an element it names again is read once,
-    // at its first entry (STAGED: serial 128).
+    // at its first entry (since serial 128).
     for (const field of DECLARED_LINKS) {
       const v = el[field];
       if (!Array.isArray(v)) continue;
@@ -273,7 +273,7 @@ function tally(counts: ReadonlyMap<OwGraphCutReason, number>, owner: boolean): P
 /**
  * Each node's degree in a graph `worldGraph` answered: the number of its edges, in or out, each edge counted
  * once for every node it touches (a mirror pair is two edges, so each end counts 2; a link to itself counts
- * once). A list that names one element twice is one edge, so each end counts 1 (STAGED: serial 128). Every node is a key, 0 included, in the graph's node order. Edges join nodes only, so the count is
+ * once). A list that names one element twice is one edge, so each end counts 1 (since serial 128). Every node is a key, 0 included, in the graph's node order. Edges join nodes only, so the count is
  * the reader's: what the reading left out (hidden, room, proposed, map space, past a lens) is never counted.
  * This is "most linked" for a finder: rank by it, highest first. A graph that is not one is a TypeError.
  */

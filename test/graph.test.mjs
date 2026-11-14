@@ -149,7 +149,7 @@ test('the fixture\'s graph cases, each answer held to the invariants', () => {
   }
   for (const line of wrong) console.log(line);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 55, `the fixture holds ${cases.length} graph cases, serial 123 has 55`);
+  assert.equal(cases.length, 56, `the fixture holds ${cases.length} graph cases, serial 128 has 56`);
 });
 
 test('the fixture\'s graph tables, read back through the reader: flags, owner-only flags, edge reasons, declared links', () => {
@@ -305,7 +305,7 @@ test('degreeOf on every fixture graph case equals a direct count of its edges', 
   }
 });
 
-// Each element once in a multi-link (STAGED serial 128): a reader served a list that names one element twice
+// Each element once in a multi-link (since serial 128): a reader served a list that names one element twice
 // reads it once, in its first place. Until the serial publishes, the vendored fixture holds none of these cases.
 const OWN = { rung: 'owner' };
 const graphNode = (id, type, name) => ({ id, type, name });
