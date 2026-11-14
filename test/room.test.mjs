@@ -55,9 +55,12 @@ test('isRoomElement reads the mark by presence, never by its value (room.md, ser
   assert.equal(isRoomElement(msg(7)), true);
   assert.equal(isRoomElement(msg(0)), true);
   assert.equal(isRoomElement(msg(false)), true);
-  assert.equal(isRoomElement(msg({})), true);
-  assert.equal(isRoomElement(msg([])), true);
+  assert.equal(isRoomElement(msg({ world: WORLD })), true);
+  assert.equal(isRoomElement(msg(['x'])), true);
   assert.equal(isRoomElement(msg(`  ${WORLD}  `)), true);
+  // STAGED for serial 126: an empty list or an empty object is absent too (a compact reader leaves both out).
+  assert.equal(isRoomElement(msg({})), false);
+  assert.equal(isRoomElement(msg([])), false);
   // A string counts only when something is left after the White_Space trim.
   assert.equal(isRoomElement(msg('')), false);
   assert.equal(isRoomElement(msg(` ${NBSP}\t`)), false);

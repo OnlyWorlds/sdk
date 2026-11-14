@@ -46,6 +46,9 @@ export const fold = (text: string): string => simpleCaseFold(trimWhiteSpace(text
 export function hasMark(el: Record<string, unknown>, field: string): boolean {
   const mark = Object.prototype.hasOwnProperty.call(el, field) ? el[field] : undefined;
   if (mark === undefined || mark === null) return false;
+  // An empty list or an empty object is absent too: STAGED for serial 126, not ruled.
+  if (Array.isArray(mark)) return mark.length > 0;
+  if (typeof mark === 'object') return Object.keys(mark).length > 0;
   return typeof mark !== 'string' || trimWhiteSpace(mark) !== '';
 }
 

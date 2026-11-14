@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+- (staged for schema-dist serial 126, not yet ruled) A mark read by presence (`x_room_of`, `x_charter_of`, through `isRoomElement` and `isCharterElement`) reads an empty list or an empty object as absent, as the review mark already does: a compact read leaves both out, so a mark must not count in one served form and not the other.
+
 ## [4.162.0] - 2026-11-13
 
 ### Changed
