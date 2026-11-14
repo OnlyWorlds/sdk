@@ -32,9 +32,11 @@ function answer(c) {
     case 'parse': run = () => ({ expect: asFixture(parseOwLink(c.text)) }); break;
     case 'format': run = () => ({ expect: elementAddress(c.address) }); break;
     // serial 123: the address that starts at `index` in prose, the slice it covers and parseOwLink's reading of it
+    // serial 127: a case whose index differs in UTF-16 units (a letter above U+FFFF before it) carries index_utf16
     case 'prose': run = () => {
-      const got = readOwLinkAt(c.text, c.index);
-      return { expect: got === null ? { address: null, reading: null } : { address: c.text.slice(c.index, got.end), reading: asFixture(got.reading) } };
+      const at = c.index_utf16 ?? c.index;
+      const got = readOwLinkAt(c.text, at);
+      return { expect: got === null ? { address: null, reading: null } : { address: c.text.slice(at, got.end), reading: asFixture(got.reading) } };
     }; break;
     default: throw new Error(`a case of unknown kind ${c.kind}`);
   }
