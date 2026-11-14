@@ -96,6 +96,16 @@ const isUuid = (s: string): boolean => UUID.test(s);
 /** An id's four hyphens at their places in `text` from `at`: checked before a slice, so an end that holds no id costs four reads. */
 const hyphensAt = (text: string, at: number): boolean =>
   text.charCodeAt(at + 8) === 45 && text.charCodeAt(at + 13) === 45 && text.charCodeAt(at + 18) === 45 && text.charCodeAt(at + 23) === 45;
+/**
+ * Whether an id at `at` is worth a parse: right after the prefix (a world's), not after a `/`, or after `/<word>/` whose
+ * word is one of the 22 types. An id after any other word is one the parser refuses, so it is passed over without the
+ * exception a refused parse costs.
+ */
+const worthParsing = (text: string, start: number, at: number): boolean => {
+  if (at === start || text.charCodeAt(at - 1) !== 47) return true;
+  const slash = text.lastIndexOf('/', at - 2);
+  return TYPES.has(text.slice(Math.max(slash + 1, start), at - 1));
+};
 const isSlug = (s: string): boolean => s.length >= 3 && s.length <= 40 && SLUG.test(s);
 
 /** The type word as given, or the refusal: `uppercase` for one of the 22 in another case, else `unknown_type`. */
@@ -367,7 +377,7 @@ export function readOwLinkAt(text: string, index: number = 0): OwAddressAt | nul
   // Every path the parser takes here ends in an id (a world's in the text form, an element's after a world), so an
   // end whose last 36 characters are not an id is passed over without a parse: a refused parse costs an exception.
   for (let p = run; p > floor; p--) {
-    if (p - ID_LENGTH >= start && hyphensAt(text, p - ID_LENGTH) && isUuid(text.slice(p - ID_LENGTH, p)) && parses(text.slice(index, p))) {
+    if (p - ID_LENGTH >= start && hyphensAt(text, p - ID_LENGTH) && isUuid(text.slice(p - ID_LENGTH, p)) && worthParsing(text, start, p - ID_LENGTH) && parses(text.slice(index, p))) {
       end = p;
       break;
     }

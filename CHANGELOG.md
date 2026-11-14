@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.165.2] - 2026-11-14
+
+### Fixed
+
+- `findOwLinks` and `readOwLinkAt` pass over an id that follows a word that is not one of the 22 types (`ow://thing/<id>`) without the parse it would fail, so a line of such starts reads in about 4 ms where it took about 63 (200 KB). No answer changes: 100,000 random texts and 714 hand-made shapes answer the same as 4.165.1.
+
 ## [4.165.1] - 2026-11-14
 
 ### Fixed
