@@ -2,14 +2,15 @@
  * The address profile (schema-dist profiles/address.md, serial 77): elementAddress and parseOwLink on
  * every conformance case in codegen/schema-dist/profiles/address.fixture.json, vendored with the
  * distribution and hash-checked by schema:verify. The vendored copy is the only source: absent, the
- * test fails. A case of a kind this file does not know fails; a prose case (serial 123) runs readOwLinkAt.
+ * test fails. A case of a kind this file does not know fails; a prose case (serial 123) runs readOwLinkAt, a
+ * prose-all case (STAGED: serial 128) findOwLinks.
  * OW_ADDRESS_FIXTURE points it at another copy (a staged branch before the serial). Runs against the compiled bundle (dist).
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { elementAddress, parseOwLink, readOwLinkAt, OwAddressError, ELEMENT_TYPES } from '../dist/index.js';
+import { elementAddress, parseOwLink, readOwLinkAt, findOwLinks, OwAddressError, ELEMENT_TYPES } from '../dist/index.js';
 
 const FIXTURE = process.env.OW_ADDRESS_FIXTURE ?? fileURLToPath(new URL('../codegen/schema-dist/profiles/address.fixture.json', import.meta.url));
 
@@ -38,6 +39,8 @@ function answer(c) {
       const got = readOwLinkAt(c.text, at);
       return { expect: got === null ? { address: null, reading: null } : { address: c.text.slice(at, got.end), reading: asFixture(got.reading) } };
     }; break;
+    // STAGED: serial 128: every address findOwLinks finds in a text, each the slice it covers, in order
+    case 'prose-all': run = () => ({ found: findOwLinks(c.text).map(f => c.text.slice(f.start, f.end)) }); break;
     default: throw new Error(`a case of unknown kind ${c.kind}`);
   }
   try {
@@ -55,7 +58,11 @@ test('elementAddress and parseOwLink answer every case of the address fixture', 
   let refusals = 0;
   for (const c of doc.cases) {
     kinds[c.kind] = (kinds[c.kind] ?? 0) + 1;
-    const want = 'refuse' in c ? { refuse: c.refuse } : { expect: c.expect };
+    // A prose-all case (STAGED: serial 128) wants found; every other case expect or refuse, and a case with
+    // neither (or both) wants something no answer gives, so it is wrong, never passed over.
+    const want = c.kind === 'prose-all' ? { found: c.found }
+      : ('refuse' in c) !== ('expect' in c) ? ('refuse' in c ? { refuse: c.refuse } : { expect: c.expect })
+      : { 'expect or refuse, one of them': c.name };
     if ('refuse' in c) refusals++;
     let got;
     try {
