@@ -7,7 +7,7 @@ earlier history lives in git log only.
 
 ## [4.165.0] - 2026-11-14
 
-schema-dist v0.34.1-dist.127 (canonical 00.34.01 unchanged; `ONLYWORLDS_VERSION` unchanged, no schema file moved). The fixtures' new cases pass: the address profile's glued starts (214 cases), the views fixture's own-banner table, three layout-mark cases and four presence cases.
+schema-dist v0.34.1-dist.127 (canonical 00.34.01 unchanged; `ONLYWORLDS_VERSION` unchanged, no schema file moved). The fixtures' new cases pass: the address profile's glued starts (216 cases), the views fixture's own-banner table, three layout-mark cases and four presence cases.
 
 ### Changed
 
