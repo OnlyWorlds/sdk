@@ -122,23 +122,6 @@ function invariants(g, c) {
   }
 }
 
-// STAGED serial 128: the published fixture still wants the old answer; the serial flips it. Each entry is the
-// case's place in the fixture's cases and its name; its want is not compared (its invariants still are), and the
-// test below fails once the fixture no longer holds the old want, so the skip goes with the serial.
-const STAGED_128 = new Map([
-  [143, 'x_lens_leads_to and x_spine_depends_on are links; another x_ field is not; a missing id is not counted'],
-]);
-const isStaged128 = c => [...STAGED_128.values()].includes(c.name);
-
-test('the cases skipped for serial 128 are in the fixture, each still wanting two edges for a repeat', () => {
-  const all = loadFixture().cases;
-  for (const [at, name] of STAGED_128) {
-    assert.equal(all[at]?.name, name, `case ${at}`);
-    const twice = all[at].want.edges.filter(e => e.field === 'x_spine_depends_on' && e.target === 't2');
-    assert.equal(twice.length, 2, `case ${at} no longer wants the old answer: the serial has flipped it, drop it from STAGED_128`);
-  }
-});
-
 test('the fixture\'s graph cases, each answer held to the invariants', () => {
   const cases = loadCases();
   const wrong = [];
@@ -162,7 +145,6 @@ test('the fixture\'s graph cases, each answer held to the invariants', () => {
     } catch (err) {
       got = { threw: String(err) };
     }
-    if (isStaged128(c) && !('threw' in got)) continue; // STAGED serial 128: the published fixture still wants the old answer; the serial flips it
     try { assert.deepEqual(got, c.want); } catch { wrong.push(`${c.name}: gave ${JSON.stringify(got)}, want ${JSON.stringify(c.want)}`); }
   }
   for (const line of wrong) console.log(line);
