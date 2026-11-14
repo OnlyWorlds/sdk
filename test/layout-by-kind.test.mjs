@@ -17,7 +17,7 @@ import { layoutByKind, layoutAround, worldGraph, GROUP_ORDER, ELEMENT_GROUPS } f
 const bytes = readFileSync(new URL('./fixtures/layout/by-kind.json', import.meta.url));
 const fx = JSON.parse(bytes.toString('utf8'));
 const clone = (v) => JSON.parse(JSON.stringify(v));
-const FIXTURE_SHA = '218b6cf8852291d7';
+const FIXTURE_SHA = '6e7c422eb4c72b17';
 const AROUND_TOLERANCE = 1e-12;
 
 test('the fixture is the one both packages hold', () => {
@@ -66,6 +66,28 @@ test('by-kind: the answer is the same twice and the graph is left as it was', ()
   const before = JSON.stringify(graph);
   assert.equal(JSON.stringify(layoutByKind(graph)), JSON.stringify(layoutByKind(graph)));
   assert.equal(JSON.stringify(graph), before);
+});
+
+test('the order nodes and links are handed in moves no point: each comes back by id, in the order handed', () => {
+  // a seeded shuffle, so a failure reruns the same
+  let s = 99;
+  const R = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const shuffle = (xs) => { const a = [...xs]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const byId = (points) => new Map(points.map((p) => [p.id, JSON.stringify(p)]));
+  for (const name of ['hyperion', 'past-324', 'a-self-link-pulls-nothing']) {
+    const g = clone(fx.cases.find((x) => x.name === name).graph);
+    const mixed = { nodes: shuffle(g.nodes), edges: shuffle(g.edges) };
+    const got = layoutByKind(mixed);
+    assert.deepEqual(got.points.map((p) => p.id), mixed.nodes.map((x) => x.id), name);
+    assert.deepEqual(byId(got.points), byId(layoutByKind(g).points), name);
+  }
+  const c = fx.around.find((x) => x.name === 'two-steps');
+  const g = clone(c.graph);
+  const mixed = { nodes: shuffle(g.nodes), edges: shuffle(g.edges) };
+  const got = layoutAround(mixed, c.focus, { steps: 2 });
+  const order = new Map(mixed.nodes.map((x, k) => [x.id, k]));
+  assert.ok(got.points.every((p, k) => k === 0 || order.get(got.points[k - 1].id) < order.get(p.id)), 'in the order handed');
+  assert.deepEqual(byId(got.points), byId(layoutAround(g, c.focus, { steps: 2 }).points));
 });
 
 test('by-kind: a link pulls both ends alike, so its direction moves nothing', () => {
@@ -127,6 +149,8 @@ test('a graph it cannot read is refused by name', () => {
   bad({ nodes: [{ id: 'a', type: 'character', name: 7 }], edges: [] }, /name is a string or null/);
   bad({ nodes: [{ id: 'a', type: 'character' }, { id: 'a', type: 'location' }], edges: [] }, /the id a is a node twice/);
   bad({ nodes: [{ id: 'a', type: 'character' }], edges: [{ source: 'a' }] }, /edge 0 is not \{ source, target \}/);
+  bad({ nodes: [{ id: 'a', type: 'character' }], edges: [{ source: 'a', target: 'a', field: 3 }] }, /edge 0: field is a string/);
+  bad({ nodes: [{ id: 'a', type: 'character' }], edges: [{ source: 'a', target: 'a', index: NaN }] }, /edge 0: index is a number/);
 });
 
 test('around: an unknown option is refused by name before anything else, and steps is 1 or 2', () => {

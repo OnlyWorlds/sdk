@@ -20,9 +20,15 @@ import { refuseUnknownOptions } from './options';
 export interface OwLayoutGraph {
   /** The elements, each with its id, its type as a slug (`character`) and, for `layoutAround`, its name. */
   nodes: ReadonlyArray<{ id: string; type: string; name?: string | null }>;
-  /** The links, each from `source` to `target` by id. A link to an id that is not a node is passed over. */
-  edges: ReadonlyArray<{ source: string; target: string }>;
+  /**
+   * The links, each from `source` to `target` by id, with the link field's name and the place in it as `worldGraph`
+   * gives them. A link to an id that is not a node is passed over.
+   */
+  edges: ReadonlyArray<{ source: string; target: string; field?: string; index?: number }>;
 }
+
+type LayoutNode = OwLayoutGraph['nodes'][number];
+type LayoutEdge = OwLayoutGraph['edges'][number];
 
 /** One element's point, in a frame of -1 to 1 on the picture's longer axis, centred. */
 export interface OwLayoutPoint {
@@ -72,14 +78,19 @@ function rng(seed: number): () => number {
 }
 const groupRank = (type: string): number => GROUP_ORDER.indexOf(ELEMENT_GROUPS[type as ElementType]);
 
-function readGraph(fn: string, graph: OwLayoutGraph): Map<string, number> {
+/**
+ * Check the graph, then put it in the method's one order, whatever order the caller handed: the nodes by id, the
+ * edges by source, then field (none as ''), then index (none as 0), then target, every word in code point order.
+ * `worldGraph` answers in this order already. Answers the ordered graph and each node's place in it by id.
+ */
+function readGraph(fn: string, graph: OwLayoutGraph): { nodes: LayoutNode[]; edges: LayoutEdge[]; index: Map<string, number> } {
   const fail = (msg: string): never => {
     throw new TypeError(`${fn}: ${msg}`);
   };
   if (!graph || typeof graph !== 'object' || !Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) {
     fail('the graph is { nodes, edges }, as worldGraph answers it');
   }
-  const index = new Map<string, number>();
+  const seen = new Set<string>();
   graph.nodes.forEach((node, i) => {
     if (!node || typeof node !== 'object') fail(`node ${i} is not an object`);
     if (typeof node.id !== 'string' || !node.id) fail(`node ${i} has no id`);
@@ -87,13 +98,18 @@ function readGraph(fn: string, graph: OwLayoutGraph): Map<string, number> {
       fail(`node ${node.id}: '${String(node.type)}' is not one of the 22 element types`);
     }
     if (node.name !== undefined && node.name !== null && typeof node.name !== 'string') fail(`node ${node.id}: name is a string or null`);
-    if (index.has(node.id)) fail(`the id ${node.id} is a node twice`);
-    index.set(node.id, i);
+    if (seen.has(node.id)) fail(`the id ${node.id} is a node twice`);
+    seen.add(node.id);
   });
   graph.edges.forEach((e, k) => {
     if (!e || typeof e !== 'object' || typeof e.source !== 'string' || typeof e.target !== 'string') fail(`edge ${k} is not { source, target }`);
+    if (e.field !== undefined && typeof e.field !== 'string') fail(`edge ${k}: field is a string`);
+    if (e.index !== undefined && !Number.isFinite(e.index)) fail(`edge ${k}: index is a number`);
   });
-  return index;
+  const nodes = [...graph.nodes].sort((a, b) => byCodePoint(a.id, b.id));
+  const edges = [...graph.edges].sort((a, b) => byCodePoint(a.source, b.source) || byCodePoint(a.field ?? '', b.field ?? '')
+    || (a.index ?? 0) - (b.index ?? 0) || byCodePoint(a.target, b.target));
+  return { nodes, edges, index: new Map(nodes.map((x, i) => [x.id, i])) };
 }
 
 /**
@@ -104,21 +120,21 @@ function readGraph(fn: string, graph: OwLayoutGraph): Map<string, number> {
  * is drawn back towards its kind's anchor, and no element moves further in one step than a cap that shrinks as the
  * steps run out. Last, the points are fitted into a frame of -1 to 1 on the longer axis, centred, proportions kept.
  *
- * Answers one point per node in the graph's node order, with the method's name and version (`by-kind`, 1), so a
- * saved layout can say what made it. An empty graph answers no points; a graph of one element answers 0, 0.
+ * The graph is first put in one order (nodes by id; links by source, field, index, then target), so the order the
+ * nodes and links are handed in moves nothing. Answers one point per node in the order the nodes were handed in, with
+ * the method's name and version (`by-kind`, 1), so a saved layout can say what made it. An empty graph answers no points; a graph of one element answers 0, 0.
  * The same graph gives the same points to the last bit in every browser and language: the anchors are a baked
  * table of numbers, never computed, and the rest is arithmetic every runtime rounds alike. Self-links pull nothing;
  * a link to an id that is not a node is passed over. Throws a TypeError, naming what, on a graph it cannot read:
  * no nodes or edges list, a node with no id, a type that is not one of the 22, an id twice.
  */
 export function layoutByKind(graph: OwLayoutGraph): OwLayoutByKind {
-  const index = readGraph('layoutByKind', graph);
-  const nodes = graph.nodes;
+  const { nodes, edges: links, index } = readGraph('layoutByKind', graph);
   const n = nodes.length;
-  if (n <= 1) return { method: 'by-kind', version: 1, points: nodes.map((x) => ({ id: x.id, x: 0, y: 0 })) };
+  if (n <= 1) return { method: 'by-kind', version: 1, points: graph.nodes.map((x) => ({ id: x.id, x: 0, y: 0 })) };
 
   const edges: [number, number][] = [];
-  for (const e of graph.edges) {
+  for (const e of links) {
     const a = index.get(e.source);
     const b = index.get(e.target);
     if (a !== undefined && b !== undefined && a !== b) edges.push([a, b]);
@@ -241,7 +257,14 @@ export function layoutByKind(graph: OwLayoutGraph): OwLayoutByKind {
   const s = span > 1e-9 ? 2 / span : 1;
   const mx = (x0 + x1) / 2;
   const my = (y0 + y1) / 2;
-  return { method: 'by-kind', version: 1, points: nodes.map((x, i) => ({ id: x.id, x: (px[i] - mx) * s, y: (py[i] - my) * s })) };
+  return {
+    method: 'by-kind',
+    version: 1,
+    points: graph.nodes.map((x) => {
+      const i = index.get(x.id)!;
+      return { id: x.id, x: (px[i] - mx) * s, y: (py[i] - my) * s };
+    }),
+  };
 }
 
 /**
@@ -250,8 +273,9 @@ export function layoutByKind(graph: OwLayoutGraph): OwLayoutByKind {
  * same in every language and locale), up to 60 on the first ring and further rings beyond it. With `steps: 2`, each
  * neighbour's own neighbours stand on an outer ring, fanned out near the neighbour that reached them.
  *
- * Answers the focus and every element within the steps, in the graph's node order, each with its depth (0, 1 or 2),
- * and the method's name and version (`around`, 1). Nothing iterates, so each point is one cosine and one sine of an
+ * The graph is first put in one order, as `layoutByKind` puts it, so the order the nodes and links are handed in
+ * moves nothing. Answers the focus and every element within the steps, in the order the nodes were handed in, each
+ * with its depth (0, 1 or 2), and the method's name and version (`around`, 1). Nothing iterates, so each point is one cosine and one sine of an
  * angle the method computes exactly; runtimes agree to within about 1e-12. Throws a TypeError on an unknown option
  * (before anything else), a `steps` that is not 1 or 2, a graph it cannot read (as `layoutByKind`), or a focus that
  * is not one of the graph's nodes.
@@ -263,13 +287,12 @@ export function layoutAround(graph: OwLayoutGraph, focus: string, options?: OwLa
   refuseUnknownOptions('layoutAround', options, ['steps']);
   const steps = options?.steps ?? 1;
   if (steps !== 1 && steps !== 2) throw new TypeError(`layoutAround: steps is 1 or 2, not ${String(steps)}`);
-  const index = readGraph('layoutAround', graph);
-  const N = graph.nodes;
+  const { nodes: N, edges: links, index } = readGraph('layoutAround', graph);
   const centre = typeof focus === 'string' ? index.get(focus) : undefined;
   if (centre === undefined) throw new TypeError(`layoutAround: the focus ${String(focus)} is not a node of the graph`);
 
   const adj: number[][] = N.map(() => []);
-  for (const e of graph.edges) {
+  for (const e of links) {
     const a = index.get(e.source);
     const b = index.get(e.target);
     if (a === undefined || b === undefined) continue;
@@ -333,9 +356,10 @@ export function layoutAround(graph: OwLayoutGraph, focus: string, options?: OwLa
     }
   }
   const points: OwLayoutAroundPoint[] = [];
-  N.forEach((x, j) => {
+  for (const x of graph.nodes) {
+    const j = index.get(x.id)!;
     const p = at.get(j);
     if (p) points.push({ id: x.id, depth: depth.get(j)!, x: p[0], y: p[1] });
-  });
+  }
   return { method: 'around', version: 1, points };
 }
