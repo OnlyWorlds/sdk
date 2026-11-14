@@ -63,7 +63,7 @@ export interface OwGraphNode {
   known_of?: true;
 }
 
-/** One link: one source, one field, one target, at its place in the field's list (0 for a single link). */
+/** One link: one source, one field, one target, at its place in the field's list as served (0 for a single link); a target the list names twice is one edge, at its first place (STAGED: serial 128). */
 export interface OwGraphEdge {
   source: string;
   field: string;
@@ -115,7 +115,10 @@ function flag(opts: Body, key: string): boolean {
  * Each schema link field, and each extension field a profile declares a link (`x_lens_leads_to`,
  * `x_spine_depends_on`), gives one edge per target that is a node, with the target's place in the list as
  * the reader is served it (the owner's list as stored; any other reader's leaves out what it does not see
- * and keeps a proposed id its rung sees); a link held on both ends is two edges. A Pin's generic pair
+ * and keeps a proposed id its rung sees); a link held on both ends is two edges. A multi-link names each
+ * element once: a list that names one element twice gives one edge, or one count in `edgesCut`, at its first
+ * entry, and the entries after the repeat keep their own places (in `[c1, c1, c2]` the edge to `c1` has index 0
+ * and the edge to `c2` index 2); ids compare as written, so `a` and `A` are two (STAGED: serial 128). A Pin's generic pair
  * (`element_type`, `element_id`) is its placement, never an edge; its `map` link is. A guest's known-of
  * element has no edges out. A link to an element of another type than its field's target draws no edge and
  * is not counted. A link to an element that is not a node is counted in `edgesCut` by that element's reason: the
@@ -228,19 +231,28 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
       const v = el[field];
       const to = linkTarget(el, field, target);
       const list: unknown[] = many ? (Array.isArray(v) ? v : []) : [v];
+      // (STAGED: serial 128) An element the list names again is read once, at its first entry; the repeat
+      // keeps its place in the served list, so the entries after it keep theirs.
+      const read = new Set<string>();
       let served = 0;
       for (let i = 0; i < list.length; i++) {
         const t = list[i];
         const typed = typeof t === 'string' && r.typeOf.get(t) === to;
-        if (typed) visit(source, field, t, seenOwner ? i : served);
+        if (typed && !read.has(t)) { read.add(t); visit(source, field, t, seenOwner ? i : served); }
         if (seenOwner || (typed && r.linkable.has(t))) served++;
       }
     }
-    // A declared extension link is served as stored to every reader.
+    // A declared extension link is served as stored to every reader; an element it names again is read once,
+    // at its first entry (STAGED: serial 128).
     for (const field of DECLARED_LINKS) {
       const v = el[field];
       if (!Array.isArray(v)) continue;
-      for (let i = 0; i < v.length; i++) visit(source, field, v[i], i);
+      const read = new Set<unknown>();
+      for (let i = 0; i < v.length; i++) {
+        if (read.has(v[i])) continue;
+        read.add(v[i]);
+        visit(source, field, v[i], i);
+      }
     }
   }
   edges.sort((a, b) => byCodePoint(a.source, b.source) || byCodePoint(a.field, b.field) || a.index - b.index);
@@ -261,7 +273,7 @@ function tally(counts: ReadonlyMap<OwGraphCutReason, number>, owner: boolean): P
 /**
  * Each node's degree in a graph `worldGraph` answered: the number of its edges, in or out, each edge counted
  * once for every node it touches (a mirror pair is two edges, so each end counts 2; a link to itself counts
- * once). Every node is a key, 0 included, in the graph's node order. Edges join nodes only, so the count is
+ * once). A list that names one element twice is one edge, so each end counts 1 (STAGED: serial 128). Every node is a key, 0 included, in the graph's node order. Edges join nodes only, so the count is
  * the reader's: what the reading left out (hidden, room, proposed, map space, past a lens) is never counted.
  * This is "most linked" for a finder: rank by it, highest first. A graph that is not one is a TypeError.
  */

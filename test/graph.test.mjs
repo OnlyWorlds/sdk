@@ -102,9 +102,10 @@ function invariants(g, c) {
       for (const [field, f] of Object.entries(FIELD_SCHEMA[n.type])) {
         if (f.target === 'any') continue;
         if (f.type === 'single_link') links += linked(el[field], f.target);
-        if (f.type === 'multi_link' && Array.isArray(el[field])) for (const t of el[field]) links += linked(t, f.target);
+        // A list names each element once: a repeat is one link (serial 128).
+        if (f.type === 'multi_link' && Array.isArray(el[field])) for (const t of new Set(el[field])) links += linked(t, f.target);
       }
-      for (const field of ['x_lens_leads_to', 'x_spine_depends_on']) if (Array.isArray(el[field])) for (const t of el[field]) links += linked(t);
+      for (const field of ['x_lens_leads_to', 'x_spine_depends_on']) if (Array.isArray(el[field])) for (const t of new Set(el[field])) links += linked(t);
     }
     const unseen = ['not_visible', 'anchor_not_visible'];
     const sum = (counts, keep) => Object.entries(counts).filter(([k]) => keep(k)).reduce((a, [, v]) => a + v, 0);
@@ -120,6 +121,23 @@ function invariants(g, c) {
     assert.equal(g.unreadable, null, `${c.name}: unreadable is null without a lens`);
   }
 }
+
+// STAGED serial 128: the published fixture still wants the old answer; the serial flips it. Each entry is the
+// case's place in the fixture's cases and its name; its want is not compared (its invariants still are), and the
+// test below fails once the fixture no longer holds the old want, so the skip goes with the serial.
+const STAGED_128 = new Map([
+  [143, 'x_lens_leads_to and x_spine_depends_on are links; another x_ field is not; a missing id is not counted'],
+]);
+const isStaged128 = c => [...STAGED_128.values()].includes(c.name);
+
+test('the cases skipped for serial 128 are in the fixture, each still wanting two edges for a repeat', () => {
+  const all = loadFixture().cases;
+  for (const [at, name] of STAGED_128) {
+    assert.equal(all[at]?.name, name, `case ${at}`);
+    const twice = all[at].want.edges.filter(e => e.field === 'x_spine_depends_on' && e.target === 't2');
+    assert.equal(twice.length, 2, `case ${at} no longer wants the old answer: the serial has flipped it, drop it from STAGED_128`);
+  }
+});
 
 test('the fixture\'s graph cases, each answer held to the invariants', () => {
   const cases = loadCases();
@@ -144,6 +162,7 @@ test('the fixture\'s graph cases, each answer held to the invariants', () => {
     } catch (err) {
       got = { threw: String(err) };
     }
+    if (isStaged128(c) && !('threw' in got)) continue; // STAGED serial 128: the published fixture still wants the old answer; the serial flips it
     try { assert.deepEqual(got, c.want); } catch { wrong.push(`${c.name}: gave ${JSON.stringify(got)}, want ${JSON.stringify(c.want)}`); }
   }
   for (const line of wrong) console.log(line);
@@ -302,4 +321,89 @@ test('degreeOf on every fixture graph case equals a direct count of its edges', 
       assert.equal(d[n.id], direct, `${c.name}: ${n.id}`);
     }
   }
+});
+
+// Each element once in a multi-link (STAGED serial 128): a reader served a list that names one element twice
+// reads it once, in its first place. Until the serial publishes, the vendored fixture holds none of these cases.
+const OWN = { rung: 'owner' };
+const graphNode = (id, type, name) => ({ id, type, name });
+
+test('a schema multi-link naming one target twice is one edge, at the first entry\'s place; the next target keeps its own place', () => {
+  const world = { elements: [
+    { id: 'c0', type: 'character', name: 'Ada', friends: ['c1', 'c1', 'c2'] },
+    graphNode('c1', 'character', 'Bo'),
+    graphNode('c2', 'character', 'Cy'),
+  ] };
+  assert.deepEqual(worldGraph(world, OWN).edges, [
+    { source: 'c0', field: 'friends', target: 'c1', index: 0 },
+    { source: 'c0', field: 'friends', target: 'c2', index: 2 },
+  ]);
+  // Below the owner the index is the place in the list as served: the hidden id is not served, the repeat is.
+  const hid = { elements: [
+    { id: 'c0', type: 'character', name: 'Ada', friends: ['h', 'c1', 'c1', 'c2'] },
+    graphNode('c1', 'character', 'Bo'),
+    graphNode('c2', 'character', 'Cy'),
+    graphNode('h', 'character', 'Ghost'),
+  ], hidden: ['h'] };
+  assert.deepEqual(worldGraph(hid, { rung: 'contributor' }).edges, [
+    { source: 'c0', field: 'friends', target: 'c1', index: 0 },
+    { source: 'c0', field: 'friends', target: 'c2', index: 2 },
+  ]);
+});
+
+test('a declared extension link naming one target twice is one edge, at the first entry\'s place', () => {
+  const world = { elements: [
+    { id: 't1', type: 'title', name: 'Steward', x_spine_depends_on: ['t2', 't2', 't3'] },
+    { id: 'L1', type: 'construct', supertype: 'Lens', name: 'Sign', x_lens_leads_to: ['L2', 'L2'] },
+    graphNode('t2', 'title', 'Clerk'),
+    graphNode('t3', 'title', 'Scribe'),
+    { id: 'L2', type: 'construct', supertype: 'Lens', name: 'Next' },
+  ] };
+  assert.deepEqual(worldGraph(world, OWN).edges, [
+    { source: 'L1', field: 'x_lens_leads_to', target: 'L2', index: 0 },
+    { source: 't1', field: 'x_spine_depends_on', target: 't2', index: 0 },
+    { source: 't1', field: 'x_spine_depends_on', target: 't3', index: 2 },
+  ]);
+});
+
+test('ids compare as written: a list naming `a` and `A` names two elements, and each is an edge', () => {
+  const world = { elements: [
+    { id: 'c0', type: 'character', name: 'Ada', friends: ['a', 'A', 'a'] },
+    graphNode('a', 'character', 'Lower'),
+    graphNode('A', 'character', 'Upper'),
+  ] };
+  assert.deepEqual(worldGraph(world, OWN).edges, [
+    { source: 'c0', field: 'friends', target: 'a', index: 0 },
+    { source: 'c0', field: 'friends', target: 'A', index: 1 },
+  ]);
+});
+
+test('a repeat to a target that is not a node is counted once in edgesCut, schema and declared links alike', () => {
+  const world = { elements: [
+    { id: 'c0', type: 'character', name: 'Ada', friends: ['h', 'h', 'c1'], x_spine_depends_on: ['h', 'h'] },
+    graphNode('c1', 'character', 'Bo'),
+    graphNode('h', 'character', 'Ghost'),
+  ], hidden: ['h'] };
+  const g = worldGraph(world, OWN);
+  assert.deepEqual(g.edgesCut, { hidden: 2 }); // one for `friends`, one for `x_spine_depends_on`
+  assert.deepEqual(g.edges, [{ source: 'c0', field: 'friends', target: 'c1', index: 2 }]);
+  // With a lens: a repeat to an element the lens neither kept nor cut is one outside_lens, for every rung.
+  const lensed = { elements: [
+    { id: 'ev', type: 'event', name: 'Feast', characters: ['c1', 'c1'] },
+    graphNode('c1', 'character', 'Bo'),
+  ] };
+  const lens = { id: 'L', type: 'construct', name: 'L', supertype: 'Lens', events: ['ev'], x_lens: { depth: 0 } };
+  for (const reader of [OWN, { rung: 'contributor' }]) {
+    assert.deepEqual(worldGraph(lensed, reader, { lens }).edgesCut, { outside_lens: 1 }, reader.rung);
+  }
+});
+
+test('degreeOf and outDegreeOf follow the graph: a list naming one target twice counts 1 at each end', () => {
+  const world = { elements: [
+    { id: 'ev', type: 'event', name: 'Feast', characters: ['mara', 'mara'] },
+    graphNode('mara', 'character', 'Mara'),
+  ] };
+  const g = worldGraph(world, OWN);
+  assert.deepEqual(degreeOf(g), { ev: 1, mara: 1 });
+  assert.deepEqual(outDegreeOf(g), { ev: 1, mara: 0 });
 });

@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { landingOf } from '../dist/index.js';
+import { landingOf, worldGraph } from '../dist/index.js';
 
 const FIXTURE = process.env.OW_LANDING_FIXTURE ?? fileURLToPath(new URL('../codegen/schema-dist/profiles/landing.fixture.json', import.meta.url));
 assert.ok(existsSync(FIXTURE), `no landing fixture at ${FIXTURE}`);
@@ -63,4 +63,14 @@ test('refused before reading: not a graph, options not an object', () => {
   assert.throws(() => landingOf(null), TypeError);
   assert.throws(() => landingOf({ nodes: [] }), TypeError);
   assert.throws(() => landingOf({ nodes: [], edges: [] }, 5), TypeError);
+});
+
+test('a list naming one target twice reads, through worldGraph, as one edge: degree 1 at both ends, both near orphans (STAGED serial 128)', () => {
+  const world = { elements: [
+    { id: 'ev', type: 'event', name: 'Feast', characters: ['mara', 'mara'] },
+    { id: 'mara', type: 'character', name: 'Mara' },
+  ] };
+  const a = landingOf(worldGraph(world, { rung: 'owner' }));
+  assert.deepEqual(a.clusters, [{ head: 'mara', members: [{ id: 'mara', hops: 0, degree: 1 }, { id: 'ev', hops: 1, degree: 1 }] }]);
+  assert.deepEqual(a.gaps, [{ kind: 'near_orphan', id: 'ev' }, { kind: 'near_orphan', id: 'mara' }, { kind: 'no_place', id: 'mara' }]);
 });
