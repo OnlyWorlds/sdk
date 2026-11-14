@@ -10,6 +10,7 @@ earlier history lives in git log only.
 - (STAGED: publishes with serial 128) `worldGraph` reads a multi-link that names one element twice once: one edge, at its first entry, whose `index` is that entry's place in the list as served; the entries after the repeat keep their own places (in `[c1, c1, c2]` the edge to `c1` has index 0 and the edge to `c2` index 2). Schema links and the declared extension links (`x_lens_leads_to`, `x_spine_depends_on`) alike; ids compare as written, so `a` and `A` are two.
 - (STAGED: publishes with serial 128) `worldGraph` counts a repeat to an element that is not a node once in `edgesCut`, not once per entry.
 - (STAGED: publishes with serial 128) `degreeOf` and `landingOf` follow the graph without a change of their own: a list naming one element twice counts 1 at each end, so an element linked only that way is a near orphan.
+- (STAGED: publishes with serial 128) `recipientsOf` answers each recipient once, in its first place; ids compare as written.
 
 ## [4.165.2] - 2026-11-14
 

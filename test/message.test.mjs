@@ -344,3 +344,13 @@ test('keyless is an options object with a boolean: a bare true or a string is a 
   assert.equal(isToEveryone({ characters: [] }, null), true);
   assert.equal(isToEveryone({ characters: [] }, {}), true);
 });
+
+test('recipientsOf answers each recipient once, in its first place; ids compare as written (STAGED serial 128)', () => {
+  assert.deepEqual(recipientsOf({ characters: ['b', 'a', 'b', 'c', 'a'] }), ['b', 'a', 'c']);
+  assert.deepEqual(recipientsOf({ characters: ['a', 'A', 'a'] }), ['a', 'A']);
+  assert.deepEqual(recipientsOf({ characters: ['a', '', 'a', 7] }), ['a']);
+  // The addressing readers already read a repeat once.
+  const repeat = { type: 'narrative', supertype: 'Message', characters: ['a', 'a'] };
+  assert.equal(isAddressedTo(repeat, 'a'), true);
+  assert.equal(isToEveryone(repeat), false);
+});

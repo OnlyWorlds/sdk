@@ -231,11 +231,13 @@ export function isNote(element: object | null | undefined): boolean {
  * The message's recipients: the Character ids in its `characters`, as written. An empty list
  * (the field absent, null or `[]`) means the message is addressed to every member of the world;
  * use `isAddressedTo` for the question "is it for X". No other field addresses a message. A Note
- * has no recipients: `[]`, whatever its `characters` holds.
+ * has no recipients: `[]`, whatever its `characters` holds. A list that names one Character twice
+ * answers it once, in its first place; ids compare as written, so `a` and `A` are two (STAGED: serial 128).
  */
 export function recipientsOf(message: object | null | undefined): string[] {
   const list = isBody(message) && !isNote(message) ? message.characters : undefined;
-  return Array.isArray(list) ? list.filter((c): c is string => typeof c === 'string' && c !== '') : [];
+  if (!Array.isArray(list)) return [];
+  return [...new Set(list.filter((c): c is string => typeof c === 'string' && c !== ''))];
 }
 
 /**
