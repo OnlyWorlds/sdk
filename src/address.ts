@@ -253,6 +253,16 @@ export function parseOwLink(text: string): OwAddressReading {
   return { form, world, worldIsSlug, type, id, lens, moment, canonical };
 }
 
+/** What `findOwLinks` answers for each address in a text: where it starts and ends, and what it reads. */
+export interface OwAddressFound {
+  /** The index of the address's first character in the text. */
+  start: number;
+  /** The index just past the address, as `readOwLinkAt` answers it. */
+  end: number;
+  /** What `parseOwLink` answers for `text.slice(start, end)`. */
+  reading: OwAddressReading;
+}
+
 /** What `readOwLinkAt` answers: the address read, and the index just past it in the text. */
 export interface OwAddressAt {
   /** What `parseOwLink` answers for `text.slice(index, end)`. */
@@ -351,8 +361,10 @@ export function readOwLinkAt(text: string, index: number = 0): OwAddressAt | nul
   } else {
     while (run < text.length && run - start <= PATH_MAX && PATH_CHAR.test(text[run])) run++;
   }
+  // Every path the parser takes here ends in an id (a world's in the text form, an element's after a world), so an
+  // end whose last 36 characters are not an id is passed over without a parse: a refused parse costs an exception.
   for (let p = run; p > floor; p--) {
-    if (parses(text.slice(index, p))) {
+    if (p - ID_LENGTH >= start && isUuid(text.slice(p - ID_LENGTH, p)) && parses(text.slice(index, p))) {
       end = p;
       break;
     }
@@ -367,4 +379,38 @@ export function readOwLinkAt(text: string, index: number = 0): OwAddressAt | nul
     if (lensEnd <= text.length && isUuid(text.slice(end + 6, lensEnd)) && parses(text.slice(index, lensEnd))) end = lensEnd;
   }
   return { reading: parseOwLink(text.slice(index, end)), end };
+}
+
+/**
+ * Every address in a text, in order: each `{start, end, reading}`, read by `readOwLinkAt` at every place either
+ * prefix (`ow://`, `https://www.onlyworlds.com/w/`) starts, so a start glued to a word is prose and what follows an
+ * address is prose as `readOwLinkAt` says. The search goes on from the end of each address found, so no two overlap,
+ * and from just past a start that reads nothing. Linear in the text: each prefix's next place is searched once, and
+ * a start reads a bounded stretch. `start` and `end` count JavaScript string indexes, as `readOwLinkAt`'s do. A text
+ * that is not a string is a TypeError.
+ *
+ * ```ts
+ * findOwLinks('See ow://object/01a1d4ef-0000-7000-8000-000000000084, not elbow://object/01a1d4ef-0000-7000-8000-000000000084.');
+ * // [{ start: 4, end: 52, reading: { type: 'object', id: '01a1d4ef-…', … } }]
+ * ```
+ */
+export function findOwLinks(text: string): OwAddressFound[] {
+  if (typeof text !== 'string') throw new TypeError('findOwLinks: text must be a string');
+  const found: OwAddressFound[] = [];
+  let nextText = text.indexOf(TEXT_PREFIX);
+  let nextHuman = text.indexOf(HUMAN_PREFIX);
+  let at = 0;
+  for (;;) {
+    if (nextText !== -1 && nextText < at) nextText = text.indexOf(TEXT_PREFIX, at);
+    if (nextHuman !== -1 && nextHuman < at) nextHuman = text.indexOf(HUMAN_PREFIX, at);
+    const start = nextText === -1 ? nextHuman : nextHuman === -1 ? nextText : Math.min(nextText, nextHuman);
+    if (start === -1) return found;
+    const got = readOwLinkAt(text, start);
+    if (got === null) {
+      at = start + 1;
+    } else {
+      found.push({ start, end: got.end, reading: got.reading });
+      at = got.end;
+    }
+  }
 }
