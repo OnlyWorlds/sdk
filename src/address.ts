@@ -87,6 +87,12 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const STEP = /^(?:0|-?[1-9][0-9]*)$/;
 const STEP_MIN = -2147483648;
 const STEP_MAX = 2147483647;
+/** A moment's step as the parser reads it: a whole number in decimal within the 32-bit range, else null. */
+function readStep(step: string): number | null {
+  if (step.length > 11 || !STEP.test(step)) return null;
+  const m = Number(step);
+  return m < STEP_MIN || m > STEP_MAX ? null : m;
+}
 /** An address's keys, a reading's included. Module-internal: openers.ts fences its address with the same list. */
 export const ADDRESS_KEYS: readonly string[] = ['form', 'world', 'type', 'id', 'lens', 'moment', 'worldIsSlug', 'canonical'];
 
@@ -256,10 +262,8 @@ export function parseOwLink(text: string): OwAddressReading {
   }
   let moment: number | null = null;
   if (step !== null) {
-    if (!STEP.test(step) || step.length > 11) return refuse('bad_moment');
-    const m = Number(step);
-    if (m < STEP_MIN || m > STEP_MAX) return refuse('bad_moment');
-    moment = m;
+    moment = readStep(step);
+    if (moment === null) return refuse('bad_moment');
   }
   const lens = query === null ? null : readLens(query);
   const canonical = !worldIsSlug && text === write(form, world, type, id, moment, lens);
@@ -304,7 +308,7 @@ function codePointStart(text: string, i: number): number {
   return i;
 }
 /** A moment's value as found in prose: its whole run of an optional minus and digits (the parser's step grammar decides whether it reads). */
-const STEP_RUN = /^-?[0-9]+/;
+const STEP_RUN = /-?[0-9]+/y;
 /** A lens's value as found in prose: an id is 36 characters, and the lens ends where its id ends. */
 const ID_LENGTH = 36;
 
@@ -384,8 +388,11 @@ export function readOwLinkAt(text: string, index: number = 0): OwAddressAt | nul
   }
   if (end === -1) return null;
   if (text[end] === '@') {
-    const step = STEP_RUN.exec(text.slice(end + 1));
-    if (step !== null && parses(text.slice(index, end + 1 + step[0].length))) end += 1 + step[0].length;
+    // A step the parser refuses (too long, a leading zero, past the 32-bit range) is passed over without a parse:
+    // a refused parse costs an exception, and a line of such moments paid one per address.
+    STEP_RUN.lastIndex = end + 1;
+    const step = STEP_RUN.exec(text);
+    if (step !== null && readStep(step[0]) !== null && parses(text.slice(index, end + 1 + step[0].length))) end += 1 + step[0].length;
   }
   if (text.startsWith('?lens=', end)) {
     const lensEnd = end + 6 + ID_LENGTH;

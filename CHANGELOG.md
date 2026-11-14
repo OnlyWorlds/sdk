@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.167.1] - 2026-11-14
+
+### Fixed
+
+- `findOwLinks` and `readOwLinkAt` pass over a moment the parser refuses (more than 11 characters, a leading zero, past the 32-bit range) without the parse it would fail, so a line of addresses each carrying a 60-digit moment reads in about 5 ms where it took about 31 (200 KB), and one of moments with a leading zero in about 14 where it took about 103. `parseOwLink` reads a moment through the same function. No answer changes: 200,000 random texts aimed at moments answer the same as 4.167.0.
+
 ## [4.167.0] - 2026-11-14
 
 ### Added
