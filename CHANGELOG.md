@@ -11,6 +11,7 @@ earlier history lives in git log only.
 - (STAGED: publishes with serial 128) `worldGraph` counts a repeat to an element that is not a node once in `edgesCut`, not once per entry.
 - (STAGED: publishes with serial 128) `degreeOf` and `landingOf` follow the graph without a change of their own: a list naming one element twice counts 1 at each end, so an element linked only that way is a near orphan.
 - (STAGED: publishes with serial 128) `recipientsOf` answers each recipient once, in its first place; ids compare as written.
+- (STAGED: publishes with serial 128) `recipientsOf`, `isAddressedTo`, `isToEveryone` and `hasUnseenRecipients` answer for a message only: any other Narrative, a Story or a Note, has no recipients and is addressed to nobody, whatever its `characters` holds (a Story's `characters` are the people it is about).
 
 ## [4.165.2] - 2026-11-14
 

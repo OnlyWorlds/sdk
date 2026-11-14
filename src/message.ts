@@ -230,12 +230,12 @@ export function isNote(element: object | null | undefined): boolean {
 /**
  * The message's recipients: the Character ids in its `characters`, as written. An empty list
  * (the field absent, null or `[]`) means the message is addressed to every member of the world;
- * use `isAddressedTo` for the question "is it for X". No other field addresses a message. A Note
- * has no recipients: `[]`, whatever its `characters` holds. A list that names one Character twice
+ * use `isAddressedTo` for the question "is it for X". No other field addresses a message. A Note,
+ * or any Narrative that is not a message, has no recipients: `[]`, whatever its `characters` holds (STAGED: serial 128). A list that names one Character twice
  * answers it once, in its first place; ids compare as written, so `a` and `A` are two (STAGED: serial 128).
  */
 export function recipientsOf(message: object | null | undefined): string[] {
-  const list = isBody(message) && !isNote(message) ? message.characters : undefined;
+  const list = isBody(message) && isMessage(message) ? message.characters : undefined;
   if (!Array.isArray(list)) return [];
   return [...new Set(list.filter((c): c is string => typeof c === 'string' && c !== ''))];
 }
@@ -246,10 +246,10 @@ export function recipientsOf(message: object | null | undefined): string[] {
  * An empty list whose `x_served_trimmed` names `characters` is to someone the reader cannot see and
  * addresses no Character the reader is given. Not `narrator`, not a name or an id in the text, not
  * any other link. A sender is not addressed by sending. An empty id (`""`) is no Character: nothing
- * is addressed to it, not even a message to everyone. A Note is addressed to nobody.
+ * is addressed to it, not even a message to everyone. A Note, or any Narrative that is not a message, is addressed to nobody (STAGED: serial 128).
  */
 export function isAddressedTo(message: object | null | undefined, characterId: string): boolean {
-  if (!isBody(message) || isNote(message) || typeof characterId !== 'string' || characterId === '') return false;
+  if (!isBody(message) || !isMessage(message) || typeof characterId !== 'string' || characterId === '') return false;
   if (isToEveryone(message)) return true;
   const list = message.characters;
   return Array.isArray(list) && list.includes(characterId);
@@ -265,7 +265,7 @@ export function isAddressedTo(message: object | null | undefined, characterId: s
  */
 export function isToEveryone(message: object | null | undefined, options?: OwAddressingOptions): boolean {
   const keyless = keylessOf('isToEveryone', options);
-  if (!isBody(message) || isNote(message) || keyless || hasUnseenRecipients(message) === true) return false;
+  if (!isBody(message) || !isMessage(message) || keyless || hasUnseenRecipients(message) === true) return false;
   const list = message.characters;
   return list === undefined || list === null || (Array.isArray(list) && list.length === 0);
 }
@@ -275,11 +275,11 @@ export function isToEveryone(message: object | null | undefined, options?: OwAdd
  * `characters` trimmed (its `x_served_trimmed` list names `characters`), whatever is left in the
  * list. It says that such a recipient exists, never who or how many. Null for a body read keyless
  * (`{ keyless: true }`): it carries no mark, so the reader cannot say either way. False for a Note,
- * which has no recipients.
+ * or any Narrative that is not a message, which has no recipients (STAGED: serial 128).
  */
 export function hasUnseenRecipients(message: object | null | undefined, options?: OwAddressingOptions): boolean | null {
   const keyless = keylessOf('hasUnseenRecipients', options);
-  if (!isBody(message) || isNote(message)) return false;
+  if (!isBody(message) || !isMessage(message)) return false;
   if (keyless) return null;
   const mark = message.x_served_trimmed;
   return Array.isArray(mark) && mark.includes('characters');

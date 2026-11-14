@@ -110,11 +110,11 @@ test('the message readers answer every case of the message fixture', (t) => {
 
 test('recipientsOf gives the ids as written; empty is everyone, which isAddressedTo reads', () => {
   const A = '019a3b10-0000-7000-8000-0000000000a1';
-  assert.deepEqual(recipientsOf({ characters: [A] }), [A]);
-  assert.deepEqual(recipientsOf({ characters: null }), []);
+  assert.deepEqual(recipientsOf({ type: 'narrative', supertype: 'Message', characters: [A] }), [A]);
+  assert.deepEqual(recipientsOf({ type: 'narrative', supertype: 'Message', characters: null }), []);
   assert.deepEqual(recipientsOf({}), []);
   assert.deepEqual(recipientsOf(null), []);
-  assert.equal(isAddressedTo({ characters: [] }, A), true);
+  assert.equal(isAddressedTo({ type: 'narrative', supertype: 'Message', characters: [] }, A), true);
 });
 
 test('the documented calls compile against the built types: bodies and member rows as the client returns them', async () => {
@@ -176,24 +176,24 @@ test('the readers on element bodies: microseconds order, and a loop in a chain e
 
 test('recipients keep their order and a malformed list is not everyone (the Python package asserts the same)', () => {
   const ADA = 'a1', MARA = 'a2';
-  assert.deepEqual(recipientsOf({ characters: [MARA, ADA] }), [MARA, ADA]);
+  assert.deepEqual(recipientsOf({ type: 'narrative', supertype: 'Message', characters: [MARA, ADA] }), [MARA, ADA]);
   assert.deepEqual(recipientsOf({}), []);
-  assert.deepEqual(recipientsOf({ characters: ADA }), []);
-  for (const characters of [ADA, [''], [5], { 0: ADA }]) assert.equal(isAddressedTo({ characters }, ADA), false, JSON.stringify(characters));
-  for (const characters of [[], null]) assert.equal(isAddressedTo({ characters }, ADA), true, JSON.stringify(characters));
-  assert.equal(isAddressedTo({}, ADA), true);
-  assert.equal(isAddressedTo({ characters: [] }, ''), false);
+  assert.deepEqual(recipientsOf({ type: 'narrative', supertype: 'Message', characters: ADA }), []);
+  for (const characters of [ADA, [''], [5], { 0: ADA }]) assert.equal(isAddressedTo({ type: 'narrative', supertype: 'Message', characters }, ADA), false, JSON.stringify(characters));
+  for (const characters of [[], null]) assert.equal(isAddressedTo({ type: 'narrative', supertype: 'Message', characters }, ADA), true, JSON.stringify(characters));
+  assert.equal(isAddressedTo({ type: 'narrative', supertype: 'Message' }, ADA), true);
+  assert.equal(isAddressedTo({ type: 'narrative', supertype: 'Message', characters: [] }, ''), false);
   assert.equal(isSentBy({ narrator: ADA }, ADA), true);
   assert.equal(isSentBy({ narrator: ADA }, MARA), false);
   assert.equal(isSentBy({}, ''), false);
-  for (const characters of [ADA, [''], [5], [ADA]]) assert.equal(isToEveryone({ characters }), false, JSON.stringify(characters));
-  for (const m of [{}, { characters: null }, { characters: [] }]) assert.equal(isToEveryone(m), true, JSON.stringify(m));
+  for (const characters of [ADA, [''], [5], [ADA]]) assert.equal(isToEveryone({ type: 'narrative', supertype: 'Message', characters }), false, JSON.stringify(characters));
+  for (const m of [{ type: 'narrative', supertype: 'Message' }, { type: 'narrative', supertype: 'Message', characters: null }, { type: 'narrative', supertype: 'Message', characters: [] }]) assert.equal(isToEveryone(m), true, JSON.stringify(m));
   assert.equal(isToEveryone(null), false);
 });
 
 test('a list the server trimmed is never everyone, and says someone unseen is addressed', () => {
   const ADA = 'a1';
-  const trimmed = (characters, mark = ['characters']) => ({ characters, x_served_trimmed: mark });
+  const trimmed = (characters, mark = ['characters']) => ({ type: 'narrative', supertype: 'Message', characters, x_served_trimmed: mark });
   // every recipient hidden: keel serves an empty list with the mark, which must not read as everyone
   assert.equal(isToEveryone(trimmed([])), false);
   assert.equal(hasUnseenRecipients(trimmed([])), true);
@@ -204,11 +204,11 @@ test('a list the server trimmed is never everyone, and says someone unseen is ad
   // only the sender trimmed: the addressing is whole
   assert.equal(hasUnseenRecipients(trimmed([], ['narrator'])), false);
   assert.equal(isToEveryone(trimmed([], ['narrator'])), true);
-  for (const m of [{}, { characters: [] }, { x_served_trimmed: 'characters' }, { x_served_trimmed: null }, null]) {
+  for (const m of [{ type: 'narrative', supertype: 'Message' }, { type: 'narrative', supertype: 'Message', characters: [] }, { type: 'narrative', supertype: 'Message', x_served_trimmed: 'characters' }, { type: 'narrative', supertype: 'Message', x_served_trimmed: null }, null]) {
     assert.equal(hasUnseenRecipients(m), false, JSON.stringify(m));
   }
   // a body read keyless carries no mark: never asserted to everyone, and the unseen answer is unknown
-  for (const m of [{}, { characters: [] }, { characters: null }]) {
+  for (const m of [{ type: 'narrative', supertype: 'Message' }, { type: 'narrative', supertype: 'Message', characters: [] }, { type: 'narrative', supertype: 'Message', characters: null }]) {
     assert.equal(isToEveryone(m, { keyless: true }), false, JSON.stringify(m));
     assert.equal(hasUnseenRecipients(m, { keyless: true }), null, JSON.stringify(m));
     assert.equal(isToEveryone(m, { keyless: false }), true, JSON.stringify(m));
@@ -341,19 +341,33 @@ test('the shared edge cases: Notes on every reader, the created_at rule, the edi
 });
 
 test('keyless is an options object with a boolean: a bare true or a string is a TypeError, never read as false', () => {
-  assert.throws(() => isToEveryone({ characters: [] }, true), TypeError);
-  assert.throws(() => hasUnseenRecipients({ characters: [] }, true), TypeError);
-  assert.throws(() => isToEveryone({ characters: [] }, { keyless: 'yes' }), TypeError);
-  assert.equal(isToEveryone({ characters: [] }, null), true);
-  assert.equal(isToEveryone({ characters: [] }, {}), true);
+  assert.throws(() => isToEveryone({ type: 'narrative', supertype: 'Message', characters: [] }, true), TypeError);
+  assert.throws(() => hasUnseenRecipients({ type: 'narrative', supertype: 'Message', characters: [] }, true), TypeError);
+  assert.throws(() => isToEveryone({ type: 'narrative', supertype: 'Message', characters: [] }, { keyless: 'yes' }), TypeError);
+  assert.equal(isToEveryone({ type: 'narrative', supertype: 'Message', characters: [] }, null), true);
+  assert.equal(isToEveryone({ type: 'narrative', supertype: 'Message', characters: [] }, {}), true);
 });
 
 test('recipientsOf answers each recipient once, in its first place; ids compare as written (STAGED serial 128)', () => {
-  assert.deepEqual(recipientsOf({ characters: ['b', 'a', 'b', 'c', 'a'] }), ['b', 'a', 'c']);
-  assert.deepEqual(recipientsOf({ characters: ['a', 'A', 'a'] }), ['a', 'A']);
-  assert.deepEqual(recipientsOf({ characters: ['a', '', 'a', 7] }), ['a']);
+  assert.deepEqual(recipientsOf({ type: 'narrative', supertype: 'Message', characters: ['b', 'a', 'b', 'c', 'a'] }), ['b', 'a', 'c']);
+  assert.deepEqual(recipientsOf({ type: 'narrative', supertype: 'Message', characters: ['a', 'A', 'a'] }), ['a', 'A']);
+  assert.deepEqual(recipientsOf({ type: 'narrative', supertype: 'Message', characters: ['a', '', 'a', 7] }), ['a']);
   // The addressing readers already read a repeat once.
   const repeat = { type: 'narrative', supertype: 'Message', characters: ['a', 'a'] };
   assert.equal(isAddressedTo(repeat, 'a'), true);
   assert.equal(isToEveryone(repeat), false);
+});
+
+test('a Narrative that is not a message has no recipients and is addressed to nobody (STAGED serial 128)', () => {
+  const story = { type: 'narrative', supertype: 'Story', characters: ['a'] };
+  assert.equal(isMessage(story), false);
+  assert.deepEqual(recipientsOf(story), []);
+  assert.equal(isAddressedTo(story, 'a'), false);
+  assert.equal(isToEveryone({ type: 'narrative', supertype: 'Story', characters: [] }), false);
+  assert.equal(hasUnseenRecipients({ type: 'narrative', supertype: 'Story', characters: [], x_served_trimmed: ['characters'] }), false);
+  const plain = { type: 'narrative', characters: ['a'] };
+  assert.deepEqual(recipientsOf(plain), []);
+  const message = { type: 'narrative', supertype: 'Message', characters: ['a'] };
+  assert.deepEqual(recipientsOf(message), ['a']);
+  assert.equal(isAddressedTo(message, 'a'), true);
 });
