@@ -7,7 +7,7 @@ earlier history lives in git log only.
 
 ### Added
 
-- `readReportLine(line, { world })` and `readReportLines(text, { world })`: a line of a report's `consequences` as the report profile reads it. The line's address is the last one that names an element of this world (`address`, written `ow://<type>/<id>`, with its `reading`, `start` and `end`), and `words` is what a reader shows: the line without its address when nothing the writer wrote is lost (canonical, no moment, no lens, standing apart), else the whole line. `readReportLines` splits a text at every carriage return and line feed and trims each line of White_Space. Both packages are held to one table of 104 lines and 15 texts.
+- `readReportLine(line, { world })` and `readReportLines(text, { world })`: a line of a report's `consequences` as the report profile reads it. The line's address is the last one that names an element of this world (`address`, written `ow://<type>/<id>`, with its `reading`, `start` and `end`), and `words` is what a reader shows: the line without its address when nothing the writer wrote is lost (canonical, no moment, no lens, standing apart), else the whole line. `readReportLines` splits a text at every carriage return and line feed and trims each line of White_Space. Both packages are held to one table of 99 lines and 15 texts.
 
 ## [4.168.0] - 2026-11-14
 
