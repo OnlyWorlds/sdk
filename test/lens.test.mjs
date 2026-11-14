@@ -590,3 +590,18 @@ test('the documented call compiles against the built types', async () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('a lens reads each anchor once: a repeat in one field or across two is one anchor, and an unseen one is cut once (serial 128)', () => {
+  const world = { elements: [
+    { id: 'c1', type: 'character', name: 'Ada' },
+    { id: 'c2', type: 'character', name: 'Bo' },
+    { id: 'p1', type: 'location', name: 'Harbour' },
+  ] };
+  const once = resolveLens(world, { ...LENS, characters: ['c1', 'c2'], x_lens: { depth: 0 } }, OWNER);
+  const twice = resolveLens(world, { ...LENS, characters: ['c1', 'c1', 'c2', 'c1'], x_lens: { depth: 0 } }, OWNER);
+  assert.deepEqual(twice.kept, ['c1', 'c2']);
+  assert.deepEqual(twice, once);
+  // The Location named twice under `characters`, and again under `objects`, is one anchor the reader cannot see.
+  const unseen = resolveLens(world, { ...LENS, characters: ['p1', 'p1', 'c1'], objects: ['p1'], x_lens: { depth: 0 } }, OWNER);
+  assert.deepEqual([unseen.kept, unseen.cut], [['c1'], { anchor_not_visible: 1 }]);
+});
