@@ -129,7 +129,7 @@ test('a text that is not a string,or an index that is not a whole number from 0,
   assert.equal(readOwLinkAt('', 0), null);
 });
 
-// What stands before ow:// (STAGED: ruled 2026-11-14, publishes with a later serial): a letter of any script, a combining mark or an
+// What stands before ow:// (since serial 127): a letter of any script, a combining mark or an
 // underscore glues the start into a word, the same set as the cut after a run; a hyphen or a digit does not.
 test('an address glued to a word before it is prose: the cut after a run, read from the other end', () => {
   const E = '01a1d4ef-0000-7000-8000-000000000084';

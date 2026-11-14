@@ -338,7 +338,7 @@ function parses(s: string): boolean {
 export function readOwLinkAt(text: string, index: number = 0): OwAddressAt | null {
   if (typeof text !== 'string') throw new TypeError('readOwLinkAt: text must be a string');
   if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) throw new TypeError('readOwLinkAt: index must be a whole number from 0');
-  // A start glued to a word is prose, the mirror of the cut after the run (STAGED: ruled 2026-11-14, publishes with a later serial):
+  // A start glued to a word is prose, the mirror of the cut after the run (since serial 127):
   // the character before is read whole, so a letter above U+FFFF (two code units) glues as any letter does.
   if (index > 0 && index <= text.length && IN_A_WORD.test(String.fromCodePoint(text.codePointAt(codePointStart(text, index - 1))!))) return null;
   const human = text.startsWith(HUMAN_PREFIX, index);

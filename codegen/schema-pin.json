@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.34.1-dist.126",
-  "commit": "86e2ff45c87029cfbd09ae485a2da9c2fc2f1929",
-  "manifest_sha256": "03858f0c11735658817dcb1fb8e7bd030505d84fdc3912cf02d745b2a58c104a",
+  "tag": "v0.34.1-dist.127",
+  "commit": "f50c5269cd89bf14560b7f34621d1cddf495fd0b",
+  "manifest_sha256": "6530b1f3e2eb9e3a037810bb3565e71de48585109791c699da2569eead03838b",
   "canonical_version": "00.34.01",
-  "dist_serial": 126,
+  "dist_serial": 127,
   "published": "2026-11-14",
   "pinned_at": "2026-11-14",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout; files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.34.1-dist.126",
+      "manifest_sha256": "03858f0c11735658817dcb1fb8e7bd030505d84fdc3912cf02d745b2a58c104a",
+      "note": "superseded by v0.34.1-dist.127 (canonical 00.34.01 unchanged, no schema file moved; an address glued to a word before it is no address, with the astral case's UTF-16 index; the own banner table in views.fixture.json; three layout-mark cases; four presence cases in checks)"
+    },
     {
       "tag": "v0.34.1-dist.124",
       "manifest_sha256": "9db0444a22a4a56ec08a8e78e429983b8e66cb2085de0f7e45410cd66ae16568",

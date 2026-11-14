@@ -5,8 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
-- (staged: ruled 2026-11-14, publishes with a later serial) `readOwLinkAt` answers null when the address would begin inside a word: after a letter of any script, a combining mark or an underscore (`elbow://object/<id>` is prose), the same set that cuts a run after it; a hyphen or a digit before `ow://` does not glue. A letter above U+FFFF before the index is read whole.
-- (staged with the start rule) `findOwLinks(text)` (new): every address in a text, in order, each `{start, end, reading}` (`OwAddressFound`), read by `readOwLinkAt` at each place either prefix starts; none overlap, and a start that reads nothing is passed. Linear in the text: each prefix's next place is searched once, and `readOwLinkAt` now passes over every path end that is not an id without a parse (a refused parse costs an exception), so a megabyte of bare `ow://` reads in tens of milliseconds where it took seconds. No answer of `readOwLinkAt` changes but the start rule's.
+## [4.165.0] - 2026-11-14
+
+schema-dist v0.34.1-dist.127 (canonical 00.34.01 unchanged; `ONLYWORLDS_VERSION` unchanged, no schema file moved). The fixtures' new cases pass: the address profile's glued starts (214 cases), the views fixture's own-banner table, three layout-mark cases and four presence cases.
+
+### Changed
+
+- `readOwLinkAt` answers null when the address would begin inside a word: after a letter of any script, a combining mark or an underscore (`elbow://object/<id>` is prose), the same set that cuts a run after it; a hyphen or a digit before `ow://` does not glue. A letter above U+FFFF before the index is read whole.
+
+### Added
+
+- `findOwLinks(text)`: every address in a text, in order, each `{start, end, reading}` (`OwAddressFound`), read by `readOwLinkAt` at each place either prefix starts; none overlap, and a start that reads nothing is passed. Linear in the text: each prefix's next place is searched once, and `readOwLinkAt` now passes over every path end that is not an id without a parse (a refused parse costs an exception), so a megabyte of bare `ow://` reads in tens of milliseconds where it took seconds. No answer of `readOwLinkAt` changes but the start rule's.
 
 ## [4.164.0] - 2026-11-14
 

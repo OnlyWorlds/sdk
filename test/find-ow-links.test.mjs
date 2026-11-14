@@ -1,6 +1,6 @@
 /**
  * findOwLinks: every address in a text, in order, each {start, end, reading}, read by readOwLinkAt at each place a
- * prefix starts. The start rule's cases as units (STAGED: ruled 2026-11-14, publishes with a later serial), order and
+ * prefix starts. The start rule's cases as units (since serial 127), order and
  * no overlap, agreement with readOwLinkAt, and six hostile 1 MB texts timed. Runs against the compiled public bundle.
  */
 import { test } from 'node:test';
