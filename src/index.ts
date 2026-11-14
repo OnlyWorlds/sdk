@@ -58,8 +58,8 @@ export type { OwSender, OwSenderStatus, OwEdited, OwMessageMember } from './mess
 export { instantOf, compareInstants } from './message';
 export type { OwInstant } from './message';
 // The report profile (schema-dist profiles/report.md, rule 9): reports grouped into threads by the parent they name.
-export { reportThreadsOf } from './report';
-export type { OwReportThreads, OwReportGroup, OwReportLint, OwReportParentKind } from './report';
+export { reportThreadsOf, readReportLine, readReportLines } from './report';
+export type { OwReportThreads, OwReportGroup, OwReportLint, OwReportParentKind, OwReportLine, OwReportLineOptions } from './report';
 // The review profile (schema-dist profiles/review.md): an element written as proposed, as a reader that
 // shows a world shows the mark, and as a reader that hands a world on leaves it out.
 export { PROPOSED_MARK, proposedMarkOf, handsOnAsProposed } from './review';

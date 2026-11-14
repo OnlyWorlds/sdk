@@ -35,6 +35,11 @@ export function trimWhiteSpace(text: string): string {
   return text.slice(start, end);
 }
 
+/** Whether the code unit at `i` is Unicode White_Space (each of the 25 is one unit); false past either end. Module-internal. */
+export function isWhiteSpaceAt(text: string, i: number): boolean {
+  return i >= 0 && i < text.length && WHITE_SPACE.has(text.charCodeAt(i));
+}
+
 /** Trimmed, then simple-case-folded: "trimmed and without regard to case", defined once. Module-internal. */
 export const fold = (text: string): string => simpleCaseFold(trimWhiteSpace(text));
 

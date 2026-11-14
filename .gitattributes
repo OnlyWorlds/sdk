@@ -20,3 +20,5 @@ test/fixtures/layout/** -text
 test/fixtures/address-in-prose.json -text
 # The by-kind layout's anchor table, the same bytes as the Python package's copy and the shared fixture's anchors (codegen/layout_anchors.mjs bakes it).
 codegen/layout/anchors.json -text
+# The report profile's lines table, the same bytes in both packages (both tests hold its sha256).
+test/fixtures/report/lines.json -text

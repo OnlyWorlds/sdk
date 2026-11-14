@@ -18,7 +18,7 @@ import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
   preparePhoto, parseDate, resolveCalendar, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
   isToEveryone, hasUnseenRecipients, readMarkOf,
-  elementAddress, resolveLens, worldGraph, openersFor, landingOf, trailByPlace, layoutAround,
+  elementAddress, resolveLens, worldGraph, openersFor, landingOf, trailByPlace, layoutAround, readReportLine, readReportLines,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
 
@@ -114,6 +114,8 @@ const FENCED = {
   // 4.135.0: a layout method's input, its settings and its places, fenced at every level.
   'trailByPlace#0': () => trailByPlace({ ...trailInput, ...U }),
   'layoutAround#2': () => layoutAround({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, 'a', U),
+  'readReportLine#1': () => readReportLine('x', U),
+  'readReportLines#1': () => readReportLines('x', U),
   // The Open with rows: the address as elementAddress fences it, and the surface's five keys.
   'openersFor#2': () => openersFor([], 'world', { form: 'human', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f', ...U }, { audience: 'member' }),
   'openersFor#3': () => openersFor([], 'world', { form: 'human', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f' }, { audience: 'member', ...U }),

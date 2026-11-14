@@ -4,8 +4,10 @@
 // trim, the fold and the mark by presence), never a second copy. A thread is ordered by `created_at` as the message
 // profile orders messages (message.ts). The fixture, profiles/report.fixture.json, is this file's own test.
 
-import { fold, isRoomElement, trimWhiteSpace } from './room';
+import { fold, isRoomElement, isWhiteSpaceAt, trimWhiteSpace } from './room';
 import { inCreatedOrder } from './message';
+import { findOwLinks, type OwAddressReading } from './address';
+import { refuseUnknownOptions } from './options';
 
 /** What a report's parent is: none served, a report, a board entry, an id whose element is not held, another element, or the report itself. */
 export type OwReportParentKind = 'none' | 'report' | 'board' | 'missing' | 'other' | 'self';
@@ -132,4 +134,121 @@ export function reportThreadsOf(narratives: readonly object[]): OwReportThreads 
     });
   }
   return { parents, groups, lints };
+}
+
+// ---- A line of `consequences` (the report profile's lines rulings: what a line is, its address, its shown words) ----
+
+/** What `readReportLine` answers for one line of a report's `consequences`. */
+export interface OwReportLine {
+  /** The line as read. */
+  line: string;
+  /** The words a reader shows: the line without its address where nothing the writer wrote is lost, else the whole line. */
+  words: string;
+  /** The element the line names, written `ow://<type>/<id>` (the id lowercase), or null when no address in it names an element of this world. */
+  address: string | null;
+  /** What `parseOwLink` reads in the address as written, or null. */
+  reading: OwAddressReading | null;
+  /** Where the address stands in the line (JavaScript string indexes, as `findOwLinks` counts them), or null. */
+  start: number | null;
+  end: number | null;
+}
+
+/** The options `readReportLine` and `readReportLines` take. */
+export interface OwReportLineOptions {
+  /** This world's id, as written. An address that names a world names this one only when its world is this id; without it, only an address with no world names an element here. */
+  world?: string | null;
+}
+
+const REPORT_LINE_KEYS = ['world'] as const;
+/** The closing marks, character by character (the lines rulings: a `?` is no closing mark, since it starts a query after an address). */
+const CLOSING: ReadonlySet<string> = new Set(['.', ',', ';', ':', '!', ')', ']', '}', "'", '"', '\u2019', '\u201d', '\u00bb']);
+/** The pairs an address may stand in, each opener with its closer. */
+const PAIRS: ReadonlyMap<string, string> = new Map([['(', ')'], ['[', ']'], ['"', '"'], ["'", "'"], ['\u201c', '\u201d'], ['\u2018', '\u2019'], ['\u00ab', '\u00bb']]);
+
+function worldOption(fn: string, options: OwReportLineOptions | undefined): string | null {
+  if (options !== undefined && (options === null || typeof options !== 'object')) throw new TypeError(`${fn}: options must be an object`);
+  refuseUnknownOptions(fn, options, REPORT_LINE_KEYS);
+  const world = options?.world ?? null;
+  if (world !== null && typeof world !== 'string') throw new TypeError(`${fn}: world must be a string (this world's id) or null`);
+  return world;
+}
+
+function trimEndWhiteSpace(text: string): string {
+  let end = text.length;
+  while (end > 0 && isWhiteSpaceAt(text, end - 1)) end--;
+  return text.slice(0, end);
+}
+
+function trimStartWhiteSpace(text: string): string {
+  let start = 0;
+  while (start < text.length && isWhiteSpaceAt(text, start)) start++;
+  return text.slice(start);
+}
+
+function readLine(line: string, world: string | null): OwReportLine {
+  // The line's address: the last one that names an element of this world, from its text alone.
+  const here = findOwLinks(line).filter(f => f.reading.type !== null && f.reading.id !== null
+    && (f.reading.world === null || (!f.reading.worldIsSlug && world !== null && f.reading.world === world)));
+  if (here.length === 0) return { line, words: line, address: null, reading: null, start: null, end: null };
+  const { start, end, reading } = here[here.length - 1];
+  const found = { line, words: line, address: `ow://${reading.type}/${reading.id}`, reading, start, end };
+  // It leaves the words only when nothing the writer wrote is lost: canonical, no moment, no lens, standing apart.
+  if (!reading.canonical || reading.moment !== null || reading.lens !== null) return found;
+  let from = start;
+  let to = end;
+  const before = start > 0 ? line[start - 1] : '';
+  if (PAIRS.has(before)) {
+    // A matched pair goes with it; an opener not closed right after keeps the whole line.
+    if (line[end] !== PAIRS.get(before)) return found;
+    from = start - 1;
+    to = end + 1;
+  }
+  const apartBefore = from === 0 || isWhiteSpaceAt(line, from - 1) || line[from - 1] === ':';
+  const apartAfter = to === line.length || isWhiteSpaceAt(line, to) || CLOSING.has(line[to]);
+  if (!apartBefore || !apartAfter) return found;
+  // The White_Space on both sides goes, and one colon right before it with the White_Space before that colon.
+  let left = trimEndWhiteSpace(line.slice(0, from));
+  if (left.endsWith(':')) left = trimEndWhiteSpace(left.slice(0, -1));
+  const right = trimStartWhiteSpace(line.slice(to));
+  // Nothing stands before the address: the whole line stays, so a line never shows empty.
+  if (left === '') return found;
+  const words = right === '' ? left : CLOSING.has(right[0]) ? left + right : `${left} ${right}`;
+  return { ...found, words };
+}
+
+/**
+ * One line of a report's `consequences`, read as the report profile reads it: the element it names and the words a
+ * reader shows. The line's address is the last address in it (found as the address profile finds one in prose, by
+ * `findOwLinks`) that names an element of this world: an `ow://` or site address, in any letter case, whose world is
+ * `world` or is left out, and whose type and id have an element's shape. An address of another world, a slug, a world
+ * alone or a lens with no element is prose, and a line with only those has no address, which is no fault. The address
+ * leaves the shown words only when nothing the writer wrote is lost: it is canonical, carries no moment and no lens,
+ * and stands apart (before it the line's start, White_Space or one colon; after it the line's end, White_Space or a
+ * closing mark, `. , ; : ! ) ] } ' " ’ ” »`), alone or in a matched pair (`()`, `[]`, `""`, `''`, `“”`, `‘’`, `«»`).
+ * Then it goes with the White_Space on both sides and one colon before it, and the two halves join with one space,
+ * or none when the second is empty or begins with a closing mark. In every other shape, and when nothing stands
+ * before the address, the whole line stays, still naming its element. Whether that element exists is the caller's
+ * to read. The line is read as given: `readReportLines` splits and trims a whole text. A line that is not a string,
+ * options that are not an object, an unknown option or a `world` that is not a string or null is a TypeError.
+ *
+ * ```ts
+ * readReportLine("Renamed the Consul's Steinway: ow://object/01a1d4ef-0000-7000-8000-000000000084.");
+ * // { words: "Renamed the Consul's Steinway.", address: 'ow://object/01a1d4ef-0000-7000-8000-000000000084', … }
+ * ```
+ */
+export function readReportLine(line: string, options?: OwReportLineOptions): OwReportLine {
+  if (typeof line !== 'string') throw new TypeError('readReportLine: line must be a string');
+  return readLine(line, worldOption('readReportLine', options));
+}
+
+/**
+ * Every line of a report's `consequences`, each read by `readReportLine`. The text is split at every carriage return
+ * and every line feed (so CRLF is one break), each piece trimmed of Unicode White_Space at both ends, and a piece
+ * empty after trimming is no line; U+2028 and U+0085 stay inside a line, and a byte order mark is no White_Space.
+ * A text that is not a string is a TypeError.
+ */
+export function readReportLines(text: string, options?: OwReportLineOptions): OwReportLine[] {
+  if (typeof text !== 'string') throw new TypeError('readReportLines: text must be a string');
+  const world = worldOption('readReportLines', options);
+  return text.split(/[\r\n]/).map(trimWhiteSpace).filter(l => l !== '').map(l => readLine(l, world));
 }
