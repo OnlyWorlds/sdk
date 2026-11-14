@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.167.0] - 2026-11-14
+
 ### Added
 
 - `layoutByKind(graph)`: a world nobody laid out, laid out from its graph as `worldGraph` answers it. Each kind gets a point on a circle, links pull, neighbours push apart, for 320 seeded steps (160 past 2,000 elements), and the points are fitted into a frame of -1 to 1 on the longer axis. Answers `{ method: 'by-kind', version: 1, points }`, one `{ id, x, y }` per node in node order (`OwLayoutByKind`). The kinds' points on the circle are a table of numbers baked into the package, never computed, so the same graph gives the same points to the last bit in every browser and in the Python package; the shared fixture `test/fixtures/layout/by-kind.json` (12 cases, 3,013 points) is compared exactly. The graph is first put in one order (nodes by id; links by source, field, index, then target, in code point order), so the order a caller hands the nodes and links in moves no point; the points come back in the caller's node order.
