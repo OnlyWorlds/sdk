@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.169.2] - 2026-11-15
+
+### Changed
+
+- **The schema pin moves to `v0.34.1-dist.131`** (canonical 00.34.01 unchanged; no schema file moved). The room profile now says once what simple case folding is: each code point replaced by its mapping in the C and S rows of Unicode's CaseFolding.txt at 15.1, never a language's lower-casing and never full folding, so `MEſſAGE` (two long s) is the word `message` and `Meßage` is not. The room and message profiles say a value that is not an object (`null`, a list, a string) is no element: every reader answers for it as for a body that is not a message, and none fails. The readers here already answered so; no source file moves. The fixtures gain the cases that hold it: room 38 to 48 (the two folds, the Kelvin sign, the dotless and dotted i, a type with a ligature, every White_Space at both ends, three bodies that are no object), message 103 to 120, lens 235 to 242 (the first line and a paragraph separator, and a description that is one separator alone) and calendar 77 to 78 (`v2-except-offset-leap-mid-year`, 229 steps).
+- Tests: the message and room readers on a value that is no object.
+
 - Comments only: an address on an agent link is a label, never matched to an account (the platform, 2026-11-15). `OwFrontDoor.sponsor` and `my_seats`, a roster row's `sponsor_member` and the account members row's `sponsor` no longer say a seat made for an email address names nobody: it answers to the link's maker and is listed in their seats.
 
 ## [4.169.1] - 2026-11-15
