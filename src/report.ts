@@ -155,7 +155,7 @@ export interface OwReportLine {
 
 /** The options `readReportLine` and `readReportLines` take. */
 export interface OwReportLineOptions {
-  /** This world's id, as written. An address that names a world names this one only when its world is this id; without it, only an address with no world names an element here. */
+  /** This world's id, lowercase as the world holds it. An address's world is read lowercase (its hex in either case) and compared with this exactly; without it, only an address with no world names an element here. */
   world?: string | null;
 }
 
@@ -219,8 +219,9 @@ function readLine(line: string, world: string | null): OwReportLine {
 /**
  * One line of a report's `consequences`, read as the report profile reads it: the element it names and the words a
  * reader shows. The line's address is the last address in it (found as the address profile finds one in prose, by
- * `findOwLinks`) that names an element of this world: an `ow://` or site address, in any letter case, whose world is
- * `world` or is left out, and whose type and id have an element's shape. An address of another world, a slug, a world
+ * `findOwLinks`) that names an element of this world: an `ow://` or site address, its ids' hex in either case (the
+ * prefix, the host and the type word only in lowercase), whose world is `world` or is left out, and whose type and id
+ * have an element's shape. An address of another world, a slug, a world
  * alone or a lens with no element is prose, and a line with only those has no address, which is no fault. The address
  * leaves the shown words only when nothing the writer wrote is lost: it is canonical, carries no moment and no lens,
  * and stands apart (before it the line's start, White_Space or one colon; after it the line's end, White_Space or a
