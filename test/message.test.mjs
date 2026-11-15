@@ -10,7 +10,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   MESSAGE_PAIR, NOTE_PAIR, ROOM_PAIRS, isMessage, isNote, recipientsOf, isAddressedTo, isToEveryone, hasUnseenRecipients, isSentBy,
-  senderStatus, editedBy, readMarkOf, unreadFor, threadOf, noteOf,
+  senderStatus, editedBy, readMarkOf, unreadFor, threadOf, noteOf, isRoomElement, isCharterElement, readingAidOf, isKnownOf,
 } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/message.fixture.json', import.meta.url));
@@ -370,4 +370,48 @@ test('a Narrative that is not a message has no recipients and is addressed to no
   const message = { type: 'narrative', supertype: 'Message', characters: ['a'] };
   assert.deepEqual(recipientsOf(message), ['a']);
   assert.equal(isAddressedTo(message, 'a'), true);
+});
+
+test('a value that is no object is no element to any reader, and none throws', () => {
+  // A served body that is no object (null, a list, a string, a number, a boolean) is no element: every reader
+  // gives its empty answer. The Python package's test makes the same calls (tests/test_message.py).
+  const A = '019a3b10-0000-7000-8000-0000000000a1';
+  for (const v of [null, undefined, [], [{ type: 'narrative', supertype: 'Message' }], 'Message', 5, true]) {
+    const at = `for ${JSON.stringify(v)}`;
+    assert.equal(isMessage(v), false, at);
+    assert.equal(isNote(v), false, at);
+    assert.equal(isRoomElement(v), false, at);
+    assert.equal(isCharterElement(v), false, at);
+    assert.equal(readingAidOf(v), null, at);
+    assert.deepEqual(recipientsOf(v), [], at);
+    assert.equal(isAddressedTo(v, A), false, at);
+    assert.equal(isToEveryone(v), false, at);
+    assert.equal(isToEveryone(v, { keyless: true }), false, at);
+    assert.equal(hasUnseenRecipients(v), false, at);
+    assert.equal(hasUnseenRecipients(v, { keyless: true }), false, at);
+    assert.equal(isSentBy(v, A), false, at);
+    assert.deepEqual(senderStatus(v, null), { status: 'unverifiable', claimed: null, writtenBy: null }, at);
+    assert.deepEqual(editedBy(v, null), { edited: false, by: null }, at);
+    assert.equal(readMarkOf([v], A, null), null, at);
+    assert.deepEqual(unreadFor([v], A, null), [], at);
+    assert.deepEqual(threadOf([v], A), [], at);
+    assert.equal(noteOf([v], A, null), null, at);
+    assert.equal(isKnownOf(v), false, at);
+  }
+});
+
+test('a list passes over what is no object and reads the rest', () => {
+  // The gate drops the entry, never the list: the elements beside a null or a string are read as before.
+  const A = '019a3b10-0000-7000-8000-0000000000a1';
+  const M = '019a3b10-0000-7000-8000-0000000000a2';
+  const message = { id: 'm1', type: 'narrative', supertype: 'Message', characters: [A], narrator: M };
+  const mark = { id: 'r1', type: 'relation', supertype: 'Read', actor: A, narratives: ['m1'] };
+  const note = { id: 'n1', type: 'narrative', supertype: 'Note', narrator: A };
+  const junk = [null, 'x', 5, []];
+  assert.deepEqual(unreadFor([...junk, message], A, null), [message]);
+  assert.deepEqual(threadOf([...junk, message], 'm1'), [message]);
+  assert.equal(readMarkOf([...junk, mark], A, null), mark);
+  assert.deepEqual(unreadFor([message], A, mark), []);
+  for (const noMark of junk) assert.deepEqual(unreadFor([message], A, noMark), [message], `for the mark ${JSON.stringify(noMark)}`);
+  assert.equal(noteOf([...junk, note], A, null), 'n1');
 });
