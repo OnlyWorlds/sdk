@@ -73,6 +73,30 @@ YAML (`canonical:` / `serial:` / `published:`), while keel's is the bare string 
 compatibility promise, so `read_canonical_version()` parses the `canonical:` *value* and never a
 line. Taking the first line yields `'canonical: 00.30.00'` and silently changes a published type.
 
+## Moving the pin
+
+`repin.py` vendors a new tag and rewrites the pin record in one step:
+
+```bash
+python codegen/repin.py v0.34.1-dist.<serial> "superseded by v0.34.1-dist.<serial> (<what moved>)"
+```
+
+It reads the tag's tree by `git archive` from a local checkout of schema-dist (the directory
+`schema-dist` beside this repository, `$OW_SCHEMA_DIST`, or `--schema-dist <path>`) and replaces
+`codegen/schema-dist/` with it, byte for byte. It writes nothing unless the tree agrees with its own
+MANIFEST, the tag ends with the serial its VERSION states, and the MANIFEST's sha256 is the one
+GitHub serves at the tag -- the check a moved tag cannot pass. The note is kept in `previous_pins`
+beside the pin it replaces.
+
+Then, by hand:
+
+1. `npm run codegen`, and read the diff of `types.generated.ts` and `SCHEMA.md` (a field that
+   disappeared is not a patch).
+2. `AGENTS.md`'s "Current as of" line names the new tag; `codegen:check` fails until it does.
+3. `npm run schema:check` and `npm test`. A test that pins a fixture's case count or sha256 goes
+   red when the fixture moved: read what moved before moving the number.
+4. The version and its CHANGELOG entry.
+
 ## The checks -- two of them, catching different things
 
 ```bash
