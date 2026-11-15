@@ -5,9 +5,15 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.169.0] - 2026-11-15
+
 ### Added
 
-- `readReportLine(line, { world })` and `readReportLines(text, { world })`: a line of a report's `consequences` as the report profile reads it. The line's address is the last one that names an element of this world (`address`, written `ow://<type>/<id>`, with its `reading`, `start` and `end`), and `words` is what a reader shows: the line without its address when nothing the writer wrote is lost (canonical, no moment, no lens, standing apart), else the whole line. `readReportLines` splits a text at every carriage return and line feed and trims each line of White_Space. Both packages are held to one table of 101 lines and 16 texts.
+- `readReportLine(line, { world })` and `readReportLines(text, { world })`: a line of a report's `consequences` as the report profile reads it. The line's address is the last one that names an element of this world (`address`, written `ow://<type>/<id>`, with its `reading`, `start` and `end`), and `words` is what a reader shows: the line without its address when nothing the writer wrote is lost (canonical, no moment, no lens, standing apart), else the whole line. `readReportLines` splits a text at every carriage return and line feed and trims each line of White_Space. Both packages are held to the report profile's second fixture, `profiles/report-lines.fixture.json` (101 lines and 16 texts), byte for byte.
+
+### Changed
+
+- **The schema pin moves to `v0.34.1-dist.129`** (canonical 00.34.01 unchanged; no schema file moved): the report profile's rule 10, a line of `consequences` read in three parts, and its second fixture.
 
 ## [4.168.0] - 2026-11-14
 

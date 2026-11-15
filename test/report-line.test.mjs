@@ -1,5 +1,5 @@
 /**
- * A line of a report's `consequences`: the report profile's lines table (the same bytes in the Python package, its
+ * A line of a report's `consequences`: the report profile's lines table, schema-dist's profiles/report-lines.fixture.json (the same bytes in the Python package, its
  * sha256 pinned in both tests) gives each line, the element its address names (or none) and the words a reader shows,
  * and each text with the lines it splits into. Every row is compared whole: the address and the words byte for byte.
  * Runs against the compiled public bundle (dist).
@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { readReportLine, readReportLines, parseOwLink } from '../dist/index.js';
 
-const bytes = readFileSync(new URL('./fixtures/report/lines.json', import.meta.url));
+const bytes = readFileSync(new URL('../codegen/schema-dist/profiles/report-lines.fixture.json', import.meta.url));
 const fx = JSON.parse(bytes.toString('utf8'));
 const TABLE_SHA = '2face7cd693235d8';
 const world = fx.world;
