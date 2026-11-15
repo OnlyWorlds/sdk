@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+- Comments only: an address on an agent link is a label, never matched to an account (the platform, 2026-11-15). `OwFrontDoor.sponsor` and `my_seats`, a roster row's `sponsor_member` and the account members row's `sponsor` no longer say a seat made for an email address names nobody: it answers to the link's maker and is listed in their seats.
+
 ## [4.169.1] - 2026-11-15
 
 ### Changed

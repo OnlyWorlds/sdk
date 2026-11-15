@@ -755,8 +755,9 @@ export interface OwFrontDoor {
   /**
    * The person who answers for this seat (an AI or a player seat): `id` their membership id
    * (null for the world's owner), `kind`, and `name` their Character's name (null when they play
-   * none this key can read). Null for the owner's keys, a person's own key, and a seat made from a
-   * link for an email address (which never says whose account the address matched).
+   * none this key can read). Null for the owner's keys, a person's own key, and a sponsor who is no
+   * longer a member. A seat made from a link for an email address names the link's maker, like any
+   * other seat: the address is a label, never matched to an account (the platform, 2026-11-15).
    */
   sponsor: { id: string | null; kind: 'owner' | 'person'; name: string | null } | null;
   /** The sponsor's Character, the one to address a message to, or null. */
@@ -765,8 +766,8 @@ export interface OwFrontDoor {
   my_character: string | null;
   /**
    * The live AI and player seats you answer for, agent seats first (since keel's front door of
-   * 2026-10-26). Empty for an AI or a player seat's own key and for anyone who answers for none;
-   * a seat made from a link for an email address is never listed.
+   * 2026-10-26). Empty for an AI or a player seat's own key and for anyone who answers for none.
+   * A seat made from a link for an email address is listed for the link's maker (since 2026-11-15).
    */
   my_seats: OwMySeat[];
   /** The world's Charter: the newest marked Charter Law (a Law with supertype Charter carrying the mark `x_charter_of`), or null. Every member may read it. */
@@ -877,8 +878,8 @@ export interface OwMember {
   lenses_from: 'chosen' | 'titles' | 'none';
   /**
    * Agent rows only: who answers for this AI, as the roster names them: the sponsor's membership id
-   * (the `id` of their row here), `owner` when the world's owner answers for it, or null for a seat
-   * made from a link for an email address and for a sponsor with no live membership here. Every
+   * (the `id` of their row here), `owner` when the world's owner answers for it, or null for a
+   * sponsor with no live membership here. Every
    * reader reads it; person and player rows carry no `sponsor_member`.
    */
   sponsor_member?: string | null;
@@ -1456,7 +1457,7 @@ export interface OwSeat {
   kind: 'agent';
   /** The Character the seat plays, or null. With `character: 'mine'` it is its sponsor's own: two rows, one Character. */
   character: string | null;
-  /** Who answers for the seat: a username when they are the world's owner or a member; null for a seat from an email invite, or a sponsor who left. */
+  /** Who answers for the seat: a username when they are the world's owner or a member; null for a sponsor who left. A seat from a link for an email address answers to the link's maker (since 2026-11-15). */
   sponsor: string | null;
   /** ISO 8601, UTC. */
   joined_at: string | null;
