@@ -12,7 +12,7 @@ import { readReportLine, readReportLines, parseOwLink } from '../dist/index.js';
 
 const bytes = readFileSync(new URL('./fixtures/report/lines.json', import.meta.url));
 const fx = JSON.parse(bytes.toString('utf8'));
-const TABLE_SHA = '81dcca339f4c37f6';
+const TABLE_SHA = '2face7cd693235d8';
 const world = fx.world;
 
 test('the table is the one both packages hold, and holds rows of each kind', () => {
