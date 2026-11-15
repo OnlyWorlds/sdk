@@ -14,7 +14,7 @@ import {
 } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/message.fixture.json', import.meta.url));
-const COUNTS = { pair: 10, addressed: 11, recipients: 2, sent_by: 3, sender: 14, unread: 22, mark: 18, thread: 4, unseen: 3, everyone: 3, edited: 4, note: 8 };
+const COUNTS = { pair: 10, addressed: 11, recipients: 2, sent_by: 3, sender: 14, unread: 22, mark: 18, thread: 4, unseen: 3, everyone: 4, edited: 4, note: 8 };
 
 function loadFixture() {
   assert.ok(existsSync(FIXTURE), `no message fixture at ${FIXTURE}`);
@@ -104,7 +104,7 @@ test('the message readers answer every case of the message fixture', (t) => {
   }
   t.diagnostic(`the message fixture: ${cases.length} cases run, ${wrong.length} disagreeing, from ${FIXTURE}`);
   assert.deepEqual(wrong, []);
-  assert.equal(cases.length, 102, `the fixture holds ${cases.length} cases, serial 128 has 102`);
+  assert.equal(cases.length, 103, `the fixture holds ${cases.length} cases, serial 130 has 103`);
   assert.deepEqual(counts, COUNTS);
 });
 

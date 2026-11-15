@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.169.1] - 2026-11-15
+
+### Changed
+
+- **The schema pin moves to `v0.34.1-dist.130`** (canonical 00.34.01 unchanged; no schema file moved): the message profile says a body that is not a message answers false from the unseen-recipients reading whatever the key, and its fixture gains one case for it (`keyless-non-message-is-not-unseen`), which `hasUnseenRecipients` already answered; the profile writes the keyless readers as the package takes them (`isToEveryone(message, { keyless })`). `hasUnseenRecipients`' description says so.
+
 ## [4.169.0] - 2026-11-15
 
 ### Added
