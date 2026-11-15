@@ -18,7 +18,7 @@ import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
   preparePhoto, parseDate, resolveCalendar, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
   isToEveryone, hasUnseenRecipients, readMarkOf,
-  elementAddress, resolveLens, worldGraph, openersFor, landingOf, trailByPlace, layoutAround, readReportLine, readReportLines,
+  elementAddress, resolveLens, worldGraph, openersFor, landingOf, trailByPlace, layoutAround, unplacedAround, readReportLine, readReportLines,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
 
@@ -114,6 +114,7 @@ const FENCED = {
   // 4.135.0: a layout method's input, its settings and its places, fenced at every level.
   'trailByPlace#0': () => trailByPlace({ ...trailInput, ...U }),
   'layoutAround#2': () => layoutAround({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, 'a', U),
+  'unplacedAround#3': () => unplacedAround({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, 'a', [], U),
   'readReportLine#1': () => readReportLine('x', U),
   'readReportLines#1': () => readReportLines('x', U),
   // The Open with rows: the address as elementAddress fences it, and the surface's five keys.
@@ -156,6 +157,8 @@ Object.assign(DATA, {
   'landingOf#0': 'the graph worldGraph answered',
   'layoutByKind#0': 'the graph worldGraph answered',
   'layoutAround#0': 'the graph worldGraph answered',
+  'unplacedByKind#0': 'the graph worldGraph answered',
+  'unplacedAround#0': 'the graph worldGraph answered',
   'charterOf#0': 'the world snapshot, as resolveLens takes it, and whether it is open',
   'charterOf#1': 'the reader, as resolveLens takes it',
   'strandOf#0': 'the world snapshot, as resolveLens takes it, with its x_strand and whether it is open',

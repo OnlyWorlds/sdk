@@ -12,17 +12,18 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { layoutByKind, layoutAround, worldGraph, GROUP_ORDER, ELEMENT_GROUPS } from '../dist/index.js';
+import { layoutByKind, layoutAround, unplacedByKind, unplacedAround, worldGraph, GROUP_ORDER, ELEMENT_GROUPS } from '../dist/index.js';
 
 const bytes = readFileSync(new URL('./fixtures/layout/by-kind.json', import.meta.url));
 const fx = JSON.parse(bytes.toString('utf8'));
 const clone = (v) => JSON.parse(JSON.stringify(v));
-const FIXTURE_SHA = '06a023eace0f906e';
+const FIXTURE_SHA = '0e4fd88b382c298d';
 const AROUND_TOLERANCE = 1e-12;
 
 test('the fixture is the one both packages hold', () => {
   assert.equal(createHash('sha256').update(bytes).digest('hex').slice(0, 16), FIXTURE_SHA);
-  assert.deepEqual(Object.keys(fx.compare), ['cases', 'around']);
+  assert.deepEqual(Object.keys(fx.compare), ['cases', 'around', 'unplaced']);
+  assert.deepEqual([...new Set(fx.unplaced.map((c) => c.method))].sort(), ['around', 'by-kind']);
 });
 
 test('the fixture\'s anchors, groups and group order are the package\'s', () => {
@@ -59,6 +60,44 @@ for (const c of fx.around) {
     });
   });
 }
+
+for (const c of fx.unplaced) {
+  test(`unplaced: ${c.name} (${c.want.length} id(s), exact)`, () => {
+    const got = c.method === 'by-kind' ? unplacedByKind(clone(c.graph), clone(c.placed)) : unplacedAround(clone(c.graph), c.focus, clone(c.placed), { steps: c.steps });
+    assert.deepEqual(got, c.want);
+  });
+}
+
+test('unplaced: placed is a list or a Set, read the same; what is no id in it is passed over', () => {
+  const c = fx.unplaced.find((x) => x.name === 'by-kind-a-pin-gone');
+  assert.equal(c.want.length, 2);
+  assert.deepEqual(unplacedByKind(clone(c.graph), new Set(c.placed)), c.want);
+  // a Pin that stands for no element gives no id: null, undefined, '' and a number place nothing
+  assert.deepEqual(unplacedByKind(clone(c.graph), [null, undefined, '', 7, ...c.placed, ...c.placed]), c.want);
+  const a = fx.unplaced.find((x) => x.name === 'around-a-pin-gone');
+  assert.equal(a.want.length, 2);
+  assert.deepEqual(unplacedAround(clone(a.graph), a.focus, new Set([null, ...a.placed]), { steps: a.steps }), a.want);
+  // nothing placed: everything the method would place, by id in code point order, whatever order was handed
+  const ids = c.graph.nodes.map((x) => x.id);
+  assert.deepEqual(unplacedByKind(clone(c.graph), []), [...ids].sort());
+  assert.notDeepEqual(ids, [...ids].sort());
+  // around's steps default to 1, as layoutAround's
+  assert.deepEqual(unplacedAround(clone(a.graph), a.focus, []), layoutAround(clone(a.graph), a.focus).points.map((p) => p.id).sort());
+  assert.deepEqual(unplacedAround(clone(a.graph), a.focus, [], { steps: 2 }), layoutAround(clone(a.graph), a.focus, { steps: 2 }).points.map((p) => p.id).sort());
+});
+
+test('unplaced: a placed that is no list is refused by name, and so is what the layout refuses', () => {
+  const g = { nodes: [{ id: 'a', type: 'character' }], edges: [] };
+  for (const placed of [undefined, null, 'a', 7, { a: true }]) {
+    assert.throws(() => unplacedByKind(g, placed), /^TypeError: unplacedByKind: placed is a list or a Set of element ids$/);
+    assert.throws(() => unplacedAround(g, 'a', placed), /^TypeError: unplacedAround: placed is a list or a Set of element ids$/);
+  }
+  assert.throws(() => unplacedByKind({ nodes: [] }, []), /^TypeError: unplacedByKind: the graph is \{ nodes, edges \}/);
+  assert.throws(() => unplacedAround(g, 'b', []), /^TypeError: unplacedAround: the focus b is not a node of the graph$/);
+  assert.throws(() => unplacedAround(g, 'a', [], { steps: 3 }), /^TypeError: unplacedAround: steps is 1 or 2, not 3$/);
+  assert.throws(() => unplacedAround(undefined, 'a', [], { step: 2 }), /^TypeError: unplacedAround: unknown option 'step'\. The keys are steps\.$/);
+  assert.deepEqual(unplacedByKind({ nodes: [], edges: [] }, []), []);
+});
 
 test('by-kind: the answer is the same twice and the graph is left as it was', () => {
   const c = fx.cases.find((x) => x.name === 'moppetopia');

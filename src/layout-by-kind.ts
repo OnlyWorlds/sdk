@@ -281,39 +281,7 @@ export function layoutByKind(graph: OwLayoutGraph): OwLayoutByKind {
  * is not one of the graph's nodes.
  */
 export function layoutAround(graph: OwLayoutGraph, focus: string, options?: OwLayoutAroundOptions): OwLayoutAround {
-  if (options !== undefined && options !== null && (typeof options !== 'object' || Array.isArray(options))) {
-    throw new TypeError('layoutAround: options is an object, { steps }');
-  }
-  refuseUnknownOptions('layoutAround', options, ['steps']);
-  const steps = options?.steps ?? 1;
-  if (steps !== 1 && steps !== 2) throw new TypeError(`layoutAround: steps is 1 or 2, not ${String(steps)}`);
-  const { nodes: N, edges: links, index } = readGraph('layoutAround', graph);
-  const centre = typeof focus === 'string' ? index.get(focus) : undefined;
-  if (centre === undefined) throw new TypeError(`layoutAround: the focus ${String(focus)} is not a node of the graph`);
-
-  const adj: number[][] = N.map(() => []);
-  for (const e of links) {
-    const a = index.get(e.source);
-    const b = index.get(e.target);
-    if (a === undefined || b === undefined) continue;
-    adj[a].push(b);
-    if (a !== b) adj[b].push(a);
-  }
-  const depth = new Map<number, number>([[centre, 0]]);
-  const via = new Map<number, number>();
-  let frontier = [centre];
-  for (let s = 1; s <= steps; s++) {
-    const next: number[] = [];
-    for (const a of frontier) {
-      for (const to of adj[a]) {
-        if (depth.has(to)) continue;
-        depth.set(to, s);
-        via.set(to, a);
-        next.push(to);
-      }
-    }
-    frontier = next;
-  }
+  const { N, index, centre, depth, via } = reachAround('layoutAround', graph, focus, options);
   const name = (j: number): string => N[j].name ?? '';
   const ring1 = [...depth].filter(([, s]) => s === 1).map(([j]) => j)
     .sort((a, b) => groupRank(N[a].type) - groupRank(N[b].type) || byCodePoint(N[a].type, N[b].type) || byCodePoint(name(a), name(b)) || a - b);
@@ -362,4 +330,84 @@ export function layoutAround(graph: OwLayoutGraph, focus: string, options?: OwLa
     if (p) points.push({ id: x.id, depth: depth.get(j)!, x: p[0], y: p[1] });
   }
   return { method: 'around', version: 1, points };
+}
+
+/**
+ * What `around` reaches: the checks `layoutAround` makes, in its order, then each node within the steps with its
+ * depth and the node it was reached from, in the order found. `fn` is the caller's name, for its refusals.
+ */
+function reachAround(fn: string, graph: OwLayoutGraph, focus: string, options?: OwLayoutAroundOptions): {
+  N: LayoutNode[]; index: Map<string, number>; centre: number; depth: Map<number, number>; via: Map<number, number>;
+} {
+  if (options !== undefined && options !== null && (typeof options !== 'object' || Array.isArray(options))) {
+    throw new TypeError(`${fn}: options is an object, { steps }`);
+  }
+  refuseUnknownOptions(fn, options, ['steps']);
+  const steps = options?.steps ?? 1;
+  if (steps !== 1 && steps !== 2) throw new TypeError(`${fn}: steps is 1 or 2, not ${String(steps)}`);
+  const { nodes: N, edges: links, index } = readGraph(fn, graph);
+  const centre = typeof focus === 'string' ? index.get(focus) : undefined;
+  if (centre === undefined) throw new TypeError(`${fn}: the focus ${String(focus)} is not a node of the graph`);
+
+  const adj: number[][] = N.map(() => []);
+  for (const e of links) {
+    const a = index.get(e.source);
+    const b = index.get(e.target);
+    if (a === undefined || b === undefined) continue;
+    adj[a].push(b);
+    if (a !== b) adj[b].push(a);
+  }
+  const depth = new Map<number, number>([[centre, 0]]);
+  const via = new Map<number, number>();
+  let frontier = [centre];
+  for (let s = 1; s <= steps; s++) {
+    const next: number[] = [];
+    for (const a of frontier) {
+      for (const to of adj[a]) {
+        if (depth.has(to)) continue;
+        depth.set(to, s);
+        via.set(to, a);
+        next.push(to);
+      }
+    }
+    frontier = next;
+  }
+  return { N, index, centre, depth, via };
+}
+
+/** `placed` as a set of ids: a list or a Set; a member that is not a non-empty string is passed over. */
+function placedIds(fn: string, placed: Iterable<unknown>): Set<string> {
+  if (placed === null || placed === undefined || typeof placed === 'string' || typeof (placed as { [Symbol.iterator]?: unknown })[Symbol.iterator] !== 'function') {
+    throw new TypeError(`${fn}: placed is a list or a Set of element ids`);
+  }
+  const ids = new Set<string>();
+  for (const v of placed) if (typeof v === 'string' && v !== '') ids.add(v);
+  return ids;
+}
+
+/**
+ * What a saved `by-kind` layout map does not place (the default layouts' page, `unplaced`): the ids of the graph's
+ * nodes that are not in `placed`, by id in code point order. `placed` is the ids of the elements the Map's Pins
+ * stand for, a list or a Set: from `mapSpace`, the `element_id` of each pin whose `map` is this Map. A member that
+ * is not a non-empty string (a Pin that stands for no element) is passed over, and an id that is no node of the
+ * graph is no part of the answer. The answer's length is the count a tool shows; it does not say why an element has
+ * no Pin, and a saved layout map changes only when a person asks (the map-space profile's rule 8). Throws a
+ * TypeError on a graph it cannot read (as `layoutByKind`) or a `placed` that is not a list or a Set.
+ */
+export function unplacedByKind(graph: OwLayoutGraph, placed: Iterable<unknown>): string[] {
+  const ids = placedIds('unplacedByKind', placed);
+  const { nodes } = readGraph('unplacedByKind', graph);
+  return nodes.map((x) => x.id).filter((id) => !ids.has(id));
+}
+
+/**
+ * What a saved `around` layout map does not place: the ids of the focus and every node within the steps that are
+ * not in `placed`, by id in code point order. `placed` is read as `unplacedByKind` reads it; an id in it that
+ * `around` would not place (no node, or a node further out than the steps) is no part of the answer. Throws as
+ * `layoutAround` does, and on a `placed` that is not a list or a Set.
+ */
+export function unplacedAround(graph: OwLayoutGraph, focus: string, placed: Iterable<unknown>, options?: OwLayoutAroundOptions): string[] {
+  const { N, depth } = reachAround('unplacedAround', graph, focus, options);
+  const ids = placedIds('unplacedAround', placed);
+  return N.filter((x, j) => depth.has(j) && !ids.has(x.id)).map((x) => x.id);
 }

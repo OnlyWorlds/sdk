@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **`unplacedByKind` and `unplacedAround`: what a saved default layout does not place.** Given the graph and the ids of the elements a layout Map's Pins stand for (a list or a Set), each answers the ids its method would place that the Map has no Pin for, by id in code point order: for `by-kind` every node of the graph, for `around` the focus and every node within its steps. An id among the placed ones that the method would not place is no part of the answer. A tool shows the answer's length as its count; neither function places anything.
+
+### Changed
+
+- Tests: the layout fixture gains eight cases for `layoutByKind` and `layoutAround` (an index of ten or more ordered by number, an edge with no field, one with no index, an edge to an id that is no node, the same link twice, names where code point order and UTF-16 order differ, a null name beside an absent one, two steps past sixty neighbours) and a suite for the two new readings. No answer of a released function changes.
+
 ## [4.169.2] - 2026-11-15
 
 ### Changed
