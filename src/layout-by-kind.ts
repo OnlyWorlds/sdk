@@ -40,6 +40,7 @@ export interface OwLayoutPoint {
 /** What `layoutByKind` answers: one point per node, in the graph's node order, and the method that made them. */
 export interface OwLayoutByKind {
   method: 'by-kind';
+  /** Always 1. A method's word is its version: a method that changes takes a new word, so read `method`, never this number. */
   version: 1;
   points: OwLayoutPoint[];
 }
@@ -56,6 +57,7 @@ export interface OwLayoutAroundPoint {
 /** What `layoutAround` answers: the focus and every element within the steps, in the graph's node order. */
 export interface OwLayoutAround {
   method: 'around';
+  /** Always 1. A method's word is its version: a method that changes takes a new word, so read `method`, never this number. */
   version: 1;
   points: OwLayoutAroundPoint[];
 }
@@ -122,7 +124,7 @@ function readGraph(fn: string, graph: OwLayoutGraph): { nodes: LayoutNode[]; edg
  *
  * The graph is first put in one order (nodes by id; links by source, field, index, then target), so the order the
  * nodes and links are handed in moves nothing. Answers one point per node in the order the nodes were handed in, with
- * the method's name and version (`by-kind`, 1), so a saved layout can say what made it. An empty graph answers no points; a graph of one element answers 0, 0.
+ * the method's name (`by-kind`; the word is the method's version, and `version` stays 1), so a saved layout can say what made it. An empty graph answers no points; a graph of one element answers 0, 0.
  * The same graph gives the same points to the last bit in every browser and language: the anchors are a baked
  * table of numbers, never computed, and the rest is arithmetic every runtime rounds alike. Self-links pull nothing;
  * a link to an id that is not a node is passed over. Throws a TypeError, naming what, on a graph it cannot read:
@@ -275,7 +277,7 @@ export function layoutByKind(graph: OwLayoutGraph): OwLayoutByKind {
  *
  * The graph is first put in one order, as `layoutByKind` puts it, so the order the nodes and links are handed in
  * moves nothing. Answers the focus and every element within the steps, in the order the nodes were handed in, each
- * with its depth (0, 1 or 2), and the method's name and version (`around`, 1). Nothing iterates, so each point is one cosine and one sine of an
+ * with its depth (0, 1 or 2), and the method's name (`around`; the word is the method's version, and `version` stays 1). Nothing iterates, so each point is one cosine and one sine of an
  * angle the method computes exactly; runtimes agree to within about 1e-12. Throws a TypeError on an unknown option
  * (before anything else), a `steps` that is not 1 or 2, a graph it cannot read (as `layoutByKind`), or a focus that
  * is not one of the graph's nodes.

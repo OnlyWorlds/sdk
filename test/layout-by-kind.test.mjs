@@ -1,6 +1,6 @@
 /**
- * by-kind and around, two layout methods read from a world's graph. The shared fixture (the same bytes in the Python
- * package, its sha256 pinned in both tests) gives each case's graph and the points the reference made.
+ * by-kind and around, two layout methods read from a world's graph. The layout profile's own fixture (the pinned
+ * distribution's profiles/layout.fixture.json, its sha256 pinned here) gives each case's graph and the points the reference made.
  *
  * by-kind compares EXACTLY: every x and y with ===, never a tolerance. The method is chaotic (one anchor moved one
  * unit in the last place moves a large world's picture by a tenth of the frame), so two runtimes agree only bit for
@@ -14,7 +14,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { layoutByKind, layoutAround, unplacedByKind, unplacedAround, worldGraph, GROUP_ORDER, ELEMENT_GROUPS } from '../dist/index.js';
 
-const bytes = readFileSync(new URL('./fixtures/layout/by-kind.json', import.meta.url));
+const bytes = readFileSync(new URL('../codegen/schema-dist/profiles/layout.fixture.json', import.meta.url));
 const fx = JSON.parse(bytes.toString('utf8'));
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const FIXTURE_SHA = '6860a7654f1a92e3';

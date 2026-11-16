@@ -1,5 +1,5 @@
 // The by-kind layout's anchor table, baked into the package: src/layout-anchors.generated.ts (LAYOUT_ANCHORS) from
-// codegen/layout/anchors.json, the table both packages and the shared fixture (test/fixtures/layout/by-kind.json,
+// codegen/layout/anchors.json, the table both packages and the layout profile's fixture (codegen/schema-dist/profiles/layout.fixture.json,
 // its `anchors`) hold byte for byte. For each count of kinds k from 1 to 22, the k points where the kinds sit on a
 // circle: x = cos(-pi/2 + 2 pi i / k), y = sin(...), computed once and kept as numbers, so no runtime's own cos or
 // sin is ever called and the picture is the same in every browser and language.
