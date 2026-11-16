@@ -11,7 +11,8 @@
  * and with the 13 cells ahead of it; every link pulls its two ends towards a rest length by ((d - R) * 0.5 * w) / d;
  * every element that is not fixed moves by push + pull * scale + (anchor - point) * hold, capped at
  * cap0 * R * (1 - step / steps) + R / 20; a fixed element stands at its anchor. The sums run in the order written
- * here, so two runtimes agree to the last bit. Module-internal.
+ * here, so two runtimes agree to the last bit. The push between two fixed elements is never read and is not worked
+ * out, which moves no number: held points that fill a world cost a step almost nothing. Module-internal.
  */
 
 export interface RelaxFeed {
@@ -46,6 +47,12 @@ export function relax(feed: RelaxFeed, opts: { steps?: number; cutoff?: number; 
   }
   const fixed = new Uint8Array(n);
   if (feed.fixed) for (let i = 0; i < n; i++) fixed[i] = feed.fixed[i] ? 1 : 0;
+  // Two fixed elements push each other and neither moves, so that push is never read: it is not worked out
+  // (a cell pair with no free element is passed over whole, and so is a pair of two fixed elements). The pushes on
+  // a free element are still summed in the same order, so no number of the answer changes. With no free element at
+  // all one step does what every step would: each element at its anchor.
+  let free = 0;
+  for (let i = 0; i < n; i++) if (!fixed[i]) free++;
   const ea = new Int32Array(m), eb = new Int32Array(m);
   const ew = new Float64Array(m);
   const scale = new Float64Array(n);
@@ -62,7 +69,8 @@ export function relax(feed: RelaxFeed, opts: { steps?: number; cutoff?: number; 
   const order = new Int32Array(n);
   const cut2 = CUT * CUT;
 
-  for (let step = 0; step < STEPS; step++) {
+  const RUN = free === 0 ? Math.min(STEPS, 1) : STEPS;
+  for (let step = 0; step < RUN; step++) {
     let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
     for (let i = 0; i < n; i++) {
       if (px[i] < x0) x0 = px[i]; if (px[i] > x1) x1 = px[i];
@@ -80,6 +88,8 @@ export function relax(feed: RelaxFeed, opts: { steps?: number; cutoff?: number; 
     for (let c = 0; c < cells; c++) startOf[c + 1] += startOf[c];
     const fill = startOf.slice(0, cells);
     for (let i = 0; i < n; i++) order[fill[cellOf[i]]++] = i;
+    const freeIn = new Int32Array(cells);
+    for (let i = 0; i < n; i++) if (!fixed[i]) freeIn[cellOf[i]]++;
 
     dx.fill(0); dy.fill(0); dz.fill(0);
     for (let cx = 0; cx < nx; cx++) for (let cy = 0; cy < ny; cy++) for (let cz = 0; cz < nz; cz++) {
@@ -94,11 +104,13 @@ export function relax(feed: RelaxFeed, opts: { steps?: number; cutoff?: number; 
         const same = q === c;
         const t0 = startOf[q], t1 = startOf[q + 1];
         if (t0 === t1) continue;
+        if (freeIn[c] === 0 && freeIn[q] === 0) continue;
         for (let u = s0; u < s1; u++) {
           const i = order[u];
           const xi = px[i], yi = py[i], zi = pz[i];
           for (let v = same ? u + 1 : t0; v < t1; v++) {
             const j = order[v];
+            if (fixed[i] && fixed[j]) continue;
             const ux = xi - px[j], uy = yi - py[j], uz = zi - pz[j];
             const d2 = ux * ux + uy * uy + uz * uz;
             if (d2 > cut2) continue;

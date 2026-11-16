@@ -33,22 +33,25 @@
  *             (a boolean as 1 or 0). Per map, an element keeps the first place it got; the maps in the order a pin
  *             first counted for them, each map's elements in the order they were first placed.
  *   3. first  no map with a counted pin: null. The first map: the most elements, a tie to the greater id (code
- *             point order). Fewer than three on it, or its width or its height falsy as Python reads it (absent,
- *             null, 0, false, '', an empty list or object): null.
+ *             point order). Fewer than three on it, or its width or its height no size: null, and no other map is
+ *             tried in its stead. A size is truthy as Python reads it (not absent, null, 0, false, '', an empty
+ *             list or object) and, when it is a number, over 0: a Map's width is any whole number in the standard,
+ *             and one under 0 is no frame to stand in.
  *   4. scale  scale = SPREAD * REST / sqrt(W * H / count), left to right (opts.scale in its place when given); each
  *             element of the first map at ((x - W / 2) * scale, (y - H / 2) * scale, 0), its place before the scale
  *             (x - W / 2, y - H / 2) kept in `first`.
  *   5. small  the other maps that hold a counted pin, in id order (code point order). Passes over them until a
  *             pass takes none; within a pass each is read in that order against the plate as it stands then (a map
  *             taken earlier in the same pass counts). A map is taken when its `location` has a place on the plate,
- *             its width and height are truthy as in 3, it holds three counted elements or more, and at least one of
+ *             its width and height are sizes as in 3, it holds three counted elements or more, and at least one of
  *             them has no place yet. Its new elements (those with no place yet, in its own order) stand at
  *             (lx + (x - cw / 2) * sc, ly + (y - ch / 2) * sc, lz + rise), sc = TILE * REST / sqrt(cw * ch / count),
  *             count all its elements (placed or not), (lx, ly, lz) its location's place, rise = REST * 4 when the
  *             count is 20 or more, else REST * 2. A map taken leaves the list; what is left at the end is left out.
  * Only + - * / and Math.sqrt: two runtimes agree to the last bit.
  * It throws on an id or a link value that is a list or an object (read only where the rule reads it), a width or
- * height that is truthy but no number, and a negative area. From rows that spaceRows made, none of these can occur.
+ * height that is truthy but no number. From rows that spaceRows made, neither can occur. A negative area is never
+ * reached: rule 3's size.
  * Module-internal.
  */
 import { byCodePoint } from './order';
@@ -86,6 +89,9 @@ function truthy(v: unknown): boolean {
   if (typeof v === 'object') return Object.keys(v as object).length > 0;
   return true; // NaN is true in Python
 }
+
+// a size (rule 3): truthy, and when a number, over 0. NaN is no size.
+const sized = (v: unknown): boolean => truthy(v) && !(typeof v === 'number' && !(v > 0));
 
 // the map-space profile's layout mark: x_layout an object (not null, not an array) whose method is a non-empty string
 export function isLayoutMap(row: Row): boolean {
@@ -149,7 +155,7 @@ export function plate(rows: readonly Row[], nodes: ReadonlySet<string>, opts: { 
   const W = map.width, H = map.height;
   const mine0 = at.get(m as string) as Map<string, [number, number]>;
   const count = mine0.size;
-  if (count < 3 || !truthy(W) || !truthy(H)) return null;
+  if (count < 3 || !sized(W) || !sized(H)) return null;
 
   // 4. the scale and the first map's places
   const own = SPREAD * REST / root(W, H, count, 'the first map');
@@ -175,7 +181,7 @@ export function plate(rows: readonly Row[], nodes: ReadonlySet<string>, opts: { 
       const mine = at.get(c) as Map<string, [number, number]>;
       const fresh: Array<[string, [number, number]]> = [];
       for (const [el, xy] of mine) if (!out.has(el)) fresh.push([el, xy]);
-      if (out.has(key(loc, "a map's location") as string) && truthy(cw) && truthy(ch) && mine.size >= 3 && fresh.length) {
+      if (out.has(key(loc, "a map's location") as string) && sized(cw) && sized(ch) && mine.size >= 3 && fresh.length) {
         const sc = TILE * REST / root(cw, ch, mine.size, `the map ${c}`);
         const [lx, ly, lz] = out.get(loc as string) as [number, number, number];
         const rise = REST * (mine.size >= 20 ? 4 : 2);

@@ -5,6 +5,17 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.171.1] - 2026-11-16
+
+### Fixed
+
+- **`layoutByLinks3d` no longer throws on a Map whose width or height is under 0.** A Map's `width` and `height` are any whole number in the standard. One under 0 made the call throw from inside the method ("the square root of a negative area") when that Map held the most pinned elements, and with both under 0 the Map became a plate with every place mirrored. A width or height that is not over 0 is now no size: such a Map is no plate, no other Map is tried in its stead, and the world is laid out by its links alone; a Map over a place with such a size is no small plate. The method's fixture gains four cases for it (64).
+- **Held points cost what they move.** The force steps worked out the push between every two fixed elements, 300 times, though neither can move and the push was never read. They no longer do; no number of any answer changes. Laying out a made world of 9,000 elements with every point handed back took 1,147 ms and takes 269 ms, the same answer to the bit, so a layout that keeps a picture still now costs less than one from nothing.
+
+### Changed
+
+- **The `held` list's words say what false means.** A pinned element stands at its Pin and is never answered as held, so `held: false` does not mean new. What is new is every id that was not handed in.
+
 ## [4.171.0] - 2026-11-16
 
 ### Added

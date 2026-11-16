@@ -18,7 +18,7 @@ import { layoutByLinks3d, BY_LINKS_3D_REST } from '../dist/index.js';
 
 const bytes = readFileSync(new URL('./fixtures/layout/by-links-3d.fixture.json', import.meta.url));
 const fx = JSON.parse(bytes.toString('utf8'));
-const FIXTURE_SHA = 'ae11c21d3c8faa285e59e288d40da8aafac19ac3cfe303bd8d90da3244c5babe';
+const FIXTURE_SHA = '16284adffac8903777e754cc01d547de95a61447b6d945ca2f641ddf93c4d4eb';
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const sha = (b) => createHash('sha256').update(b).digest('hex');
 const EXACT = new Set(['centre', 'with', 'map']);
