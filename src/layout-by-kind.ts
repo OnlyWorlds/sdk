@@ -40,7 +40,10 @@ export interface OwLayoutPoint {
 /** What `layoutByKind` answers: one point per node, in the graph's node order, and the method that made them. */
 export interface OwLayoutByKind {
   method: 'by-kind';
-  /** Always 1. A method's word is its version: a method that changes takes a new word, so read `method`, never this number. */
+  /**
+   * Always 1. A method's word is its version: a method that changes takes a new word, so read `method`, never this number.
+   * @deprecated The layout profile's mark carries no version key. Leaves in 5.0.
+   */
   version: 1;
   points: OwLayoutPoint[];
 }
@@ -57,7 +60,10 @@ export interface OwLayoutAroundPoint {
 /** What `layoutAround` answers: the focus and every element within the steps, in the graph's node order. */
 export interface OwLayoutAround {
   method: 'around';
-  /** Always 1. A method's word is its version: a method that changes takes a new word, so read `method`, never this number. */
+  /**
+   * Always 1. A method's word is its version: a method that changes takes a new word, so read `method`, never this number.
+   * @deprecated The layout profile's mark carries no version key. Leaves in 5.0.
+   */
   version: 1;
   points: OwLayoutAroundPoint[];
 }

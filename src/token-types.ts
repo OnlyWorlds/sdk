@@ -23,6 +23,9 @@ export interface TokenStatus {
 
 /**
  * Response from token consumption endpoint
+ *
+ * @deprecated Serves only a `TokenResource` method keel answers with 404 (production,
+ * since 2026-10). Leaves in 5.0 with that method.
  */
 export interface TokenConsumeResponse {
   /** Whether the consumption was successful */
@@ -39,6 +42,9 @@ export interface TokenConsumeResponse {
 
 /**
  * Parameters for consuming tokens
+ *
+ * @deprecated Serves only a `TokenResource` method keel answers with 404 (production,
+ * since 2026-10). Leaves in 5.0 with that method.
  */
 export interface TokenConsumeParams {
   /** Number of tokens to consume (required) */
@@ -53,6 +59,9 @@ export interface TokenConsumeParams {
 
 /**
  * Response from getting encrypted access key (advanced use case)
+ *
+ * @deprecated Serves only a `TokenResource` method keel answers with 404 (production,
+ * since 2026-10). Leaves in 5.0 with that method.
  */
 export interface AccessKeyResponse {
   /** Base64 encoded encrypted OpenAI key */
@@ -89,6 +98,9 @@ export interface EncryptionInfo {
 
 /**
  * Response from session revocation
+ *
+ * @deprecated Serves only a `TokenResource` method keel answers with 404 (production,
+ * since 2026-10). Leaves in 5.0 with that method.
  */
 export interface RevokeSessionResponse {
   /** Whether revocation was successful */
@@ -99,6 +111,9 @@ export interface RevokeSessionResponse {
 
 /**
  * Response from revoking all sessions
+ *
+ * @deprecated Serves only a `TokenResource` method keel answers with 404 (production,
+ * since 2026-10). Leaves in 5.0 with that method.
  */
 export interface RevokeAllSessionsResponse {
   /** Whether revocation was successful */

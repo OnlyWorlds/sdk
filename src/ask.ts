@@ -6,7 +6,7 @@
  *
  *   const hits = lookupWorld(index, question).slice(0, 8);   // what the screen lists
  *   const { context, kept, leftOut } = buildAskContext(hits, index);
- *   const reply = await account.ask({ worldId, question, context });
+ *   const reply = await account.ai('ask', { world_id: worldId, question, context });
  *
  * It is a reader that hands a world on, so three published rules hold here, not only in
  * the caller: an element marked proposed (the review profile, rules 1 and 4: an

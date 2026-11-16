@@ -144,8 +144,8 @@ export class TokenResource {
    * Get encrypted OpenAI API key (advanced use case)
    *
    * @deprecated keel serves no access-key route (404 on production since
-   * 2026-10). AI answers come from keel's own proxy: `OwV2Client.ask()` and
-   * `sort()`. Removed in 5.0.
+   * 2026-10). AI answers come from keel's own proxy: `OwV2Client.ai('ask', ...)`
+   * and `ai('sort', ...)`. Removed in 5.0.
    *
    * Requires minimum 100 tokens available. Creates a 1-hour session for tracking.
    * Returns encrypted key that must be decrypted client-side using Fernet.

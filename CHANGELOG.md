@@ -5,6 +5,15 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Deprecated
+
+- **The `version` key on `layoutByKind`'s and `layoutAround`'s answers** leaves in 5.0. It was always 1, and the layout profile's mark carries no version key: read `method`.
+- **Five token types that serve only methods already deprecated** (`TokenConsumeParams`, `TokenConsumeResponse`, `AccessKeyResponse`, `RevokeSessionResponse`, `RevokeAllSessionsResponse`) are marked and leave in 5.0 with those methods.
+
+### Fixed
+
+- **`getAccessKey`'s deprecation note names `ai('ask', ...)` and `ai('sort', ...)`**, where it sent a reader to `ask()` and `sort()`, themselves deprecated since 4.139.0. The example at the head of the ask module calls `ai('ask', ...)` too. The by-links-3d frame comment says every candidate is tested, and the README names the fixtures without a case count.
+
 ## [4.176.0] - 2026-11-16
 
 ### Added
