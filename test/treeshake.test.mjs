@@ -54,6 +54,19 @@ test('the control: a bundle that lays out by links in 3D keeps the directions ta
   assert.ok(bundle('layoutByLinks3d').includes(DIRECTION_DIGITS));
 });
 
+// The by-links-3d layout's golden angle, a top-level constant: it stays out of a bundle that never lays out in 3D.
+const GOLD_DIGITS = '399963229728653';
+for (const name of ['mapSpace', 'layoutOf', 'worldGraph', 'trailByPlace', 'layoutByKind', 'layoutAround', 'OwV2Client']) {
+  test(`a bundle of ${name} alone leaves the by-links-3d golden angle out`, () => {
+    const text = bundle(name);
+    assert.ok(!text.includes(GOLD_DIGITS) && !text.includes('sqrt(5)'));
+  });
+}
+
+test('the control: a bundle that lays out by links in 3D keeps the golden angle', () => {
+  assert.ok(bundle('layoutByLinks3d').includes(GOLD_DIGITS));
+});
+
 // fflate's own error words survive minifying, where its function names do not.
 const FFLATE = /invalid block type|unexpected EOF|invalid zip data/;
 for (const name of ['trailByPlace', 'mapSpace', 'layoutOf', 'layoutByLinks3d']) {

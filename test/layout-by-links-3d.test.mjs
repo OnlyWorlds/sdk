@@ -175,6 +175,13 @@ test('unplaced: a placed that is no list is refused by name, and so is what the 
   assert.throws(() => unplacedByLinks3d(clone(twice), []), (err) => err.constructor === Error && /^unplacedByLinks3d: two nodes share the id a$/.test(err.message));
 });
 
+test('the golden angle is written as the double PI * (3 - sqrt(5)) is', () => {
+  const src = readFileSync(new URL('../src/layout3d/hang.ts', import.meta.url), 'utf8');
+  const m = src.match(/^export const GOLD = ([0-9.]+);$/m);
+  assert.ok(m, 'hang.ts writes GOLD as a number');
+  assert.ok(Object.is(Number(m[1]), Math.PI * (3 - Math.sqrt(5))));
+});
+
 test('the function and its rest are exported, with its two types', () => {
   assert.equal(typeof layoutByLinks3d, 'function');
   assert.equal(typeof unplacedByLinks3d, 'function');

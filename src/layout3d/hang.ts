@@ -75,7 +75,10 @@
 import { byCodePoint } from './order'; // the shelf's order by type word, then by place
 
 export const REST = 60.0;
-export const GOLD = Math.PI * (3.0 - /* @__PURE__ */ Math.sqrt(5.0));
+// The golden angle, PI * (3 - sqrt(5)), written as the double it is: an expression at the top level stays in every
+// bundle that never lays out in 3D (the multiplication is not marked pure). test/layout-by-links-3d.test.mjs holds
+// the literal to the expression.
+export const GOLD = 2.399963229728653;
 export const HOW = ['centre', 'with', 'arm', 'link', 'shelf', 'map'] as const;
 export const CENTRE = 0, WITH = 1, ARM = 2, LINK = 3, SHELF = 4, MAP = 5;
 export const LINE = REST / 8; // a held element nearer than this to a free place takes it (held points only)

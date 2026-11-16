@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.173.1] - 2026-11-16
+
+### Fixed
+
+- **A bundle that never lays out in 3D no longer carries the 3D method's golden angle.** It was computed at the module's top level, and since the multiplication is not marked pure, every bundle kept it (25 bytes). It is now written as the double it is, and a test holds the literal to `Math.PI * (3 - Math.sqrt(5))`. No point of the method moves.
+
 ## [4.173.0] - 2026-11-16
 
 ### Added
