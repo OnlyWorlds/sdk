@@ -457,7 +457,7 @@ const heading = typeWord(world, 'character', { many: true }) ?? 'Characters';
 const label = typeWord(world, el.type, { supertype: el.supertype }) ?? el.type;
 ```
 
-The word is printed as written, never re-cased; folder names are never translated. The profile: [`profiles/names.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/names.md) in the schema distribution, with its 23-case fixture, which is this function's test.
+The word is printed as written, never re-cased; folder names are never translated. The profile: [`profiles/names.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/names.md) in the schema distribution, with its fixture, which is this function's test.
 
 ### Addresses
 
@@ -471,7 +471,7 @@ const r = parseOwLink(text); // { form, world, worldIsSlug, type, id, lens, mome
 // a refusal throws OwAddressError: err.reason is the profile's name ('bad_id', 'uppercase', ...)
 ```
 
-A field that holds an address is text: never fetch or resolve it on the server, and show one wording ("private or missing") for a world you cannot read and an element that is not there. `parseOwLink` reads one string whole; finding a link inside other text is yours. The profile: [`profiles/address.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/address.md), with its 133-case fixture, which is these functions' test.
+A field that holds an address is text: never fetch or resolve it on the server, and show one wording ("private or missing") for a world you cannot read and an element that is not there. `parseOwLink` reads one string whole; finding a link inside other text is yours. The profile: [`profiles/address.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/address.md), with its fixture, which is these functions' test.
 
 ### Open with
 
