@@ -833,6 +833,8 @@ export interface OwServedReadingAids extends OwReadingAids {
 /** The Charter in `reading_aids`. */
 export interface OwReadingAidsCharter {
   id: string;
+  /** The Charter is a Law. */
+  type: 'law';
   name: string;
   /** Its `x_checks_rules` (the checks profile) as stored; empty when it has none. */
   rules: unknown[];
@@ -843,12 +845,16 @@ export interface OwReadingAidsCharter {
 /** The Guide in `reading_aids`. */
 export interface OwReadingAidsGuide {
   id: string;
+  /** The Guide is a Construct. */
+  type: 'construct';
   name: string;
 }
 
 /** One Domain in `reading_aids`. */
 export interface OwReadingAidsDomain {
   id: string;
+  /** A Domain is a Construct. */
+  type: 'construct';
   name: string;
   /** Its description up to the first line break, trimmed; empty when it has none. */
   sentence: string;

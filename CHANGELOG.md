@@ -5,14 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.177.0] - 2026-11-17
+
+### Added
+
+- **The charter and strand packets say each element's type** (schema-dist serial 133). `charterOf` answers `type: 'law'` on the Charter and `type: 'construct'` on the Guide and on each Domain; `strandOf` answers `type` on every filled slot (`narrative`, `event`, `location`, `character`, and `location` for `now`): the kind the slot holds, singular and lowercase, never the spelling stored. A packet is handed to a reader that may hold nothing else of the world, and an id is fetched by its type. `OwReadingAidsCharter`, `OwReadingAidsGuide`, `OwReadingAidsDomain` and `OwStrandSlot` declare the key, so `OwServedReadingAids` reads it as onlyworlds.com's `reading_aids` serves it. The schema pin moves to `v0.34.1-dist.133`; the charter fixture holds 47 cases and the strand fixture 29.
+
+### Fixed
+
+- **A Domain's hub is an element of the kind its field links to, in the reader's view.** An id of another kind in a hub field, or of an element the reader does not see, names no hub. Wherever the charter and strand readers compare an element's type to a kind, the type is trimmed and compared without regard to case, as the room profile defines it.
+- **`getAccessKey`'s deprecation note names `ai('ask', ...)` and `ai('sort', ...)`**, where it sent a reader to `ask()` and `sort()`, themselves deprecated since 4.139.0. The example at the head of the ask module calls `ai('ask', ...)` too. The by-links-3d frame comment says every candidate is tested, and the README names the fixtures without a case count.
+
 ### Deprecated
 
 - **The `version` key on `layoutByKind`'s and `layoutAround`'s answers** leaves in 5.0. It was always 1, and the layout profile's mark carries no version key: read `method`.
 - **Five token types that serve only methods already deprecated** (`TokenConsumeParams`, `TokenConsumeResponse`, `AccessKeyResponse`, `RevokeSessionResponse`, `RevokeAllSessionsResponse`) are marked and leave in 5.0 with those methods.
-
-### Fixed
-
-- **`getAccessKey`'s deprecation note names `ai('ask', ...)` and `ai('sort', ...)`**, where it sent a reader to `ask()` and `sort()`, themselves deprecated since 4.139.0. The example at the head of the ask module calls `ai('ask', ...)` too. The by-links-3d frame comment says every candidate is tested, and the README names the fixtures without a case count.
 
 ## [4.176.0] - 2026-11-16
 

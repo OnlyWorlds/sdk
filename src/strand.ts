@@ -22,6 +22,8 @@ export interface OwStrandWorld extends OwLensWorld {
 /** A filled slot. */
 export interface OwStrandSlot {
   id: string;
+  /** The element's type: the slot's own (narrative, event, location, character; `now` a location). */
+  type: 'narrative' | 'event' | 'location' | 'character';
   name: string;
 }
 
@@ -102,7 +104,7 @@ export function strandOf(world: OwStrandWorld, reader: OwLensReader): OwStrand {
     typeof id === 'string' && r.view.has(id) && r.typeOf.get(id) === type;
   const slot = (id: string): OwStrandSlot => {
     const name = r.body(id).name;
-    return { id, name: typeof name === 'string' ? name : '' };
+    return { id, type: r.typeOf.get(id) as OwStrandSlot['type'], name: typeof name === 'string' ? name : '' };
   };
   const listed = (holder: string, field: string, id: string): boolean => {
     const v = r.body(holder)[field];

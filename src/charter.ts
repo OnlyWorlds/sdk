@@ -77,7 +77,8 @@ function hubsOf(id: string, r: Reading): OwReadingAidsHub[] {
     const v = body[field];
     const target = schema[field]?.target ?? '';
     for (const t of many ? (Array.isArray(v) ? v : []) : [v]) {
-      if (typeof t !== 'string' || t === '' || r.proposed.has(t) || seen.has(`${target}/${t}`)) continue;
+      // a hub is an element of the kind its field links to, in the reader's view: an id of another kind names no hub
+      if (typeof t !== 'string' || t === '' || r.proposed.has(t) || !r.view.has(t) || r.typeOf.get(t) !== target || seen.has(`${target}/${t}`)) continue;
       seen.add(`${target}/${t}`);
       out.push({ type: target, id: t });
     }
@@ -128,6 +129,7 @@ export function charterOf(world: OwCharterWorld, reader: OwLensReader): OwReadin
       .slice(0, SKILL_MAX);
     out.charter = {
       id: law,
+      type: 'law',
       name: typeof el.name === 'string' ? el.name : '',
       rules: Array.isArray(rules) ? JSON.parse(JSON.stringify(rules)) : [],
       skill,
@@ -137,7 +139,7 @@ export function charterOf(world: OwCharterWorld, reader: OwLensReader): OwReadin
   const guide = newest(seen('construct/guide'), r);
   if (guide !== null) {
     const el = r.byId.get(guide) as Body;
-    out.guide = { id: guide, name: typeof el.name === 'string' ? el.name : '' };
+    out.guide = { id: guide, type: 'construct', name: typeof el.name === 'string' ? el.name : '' };
   }
 
   const domains = new Set(seen('construct/domain'));
@@ -154,6 +156,7 @@ export function charterOf(world: OwCharterWorld, reader: OwLensReader): OwReadin
     .sort((a, b) => byCodePoint(fold(nameOf(a)), fold(nameOf(b))) || byCodePoint(a, b));
   out.domains = [...order, ...rest].map((id): OwReadingAidsDomain => ({
     id,
+    type: 'construct',
     name: nameOf(id),
     sentence: firstLine(r.body(id).description),
     hubs: hubsOf(id, r),

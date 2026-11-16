@@ -25,7 +25,7 @@ test('CHARTER_PAIRS is the fixture\'s pairs, in its order, and its tables are wh
     .filter(([, f]) => f.type === 'single_link' || f.type === 'multi_link')
     .map(([field, f]) => ({ field, type: f.target }));
   assert.deepEqual(links, doc.hub_fields);
-  assert.equal(doc.cases.length, 41, `the fixture holds ${doc.cases.length} cases, serial 126 has 41`);
+  assert.equal(doc.cases.length, 47, `the fixture holds ${doc.cases.length} cases, serial 133 has 47`);
 });
 
 /** A case's world: one of the fixture's named worlds, or the case's own. */
@@ -63,7 +63,7 @@ test('charterOf: a Guide the reader knows only as a stub names it, and orders no
   const world = doc.worlds.harbour;
   const [guide, docks, archive, ash] = ['203', '204', '205', '206'].map(n => `019a7f00-0000-7000-8000-000000000${n}`);
   const got = charterOf(world, { rung: 'guest', character: null, whole: [docks, archive, ash], known_of: [guide] });
-  assert.deepEqual(got.guide, { id: guide, name: 'Start here' });
+  assert.deepEqual(got.guide, { id: guide, type: 'construct', name: 'Start here' });
   // By folded name and id alone: ash row, the Archive, The Docks (not the Guide's Archive, Docks).
   assert.deepEqual(got.domains.map(d => d.name), ['ash row', 'the Archive', 'The Docks']);
 });
