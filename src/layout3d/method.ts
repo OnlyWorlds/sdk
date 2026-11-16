@@ -83,9 +83,10 @@
  *            differences exactly 0) the pair gives no frame; else s = the 2D distance of their held points over that
  *            of their map places; P = (ax - s * max, ay - s * may, az). A candidate agrees when each axis of its held
  *            point is within near (|d| <= near) of P + s * its map place (z: of P's z). The frame is that of the
- *            first pair (a in id order, then b in its order) that FRAME_AGREE candidates agree with (a itself is
- *            counted). With a frame: plate(rows, Set(ids), { scale: s }); the plate is a fixed part at P, so each
- *            first-map element stands at P + its place * s, and the small plates follow from the first map's places.
+ *            first pair (a in id order, then b in its order) that FRAME_AGREE candidates agree with (every candidate
+ *            is tested, a and b too). With a frame: plate(rows, Set(ids), { scale: s }); the plate is a fixed part
+ *            at P, so each first-map element stands at P + its place * s, and the small plates follow from the
+ *            first map's places.
  *            With none: plate() as it is, a free part.
  *   2. each group's point, the first case that applies: 1 its centre is pinned (over the plate); 2 its centre is
  *            held: the held point; 3 it has held members (today's group, in the body, held, not pinned): their mean,
