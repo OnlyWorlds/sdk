@@ -1463,6 +1463,17 @@ export interface OwSeat {
   joined_at: string | null;
   /** The latest use of the seat's key, or null. */
   last_active: string | null;
+  /**
+   * True when the seat may change, never delete, the Character it plays: the owner gave it that Character, or its
+   * sponsor could change it. False says only that no such right is held: a co-builder seat changes everything and a
+   * seat changes what it made. On a seat a member answers for it holds only while that member could change the
+   * Character. False when the seat has no Character, and when its Character is kept from you (`character` null).
+   */
+  may_change_character: boolean;
+  /** Why the seat may not change the Character it plays, as a sentence; null when it may, and when its Character is kept from you. */
+  may_change_character_note: string | null;
+  /** True when its member made it for their own AI to play their own Character: it plays what its sponsor plays, and its `may_change_character` is its sponsor's, until it is handed to someone else. */
+  follows_sponsor: boolean;
   [k: string]: unknown;
 }
 

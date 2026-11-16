@@ -21,6 +21,7 @@ function fake(status, body) {
 const ROW = {
   id: 's1', name: 'Quill', role: 'contributor', kind: 'agent', character: 'c1', sponsor: 'titus',
   joined_at: '2026-10-16T15:50:00Z', last_active: null,
+  may_change_character: false, may_change_character_note: 'plays it; cannot change it, since titus cannot', follows_sponsor: true,
 };
 const CREATED = {
   world: { id: 'w1', name: 'Moppetopia' },

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.172.0] - 2026-11-16
+
+### Added
+
+- **A seat row says whether the seat may change its Character.** `listSeats()` rows (`OwSeat`) carry three fields the API serves on every row since 2026-11-16: `may_change_character` (true when the seat may change, never delete, the Character it plays), `may_change_character_note` (a sentence saying why it may not, else null) and `follows_sponsor` (true for a seat its member made to play their own Character). Where a Character is kept from you the row reads `character` null, `may_change_character` false and no note. The rows already came back whole; this release types them.
+
 ## [4.171.1] - 2026-11-16
 
 ### Fixed
