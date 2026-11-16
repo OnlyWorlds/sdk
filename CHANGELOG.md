@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.170.1] - 2026-11-16
+
+### Fixed
+
+- The comment on `unplacedByKind` said a saved layout map changes only when a person asks. The map-space profile's rule 8 says something else: reading or drawing a layout map never changes it, and laying it out again is a write like any other. The comment now says the first. No behaviour changes.
+
 ## [4.170.0] - 2026-11-16
 
 ### Added

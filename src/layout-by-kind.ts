@@ -393,7 +393,7 @@ function placedIds(fn: string, placed: Iterable<unknown>): Set<string> {
  * stand for, a list or a Set: from `mapSpace`, the `element_id` of each pin whose `map` is this Map. A member that
  * is not a non-empty string (a Pin that stands for no element) is passed over, and an id that is no node of the
  * graph is no part of the answer. The answer's length is the count a tool shows; it does not say why an element has
- * no Pin, and a saved layout map changes only when a person asks (the map-space profile's rule 8). Throws a
+ * no Pin, and reading or drawing a layout map never changes it (the map-space profile's rule 8). Throws a
  * TypeError on a graph it cannot read (as `layoutByKind`) or a `placed` that is not a list or a Set.
  */
 export function unplacedByKind(graph: OwLayoutGraph, placed: Iterable<unknown>): string[] {
