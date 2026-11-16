@@ -1166,8 +1166,10 @@ export class OwV2Client {
 
   /**
    * DELETE /account/worlds/{worldId}/seats/{seatId} -- remove an agent seat: its sponsor or the
-   * world's owner may. Its key and secret stop at once; a Character it made that nobody touched
-   * goes with it, any other stays. Needs the client's `ow_a_` token.
+   * world's owner may. Its key and secret stop at once; the Character it plays goes with it only
+   * while it is as the join left one (made by the join, named as the seat, supertype `Agent` alone,
+   * last written by the join, linked from nothing, played by no one else); any other stays, one
+   * given to the seat to play included. Needs the client's `ow_a_` token.
    */
   async removeSeat(worldId: string, seatId: string): Promise<void> {
     if (this.keyKind !== 'account') {
