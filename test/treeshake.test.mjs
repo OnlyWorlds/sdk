@@ -20,7 +20,7 @@ function bundle(name, { external = ['fflate'] } = {}) {
   }).outputFiles[0].text;
 }
 
-for (const name of ['mapSpace', 'layoutOf', 'worldGraph', 'OwV2Client']) {
+for (const name of ['mapSpace', 'layoutOf', 'worldGraph', 'layoutByLinks3d', 'OwV2Client']) {
   test(`a bundle of ${name} alone leaves the layout method's floors out`, () => {
     assert.ok(!bundle(name).includes('location, object, zone'));
   });
@@ -32,7 +32,7 @@ test('the control: a bundle that reads the floors keeps them', () => {
 
 // The by-kind layout's anchor table (253 points): one anchor's digits, which survive minifying whatever its form.
 const ANCHOR_DIGITS = '8660254037844387';
-for (const name of ['mapSpace', 'layoutOf', 'worldGraph', 'trailByPlace', 'layoutAround', 'OwV2Client']) {
+for (const name of ['mapSpace', 'layoutOf', 'worldGraph', 'trailByPlace', 'layoutAround', 'layoutByLinks3d', 'OwV2Client']) {
   test(`a bundle of ${name} alone leaves the by-kind anchor table out`, () => {
     assert.ok(!bundle(name).includes(ANCHOR_DIGITS));
   });
@@ -42,9 +42,21 @@ test('the control: a bundle that lays out by kind keeps the anchor table', () =>
   assert.ok(bundle('layoutByKind').includes(ANCHOR_DIGITS));
 });
 
+// The by-links-3d layout's directions table (703 directions): one direction's digits.
+const DIRECTION_DIGITS = '7373688780783197';
+for (const name of ['mapSpace', 'layoutOf', 'worldGraph', 'trailByPlace', 'layoutByKind', 'layoutAround', 'BY_LINKS_3D_REST', 'OwV2Client']) {
+  test(`a bundle of ${name} alone leaves the by-links-3d directions table out`, () => {
+    assert.ok(!bundle(name).includes(DIRECTION_DIGITS));
+  });
+}
+
+test('the control: a bundle that lays out by links in 3D keeps the directions table', () => {
+  assert.ok(bundle('layoutByLinks3d').includes(DIRECTION_DIGITS));
+});
+
 // fflate's own error words survive minifying, where its function names do not.
 const FFLATE = /invalid block type|unexpected EOF|invalid zip data/;
-for (const name of ['trailByPlace', 'mapSpace', 'layoutOf']) {
+for (const name of ['trailByPlace', 'mapSpace', 'layoutOf', 'layoutByLinks3d']) {
   test(`a bundle of ${name} alone carries none of the zip library`, () => {
     assert.ok(!FFLATE.test(bundle(name, { external: [] })));
   });

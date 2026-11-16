@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.171.0] - 2026-11-16
+
+### Added
+
+- **`layoutByLinks3d`: a 3D layout of a whole graph by its links.** `layoutByLinks3d(graph, elements?, options?)` takes `worldGraph`'s answer and, optionally, the world's elements (only Map and Pin elements are read, by `mapSpace` and `layoutOf`). The body of the graph is cut into groups round its centres, the elements with most links (twelve at most, more when a group that holds over half the body is split), packed apart in directions read from a table baked into the package, and relaxed for 300 seeded force steps; what hangs off the body is fanned out from it, and what is not joined to the main piece stands on a shelf under the picture. The world's Map that holds the most elements of the graph by a Pin (three or more) is a flat plate with each of them at its Pin, and a Map over a place on it a small plate above it; a Pin's z is not read, and a layout map is never the plate. The answer is one row per node in the order handed in: `points` (x, y, z in a `Float64Array`, in units where a link at rest is `BY_LINKS_3D_REST`, 60, long), and per element `how`, `group`, `part` and `held`, with the centres' ids; the words of `how` and `part` are the exported types `OwLayout3dHow` and `OwLayout3dPart`. The same input gives the same points in every runtime: to the last bit for every centre, grouped and pinned element, and within a billionth of a rest for the rest, which are placed with the runtime's cosine and sine.
+- **Held points.** `options.held` hands back points an earlier answer gave (element id to `[x, y, z]`, a Map or a plain object), so the picture keeps still as the world changes; `options.heldUnit` says the step they were rounded to. A held element that is still a node and is not pinned stands at its held point, and the answer's `held` says which. A held value that is not a Map or a plain object, a point that is not three finite numbers, held points wider than 768 rests, and a `heldUnit` outside 0 to an eighth of a rest are refused before any step of the layout runs, with the codes `held-not-object`, `held-not-point` (TypeError), `held-box` and `held-unit` (RangeError). An unknown option key is refused by name.
+- **The word `by-links-3d` is the tool's own until the method's page is published, and until then a release may move its points.** The method's shared fixture is the test, its sha256 pinned, and the directions table is held to the sha256 the fixture names.
+
 ## [4.170.1] - 2026-11-16
 
 ### Fixed
