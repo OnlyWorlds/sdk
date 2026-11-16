@@ -378,7 +378,7 @@ function reachAround(fn: string, graph: OwLayoutGraph, focus: string, options?: 
 }
 
 /** `placed` as a set of ids: a list or a Set; a member that is not a non-empty string is passed over. */
-function placedIds(fn: string, placed: Iterable<unknown>): Set<string> {
+export function placedIds(fn: string, placed: Iterable<unknown>): Set<string> {
   if (placed === null || placed === undefined || typeof placed === 'string' || typeof (placed as { [Symbol.iterator]?: unknown })[Symbol.iterator] !== 'function') {
     throw new TypeError(`${fn}: placed is a list or a Set of element ids`);
   }

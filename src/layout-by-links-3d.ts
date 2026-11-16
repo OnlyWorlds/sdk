@@ -7,6 +7,8 @@
  * floor, which every runtime rounds alike.
  */
 import type { OwLayoutGraph } from './layout-by-kind';
+import { placedIds } from './layout-by-kind';
+import { byCodePoint } from './lens';
 import { refuseUnknownOptions } from './options';
 import { LAYOUT_DIRECTIONS } from './layout-directions.generated';
 import { layout3d } from './layout3d/method';
@@ -109,5 +111,25 @@ export function layoutByLinks3d(graph: OwLayoutGraph, elements?: readonly unknow
   }
   const rows = spaceRows(elements);
   return layout3d(graph.nodes, graph.edges, rows, LAYOUT_DIRECTIONS, options ?? {});
+}
+
+/**
+ * What a saved `by-links-3d` layout map does not place: the ids of the graph's nodes that are not in `placed`, by id
+ * in code point order. The method places every node it is handed, of any type and with or without a link, so nothing
+ * else is left out. `placed` is the ids of the elements the Map's Pins stand for, a list or a Set: from `mapSpace`,
+ * the `element_id` of each pin whose `map` is this Map. A member that is not a non-empty string (a Pin that stands
+ * for no element) is passed over, and an id that is no node of the graph is no part of the answer. The answer's
+ * length is the count a tool shows; reading or drawing a layout map never changes it. Throws a TypeError on a graph
+ * that is not `{ nodes, edges }` or a `placed` that is not a list or a Set, and, as `layoutByLinks3d` does, when two
+ * nodes share an id.
+ */
+export function unplacedByLinks3d(graph: OwLayoutGraph, placed: Iterable<unknown>): string[] {
+  if (!graph || typeof graph !== 'object' || !Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) {
+    throw new TypeError('unplacedByLinks3d: the graph is { nodes, edges }, as worldGraph answers it');
+  }
+  const taken = placedIds('unplacedByLinks3d', placed);
+  const ids = graph.nodes.map((x) => x.id).sort(byCodePoint);
+  for (let i = 1; i < ids.length; i++) if (ids[i] === ids[i - 1]) throw new Error(`unplacedByLinks3d: two nodes share the id ${ids[i]}`);
+  return ids.filter((id) => !taken.has(id));
 }
 
