@@ -161,6 +161,7 @@ Object.assign(DATA, {
   'unplacedByKind#0': 'the graph worldGraph answered',
   'unplacedAround#0': 'the graph worldGraph answered',
   'layoutByLinks3d#0': 'the graph worldGraph answered',
+  'unplacedByLinks3d#0': 'the graph worldGraph answered',
   'charterOf#0': 'the world snapshot, as resolveLens takes it, and whether it is open',
   'charterOf#1': 'the reader, as resolveLens takes it',
   'strandOf#0': 'the world snapshot, as resolveLens takes it, with its x_strand and whether it is open',

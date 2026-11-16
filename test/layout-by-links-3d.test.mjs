@@ -8,17 +8,18 @@
  *            those are placed with the runtime's cosine and sine
  *   held     every element answered as held: the very double the case's input.held gives for it
  *   refused  the call throws before anything runs, with the case's code, on a TypeError or a RangeError
+ *   unplaced each case of the unplaced suite: unplacedByLinks3d answers the same ids in the same order
  * Runs against the compiled public bundle (dist).
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { layoutByLinks3d, BY_LINKS_3D_REST } from '../dist/index.js';
+import { layoutByLinks3d, unplacedByLinks3d, BY_LINKS_3D_REST } from '../dist/index.js';
 
 const bytes = readFileSync(new URL('./fixtures/layout/by-links-3d.fixture.json', import.meta.url));
 const fx = JSON.parse(bytes.toString('utf8'));
-const FIXTURE_SHA = '16284adffac8903777e754cc01d547de95a61447b6d945ca2f641ddf93c4d4eb';
+const FIXTURE_SHA = 'b29606c379633a5fa13f35f71d449b67cb417013c2bfc223024650c7945edb37';
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const sha = (b) => createHash('sha256').update(b).digest('hex');
 const EXACT = new Set(['centre', 'with', 'map']);
@@ -38,7 +39,7 @@ test('the fixture is the one the method\'s reference made', () => {
   assert.equal(sha(bytes), FIXTURE_SHA);
   assert.equal(fx.method, 'by-links-3d');
   assert.equal(fx.rest, BY_LINKS_3D_REST);
-  assert.deepEqual(Object.keys(fx.compare), ['exact', 'within', 'held', 'refused']);
+  assert.deepEqual(Object.keys(fx.compare), ['exact', 'within', 'held', 'refused', 'unplaced']);
 });
 
 test('the baked directions table is codegen/layout/directions.json, the table the fixture names', () => {
@@ -140,8 +141,43 @@ test('the call changes none of its inputs', () => {
   }
 });
 
+for (const c of fx.unplaced) {
+  test(`unplaced: ${c.name} (${c.want.length} id(s), exact)`, () => {
+    assert.deepEqual(unplacedByLinks3d(clone(c.graph), clone(c.placed)), c.want);
+  });
+}
+
+test('unplaced: placed is a list or a Set, read the same; what is no id in it is passed over', () => {
+  const c = fx.unplaced.find((x) => x.name === 'by-links-3d-a-node-with-no-link-and-a-node-off-the-main-piece');
+  assert.equal(c.want.length, 4);
+  assert.deepEqual(unplacedByLinks3d(clone(c.graph), new Set(c.placed)), c.want);
+  // a Pin that stands for no element gives no id: null, undefined, '' and a number place nothing
+  assert.deepEqual(unplacedByLinks3d(clone(c.graph), [null, undefined, '', 7, ...c.placed, ...c.placed]), c.want);
+  assert.deepEqual(unplacedByLinks3d(clone(c.graph), new Set([null, undefined, '', 7, ...c.placed])), c.want);
+  // nothing placed: every node, by id in code point order, whatever order was handed
+  const ids = c.graph.nodes.map((x) => x.id);
+  assert.deepEqual(unplacedByLinks3d(clone(c.graph), []), [...ids].sort());
+  assert.notDeepEqual(ids, [...ids].sort());
+  assert.deepEqual(unplacedByLinks3d({ nodes: [], edges: [] }, []), []);
+});
+
+test('unplaced: a placed that is no list is refused by name, and so is what the layout refuses', () => {
+  const g = { nodes: [{ id: 'a', type: 'character' }], edges: [] };
+  for (const placed of [undefined, null, 'a', 7, { a: true }]) {
+    assert.throws(() => unplacedByLinks3d(g, placed), /^TypeError: unplacedByLinks3d: placed is a list or a Set of element ids$/);
+  }
+  for (const graph of [undefined, null, 'a', [], { nodes: [] }, { edges: [] }, { nodes: {}, edges: [] }]) {
+    assert.throws(() => unplacedByLinks3d(graph, []), /^TypeError: unplacedByLinks3d: the graph is \{ nodes, edges \}/);
+  }
+  // two nodes with one id: an Error, as layoutByLinks3d's own
+  const twice = { nodes: [{ id: 'a', type: 'character' }, { id: 'b', type: 'object' }, { id: 'a', type: 'location' }], edges: [] };
+  assert.throws(() => layoutByLinks3d(clone(twice)), (err) => err.constructor === Error && /^layoutByLinks3d: two nodes share the id a$/.test(err.message));
+  assert.throws(() => unplacedByLinks3d(clone(twice), []), (err) => err.constructor === Error && /^unplacedByLinks3d: two nodes share the id a$/.test(err.message));
+});
+
 test('the function and its rest are exported, with its two types', () => {
   assert.equal(typeof layoutByLinks3d, 'function');
+  assert.equal(typeof unplacedByLinks3d, 'function');
   assert.equal(BY_LINKS_3D_REST, 60);
   const dts = readFileSync(new URL('../dist/index.d.ts', import.meta.url), 'utf8');
   for (const name of ['OwLayoutByLinks3d', 'OwLayoutByLinks3dOptions']) {

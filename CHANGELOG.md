@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **`unplacedByLinks3d`: what a saved `by-links-3d` layout map does not place.** `unplacedByLinks3d(graph, placed)` answers the ids of the graph's nodes that are not in `placed` (the ids the Map's Pins stand for, a list or a Set), by id in code point order. Every node counts, of any type and with or without a link, because the method places every node it is handed. A member of `placed` that is not a non-empty string is passed over; a `placed` that is not a list or a Set, or a graph that is not `{ nodes, edges }`, throws a TypeError, and two nodes with one id throw as `layoutByLinks3d` does.
+
+### Changed
+
+- **The method's shared fixture gains eight cases and an `unplaced` suite of eight** (72 cases and 8), the same bytes as the Python package's copy, its sha256 pinned in the test. No answer of the method changes.
+
 ## [4.172.0] - 2026-11-16
 
 ### Added
