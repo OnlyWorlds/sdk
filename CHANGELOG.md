@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.174.0] - 2026-11-16
+
+### Added
+
+- **`BY_LINKS_3D_VERSION`: the version of `layoutByLinks3d`'s answers.** It starts at 1 and is raised exactly when the answer to some case of the method's fixture changes (a constant, a rule, or a fix that moves a point), never for a release that moves none. A tool that keeps a picture to hand back as `held` can store it beside the points and read a different value as no picture kept, so a change to the method lays the world out fresh instead of holding points the method no longer gives. A test pins every fixture case's answer by its sha256 under the version (`test/fixtures/layout/by-links-3d.answers.json`), and `scripts/pin-layout-answers.mjs` refuses to pin a moved answer unless the version has been raised. No point of the method moves.
+
 ## [4.173.1] - 2026-11-16
 
 ### Fixed

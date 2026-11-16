@@ -17,6 +17,14 @@ import { spaceRows } from './layout3d/space';
 /** The rest length of the by-links-3d layout: a link's length at rest, and the unit of its answer's points. */
 export const BY_LINKS_3D_REST = 60;
 
+/**
+ * The version of `layoutByLinks3d`'s answers: raised whenever the answer to any case of the method's fixture
+ * changes (a constant, a rule, a fix that moves a point), and never for a release that moves none. A tool that keeps
+ * a picture to hand back as `held` stores it beside the points and reads another value as no picture kept, so a
+ * change to the method lays the world out fresh instead of holding points the method no longer gives.
+ */
+export const BY_LINKS_3D_VERSION = 1;
+
 /** `layoutByLinks3d`'s options. */
 export interface OwLayoutByLinks3dOptions {
   /**

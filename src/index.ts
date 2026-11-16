@@ -89,7 +89,7 @@ export type { OwTrailGround, OwTrailHanger, OwTrailInput, OwTrailLayout, OwTrail
 export { layoutByKind, layoutAround, unplacedByKind, unplacedAround } from './layout-by-kind';
 export type { OwLayoutGraph, OwLayoutPoint, OwLayoutByKind, OwLayoutAround, OwLayoutAroundPoint, OwLayoutAroundOptions } from './layout-by-kind';
 // A 3D layout method from the graph and the world's Maps and Pins, by links: groups round centres, packed apart.
-export { layoutByLinks3d, unplacedByLinks3d, BY_LINKS_3D_REST } from './layout-by-links-3d';
+export { layoutByLinks3d, unplacedByLinks3d, BY_LINKS_3D_REST, BY_LINKS_3D_VERSION } from './layout-by-links-3d';
 export type { OwLayoutByLinks3d, OwLayoutByLinks3dOptions, OwLayout3dHow, OwLayout3dPart } from './layout-by-links-3d';
 // The names profile (schema-dist profiles/names.md): a world's own words for the types, x_names on the World.
 export { typeWord } from './names';

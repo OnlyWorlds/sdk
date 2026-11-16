@@ -15,7 +15,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { layoutByLinks3d, unplacedByLinks3d, BY_LINKS_3D_REST } from '../dist/index.js';
+import { layoutByLinks3d, unplacedByLinks3d, BY_LINKS_3D_REST, BY_LINKS_3D_VERSION } from '../dist/index.js';
 
 const bytes = readFileSync(new URL('./fixtures/layout/by-links-3d.fixture.json', import.meta.url));
 const fx = JSON.parse(bytes.toString('utf8'));
@@ -186,10 +186,25 @@ test('the function and its rest are exported, with its two types', () => {
   assert.equal(typeof layoutByLinks3d, 'function');
   assert.equal(typeof unplacedByLinks3d, 'function');
   assert.equal(BY_LINKS_3D_REST, 60);
+  assert.equal(typeof BY_LINKS_3D_VERSION, 'number');
   const dts = readFileSync(new URL('../dist/index.d.ts', import.meta.url), 'utf8');
   for (const name of ['OwLayoutByLinks3d', 'OwLayoutByLinks3dOptions']) {
     assert.match(dts, new RegExp(`(?:interface|type) ${name}\\b`), `${name} is declared`);
   }
   const empty = layoutByLinks3d({ nodes: [], edges: [] });
   assert.deepEqual({ ...empty, points: [...empty.points] }, { method: 'by-links-3d', ids: [], points: [], how: [], group: [], part: [], centres: [], held: [] });
+});
+
+// BY_LINKS_3D_VERSION is raised exactly when an answer moves: every case is pinned to its want under the version
+// (test/fixtures/layout/by-links-3d.answers.json, written by scripts/pin-layout-answers.mjs, which refuses a moved
+// answer under the same version). A fixture made again with a moved answer fails here until the version is raised.
+test('BY_LINKS_3D_VERSION is the version every case of the fixture is pinned under, and no pin has moved', () => {
+  const pins = JSON.parse(readFileSync(new URL('./fixtures/layout/by-links-3d.answers.json', import.meta.url), 'utf8'));
+  assert.ok(Number.isSafeInteger(BY_LINKS_3D_VERSION) && BY_LINKS_3D_VERSION >= 1, 'the version is a whole number from 1');
+  assert.equal(pins.version, BY_LINKS_3D_VERSION, 'the pins are under the exported version');
+  const names = fx.cases.map((c) => c.name);
+  assert.ok(names.length > 0, 'the fixture holds cases');
+  assert.deepEqual(Object.keys(pins.answers), names, 'every case is pinned, in the fixture\x27s order, and nothing else');
+  const moved = fx.cases.filter((c) => pins.answers[c.name] !== sha(JSON.stringify(c.want))).map((c) => c.name);
+  assert.deepEqual(moved, [], `answers moved under BY_LINKS_3D_VERSION ${BY_LINKS_3D_VERSION}: raise it, then node scripts/pin-layout-answers.mjs`);
 });
