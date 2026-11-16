@@ -67,6 +67,17 @@ export class OwApiError extends Error {
     return this.code === 'invalid_credentials' || this.code === 'key_revoked' || this.code === 'world_gone';
   }
 
+  /**
+   * The host in front of onlyworlds.com refused the request before the API saw it: a 403 whose body is an HTML
+   * page titled "Blocked", not the API's JSON envelope. Nothing was written. The host refuses text that holds a
+   * shell command such as `python -m`, `python -c`, `perl -e`, or `curl` or `wget` with an address right after
+   * a backtick, a semicolon or a pipe; such a command passes in a fenced code block whose first line names a
+   * language, or without the backtick. `code` is null (it is no API code) and `detail` keeps the page.
+   */
+  get isHostBlocked(): boolean {
+    return isHostBlockedPage(this.status, this.detail);
+  }
+
   /** 422s/400s name the offending param/field -- typos error loudly platform-wide. */
   get isValidationError(): boolean {
     return this.status === 422 || this.status === 400;
@@ -633,7 +644,20 @@ interface EnvelopeShape {
 /** Parse a wire envelope into OwApiError parts (exported for the error type-tests). */
 /** Parse the platform ERROR envelope into an OwApiError. (Renamed from parseEnvelope in 4.0 —
  *  distinct from the world-export envelope, which is a different artifact entirely.) */
+/** A 403 whose body is not JSON and is an HTML page titled "Blocked": the host's refusal, not the API's. */
+function isHostBlockedPage(status: number, body: unknown): boolean {
+  return status === 403 && typeof body === 'string' && /<title[^>]*>\s*Blocked\s*<\/title>/i.test(body);
+}
+
+/** The message a person reads when the host refuses a write (see `OwApiError.isHostBlocked`). */
+const HOST_BLOCKED_MESSAGE =
+  'The host in front of onlyworlds.com refused this request before the API saw it (a 403 page titled "Blocked"), ' +
+  'and nothing was written. It refuses text that holds a shell command such as python -m, python -c, perl -e, ' +
+  'or curl or wget with an address, right after a backtick, a semicolon or a pipe. Put such a command in a fenced ' +
+  'code block whose first line names a language, or write it without the backtick.';
+
 export function parseErrorEnvelope(status: number, body: unknown, retryAfter: number | null = null): OwApiError {
+  if (isHostBlockedPage(status, body)) return new OwApiError(status, null, HOST_BLOCKED_MESSAGE, null, body, null, null, retryAfter);
   const env = (body && typeof body === 'object' ? body : {}) as EnvelopeShape;
   const nested = typeof env.error === 'object' && env.error !== null ? env.error : undefined;
   const code = env.code ?? nested?.code ?? (typeof env.error === 'string' ? env.error : null) ?? null;

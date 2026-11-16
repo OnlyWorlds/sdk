@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.175.0] - 2026-11-16
+
+### Added
+
+- **`OwApiError.isHostBlocked`: a write the host refused before the API saw it.** The host in front of onlyworlds.com answers some writes with a 403 whose body is an HTML page titled "Blocked", not the API's JSON envelope: text that holds a shell command such as `python -m`, `python -c`, `perl -e`, or `curl` or `wget` with an address right after a backtick, a semicolon or a pipe. Such an error read "OnlyWorlds API error 403" until now. It now says the host refused the request and nothing was written, and how to write the command so it passes (a fenced code block whose first line names a language, or no backtick). `code` stays null, as it is no API code, and `detail` keeps the page. Read on the page's title and on the body not being JSON, so the API's own 403s read as before.
+
+### Fixed
+
+- **`removeSeat`'s description** says when the Character a seat plays goes with it: only while it is as the seat's join left it (made by the join, named as the seat, supertype `Agent` alone, last written by the join, linked from nothing and played by no one else). Any other stays, one given to the seat to play included.
+
 ## [4.174.0] - 2026-11-16
 
 ### Added
