@@ -57,7 +57,7 @@ test('client.me: an empty my_seats for a seat\'s own key stays an empty list', a
   assert.deepEqual(got, me);
 });
 
-test('the published types: OwFrontDoor\'s six keys in the document\'s order, OwMySeat\'s four', () => {
+test('the published types: OwFrontDoor\'s eight keys in the document\'s order, OwMySeat\'s four, the two typed refs', () => {
   const all = readFileSync(new URL('../dist/index.d.ts', import.meta.url), 'utf8');
   const block = (name) => {
     const at = all.indexOf(`interface ${name} {`);
@@ -65,8 +65,18 @@ test('the published types: OwFrontDoor\'s six keys in the document\'s order, OwM
     return all.slice(at, all.indexOf('\n}', at));
   };
   const keys = (src) => [...src.matchAll(/^\s{4}(\w+)(\??):/gm)].map((m) => m[1] + m[2]);
-  assert.deepEqual(keys(block('OwFrontDoor')), ['sponsor', 'sponsor_character', 'my_character', 'my_seats', 'charter', 'charter_skill']);
+  assert.deepEqual(keys(block('OwFrontDoor')), ['sponsor', 'sponsor_character', 'my_character', 'my_seats', 'charter', 'charter_skill', 'charter_element', 'charter_skill_elements']);
   assert.match(block('OwFrontDoor'), /\bmy_seats: OwMySeat\[\];/);
+  // The document gives each ref's type as a const ('law', 'object'), which the wire gate's union check does not
+  // read (a single literal is no union), so the published words are held here.
+  assert.match(block('OwFrontDoor'), /\bcharter_element: OwFrontDoorCharter \| null;/);
+  assert.match(block('OwFrontDoor'), /\bcharter_skill_elements: OwFrontDoorSkill\[\];/);
+  assert.deepEqual(keys(block('OwFrontDoorCharter')), ['type', 'id']);
+  assert.match(block('OwFrontDoorCharter'), /\btype: 'law';/);
+  assert.deepEqual(keys(block('OwFrontDoorSkill')), ['type', 'id']);
+  assert.match(block('OwFrontDoorSkill'), /\btype: 'object';/);
+  assert.match(all, /export \{[^}]*\bOwFrontDoorCharter\b/);
+  assert.match(all, /export \{[^}]*\bOwFrontDoorSkill\b/);
   assert.deepEqual(keys(block('OwMySeat')), ['id', 'kind', 'name', 'character']);
   assert.match(block('OwMySeat'), /\bkind: 'agent' \| 'player';/);
   assert.match(all, /export \{[^}]*\bOwMySeat\b/);

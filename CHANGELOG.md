@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.176.0] - 2026-11-16
+
+### Added
+
+- **`front_door.charter_element` and `front_door.charter_skill_elements`**, which `GET /me`, `PUT /me/character` and an AI seat's join now serve: the Charter and its skills typed as `{type, id}`, so a reader knows which route fetches each. `OwFrontDoorCharter` (`type: 'law'`, or null where `charter` is) and `OwFrontDoorSkill` (`type: 'object'`, in `charter_skill`'s order) are exported.
+
+### Fixed
+
+- **`OwSeat`'s descriptions of the Character right** follow the platform's: the owner may give a seat its Character without the right; once the right is cleared, sending the same Character again keeps it cleared, and only the owner's `may_change_character` true gives it back; and `may_change_character_note` also says why a seat can change its Character all the same (it made it, or it is a co-builder), not only why it cannot.
+
 ## [4.175.0] - 2026-11-16
 
 ### Added

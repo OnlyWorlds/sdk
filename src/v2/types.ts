@@ -774,6 +774,22 @@ export interface OwFrontDoor {
   charter: string | null;
   /** The Objects the Charter's description names (by `ow://` link or id), in the order written, at most five; empty when none. */
   charter_skill: string[];
+  /** `charter` typed as an element: the Charter is a Law, read with `get('law', id)`. Null where `charter` is. */
+  charter_element: OwFrontDoorCharter | null;
+  /** `charter_skill` typed as elements, in the same order: each an Object, read with `get('object', id)`. Empty where `charter_skill` is. */
+  charter_skill_elements: OwFrontDoorSkill[];
+}
+
+/** The Charter in `front_door.charter_element`: a Law by its type and id. */
+export interface OwFrontDoorCharter {
+  type: 'law';
+  id: string;
+}
+
+/** One skill in `front_door.charter_skill_elements`: an Object by its type and id. */
+export interface OwFrontDoorSkill {
+  type: 'object';
+  id: string;
 }
 
 /** One seat you answer for, a row of `front_door.my_seats`. */
@@ -1464,13 +1480,19 @@ export interface OwSeat {
   /** The latest use of the seat's key, or null. */
   last_active: string | null;
   /**
-   * True when the seat may change, never delete, the Character it plays: the owner gave it that Character, or its
-   * sponsor could change it. False says only that no such right is held: a co-builder seat changes everything and a
-   * seat changes what it made. On a seat a member answers for it holds only while that member could change the
-   * Character. False when the seat has no Character, and when its Character is kept from you (`character` null).
+   * True when the seat may change, never delete, the Character it plays: the owner gave it that Character with the
+   * right (the owner may also give it without, `may_change_character` false on the member's PATCH), or its sponsor
+   * could change it. False says only that no such right is held: a co-builder seat changes everything and a seat
+   * changes what it made. On a seat a member answers for it holds only while that member could change the
+   * Character; once cleared, sending the same Character again keeps it cleared, and only the owner's
+   * `may_change_character` true gives it back. False when the seat has no Character, and when its Character is kept
+   * from you (`character` null).
    */
   may_change_character: boolean;
-  /** Why the seat may not change the Character it plays, as a sentence; null when it may, and when its Character is kept from you. */
+  /**
+   * A sentence: why the seat may not change the Character it plays, or, where it can change it all the same without
+   * the right, why (it made it, or it is a co-builder). Null otherwise, and when its Character is kept from you.
+   */
   may_change_character_note: string | null;
   /** True when its member made it for their own AI to play their own Character: it plays what its sponsor plays, and its `may_change_character` is its sponsor's, until it is handed to someone else. */
   follows_sponsor: boolean;
