@@ -538,7 +538,7 @@ Use this SDK for known operations in your own code (CRUD, sync, bulk). To let an
 
 ## Links
 
-[Docs](https://onlyworlds.github.io/docs/development/typescript) · [Games](https://onlyworlds.github.io/docs/development/games) · [API reference](https://www.onlyworlds.com/api/docs) · [Issues](https://github.com/OnlyWorlds/sdk/issues) · [Changelog](CHANGELOG.md)
+[Docs](https://onlyworlds.github.io/docs/development/typescript) · [Games](https://onlyworlds.github.io/docs/development/games) · [API reference](https://www.onlyworlds.com/api/docs) · [Issues](https://github.com/OnlyWorlds/sdk/issues) · [Changelog](https://github.com/OnlyWorlds/sdk/blob/main/CHANGELOG.md)
 
 ## Licence and contributions
 
