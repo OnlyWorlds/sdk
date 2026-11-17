@@ -73,6 +73,8 @@ export class OwApiError extends Error {
    * shell command such as `python -m`, `python -c`, `perl -e`, or `curl` or `wget` with an address right after
    * a backtick, a semicolon or a pipe; such a command passes in a fenced code block whose first line names a
    * language, or with none of the three directly before it. `code` is null (it is no API code) and `detail` keeps the page.
+   * In a browser on another origin this never fires: the host sends the page without CORS headers, so the browser
+   * hides it and `fetch` throws a network error before any status reaches the client (measured 2026-11-17).
    */
   get isHostBlocked(): boolean {
     return isHostBlockedPage(this.status, this.detail);
