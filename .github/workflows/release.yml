@@ -84,7 +84,7 @@ jobs:
             echo "the $VERSION entry names someone inside the team or points at an internal room or tracker (above): say the rule and its date instead"; exit 1
           fi
 
-      - run: npm ci || npm install
+      - run: npm ci
       - run: npm run schema:verify
       - run: npm run codegen:check
       - run: npm test

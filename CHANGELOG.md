@@ -8,6 +8,8 @@ earlier history lives in git log only.
 ### Tests
 
 - **Node 18 is tested.** `package.json` admits Node 18 and later, and the suite ran on 20 and 22 only. It now runs on 18 as well, with one flag: Sign in with OnlyWorlds needs Web Crypto as a global, which Node has from 19 on and Node 18 only when started with `--experimental-global-webcrypto`. Without it `signInWithOnlyWorlds` and `pkceChallenge` refuse with a `TypeError` that names Web Crypto, storing and opening nothing (a new test holds that on every Node), and the rest of the package runs.
+- **Node 24 is tested**, beside 18, 20 and 22.
+- **The build and the tests install from a committed lockfile.** `package-lock.json` was ignored, so every CI run and every release installed whatever the version ranges resolved to that day, and `npm ci || npm install` hid that there was no lockfile to install from. It is committed now and CI and the release run `npm ci`. Nothing changes for a project that installs the package: a lockfile is not published.
 
 ## [4.178.0] - 2026-11-17
 

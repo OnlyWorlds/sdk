@@ -44,14 +44,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18, 20, 22]
+        node-version: [18, 20, 22, 24]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm ci || npm install
+      - run: npm ci
       # Published text names no one inside the team and points at no internal room or tracker.
       - run: node scripts/public-words.mjs
       # `npm test` runs pretest (tsup build) then node --test against the
@@ -73,7 +73,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - run: npm ci || npm install
+      - run: npm ci
       - run: npm run build
       - run: node --test test/live-practice.test.mjs
         env:

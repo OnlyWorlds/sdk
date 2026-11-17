@@ -1,5 +1,6 @@
-# Keeps the actions the workflows use current: one grouped pull request a week, read and merged by a maintainer.
-# Only the workflow actions: the package's own dependencies are not updated from here.
+# Keeps the actions the workflows use and the packages the build and the tests install current: one grouped
+# pull request a week for each, read and merged by a maintainer. The npm group moves package-lock.json, which
+# CI and the release install from exactly (npm ci).
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -8,4 +9,11 @@ updates:
       interval: weekly
     groups:
       actions:
+        patterns: ['*']
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm:
         patterns: ['*']
