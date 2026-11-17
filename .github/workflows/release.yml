@@ -31,12 +31,12 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # No registry-url: with it, setup-node writes an .npmrc and a placeholder NODE_AUTH_TOKEN
       # (XXXXX-XXXXX-XXXXX-XXXXX), and npm sent that instead of the OIDC exchange: the first run,
       # 2026-10-11, answered E404 on the PUT. The default registry is npmjs.org anyway.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
 
@@ -44,7 +44,7 @@ jobs:
       - run: npm install -g npm@^11.5.1
       - run: npm --version
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - run: pip install pyyaml
@@ -123,7 +123,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: The tag becomes a GitHub release, its body this version's CHANGELOG entry
         env:
           GH_TOKEN: ${{ github.token }}

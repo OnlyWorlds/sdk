@@ -11,7 +11,7 @@ jobs:
     # inside the team and point at no internal room or tracker, like the tree.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - run: node scripts/public-words.mjs --commits "$RANGE"
@@ -47,8 +47,8 @@ jobs:
         node-version: [18, 20, 22]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci || npm install
@@ -69,8 +69,8 @@ jobs:
     # means the server moved under the client, not that a change broke it.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: npm ci || npm install
@@ -97,8 +97,8 @@ jobs:
     # substituted schema passes the second and fails the first.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       # PyYAML is codegen's only third-party dependency and this repo carries no
