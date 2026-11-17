@@ -1227,8 +1227,15 @@ export interface OwDraught {
   /** With `self`: her own element (`grade: 'known_of'` when this reader knows her only as a stub), or null when it is hidden from her. */
   character?: { self: true; grade: 'whole' | 'known_of'; element: OwElement } | null;
   role?: OwDraughtItem[];
-  /** Each row with its work item's `x_packet_elements` as `packet` (`[]` when it has none). */
-  work?: Array<OwDraughtItem & { packet: Array<Record<string, unknown>> }>;
+  /**
+   * Her open work: Relations with supertype `Work item` and subtype `open` or `taken` that are for her, by name
+   * (`actor` is her) or by a role she holds (`x_packet_for` names a Title whose `holders` name her). Each row adds
+   * `packet`, the item's `x_packet_elements` (`[]` when it has none), and `by_role`, the ids of her Titles the item
+   * names, each once, in the item's order (`[]` when none does). A row that reached her only through a Title has
+   * `via` `['holders']`. Read as her (`mode: 'voice'`) a work item reaches her only through a field of its own
+   * that names her: ask with `mode: 'act'` for what is hers by role.
+   */
+  work?: Array<OwDraughtItem & { packet: Array<Record<string, unknown>>; by_role: string[] }>;
   style?: OwDraughtItem | null;
   events?: OwDraughtItem[];
   knowledge?: OwDraughtItem[];

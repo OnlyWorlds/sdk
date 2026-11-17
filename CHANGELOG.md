@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.178.0] - 2026-11-17
+
+### Added
+
+- **`by_role` on every row of a draught's `work`**, which `GET /character/{id}/context` now serves: the ids of her Titles that the work item names, each once, in the item's order, and an empty list when none does. Work is for her by name (the item's `actor`) or by a role she holds (the item's `x_packet_for` names a Title whose `holders` name her), and a row that reached her only through a Title has `via` `['holders']`. Read as her (`mode: 'voice'`) a work item reaches her only through a field of its own that names her, so a caller asks with `mode: 'act'` for what is hers by role.
+
+### Fixed
+
+- **The message for a write the host refused says the whole way out.** The same command passes in a fenced code block whose first line names a language, or with no backtick, semicolon or pipe directly before it; the message named only the backtick.
+
 ## [4.177.0] - 2026-11-17
 
 ### Added

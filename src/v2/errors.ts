@@ -72,7 +72,7 @@ export class OwApiError extends Error {
    * page titled "Blocked", not the API's JSON envelope. Nothing was written. The host refuses text that holds a
    * shell command such as `python -m`, `python -c`, `perl -e`, or `curl` or `wget` with an address right after
    * a backtick, a semicolon or a pipe; such a command passes in a fenced code block whose first line names a
-   * language, or without the backtick. `code` is null (it is no API code) and `detail` keeps the page.
+   * language, or with none of the three directly before it. `code` is null (it is no API code) and `detail` keeps the page.
    */
   get isHostBlocked(): boolean {
     return isHostBlockedPage(this.status, this.detail);
@@ -654,7 +654,7 @@ const HOST_BLOCKED_MESSAGE =
   'The host in front of onlyworlds.com refused this request before the API saw it (a 403 page titled "Blocked"), ' +
   'and nothing was written. It refuses text that holds a shell command such as python -m, python -c, perl -e, ' +
   'or curl or wget with an address, right after a backtick, a semicolon or a pipe. Put such a command in a fenced ' +
-  'code block whose first line names a language, or write it without the backtick.';
+  'code block whose first line names a language, or write it with none of the three directly before it.';
 
 export function parseErrorEnvelope(status: number, body: unknown, retryAfter: number | null = null): OwApiError {
   if (isHostBlockedPage(status, body)) return new OwApiError(status, null, HOST_BLOCKED_MESSAGE, null, body, null, null, retryAfter);
