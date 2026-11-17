@@ -14,55 +14,17 @@ const FIXTURE = process.env.OW_RECORD_FIXTURE ?? fileURLToPath(new URL('../codeg
 assert.ok(existsSync(FIXTURE), `no record fixture at ${FIXTURE}`);
 const doc = JSON.parse(readFileSync(FIXTURE, 'utf8'));
 
-// Serial 123 renames three of serial 122's cases for what they test (their inputs move with the names); a test that
-// names one reads it under either name, so moving the pin past serial 122 moves no test.
-const RENAMED_BY_SERIAL_123 = {
-  'no-mark-played-offset': 'no-mark-played-offset-without-its-colon',
-  'no-mark-year-0': 'no-mark-year-0-without-seconds',
-  'no-mark-played-lower-case': 'no-mark-played-lower-case-without-seconds',
-};
-const caseNamed = (name) => doc.cases.find((c) => c.name === name || c.name === RENAMED_BY_SERIAL_123[name]);
-const FIXTURE_SERIAL = doc.cases.some((c) => Object.values(RENAMED_BY_SERIAL_123).includes(c.name)) ? 123 : 122;
-const CASES_BY_SERIAL = { 122: 41, 123: 46 };
-
 test('the fixture is the record profile\'s, its mark the field recordMarkOf reads', () => {
   assert.equal(doc.profile, 'record');
   assert.equal(doc.mark.field, RECORD_FIELD);
   assert.deepEqual(doc.mark.members, ['tool', 'played_at', 'version', 'seed', 'outcome', 'seats']);
-  const want = CASES_BY_SERIAL[FIXTURE_SERIAL];
-  assert.equal(doc.cases.length, want, `the fixture holds ${doc.cases.length} cases, serial ${FIXTURE_SERIAL} has ${want}`);
-  for (const [old, renamed] of Object.entries(RENAMED_BY_SERIAL_123)) assert.ok(caseNamed(old), `no case ${old} or ${renamed}`);
-});
-
-// Serial 123 reads played_at by the message page's grammar, and four of serial 122's cases move with it: an offset
-// reads, a time without seconds does not. Until the pin moves past serial 122, the vendored fixture's cases are held to
-// serial 123's answers, written here by hand from the ruling; a staged fixture (OW_RECORD_FIXTURE) is read as written.
-const PIN_SERIAL = JSON.parse(readFileSync(new URL('../codegen/schema-pin.json', import.meta.url), 'utf8')).dist_serial;
-const OFFSET_RUN = { event: { id: '019a8000-0000-7000-8000-000000000215', name: 'Played with an offset' }, tool: 'subs', played_at: '2026-11-01T08:00:00+01:00', version: null, seed: null, outcome: null, seat: null, stories: [] };
-const MOVED_BY_SERIAL_123 = process.env.OW_RECORD_FIXTURE || PIN_SERIAL !== 122 ? {} : {
-  // 08:00+01:00 is 07:00Z: a mark.
-  'no-mark-played-offset': () => ({ tool: 'subs', played_at: '2026-11-01T08:00:00+01:00', version: null, seed: null, outcome: null, seats: {} }),
-  // 2028-02-29T00:00Z has no seconds: no mark.
-  'mark-leap-day-of-a-leap-year': () => null,
-  // The run played at 08:00+01:00 is Fluffington's too, between 11-02T21:00Z and 11-01T00:30Z.
-  'fluffington-two-games': (want) => [want[0], OFFSET_RUN, ...want.slice(1)],
-  // Half past with no seconds is no mark: the run with the fraction alone.
-  'order-by-the-instant-not-the-string': (want) => want.filter((r) => r.played_at !== '2026-11-01T00:30Z'),
-};
-
-test('four of serial 122\'s cases are expected to turn until the dist rewrites them (serial 123): each still as serial 122 wrote it',{ skip: Object.keys(MOVED_BY_SERIAL_123).length === 0 }, () => {
-  for (const name of Object.keys(MOVED_BY_SERIAL_123)) assert.ok(caseNamed(name), `no case ${name} in the fixture`);
-  assert.equal(caseNamed('no-mark-played-offset').want, null);
-  assert.equal(caseNamed('mark-leap-day-of-a-leap-year').want.played_at, '2028-02-29T00:00Z');
-  assert.ok(!caseNamed('fluffington-two-games').want.some((r) => r.event.id === OFFSET_RUN.event.id));
-  assert.deepEqual(caseNamed('order-by-the-instant-not-the-string').want.map((r) => r.played_at), ['2026-11-01T00:30:00.500Z', '2026-11-01T00:30Z']);
+  assert.equal(doc.cases.length, 46, `the fixture holds ${doc.cases.length} cases, serial 123 has 46`);
 });
 
 for (const c of doc.cases) {
   const world = doc.worlds[c.world];
-  const moved = Boolean(MOVED_BY_SERIAL_123[c.name]);
-  const want = moved ? MOVED_BY_SERIAL_123[c.name](c.want) : c.want;
-  const title = `record fixture: ${c.name}${moved ? ' (turned by serial 123: held to its answer, not serial 122\'s want)' : ''}`;
+  const want = c.want;
+  const title = `record fixture: ${c.name}`;
   if (c.kind === 'mark') {
     test(title, () => {
       const el = world.elements.find((e) => e.id === c.element);
