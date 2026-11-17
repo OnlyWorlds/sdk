@@ -243,8 +243,10 @@ export class OwV2Client {
    * without the room mark is placed as any Narrative unless `messages` is named, when it is there
    * and in no other section; a room-marked Message is in `messages` or nowhere. `lens` (a lens id)
    * adds `lenses`, one frame with that lens read for this key's own view (beside `depth` or `budget`
-   * a 422); with no policy key but `compact`, the packet adds one frame per lens chosen with
-   * setMyLenses. Served `Cache-Control: private, no-store`. On a client with `world` set, an account token
+   * a 422), on any Character; with no policy key but `compact`, a read of the caller's own Character (the
+   * one `me()` names) adds one frame per lens the caller starts with: the ones chosen with setMyLenses, or
+   * for a seat that never chose, the ones its Titles give it. A read of any other Character adds none of
+   * them. A frame is the caller's own reading and its own Character's mail, never the Character's. Served `Cache-Control: private, no-store`. On a client with `world` set, an account token
    * reads the draught as the account's own access there, and no key reads it as the public reads the world.
    */
   draught(characterId: string, policy?: OwDraughtPolicy & { compact?: false }): Promise<OwDraught>;

@@ -7,6 +7,8 @@ earlier history lives in git log only.
 
 ### Changed
 
+- **`draught`'s comments say whose reading a lens frame is.** Since 17 November 2026 onlyworlds.com adds the lenses a caller starts with to a plain context read only when the Character read is the caller's own; a read of any other Character holds no `lenses` unless `lens` names one. The comments on `draught` and on `OwDraught.lenses` say so, and name the lenses a seat's Titles give it beside the ones it chose. No call or type changes: `lenses` was already optional.
+
 - **The installed package no longer carries the changelog.** `CHANGELOG.md` was 308 KB of the 1,437 KB a project unpacked into `node_modules`, a fifth of the package, and nothing in the package reads it. It stays in the repository and on each GitHub release, and the README links it there. The unpacked package is 1,131 KB.
 
 ## [4.179.0] - 2026-11-17

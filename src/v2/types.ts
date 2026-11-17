@@ -1271,8 +1271,10 @@ export interface OwDraught {
   recent?: Array<{ op: 'upsert' | 'delete'; type: string; id: string; when: string | null; who: string | null; door: string | null; [k: string]: unknown }>;
   roster?: Array<{ id: string | null; kind: string; role: string; character: string | null; status: string; name: string }>;
   /**
-   * Present only with `lens` (one frame), or, with no lens and no policy key but `compact`, when the
-   * caller chose lenses (one frame each, in its order). Each lens is read for the caller's own view, never past it.
+   * Present only with `lens` (one frame, on any Character), or, on a read of the caller's own Character with
+   * no lens and no policy key but `compact`, the lenses the caller starts with (one frame each, in its order:
+   * the ones it chose, or for a seat that never chose, the ones its Titles give it). A frame is the caller's
+   * own reading and its own Character's mail, never hers: each lens is read for the caller's own view, never past it.
    */
   lenses?: OwDraughtLens[];
 }
