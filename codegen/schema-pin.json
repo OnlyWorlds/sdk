@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.34.1-dist.133",
-  "commit": "6c28fc1cebf01628e2badca761f731528b63f5f8",
-  "manifest_sha256": "b0fe3a48684d2e90261f74b5c5b2382689e071a0af1709f359a174d45cc5324a",
+  "tag": "v0.34.1-dist.134",
+  "commit": "700f04b6a99d5631e5e2b01072359d110282ad67",
+  "manifest_sha256": "199b4c9af2fcccaeeaa6ed2a27e41e76cb7dd2e491cdbd367741011982fdf174",
   "canonical_version": "00.34.01",
-  "dist_serial": 133,
-  "published": "2026-11-16",
+  "dist_serial": 134,
+  "published": "2026-11-17",
   "pinned_at": "2026-11-17",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout (213 files: the 212 the MANIFEST lists, and MANIFEST.json itself); files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.34.1-dist.133",
+      "manifest_sha256": "b0fe3a48684d2e90261f74b5c5b2382689e071a0af1709f359a174d45cc5324a",
+      "note": "superseded by v0.34.1-dist.134 (canonical 00.34.01 unchanged, no schema file moved: the strand page and fixture, 42 cases (an empty string in any member is no mark, nothing is trimmed), the checks page and fixture's notes and its control row's field, the lens page's sentence on whose reading it is)"
+    },
     {
       "tag": "v0.34.1-dist.132",
       "manifest_sha256": "263b287bcce91eda6c76c7b82746ddad378a44d79caa1ed8a14cf506d9898be2",
