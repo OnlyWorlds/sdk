@@ -365,6 +365,26 @@ export interface OwErrorBody {
   reason?: OwResyncReason;
   /** On a 422 `answer_not_parsed` only: each answer the server refused, in order (see {@link OwAiRefusal}). */
   refusals?: OwAiRefusal[];
+  /** On a 422 with `param` `fields` only: every name in a read's `fields` list that its type does not have, in the order sent. */
+  unknown_fields?: string[];
+  /** Beside `unknown_fields`: for each unknown name another element type has, those types. */
+  types_with_field?: Record<string, string[]>;
+  /** Beside `unknown_fields`: the names this type's `fields` takes (an extension field name passes too). */
+  allowed_fields?: string[];
+}
+
+/**
+ * What a 422 with `param` `fields` carries beside its message, when a read's `fields` list names fields
+ * its type does not have: the whole list is refused once, with every unknown name, so a caller corrects
+ * it in one try. Read from `OwApiError.fieldsRefusal`.
+ */
+export interface OwFieldsRefusal {
+  /** Every name in the list that the type does not have, in the order sent. */
+  unknown_fields: string[];
+  /** For each unknown name another element type has, those types. A name no type has is not a key here. */
+  types_with_field: Record<string, string[]>;
+  /** The names this type's `fields` takes. An extension field name (`x_`, `atlas_`, `shadow_`) passes too and is not listed. */
+  allowed_fields: string[];
 }
 
 /**

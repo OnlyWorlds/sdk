@@ -9,7 +9,7 @@
  * surfaced on the thrown error.
  */
 
-import type { OwAiRefusal, OwProposal, OwProposalConflict, OwResyncReason } from './types';
+import type { OwAiRefusal, OwFieldsRefusal, OwProposal, OwProposalConflict, OwResyncReason } from './types';
 import { refuseUnknownOptions } from '../options';
 
 /**
@@ -386,6 +386,33 @@ export class OwApiError extends Error {
       }
     }
     return rows;
+  }
+
+  /**
+   * On a 422 whose `param` is `fields`, when a read's `fields` list named fields its type does not have:
+   * every unknown name in the order sent (`unknown_fields`), for each one another element type has, those
+   * types (`types_with_field`), and the names this type takes (`allowed_fields`). The server refuses the
+   * whole list once, so the list is corrected in one try. Undefined for any other error, or when the server
+   * sends no `unknown_fields`; an entry that is not a string is left out.
+   */
+  get fieldsRefusal(): OwFieldsRefusal | undefined {
+    if (this.status !== 422 || this.param !== 'fields') return undefined;
+    const env = this.detail && typeof this.detail === 'object' ? (this.detail as { error?: unknown }) : undefined;
+    const nested = env?.error && typeof env.error === 'object' ? (env.error as Record<string, unknown>) : undefined;
+    if (!nested || !Array.isArray(nested.unknown_fields)) return undefined;
+    const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((s): s is string => typeof s === 'string') : []);
+    const types_with_field: Record<string, string[]> = {};
+    const held = nested.types_with_field;
+    if (held && typeof held === 'object' && !Array.isArray(held)) {
+      for (const [name, types] of Object.entries(held as Record<string, unknown>)) {
+        if (Array.isArray(types)) types_with_field[name] = strings(types);
+      }
+    }
+    return {
+      unknown_fields: strings(nested.unknown_fields),
+      types_with_field,
+      allowed_fields: strings(nested.allowed_fields),
+    };
   }
 
   /** ask: the model gave no answer (502 `ask_failed`). Not counted; try again in a moment. */

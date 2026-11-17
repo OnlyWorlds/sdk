@@ -3,6 +3,12 @@
 All notable changes to `@onlyworlds/sdk`. Maintained from 3.1.0 onward;
 earlier history lives in git log only.
 
+## [4.179.0] - 2026-11-17
+
+### Added
+
+- **`err.fieldsRefusal`: everything a read's `fields` list got wrong, in one answer.** A `list` or `get` whose `fields` names fields the type does not have is one 422 with `param` `fields`, as before. Since 17 November 2026 onlyworlds.com names every unknown name in it, where it named only the first: the message lists them, and the error carries `unknown_fields` (each unknown name once, in the order sent), `types_with_field` (for each one another element type has, those types) and `allowed_fields` (the names this type takes). `OwApiError.fieldsRefusal` returns the three as served, typed `OwFieldsRefusal`, so a caller corrects the list in one try; it is `undefined` for any other error. `OwErrorBody` declares the three keys. A list with one unknown name keeps the message it always had, and no SDK code read that message.
+
 ## [4.178.1] - 2026-11-17
 
 ### Fixed

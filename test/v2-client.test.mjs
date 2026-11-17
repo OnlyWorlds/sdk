@@ -401,6 +401,65 @@ test('resyncReason reads the 409 envelope\'s reason, and is undefined without on
   assert.equal(other.resyncReason, undefined);
 });
 
+// A read whose `fields` list names fields its type does not have: one 422, every unknown name beside it.
+// The body is the server's answer to fields=name,story,hidden,narrator,nonsuch on a Character list,
+// its allowed list cut to four names.
+const fieldsRefused = () => ({ error: { type: 'invalid_request', code: 'invalid_request',
+  message: 'Unknown fields in ?fields: story, hidden, narrator, nonsuch', param: 'fields',
+  doc_url: 'https://onlyworlds.github.io/api/errors/#invalid_request',
+  unknown_fields: ['story', 'hidden', 'narrator', 'nonsuch'],
+  types_with_field: { story: ['narrative'], narrator: ['narrative'] },
+  allowed_fields: ['id', 'name', 'description', 'supertype'] } });
+const listWithFields = (c) => c.list('character', { fields: ['name', 'story', 'hidden', 'narrator', 'nonsuch'] });
+
+test('fieldsRefusal reads the three keys of a 422 on fields, as served', async () => {
+  const err = await thrown({ status: 422, body: fieldsRefused() }, listWithFields);
+  assert.equal(err.param, 'fields');
+  assert.deepEqual(err.fieldsRefusal, {
+    unknown_fields: ['story', 'hidden', 'narrator', 'nonsuch'],
+    types_with_field: { story: ['narrative'], narrator: ['narrative'] },
+    allowed_fields: ['id', 'name', 'description', 'supertype'],
+  });
+});
+
+test('fieldsRefusal is undefined on any other error, each condition alone', async () => {
+  // no unknown_fields: a server from before the keys, or another refusal that names fields
+  const bare = fieldsRefused();
+  delete bare.error.unknown_fields;
+  assert.equal((await thrown({ status: 422, body: bare }, listWithFields)).fieldsRefusal, undefined);
+  // the three keys under another param
+  const otherParam = fieldsRefused();
+  otherParam.error.param = 'expand';
+  assert.equal((await thrown({ status: 422, body: otherParam }, listWithFields)).fieldsRefusal, undefined);
+  // the three keys under another status
+  assert.equal((await thrown({ status: 400, body: fieldsRefused() }, listWithFields)).fieldsRefusal, undefined);
+  // unknown_fields that is no list
+  const notList = fieldsRefused();
+  notList.error.unknown_fields = 'story';
+  assert.equal((await thrown({ status: 422, body: notList }, listWithFields)).fieldsRefusal, undefined);
+});
+
+test('fieldsRefusal leaves out what is not in shape, and answers empty for a key the server left out', async () => {
+  const odd = fieldsRefused();
+  odd.error.unknown_fields = ['story', 7, null];
+  odd.error.types_with_field = { story: ['narrative', 3], narrator: 'narrative' };
+  odd.error.allowed_fields = ['id', {}, 'name'];
+  assert.deepEqual((await thrown({ status: 422, body: odd }, listWithFields)).fieldsRefusal, {
+    unknown_fields: ['story'],
+    types_with_field: { story: ['narrative'] },
+    allowed_fields: ['id', 'name'],
+  });
+  const thin = fieldsRefused();
+  delete thin.error.types_with_field;
+  delete thin.error.allowed_fields;
+  assert.deepEqual((await thrown({ status: 422, body: thin }, listWithFields)).fieldsRefusal, {
+    unknown_fields: ['story', 'hidden', 'narrator', 'nonsuch'], types_with_field: {}, allowed_fields: [],
+  });
+  const list = fieldsRefused();
+  list.error.types_with_field = [['story', ['narrative']]];
+  assert.deepEqual((await thrown({ status: 422, body: list }, listWithFields)).fieldsRefusal.types_with_field, {});
+});
+
 // -- If-Match: the PATCH precondition ------------------------------------------
 
 const FIX_412 = {
