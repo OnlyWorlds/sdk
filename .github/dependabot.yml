@@ -1,6 +1,8 @@
 # Keeps the actions the workflows use and the packages the build and the tests install current: one grouped
 # pull request a week for each, read and merged by a maintainer. The npm group moves package-lock.json, which
-# CI and the release install from exactly (npm ci).
+# CI and the release install from exactly (npm ci). It holds minor and patch updates only: a new major of the
+# build's own tools (the bundler, TypeScript) changes what is published, so each arrives as a pull request of
+# its own and is taken as work, never as a bump.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -17,3 +19,4 @@ updates:
     groups:
       npm:
         patterns: ['*']
+        update-types: [minor, patch]
