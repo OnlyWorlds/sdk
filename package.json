@@ -60,7 +60,7 @@
     "url": "https://github.com/OnlyWorlds/sdk/issues"
   },
   "devDependencies": {
-    "happy-dom": "^20.14.6",
+    "happy-dom": "^21.0.4",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   },
