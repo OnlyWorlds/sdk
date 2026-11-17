@@ -47,6 +47,27 @@ test('signInWithOnlyWorlds keeps the record under the client id and builds the a
   await assert.rejects(client.signInWithOnlyWorlds({ clientId: 'atlas', redirectUri: 'https://atlas.onlyworlds.com/cb', navigate: false }), /storage/);
 });
 
+test('with no Web Crypto global (Node 18 started without its flag) the sign-in refuses by name: nothing stored, nothing opened', async () => {
+  const desc = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
+  Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true, writable: true });
+  try {
+    const client = new OwV2Client({ fetch: async () => { throw new Error('no fetch expected'); } });
+    const storage = memory();
+    const gone = [];
+    await assert.rejects(
+      client.signInWithOnlyWorlds({ clientId: 'atlas', redirectUri: 'https://atlas.onlyworlds.com/signin/callback', storage, navigate: (u) => gone.push(u) }),
+      (e) => e instanceof TypeError && /Web Crypto/.test(e.message),
+    );
+    assert.equal(storage.map.size, 0);
+    assert.deepEqual(gone, []);
+    await assert.rejects(pkceChallenge('dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk'), /Web Crypto/);
+  } finally {
+    if (desc) Object.defineProperty(globalThis, 'crypto', desc);
+    else delete globalThis.crypto;
+  }
+  assert.notEqual(globalThis.crypto, undefined);
+});
+
 async function begun(storage) {
   const client = new OwV2Client({ fetch: async () => { throw new Error('no fetch expected'); } });
   const { state } = await client.signInWithOnlyWorlds({

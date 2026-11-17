@@ -40,7 +40,9 @@ server the routes 404; the SDK annotates that 404 so it doesn't read as "no toke
 ## Packaging
 
 ESM-only (`"type": "module"`, sealed `exports` map). Every current bundler and Node >= 18
-handles this natively. CJS consumers: stay on 3.x, migrate your project to ESM, or use the
+handles this natively. On Node 18, Sign in with OnlyWorlds needs Node started with
+`--experimental-global-webcrypto` (Web Crypto is a global from Node 19 on); without it the
+sign-in refuses with a `TypeError` that says so. CJS consumers: stay on 3.x, migrate your project to ESM, or use the
 async escape hatch from inside CJS:
 
 ```js

@@ -56,7 +56,12 @@ jobs:
       - run: node scripts/public-words.mjs
       # `npm test` runs pretest (tsup build) then node --test against the
       # compiled dist bundle — the same artifact npm publish ships.
+      # Node 18 has Web Crypto as a global only behind a flag (it is one from Node 19 on), and
+      # Sign in with OnlyWorlds needs it, so the 18 leg runs with the flag a Node 18 caller of the
+      # sign-in would set. Without it the sign-in refuses by name: a test holds that on every leg.
       - run: npm test
+        env:
+          NODE_OPTIONS: ${{ matrix.node-version == 18 && '--experimental-global-webcrypto' || '' }}
 
   live:
     # A few writes to the production practice world (its key and PIN published on the docs, reset

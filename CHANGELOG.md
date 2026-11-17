@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Tests
+
+- **Node 18 is tested.** `package.json` admits Node 18 and later, and the suite ran on 20 and 22 only. It now runs on 18 as well, with one flag: Sign in with OnlyWorlds needs Web Crypto as a global, which Node has from 19 on and Node 18 only when started with `--experimental-global-webcrypto`. Without it `signInWithOnlyWorlds` and `pkceChallenge` refuse with a `TypeError` that names Web Crypto, storing and opening nothing (a new test holds that on every Node), and the rest of the package runs.
+
 ## [4.178.0] - 2026-11-17
 
 ### Added
