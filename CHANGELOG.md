@@ -3,9 +3,16 @@
 All notable changes to `@onlyworlds/sdk`. Maintained from 3.1.0 onward;
 earlier history lives in git log only.
 
-## [Unreleased]
+## [4.178.1] - 2026-11-17
+
+### Fixed
+
+- **Installing the package into a plain JavaScript project no longer installs TypeScript.** TypeScript was a required peer, so npm placed the newest compiler beside the package in every project, used or not: two of the four packages a first `npm install @onlyworlds/sdk` added. It is an optional peer now: a TypeScript project brings its own (4.5 or later, as before) and a JavaScript project gets the package and `fflate`, nothing else.
+- **`@onlyworlds/sdk/waymark` has types in a project on the older module resolution.** With `moduleResolution` set to `node` (or `node10`), which does not read a package's `exports`, the import answered TS2307, "Cannot find module", while the package root's types were found. The package now carries a `typesVersions` entry for the subpath. Projects on `node16`, `nodenext` or `bundler` were not affected and read the same files as before. Read with TypeScript 4.5, 4.7, 5.0, 5.9, 6.0 and 7.0 against the packed build.
 
 ### Tests
+
+- **What a TypeScript project is handed is compiled, under each module resolution.** A new test type-checks a consumer of the built package's root and `/waymark` subpath on `node`, `node16` and `bundler`, and holds every typed subpath of `exports` to its `typesVersions` entry and the peer to optional.
 
 - **Node 18 is tested.** `package.json` admits Node 18 and later, and the suite ran on 20 and 22 only. It now runs on 18 as well, with one flag: Sign in with OnlyWorlds needs Web Crypto as a global, which Node has from 19 on and Node 18 only when started with `--experimental-global-webcrypto`. Without it `signInWithOnlyWorlds` and `pkceChallenge` refuse with a `TypeError` that names Web Crypto, storing and opening nothing (a new test holds that on every Node), and the rest of the package runs.
 - **Node 24 is tested**, beside 18, 20 and 22.
