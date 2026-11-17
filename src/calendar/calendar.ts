@@ -243,8 +243,8 @@ export function readCalendarConfig(value: unknown): CalendarConfig | null {
   // A day placed after a month the year does not have, past the last or below the first, has
   // no position, and a reader never invents one: the calendar is unreadable (the profile,
   // serial 89; the free week threw here). With no months, after_month names a place between
-  // months that is not there: any intercalary day is unreadable, after_month 0 included (ruled
-  // for serial 90, ahead of its fixture).
+  // months that is not there: any intercalary day is unreadable, after_month 0 included (the
+  // profile, serial 90).
   if (!months && cfg.intercalary != null && cfg.intercalary.length > 0) return null;
   const monthCount = months ? months.names.length : 0;
   if (cfg.intercalary?.some((i) => i.after_month < 0 || i.after_month > monthCount)) return null;
