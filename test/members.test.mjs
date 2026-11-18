@@ -75,11 +75,11 @@ test('the published types: OwFrontDoor\'s eight keys in the document\'s order, O
   assert.match(block('OwFrontDoorCharter'), /\btype: 'law';/);
   assert.deepEqual(keys(block('OwFrontDoorSkill')), ['type', 'id']);
   assert.match(block('OwFrontDoorSkill'), /\btype: 'object';/);
-  assert.match(all, /export \{[^}]*\bOwFrontDoorCharter\b/);
-  assert.match(all, /export \{[^}]*\bOwFrontDoorSkill\b/);
+  assert.match(all, /export (?:type )?\{[^}]*\bOwFrontDoorCharter\b/);
+  assert.match(all, /export (?:type )?\{[^}]*\bOwFrontDoorSkill\b/);
   assert.deepEqual(keys(block('OwMySeat')), ['id', 'kind', 'name', 'character']);
   assert.match(block('OwMySeat'), /\bkind: 'agent' \| 'player';/);
-  assert.match(all, /export \{[^}]*\bOwMySeat\b/);
+  assert.match(all, /export (?:type )?\{[^}]*\bOwMySeat\b/);
 });
 
 test('client.members: GET /members, the rows unwrapped from { data }', async () => {

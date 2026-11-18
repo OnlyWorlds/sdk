@@ -5,7 +5,8 @@
  * and `import { type OwWorldKeyRow }` failed to compile until 4.134.1.
  *
  * Reads dist/*.d.ts as built (pretest builds): each declared interface and type alias against the
- * entry's own `export { ... }` list.
+ * entry's own export lists: `export { ... }`, and `export type { ... }` where the bundler writes the types
+ * apart (tsup 9 does; tsup 8 marked each `type` inside the one list).
  */
 
 import test from 'node:test';
@@ -40,7 +41,7 @@ for (const entry of entries) {
     const text = readFileSync(new URL(entry, DIST), 'utf8');
     const declared = new Set([...text.matchAll(/^(?:declare )?(?:interface|type) ([A-Za-z_$][\w$]*)/gm)].map((m) => m[1]));
     const exported = new Set();
-    for (const m of text.matchAll(/^export \{([^}]*)\}/gm)) {
+    for (const m of text.matchAll(/^export (?:type )?\{([^}]*)\}/gm)) {
       for (const part of m[1].split(',')) {
         const name = part.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0];
         if (name) exported.add(name);
