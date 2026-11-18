@@ -40,8 +40,22 @@ export function isWhiteSpaceAt(text: string, i: number): boolean {
   return i >= 0 && i < text.length && WHITE_SPACE.has(text.charCodeAt(i));
 }
 
-/** Trimmed, then simple-case-folded: "trimmed and without regard to case", defined once. Module-internal. */
+/** Trimmed, then simple-case-folded: "trimmed and without regard to case", defined once. Module-internal (exported as `trimAndFold`, which checks its argument). */
 export const fold = (text: string): string => simpleCaseFold(trimWhiteSpace(text));
+
+/**
+ * A text trimmed and without regard to case, as the profiles define it once (room.md): Unicode's White_Space removed at
+ * both ends, then simple case folding by Unicode 15.1's table. JavaScript's `trim()` is not that trim (it also strips a byte
+ * order mark, which stays) and `toLowerCase()` is not that fold (it leaves the long s `ſ`, which folds to `s`). Two
+ * values match when their folds are equal; order folded names with `byCodePoint`. The fold is for comparing, never for
+ * showing or storing. A value that is not a string is refused with a TypeError.
+ */
+export function trimAndFold(text: string): string {
+  if (typeof text !== 'string') {
+    throw new TypeError(`trimAndFold takes a string, not ${text === null ? 'null' : Array.isArray(text) ? 'an array' : typeof text}`);
+  }
+  return fold(text);
+}
 
 /**
  * A mark read by presence (room.md and charter.md, serial 83): it counts when its value is not null; a

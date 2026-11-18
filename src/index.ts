@@ -138,6 +138,9 @@ export {
 } from './world-file';
 export { nfc } from './nfc';
 export { simpleCaseFold } from './case-fold';
+// Names compared as the profiles compare them: trimmed and without regard to case, ordered by code point
+export { trimAndFold } from './room';
+export { byCodePoint } from './message';
 export type {
   OwReadWorldFile, OwReadWorldFileOptions, OwWorldFileEntry, OwWorldFileReason, OwWriteWorldFileOptions, OwWriteWorldFileReport,
 } from './world-file';

@@ -181,7 +181,13 @@ export function compareInstants(a: OwInstant | null, b: OwInstant | null): numbe
 /** Module-internal: not in the package's exports. */
 export const compareKeys = (a: [number, number], b: [number, number]): number => a[0] - b[0] || a[1] - b[1];
 
-/** Strings by code point, as the Python package compares them (never UTF-16 units, never a locale). Module-internal (the lens, record, charter, graph and landing readers order by it too): not in the package's exports. */
+/**
+ * Two strings compared by code point, the order every profile names (never UTF-16 units, which put a letter beyond U+FFFF
+ * before U+FF5A, and never a locale's collation): negative when `a` comes first, positive when `b` does, 0 when equal. A
+ * comparator for `Array.prototype.sort`; Python's own string order is the same. For names as the profiles order them,
+ * compare their folds and break a tie by id: `byCodePoint(trimAndFold(x.name), trimAndFold(y.name)) || byCodePoint(x.id, y.id)`.
+ * The lens, record, charter, graph and landing readers order by it.
+ */
 export function byCodePoint(a: string, b: string): number {
   const x = Array.from(a);
   const y = Array.from(b);

@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.180.0] - 2026-11-18
+
+### Added
+
+- **`trimAndFold(text)`**: a text trimmed and without regard to case, as the profiles define it once. It trims Unicode's White_Space set at both ends (U+0085 and the ideographic space go, a byte order mark stays), then applies simple case folding by Unicode 15.1's table (the long s folds to s, the sharp s stays). It is the fold the room, reading-aid and names readers already match by. JavaScript's `trim()` and `toLowerCase()` are neither. A value that is not a string is refused with a TypeError.
+- **`byCodePoint(a, b)`**: two strings compared by code point, never by UTF-16 unit (which puts a letter beyond U+FFFF before U+FF5A) and never by a locale's collation. It is a comparator for `sort` and is the order the profile readers already use. Names as the profiles order them: `byCodePoint(trimAndFold(x.name), trimAndFold(y.name)) || byCodePoint(x.id, y.id)`.
+- Tests: both functions at the places where a language's own trim, lower-casing or string order answers differently.
+
 ## [4.179.1] - 2026-11-17
 
 ### Changed
