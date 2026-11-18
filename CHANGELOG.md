@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+
+- **Built with tsup 9** (was 8). The JavaScript is byte for byte the same. Each declaration file now lists the types it exports in their own `export type { … }` statement beside `export { … }`: the same names, read the same way by TypeScript 4.5 through 7.0. Building the package from source needs Node 22.18 or later; the package itself still runs on Node 18 and later, and CI now tests the one build on Node 18, 20, 22 and 24.
+
 ## [4.180.0] - 2026-11-18
 
 ### Added
