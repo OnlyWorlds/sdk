@@ -87,6 +87,33 @@ jobs:
         env:
           NODE_OPTIONS: ${{ matrix.node-version == 18 && '--experimental-global-webcrypto' || '' }}
 
+  types:
+    # The peer range (typescript >=4.5.0) is a promise to every TypeScript project, and the test job compiles
+    # a consumer only with the TypeScript this repo installs. Here the same consumer is compiled against the
+    # build's declarations by each version below, under each module resolution that version has. The first
+    # entry is the range's floor (test/types-resolution.test.mjs holds it there); 7.0 is npm's latest.
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        typescript: ['4.5', '4.7', '5.0', '6.0', '7.0']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - run: npm install --prefix "$RUNNER_TEMP/ts" --no-save --no-audit --no-fund "typescript@${{ matrix.typescript }}"
+      - run: node --test test/types-resolution.test.mjs
+        env:
+          OW_TSC_DIR: ${{ runner.temp }}/ts/node_modules/typescript
+          OW_TSC_EXPECT: ${{ matrix.typescript }}
+
   live:
     # A few writes to the production practice world (its key and PIN published on the docs, reset
     # every night), each deleted again, through the built package. Red here with the test job green

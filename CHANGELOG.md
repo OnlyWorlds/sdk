@@ -9,6 +9,10 @@ earlier history lives in git log only.
 
 - **Built with tsup 9** (was 8). The JavaScript is byte for byte the same. Each declaration file now lists the types it exports in their own `export type { … }` statement beside `export { … }`: the same names, read the same way by TypeScript 4.5 through 7.0. Building the package from source needs Node 22.18 or later; the package itself still runs on Node 18 and later, and CI now tests the one build on Node 18, 20, 22 and 24.
 
+### Added
+
+- Tests: CI compiles a consumer file against the built declarations with TypeScript 4.5, 4.7, 5.0, 6.0 and 7.0, under each module resolution each version has; the peer range's floor (4.5) is the first, and a test holds it there. Before, only the TypeScript this repository installs was run.
+
 ## [4.180.0] - 2026-11-18
 
 ### Added

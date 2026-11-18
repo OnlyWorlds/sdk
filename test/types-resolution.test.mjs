@@ -6,8 +6,10 @@
  * that map the root's types are found and `@onlyworlds/sdk/waymark` is not.
  *
  * Runs the TypeScript the repo installs, against package.json and dist/*.d.ts copied into a scratch
- * node_modules, so nothing is resolved through the repo itself. Measured once by hand against TypeScript
- * 4.5, 4.7, 5.0, 5.9, 6.0 and 7.0 from npm (2026-11-17); this test holds the one installed.
+ * node_modules, so nothing is resolved through the repo itself. With OW_TSC_DIR (a `typescript` package
+ * folder) and OW_TSC_EXPECT (the version asked for) it runs that TypeScript instead: CI's `types` job runs
+ * it so on each version in its matrix, the peer range's floor first, and a test below holds that first entry
+ * to the floor. A resolution a version does not have is skipped there by name and runs on the others.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -19,8 +21,13 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-const TSC = join(ROOT, 'node_modules', 'typescript', 'bin', 'tsc');
-const TS_VERSION = JSON.parse(readFileSync(join(ROOT, 'node_modules', 'typescript', 'package.json'), 'utf8')).version;
+const TS_DIR = process.env.OW_TSC_DIR || join(ROOT, 'node_modules', 'typescript');
+const TSC = join(TS_DIR, 'bin', 'tsc');
+const TS_VERSION = JSON.parse(readFileSync(join(TS_DIR, 'package.json'), 'utf8')).version;
+const [TS_MAJOR, TS_MINOR] = TS_VERSION.split('.').map(Number);
+const tsAtLeast = (major, minor) => TS_MAJOR > major || (TS_MAJOR === major && TS_MINOR >= minor);
+// The es2022 lib arrived in TypeScript 4.6; the floor, 4.5, reads the consumer with es2021's.
+const LIB = tsAtLeast(4, 6) ? 'es2022,dom' : 'es2021,dom';
 
 // Every subpath the package gives types for, read from its own exports.
 const typed = Object.entries(pkg.exports)
@@ -54,7 +61,7 @@ function check(resolution, module) {
     // package.json is CommonJS, and the compiler rightly refuses to import the package from it.
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'consumer', private: true, type: 'module' }));
     writeFileSync(join(dir, 'use.ts'), CONSUMER);
-    const r = spawnSync(process.execPath, [TSC, '--noEmit', '--strict', '--target', 'es2020', '--lib', 'es2022,dom',
+    const r = spawnSync(process.execPath, [TSC, '--noEmit', '--strict', '--target', 'es2020', '--lib', LIB,
       '--skipLibCheck', 'false', '--module', module, '--moduleResolution', resolution, 'use.ts'], { cwd: dir, encoding: 'utf8', timeout: 120000 });
     return { code: r.status, out: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim() };
   } finally {
@@ -72,15 +79,37 @@ test('every subpath with types is in typesVersions, naming the same file as expo
     'typesVersions["*"] holds each typed subpath of exports and nothing else: the older resolution reads only this map');
 });
 
-for (const [resolution, module] of [['node', 'esnext'], ['node16', 'node16'], ['bundler', 'esnext']]) {
-  test(`a project on moduleResolution ${resolution} is given the root's and the waymark subpath's types (TypeScript ${TS_VERSION})`, () => {
+// Which resolutions this TypeScript has: node16 from 4.7, bundler from 5.0; TypeScript 6 deprecates the older
+// `node` (an error without --ignoreDeprecations) and 7 removes it, so the map above is for the versions before 6.
+const RESOLUTIONS = [
+  ['node', 'esnext', tsAtLeast(6, 0) ? `TypeScript ${TS_VERSION} has no moduleResolution node` : false],
+  ['node16', 'node16', tsAtLeast(4, 7) ? false : `TypeScript ${TS_VERSION} has no moduleResolution node16`],
+  ['bundler', 'esnext', tsAtLeast(5, 0) ? false : `TypeScript ${TS_VERSION} has no moduleResolution bundler`],
+];
+
+for (const [resolution, module, skip] of RESOLUTIONS) {
+  test(`a project on moduleResolution ${resolution} is given the root's and the waymark subpath's types (TypeScript ${TS_VERSION})`, { skip }, () => {
     const r = check(resolution, module);
-    // TypeScript 6 deprecates the older resolution and 7 removes it: this leg then says so by its own error,
-    // and the map above stays for the projects on the TypeScript versions that still have it.
     assert.equal(r.out, '', `tsc --moduleResolution ${resolution} on a consumer of the built package`);
     assert.equal(r.code, 0);
   });
 }
+
+test('the TypeScript run is the one asked for', { skip: process.env.OW_TSC_DIR ? false : 'the installed TypeScript' }, () => {
+  const want = process.env.OW_TSC_EXPECT;
+  assert.ok(want, 'OW_TSC_DIR is set: OW_TSC_EXPECT names the version it should hold');
+  assert.ok(TS_VERSION === want || TS_VERSION.startsWith(`${want}.`), `asked for ${want}, ran ${TS_VERSION}`);
+});
+
+test("CI's types job compiles against the peer range's floor first", () => {
+  const floor = pkg.peerDependencies?.typescript?.match(/^>=(\d+\.\d+)\.0$/)?.[1];
+  assert.ok(floor, `the peer range is a floor written >=X.Y.0 (it reads ${pkg.peerDependencies?.typescript})`);
+  const ci = readFileSync(join(ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
+  const list = ci.match(/^\s+typescript: \[([^\]]*)\]/m)?.[1];
+  assert.ok(list, 'ci.yml has a types job with a typescript matrix');
+  const versions = list.split(',').map((v) => v.trim().replace(/^['"]|['"]$/g, ''));
+  assert.equal(versions[0], floor, 'the first version in the matrix is the floor the peer range states');
+});
 
 test('TypeScript is a peer a project may leave out: installing the package into plain JavaScript brings no compiler', () => {
   assert.deepEqual(Object.keys(pkg.peerDependencies ?? {}), ['typescript']);
