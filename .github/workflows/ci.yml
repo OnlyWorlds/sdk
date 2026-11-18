@@ -18,7 +18,26 @@ jobs:
         env:
           RANGE: ${{ github.event_name == 'pull_request' && format('{0}..{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || (github.event.before && !startsWith(github.event.before, '0000000') && format('{0}..{1}', github.event.before, github.sha)) || github.sha }}
 
+  build:
+    # The build tool (tsup 9) runs only on Node 22.18 or later, while the package runs on Node 18 and
+    # later. So the package is built once, here, on Node 22 as the release workflow builds it, and every
+    # leg of the test matrix runs that one dist/: the artifact npm publishes, on each runtime it admits.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
   test:
+    needs: build
     # ⚑ This job had NEVER passed. Ten runs, ten failures, from the day the "CI
     # gate" was added (2026-07-18) until 2026-07-28 — and nobody noticed,
     # because it fails identically every time and the failure was never opened.
@@ -54,12 +73,17 @@ jobs:
       - run: npm ci
       # Published text names no one inside the team and points at no internal room or tracker.
       - run: node scripts/public-words.mjs
-      # `npm test` runs pretest (tsup build) then node --test against the
-      # compiled dist bundle — the same artifact npm publish ships.
+      # The build job's dist/, the same artifact npm publish ships. `npm test` would run pretest (the
+      # tsup build) first, which the Node 18 and 20 legs cannot run, so the leg calls the runner itself:
+      # `node --test`, the package's own test script.
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
       # Node 18 has Web Crypto as a global only behind a flag (it is one from Node 19 on), and
       # Sign in with OnlyWorlds needs it, so the 18 leg runs with the flag a Node 18 caller of the
       # sign-in would set. Without it the sign-in refuses by name: a test holds that on every leg.
-      - run: npm test
+      - run: node --test
         env:
           NODE_OPTIONS: ${{ matrix.node-version == 18 && '--experimental-global-webcrypto' || '' }}
 
