@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.181.0] - 2026-11-19
+
 ### Changed
 
 - **The schema pin moves to `v0.34.1-dist.136`** (serials 135 and 136; canonical 00.34.01 unchanged, no schema file moved, no generated type changed). Serial 135 adds the talk on an Object or a Construct to the room and report pages and the design state to the charter page, each with a new fixture list, and rules that a Charter the hidden mark keeps from a reader is not that reader's (`charterOf` already read it so: no case moved). Serial 136 gives the packet page a fourth work item state, `standing` (never done, never open work), an optional asker key `x_packet_from`, and the page's first fixture, read by the new packet readers below; the report page says a report sets `done` only on open work, never on a `standing` work item.
