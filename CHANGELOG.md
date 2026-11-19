@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+
+- **`worldGraph` reads a co-builder as a keeper** (schema-dist serial 140). The flags `hidden` and `proposed` may be asked by a co-builder, and by the owner reading `as` one, where they were the owner's alone; a co-builder's graph without a lens is answered as the owner's is on the same input, the hidden and proposed elements it leaves out counted in `cut` and `edgesCut`. `not_visible` and `anchor_not_visible` stay the owner's, and a contributor, a guest and the public reader answer as before. A refused flag's message now says it is a keeper's.
+
 ## [4.183.0] - 2026-11-19
 
 ### Added

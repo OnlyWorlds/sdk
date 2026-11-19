@@ -71,8 +71,14 @@ function invariants(g, c) {
     }
   }
   if (c.reader.rung !== 'owner') {
-    for (const k of ['hidden', 'proposed', 'not_visible', 'anchor_not_visible']) {
+    for (const k of ['not_visible', 'anchor_not_visible']) {
       assert.ok(!(k in g.cut) && !(k in g.edgesCut), `${c.name}: a reader that is not the owner has no count of ${k}`);
+    }
+    // The hidden and proposed counts are a keeper's (the owner or a co-builder; serial 140).
+    if (c.reader.rung !== 'co-builder') {
+      for (const k of ['hidden', 'proposed']) {
+        assert.ok(!(k in g.cut) && !(k in g.edgesCut), `${c.name}: a reader below a keeper has no count of ${k}`);
+      }
     }
   }
   const opts = optionsOf(c);
@@ -160,8 +166,11 @@ test('the fixture\'s graph tables, read back through the reader: flags, owner-on
     const opt = { [KEY[f] ?? f]: true };
     assert.doesNotThrow(() => worldGraph(empty, { rung: 'owner' }, opt), f);
     const asked = () => worldGraph(empty, { rung: 'contributor' }, opt);
-    if (doc.owner_only_flags.includes(f)) assert.throws(asked, /owner's alone/, f);
+    if (doc.owner_only_flags.includes(f)) assert.throws(asked, /a keeper's alone/, f);
     else assert.doesNotThrow(asked, f);
+    // owner_only_flags keeps its name; since serial 140 a co-builder may ask them too.
+    assert.doesNotThrow(() => worldGraph(empty, { rung: 'co-builder' }, opt), f);
+    assert.doesNotThrow(() => worldGraph(empty, { rung: 'owner', as: { rung: 'co-builder' } }, opt), f);
     assert.throws(() => worldGraph(empty, { rung: 'public' }, opt), TypeError, f);
   }
   const reasons = new Set(doc.edges_cut_reasons);
@@ -179,8 +188,8 @@ test('a refused flag is refused before anything is read', () => {
   Object.defineProperty(elements, 0, { get() { throw new Error('read'); }, enumerable: true });
   elements.length = 1;
   const world = { elements };
-  assert.throws(() => worldGraph(world, { rung: 'contributor' }, { hidden: true }), /hidden is the owner's alone/);
-  assert.throws(() => worldGraph(world, { rung: 'guest', whole: [] }, { proposed: true }), /proposed is the owner's alone/);
+  assert.throws(() => worldGraph(world, { rung: 'contributor' }, { hidden: true }), /hidden is a keeper's alone/);
+  assert.throws(() => worldGraph(world, { rung: 'guest', whole: [] }, { proposed: true }), /proposed is a keeper's alone/);
   assert.throws(() => worldGraph(world, { rung: 'public' }, { rooms: true }), /public reader takes no flag; it asked rooms/);
   assert.throws(() => worldGraph(world, { rung: 'public' }, { mapSpace: true }), /it asked mapSpace/);
   assert.throws(() => worldGraph(world, { rung: 'public' }, { readingAids: true }), /it asked readingAids/);

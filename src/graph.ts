@@ -23,9 +23,9 @@ export interface OwGraphOptions {
   clock?: string | null;
   /** Bring back room elements. Refused for a public reader. */
   rooms?: boolean | null;
-  /** Bring back hidden elements. The owner's alone: refused from any other rung. */
+  /** Bring back hidden elements. A keeper's alone (the owner or a co-builder): refused from any other rung. */
   hidden?: boolean | null;
-  /** Bring back elements written as proposed. The owner's alone: refused from any other rung. */
+  /** Bring back elements written as proposed. A keeper's alone (the owner or a co-builder): refused from any other rung. */
   proposed?: boolean | null;
   /** Bring back map space: Maps, Pins and Markers (a Zone is a node by default). Refused for a public reader. */
   mapSpace?: boolean | null;
@@ -77,9 +77,9 @@ export interface OwWorldGraph {
   nodes: OwGraphNode[];
   /** The edges, by source id, then field name (both in code point order), then index. */
   edges: OwGraphEdge[];
-  /** The links left out because their target is not a node, counted by the target's reason, in the reasons' one order. A reason with no count is absent; a reader that is not the owner never carries `anchor_not_visible`, `not_visible`, `hidden` or `proposed`, and every reader carries `outside_lens`. */
+  /** The links left out because their target is not a node, counted by the target's reason, in the reasons' one order. A reason with no count is absent; a reader that is not the owner never carries `anchor_not_visible` or `not_visible`, one below a keeper (the owner or a co-builder) never carries `hidden` or `proposed`, and every reader carries `outside_lens`. */
   edgesCut: Partial<Record<OwGraphCutReason, number>>;
-  /** With a lens, the lens's own cut, unchanged. Without one, the elements out by default, counted by reason (`room`, `hidden` and `proposed` for the owner only, `map_space`, `reading_aid`). */
+  /** With a lens, the lens's own cut, unchanged. Without one, the elements out by default, counted by reason (`room`, `hidden` and `proposed` for a keeper only, `map_space`, `reading_aid`). */
   cut: Partial<Record<OwGraphCutReason, number>>;
   /** With a lens whose `x_lens` the lens reader cannot read, the key it names (as `resolveLens`'s `unreadable`), and the graph is empty. Null otherwise, and always null without a lens. */
   unreadable: string | null;
@@ -93,7 +93,7 @@ export interface OwWorldGraph {
  */
 export const DECLARED_LINKS: readonly string[] = Object.freeze(['x_lens_leads_to', 'x_spine_depends_on']);
 const GRAPH_REASONS: readonly OwGraphCutReason[] = [...CUT_REASONS, 'room', 'hidden', 'proposed', 'map_space', 'reading_aid', 'outside_lens'];
-const GRAPH_OWNER_ONLY: ReadonlySet<string> = new Set([...OWNER_ONLY, 'hidden', 'proposed']);
+const GRAPH_KEEPER_ONLY: ReadonlySet<string> = new Set(['hidden', 'proposed']);
 
 type Body = Record<string, unknown>;
 /** The kinds out of an unlensed graph by default, each brought back by its flag. */
@@ -131,7 +131,7 @@ function flag(opts: Body, key: string): boolean {
  * nor cut (counted for every rung); one of the kinds out by default without a lens; and `not_visible` for one the
  * reader does not see. A link to an id that is not in the world is left out and not counted.
  *
- * `hidden` or `proposed` from a reader that is not the owner, or any flag from a public reader, is refused
+ * `hidden` or `proposed` from a reader below a keeper (the owner or a co-builder), or any flag from a public reader, is refused
  * by name before anything is read; of several, the first in the order `hidden`, `proposed`, `rooms`, `mapSpace`,
  * `readingAids`. An owner reading `as` another reader is judged by that reader's rung.
  */
@@ -151,7 +151,9 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
   };
   const seenRung = reader.rung === 'owner' && reader.as != null ? reader.as.rung : reader.rung;
   for (const [kind, key] of [['hidden', 'hidden'], ['proposed', 'proposed']] as const) {
-    if (flags[kind] && seenRung !== 'owner') throw new TypeError(`worldGraph: ${key} is the owner's alone; a ${seenRung} reader may not ask it.`);
+    if (flags[kind] && seenRung !== 'owner' && seenRung !== 'co-builder') {
+      throw new TypeError(`worldGraph: ${key} is a keeper's alone (the owner or a co-builder); a ${seenRung} reader may not ask it.`);
+    }
   }
   if (seenRung === 'public') {
     for (const [kind, key] of [['room', 'rooms'], ['map_space', 'mapSpace'], ['reading_aid', 'readingAids']] as const) {
@@ -163,7 +165,10 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
   if (lens !== null && typeof lens !== 'string' && !isBody(lens)) throw new TypeError('worldGraph: lens is a lens body or its id.');
 
   const r = new Reading(world as Body, reader, asOf);
-  const seenOwner = r.seenRung === 'owner';
+  // A keeper (the owner, or a co-builder; serial 140) is served the bodies as stored and its view holds the proposed.
+  const seenKeeper = r.seenRung === 'owner' || r.seenRung === 'co-builder';
+  // The hidden and proposed counts are a keeper's, and the counts of a reader that keeps the owner's (the owner `as`).
+  const keeperCounts = seenKeeper || r.owner;
   const kinds = (id: string): Kind[] => {
     const out: Kind[] = [];
     if (r.room.has(id)) out.push('room');
@@ -174,8 +179,8 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
     return out;
   };
   const brought = (k: Kind): boolean => flags[k];
-  // What the reader could see as a node: its view, and for the owner what is written as proposed too.
-  const candidate = (id: string): boolean => r.view.has(id) || (seenOwner && r.proposed.has(id));
+  // What the reader could see as a node: its view, and for a keeper what is written as proposed too.
+  const candidate = (id: string): boolean => r.view.has(id) || (seenKeeper && r.proposed.has(id));
 
   const nodeIds = new Set<string>();
   let cut: Partial<Record<OwGraphCutReason, number>>;
@@ -196,7 +201,7 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
       if (why === null) nodeIds.add(id);
       else counts.set(why, (counts.get(why) ?? 0) + 1);
     }
-    cut = tally(counts, r.owner);
+    cut = tally(counts, r.owner, keeperCounts);
     reasonOf = id => (candidate(id) ? outBy(id) : 'not_visible');
   }
 
@@ -243,8 +248,8 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
       for (let i = 0; i < list.length; i++) {
         const t = list[i];
         const typed = typeof t === 'string' && r.typeOf.get(t) === to;
-        if (typed && !read.has(t)) { read.add(t); visit(source, field, t, seenOwner ? i : served); }
-        if (seenOwner || (typed && r.linkable.has(t))) served++;
+        if (typed && !read.has(t)) { read.add(t); visit(source, field, t, seenKeeper ? i : served); }
+        if (seenKeeper || (typed && r.linkable.has(t))) served++;
       }
     }
     // A declared extension link is served as stored to every reader; an element it names again is read once,
@@ -261,14 +266,15 @@ export function worldGraph(world: OwLensWorld, reader: OwLensReader, options?: O
     }
   }
   edges.sort((a, b) => byCodePoint(a.source, b.source) || byCodePoint(a.field, b.field) || a.index - b.index);
-  return { nodes, edges, edgesCut: tally(cutEdges, r.owner), cut, unreadable };
+  return { nodes, edges, edgesCut: tally(cutEdges, r.owner, keeperCounts), cut, unreadable };
 }
 
-/** Counts in the reasons' one order, a reason with no count left out, and the owner's reasons kept for the owner. */
-function tally(counts: ReadonlyMap<OwGraphCutReason, number>, owner: boolean): Partial<Record<OwGraphCutReason, number>> {
+/** Counts in the reasons' one order, a reason with no count left out, the owner's reasons kept for the owner and the hidden and proposed counts for a keeper. */
+function tally(counts: ReadonlyMap<OwGraphCutReason, number>, owner: boolean, keeper: boolean): Partial<Record<OwGraphCutReason, number>> {
   const out: Partial<Record<OwGraphCutReason, number>> = {};
   for (const why of GRAPH_REASONS) {
-    if (GRAPH_OWNER_ONLY.has(why) && !owner) continue;
+    if (OWNER_ONLY.has(why) && !owner) continue;
+    if (GRAPH_KEEPER_ONLY.has(why) && !keeper) continue;
     const n = counts.get(why) ?? 0;
     if (n > 0) out[why] = n;
   }
