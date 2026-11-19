@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.183.0] - 2026-11-19
+
+### Added
+
+- **`carryOf(map, point, maps)`, the map-space profile's frame reading** (schema-dist serial 139, rules 13 and 14). A child Map says where it lies on the Map its `parent_map` names with `x_parent_frame`, a box `[x0, y0, x1, y1]` in the parent's pixels; `carryOf` carries a point on a Map up that chain, one level at a time by each level's own frame, and answers `{parent_frame, lint, points, stop}`: the Map's own frame as written or null, what is wrong with it (`no_parent`, `not_four_numbers`, `not_a_box`), the point on each Map it reaches, and why the walk ended (`top`, `dangling`, `cycle`, `no_frame`, `no_carry`). Its types are `OwCarryOf`, `OwCarryPoint`, `OwCarryStop` and `OwCarryLint`. `mapSpace` and `layoutOf` do not read the key.
+- **The schema pin moves to `v0.34.1-dist.139`** (canonical 00.34.01 unchanged, no schema file moved, no generated type changed): the map-space page's rules 13 and 14 and the fixture's 66 `frame_cases`, which `carryOf` answers as published; the map-space reading's own cases are unchanged.
+
 ## [4.182.0] - 2026-11-19
 
 ### Changed

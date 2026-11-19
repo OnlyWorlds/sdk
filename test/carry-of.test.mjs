@@ -56,7 +56,7 @@ function same(got, want, path) {
 
 test('the fixture holds the frame reading\'s cases', () => {
   assert.equal(doc.profile, 'map-space');
-  assert.equal(cases.length, 66, `the fixture holds ${cases.length} frame cases, the frame's serial has 66`);
+  assert.equal(cases.length, 66, `the fixture holds ${cases.length} frame cases, serial 139 has 66`);
   assert.equal(new Set(cases.map((c) => c.name)).size, cases.length, 'two frame cases share a name');
 });
 
