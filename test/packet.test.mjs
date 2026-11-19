@@ -39,10 +39,12 @@ for (const [i, c] of doc.state_cases.entries()) {
     for (const [item, ids] of Object.entries(want.elements ?? {})) {
       assert.deepEqual(got.elements[item].map((e) => e.id), ids, `${name}: elements of ${item}, in order`);
     }
-    // The one-item readers answer as the list reader does.
+    // The one-item readers answer as the list reader does. `states` keys only the work items, so an element given
+    // that is no work item has no key there and its one-item state is null (serial 138's case).
     for (const item of c.items) {
-      assert.equal(workStateOf(item), want.states[item.id], `${name}: workStateOf ${item.id}`);
-      assert.equal(isOpenWork(item), want.states[item.id] === 'open' || want.states[item.id] === 'taken', `${name}: isOpenWork ${item.id}`);
+      const state = Object.hasOwn(want.states, item.id) ? want.states[item.id] : null;
+      assert.equal(workStateOf(item), state, `${name}: workStateOf ${item.id}`);
+      assert.equal(isOpenWork(item), state === 'open' || state === 'taken', `${name}: isOpenWork ${item.id}`);
     }
   });
 }

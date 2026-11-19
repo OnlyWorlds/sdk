@@ -18,15 +18,18 @@ import { refuseUnknownOptions } from './options';
 /** A reader of a lens: the rung decides what of the world it sees. */
 export interface OwLensReader {
   /**
-   * `owner` (the whole world), `contributor` (the world less the hidden), `guest` (exactly the ids in
+   * `owner` (the whole world), `co-builder` (the whole world as the owner reads it, hidden elements included, and
+   * none of the owner's two counts: a keeper, as the charter profile names the role; serial 138), `contributor`
+   * (the world less the hidden, plus the hidden elements it made, listed
+   * in `whole`), `guest` (exactly the ids in
    * `whole`, and those in `known_of` as stubs, less a hidden one: hidden beats `known_of`) or `public`
    * (the world less the hidden and the room elements). A proposed element is in no reader's view, but below the public rung a served body keeps
    * a link to one the rung sees, and a lens's note keyed to it.
    */
-  rung: 'owner' | 'contributor' | 'guest' | 'public';
+  rung: 'owner' | 'co-builder' | 'contributor' | 'guest' | 'public';
   /** The reader's Character, for the mail rule; null or absent: no Character, no mail. */
   character?: string | null;
-  /** A guest's whole elements. */
+  /** A guest's whole elements; a contributor's, the hidden elements it made. */
   whole?: readonly string[] | null;
   /** A guest's known-of elements, served as stubs (the base and public fields, every other field unset: no links, no date); one under the hidden mark is not in its view at all. */
   known_of?: readonly string[] | null;
@@ -369,7 +372,8 @@ export class Reading {
     this.owner = reader.rung === 'owner';
     const seen = this.owner && reader.as != null ? reader.as : reader;
     this.seenRung = seen.rung;
-    this.stored = seen.rung === 'owner';
+    // A keeper (the owner, or a co-builder) is served the bodies as stored; the owner's two counts stay `owner`'s.
+    this.stored = seen.rung === 'owner' || seen.rung === 'co-builder';
     this.character = typeof seen.character === 'string' && seen.character !== '' ? seen.character : null;
     const listed = (v: unknown): Set<string> => new Set(Array.isArray(v) ? v.filter((i): i is string => typeof i === 'string') : []);
     const wholeIds = listed(seen.whole);
@@ -380,8 +384,10 @@ export class Reading {
       if (proposed) this.proposed.add(id);
       let sees: boolean;
       switch (seen.rung) {
-        case 'owner': sees = true; break;
-        case 'contributor': sees = !hidden.has(id); break;
+        case 'owner': case 'co-builder': sees = true; break;
+        // The hidden mark keeps an element from every reader but a keeper and the one who made it: a contributor's
+        // view is the world less the hidden, plus the hidden elements it made, listed in `whole` (serial 138).
+        case 'contributor': sees = !hidden.has(id) || wholeIds.has(id); break;
         case 'public': sees = !hidden.has(id) && !this.room.has(id) && !proposed; break;
         // Hidden beats known_of: the hidden mark comes off the known-of grant too, so a hidden element the guest
         // knows of and did not make is not in its view at all; its own creations come in whole.
@@ -449,7 +455,8 @@ export class Reading {
    * and the type's public fields kept, every other field of the type it holds at its unset value (`UNSET`; the
    * server's who and door null), no extension key, and `known_of: true`. A body of an element under the hidden
    * mark (the world's `hidden` list or its own `hidden`) carries `hidden: true`, and no other body a `hidden` key:
-   * only the owner's view holds a hidden element, and a guest's its own hidden creations, listed in `whole`.
+   * only the owner's view holds a hidden element, and a contributor's or a guest's its own hidden creations, listed
+   * in `whole`.
    */
   body(id: string): Body {
     let b = this.served.get(id);
@@ -820,10 +827,10 @@ function mailPart(r: Reading, mode: Mail, budget: number, clock: [number, number
 
 const NOTHING = (): OwLensReading => ({ kept: [], rows: [], cut: {}, notesIgnored: 0, mail: null, unreadable: null });
 
-/** Refuse a reader that is not an object with one of the four rungs (module-internal). */
+/** Refuse a reader that is not an object with one of the five rungs (module-internal). */
 export function checkReader(reader: unknown, where: string): asserts reader is OwLensReader {
-  if (!isBody(reader) || !['owner', 'contributor', 'guest', 'public'].includes(reader.rung as string)) {
-    throw new TypeError(`${where}: a reader is an object whose rung is owner, contributor, guest or public; got ${JSON.stringify(reader) ?? String(reader)}.`);
+  if (!isBody(reader) || !['owner', 'co-builder', 'contributor', 'guest', 'public'].includes(reader.rung as string)) {
+    throw new TypeError(`${where}: a reader is an object whose rung is owner, co-builder, contributor, guest or public; got ${JSON.stringify(reader) ?? String(reader)}.`);
   }
   if (reader.as !== undefined && reader.as !== null) checkReader(reader.as, `${where}.as`);
 }
