@@ -12,6 +12,11 @@ earlier history lives in git log only.
 ### Added
 
 - Tests: CI compiles a consumer file against the built declarations with TypeScript 4.5, 4.7, 5.0, 6.0 and 7.0, under each module resolution each version has; the peer range's floor (4.5) is the first, and a test holds it there. Before, only the TypeScript this repository installs was run.
+- Tests: every TypeScript example in the README is compiled against the built package (strict, `nodenext`), each block on its own, so a renamed method, an export or an option key the package no longer has fails before the README ships.
+
+### Fixed
+
+- README: two examples did not compile under `strict`. The lens example now stops when a world holds no lens (`find` can return `undefined`), and the Waymark example marks the `querySelector` result as present (`!`), since `mountWaymark` takes an element, never `null`.
 
 ## [4.180.0] - 2026-11-18
 

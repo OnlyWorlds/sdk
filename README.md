@@ -426,6 +426,7 @@ A lens is a saved way of reading a world: a Construct with supertype `Lens` (`is
 import { isLens, resolveLens } from '@onlyworlds/sdk';
 
 const lens = elements.find(isLens);
+if (!lens) throw new Error('this world holds no lens');
 const r = resolveLens({ elements, members, now: 1200 }, lens, { rung: 'contributor', character: me }, { asOf: 1194 });
 r.kept; r.rows; r.cut; // ids in order, rows as show makes them, e.g. { budget: 3, after_as_of: 1 }
 if (r.unreadable) console.warn(`x_lens.${r.unreadable} is outside the profile's table`);
@@ -496,7 +497,7 @@ A web page can draw the rows above for a person: the OnlyWorlds mark beside a wo
 import { mountWaymark } from '@onlyworlds/sdk/waymark';
 import '@onlyworlds/sdk/waymark.css'; // or <link rel="stylesheet"> to the file
 
-const dispose = mountWaymark(document.querySelector('h1.name'), {
+const dispose = mountWaymark(document.querySelector('h1.name')!, {
   world: { id: worldId, name: 'Moppetopia' },
   element,                 // the element's body as the API serves it; leave it out for the world's own fan-out
   reader: 'member',        // 'member', 'guest' or 'public'
