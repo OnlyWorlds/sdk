@@ -17,7 +17,7 @@ import { layoutByKind, layoutAround, unplacedByKind, unplacedAround, worldGraph,
 const bytes = readFileSync(new URL('../codegen/schema-dist/profiles/layout.fixture.json', import.meta.url));
 const fx = JSON.parse(bytes.toString('utf8'));
 const clone = (v) => JSON.parse(JSON.stringify(v));
-const FIXTURE_SHA = '6860a7654f1a92e3';
+const FIXTURE_SHA = '392b5b19b21d5beb';
 const AROUND_TOLERANCE = 1e-12;
 
 test('the fixture is the one both packages hold', () => {

@@ -152,7 +152,7 @@ test('reportThreadsOf is pure: the narratives are not moved', () => {
 
 test('the report fixture holds its talk_cases list', () => {
   assert.ok(Array.isArray(doc.talk_cases), 'the fixture holds no talk_cases list');
-  assert.equal(doc.talk_cases.length, 6, `the fixture holds ${doc.talk_cases.length} talk cases, serial 135 has 6`);
+  assert.equal(doc.talk_cases.length, 9, `the fixture holds ${doc.talk_cases.length} talk cases, serial 138 has 9`);
 });
 
 for (const [i, c] of (doc.talk_cases ?? []).entries()) {

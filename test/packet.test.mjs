@@ -24,8 +24,8 @@ const mapOfSets = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) =
 test('the fixture is the packet profile\'s, with its two lists', () => {
   assert.equal(doc.profile, 'packet');
   assert.ok(Array.isArray(doc.state_cases) && Array.isArray(doc.asker_cases), 'the fixture holds no state_cases or asker_cases list');
-  assert.equal(doc.state_cases.length, 10, `the fixture holds ${doc.state_cases.length} state cases, serial 136 has 10`);
-  assert.equal(doc.asker_cases.length, 13, `the fixture holds ${doc.asker_cases.length} asker cases, serial 136 has 13`);
+  assert.equal(doc.state_cases.length, 11, `the fixture holds ${doc.state_cases.length} state cases, serial 138 has 11`);
+  assert.equal(doc.asker_cases.length, 14, `the fixture holds ${doc.asker_cases.length} asker cases, serial 138 has 14`);
 });
 
 for (const [i, c] of doc.state_cases.entries()) {

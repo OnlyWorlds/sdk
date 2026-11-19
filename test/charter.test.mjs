@@ -103,7 +103,7 @@ const asSet = (list) => list.map((v) => JSON.stringify(v, Object.keys(v).sort())
 
 test('the charter fixture holds its design_cases list', () => {
   assert.ok(Array.isArray(doc.design_cases), 'the fixture holds no design_cases list');
-  assert.equal(doc.design_cases.length, 13, `the fixture holds ${doc.design_cases.length} design cases, serial 135 has 13`);
+  assert.equal(doc.design_cases.length, 16, `the fixture holds ${doc.design_cases.length} design cases, serial 138 has 16`);
 });
 
 for (const [i, c] of (doc.design_cases ?? []).entries()) {
