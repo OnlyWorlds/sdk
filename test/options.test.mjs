@@ -170,6 +170,9 @@ Object.assign(DATA, {
   'domainsOf#1': 'the reader, as charterOf takes it',
   'designPartsOf#0': 'the world snapshot, as charterOf takes it',
   'designPartsOf#1': 'the reader, as charterOf takes it',
+  'askerOf#1': 'the world the work item sits in: its Characters and other ids',
+  'workOf#1': 'the world the work items sit in: its Characters and other ids',
+  'workOf#2': 'the source world, in the same shape',
   'doorWhere#0': 'an entry of doorsOf, as doorsOf gives it',
 });
 

@@ -62,6 +62,10 @@ export type { OwInstant } from './message';
 // the talks a report is shown with (serial 135).
 export { reportThreadsOf, reportTalksOf, readReportLine, readReportLines } from './report';
 export type { OwReportThreads, OwReportGroup, OwReportLint, OwReportParentKind, OwReportLine, OwReportLineOptions } from './report';
+// The packet profile (schema-dist profiles/packet.md, serial 136): a work item's state, open work, who asked, and the
+// work items one reader is given read together.
+export { workStateOf, isOpenWork, askerOf, workOf } from './packet';
+export type { OwWorkState, OwWorkElement, OwWorkWorld, OwWorkLint, OwWork } from './packet';
 // The review profile (schema-dist profiles/review.md): an element written as proposed, as a reader that
 // shows a world shows the mark, and as a reader that hands a world on leaves it out.
 export { PROPOSED_MARK, proposedMarkOf, handsOnAsProposed } from './review';
