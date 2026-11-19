@@ -89,6 +89,22 @@ function hubsOf(id: string, r: Reading): OwReadingAidsHub[] {
 const NONE = (): OwReadingAids => ({ charter: null, guide: null, domains: [] });
 
 /**
+ * The one view the charter readers read: the world as `reader` sees it through the lens reader, the marked aids of a pair in
+ * that view, and the Charter `charterOf` selects (the newest marked Charter in the view, so one the hidden mark keeps from
+ * the reader is not that reader's); null for the public rung on a world that is not open, which reads nothing.
+ */
+function readAids(world: OwCharterWorld, reader: OwLensReader, fn: string): { r: Reading; law: string | null; seen: (pair: string) => string[] } | null {
+  if (!isBody(world) || !Array.isArray((world as Body).elements)) {
+    throw new TypeError(`${fn}: world is an object with an elements list.`);
+  }
+  checkReader(reader, `${fn}: reader`);
+  const r = new Reading(world as Body, reader, null);
+  if (r.seenRung === 'public' && (world as Body).open !== true) return null;
+  const seen = (pair: string): string[] => r.order.filter(id => r.view.has(id) && r.aid.get(id) === pair);
+  return { r, law: newest(seen('law/charter'), r), seen };
+}
+
+/**
  * A world's reading aids as `reader` sees it (schema-dist profiles/charter.md): `{charter, guide, domains}`,
  * the packet every front door shows first, in that order.
  *
@@ -111,16 +127,11 @@ const NONE = (): OwReadingAids => ({ charter: null, guide: null, domains: [] });
  * since a stub serves no extension field; what the packet shows of it is what the reader is served. Pure.
  */
 export function charterOf(world: OwCharterWorld, reader: OwLensReader): OwReadingAids {
-  if (!isBody(world) || !Array.isArray((world as Body).elements)) {
-    throw new TypeError('charterOf: world is an object with an elements list.');
-  }
-  checkReader(reader, 'charterOf: reader');
-  const r = new Reading(world as Body, reader, null);
-  if (r.seenRung === 'public' && (world as Body).open !== true) return NONE();
-  const seen = (pair: string): string[] => r.order.filter(id => r.view.has(id) && r.aid.get(id) === pair);
+  const read = readAids(world, reader, 'charterOf');
+  if (read === null) return NONE();
+  const { r, law, seen } = read;
   const out = NONE();
 
-  const law = newest(seen('law/charter'), r);
   if (law !== null) {
     const el = r.byId.get(law) as Body;
     const rules = el.x_checks_rules;
@@ -167,4 +178,45 @@ export function charterOf(world: OwCharterWorld, reader: OwLensReader): OwReadin
 /** The marked Domains alone, as `charterOf` lists them for the same reader. */
 export function domainsOf(world: OwCharterWorld, reader: OwLensReader): OwReadingAidsDomain[] {
   return charterOf(world, reader).domains;
+}
+
+/** A design part (charter.md, serial 135): an Object or a Construct whose `subtype` is a design state, and that state. */
+export interface OwDesignPart {
+  /** The type as the packet writes one, whatever spelling the element's type is stored in. */
+  type: 'object' | 'construct';
+  id: string;
+  /** The design state: the subtype trimmed and folded, whatever spelling it is stored in (`In Design ` is `in design`). */
+  state: 'in design' | 'locked';
+}
+
+/** The two design states, as the fold writes them. */
+const DESIGN_STATES: ReadonlySet<string> = new Set(['in design', 'locked']);
+
+/**
+ * The design parts `reader` reads in a world (schema-dist profiles/charter.md, serial 135): each Object or Construct the
+ * reader is served whole whose `subtype`, trimmed and compared without regard to case as the room profile defines it, is
+ * `in design` or `locked`, as `{type, id, state}`, in the world's order (the page orders no parts: compare as a set).
+ *
+ * Only where `charterOf` finds a Charter for the same reader: with none (no Charter, only one without the mark, only a
+ * proposed one, or one the hidden mark keeps from the reader), no element has a design state and the answer is `[]`,
+ * even where another reader of the same world reads parts. The state alone makes a part, whatever the supertype; no
+ * other subtype and no other type has one. A known-of stub has none, though it is served its subtype; what the reader
+ * sees (hidden and proposed elements, the rungs) is `charterOf`'s own view. Takes the same world and reader as
+ * `charterOf`. Pure.
+ */
+export function designPartsOf(world: OwCharterWorld, reader: OwLensReader): OwDesignPart[] {
+  const read = readAids(world, reader, 'designPartsOf');
+  if (read === null || read.law === null) return [];
+  const { r } = read;
+  const out: OwDesignPart[] = [];
+  for (const id of r.order) {
+    if (!r.view.has(id) || r.stubs.has(id)) continue;
+    const type = r.typeOf.get(id);
+    if (type !== 'object' && type !== 'construct') continue;
+    const subtype = r.body(id).subtype;
+    if (typeof subtype !== 'string') continue;
+    const state = fold(subtype);
+    if (DESIGN_STATES.has(state)) out.push({ type, id, state: state as OwDesignPart['state'] });
+  }
+  return out;
 }

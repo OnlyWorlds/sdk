@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { ROOM_PAIRS, reportThreadsOf } from '../dist/index.js';
+import { ROOM_PAIRS, reportTalksOf, reportThreadsOf } from '../dist/index.js';
 
 const FIXTURE = process.env.OW_REPORT_FIXTURE ?? fileURLToPath(new URL('../codegen/schema-dist/profiles/report.fixture.json', import.meta.url));
 assert.ok(existsSync(FIXTURE), `no report fixture at ${FIXTURE}`);
@@ -146,4 +146,54 @@ test('reportThreadsOf is pure: the narratives are not moved', () => {
   const before = JSON.stringify(c.narratives);
   reportThreadsOf(c.narratives);
   assert.equal(JSON.stringify(c.narratives), before);
+});
+
+// ---- The talks a report is shown with (report.md, serial 135): reportTalksOf ----
+
+test('the report fixture holds its talk_cases list', () => {
+  assert.ok(Array.isArray(doc.talk_cases), 'the fixture holds no talk_cases list');
+  assert.equal(doc.talk_cases.length, 6, `the fixture holds ${doc.talk_cases.length} talk cases, serial 135 has 6`);
+});
+
+for (const [i, c] of (doc.talk_cases ?? []).entries()) {
+  const name = typeof c?.name === 'string' ? c.name : `case ${i}`;
+  test(`report fixture, reportTalksOf: ${name}`, () => {
+    assert.ok(Array.isArray(c.talks), `${name}: no talks list`);
+    // The page compares talks as a set.
+    assert.deepEqual(asSet(reportTalksOf(c.report)), asSet(c.talks), `${name}: talks`);
+  });
+}
+
+// The cases below are the package's own: the fixture does not hold them, the page's rule implies them.
+const REPORT = (fields) => ({ id: 'r-1', type: 'narrative', supertype: 'Report', x_room_of: 'w', subtype: 'completed', ...fields });
+
+test('reportTalksOf (the package\'s own): each talk once, in first place, objects before constructs', () => {
+  assert.deepEqual(reportTalksOf(REPORT({ constructs: ['c', 'c'], objects: ['b', 'a', 'b'] })), [
+    { type: 'object', id: 'b' }, { type: 'object', id: 'a' }, { type: 'construct', id: 'c' },
+  ]);
+});
+
+test('reportTalksOf (the package\'s own): an id with a space left on it, and one in upper case, are read as written', () => {
+  assert.deepEqual(reportTalksOf(REPORT({ objects: ['ABC ', ' abc'] })), [{ type: 'object', id: 'ABC ' }, { type: 'object', id: ' abc' }]);
+});
+
+test('reportTalksOf (the package\'s own): a field that is no list names nothing, the other still read', () => {
+  for (const bad of ['abc', { id: 'abc' }, 7, null]) {
+    assert.deepEqual(reportTalksOf(REPORT({ objects: ['o'], constructs: bad })), [{ type: 'object', id: 'o' }], JSON.stringify(bad));
+  }
+});
+
+test('reportTalksOf (the package\'s own): the pair is trimmed and folded, the mark needed; a board entry, a line, a non-element answer []', () => {
+  assert.deepEqual(reportTalksOf(REPORT({ type: 'NARRATIVE ', supertype: ' report', objects: ['o'] })), [{ type: 'object', id: 'o' }]);
+  assert.deepEqual(reportTalksOf(REPORT({ x_room_of: null, objects: ['o'] })), []);
+  assert.deepEqual(reportTalksOf(REPORT({ supertype: 'Board', objects: ['o'] })), []);
+  assert.deepEqual(reportTalksOf(REPORT({ supertype: 'Message', objects: ['o'] })), []);
+  for (const bad of [null, undefined, 'report', 7, [REPORT({ objects: ['o'] })]]) assert.deepEqual(reportTalksOf(bad), [], String(bad));
+});
+
+test('reportTalksOf is pure: the report is not moved', () => {
+  const r = REPORT({ objects: ['o'], constructs: ['c'] });
+  const before = JSON.stringify(r);
+  reportTalksOf(r).push({ type: 'object', id: 'planted' });
+  assert.equal(JSON.stringify(r), before);
 });

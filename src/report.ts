@@ -1,10 +1,11 @@
 // The report profile (schema-dist profiles/report.md, rule 9, serial 120): reports grouped into threads by their
-// `parent_narrative`, read as written. A report is a Narrative with supertype `Report` and the room's mark; a board
+// `parent_narrative`, read as written; and the talks a report is shown with (serial 135), read by room.ts's reader. A report is a Narrative with supertype `Report` and the room's mark; a board
 // entry is a Narrative with supertype `Board` and the mark; both are room pairs, matched by room.ts's reader (the
 // trim, the fold and the mark by presence), never a second copy. A thread is ordered by `created_at` as the message
 // profile orders messages (message.ts). The fixture, profiles/report.fixture.json, is this file's own test.
 
-import { fold, isRoomElement, isWhiteSpaceAt, trimWhiteSpace } from './room';
+import { fold, isRoomElement, isWhiteSpaceAt, namedTalks, trimWhiteSpace } from './room';
+import type { OwTalk } from './room';
 import { inCreatedOrder } from './message';
 import { findOwLinks, type OwAddressReading } from './address';
 import { refuseUnknownOptions } from './options';
@@ -134,6 +135,22 @@ export function reportThreadsOf(narratives: readonly object[]): OwReportThreads 
     });
   }
   return { parents, groups, lints };
+}
+
+/**
+ * The talks a reader shows a report with (schema-dist profiles/report.md, serial 135): `{type: 'object', id}` for each id in
+ * the report's `objects` and `{type: 'construct', id}` for each in its `constructs`, its entries read as the room profile reads
+ * a line's (`talksOf`): an entry that is not a string, or is empty once trimmed of White_Space, names nothing, a field that is
+ * not a list names nothing, and every other entry is an id as written, untrimmed and with its case; each once, in first
+ * place, objects before constructs. A report is a Narrative with supertype `Report` and the room's mark `x_room_of`, both;
+ * any other Narrative (a Report without the mark, a line in the room, a board entry) answers `[]`.
+ *
+ * These fields hold every Object and Construct the report touched or changed, so the answer is every talk it is shown with,
+ * old reports included; none of them is named as the talk the report closed, which the report alone cannot tell. Pure.
+ */
+export function reportTalksOf(narrative: unknown): OwTalk[] {
+  if (!isBody(narrative) || roomKindOf(narrative) !== 'report') return [];
+  return namedTalks(narrative);
 }
 
 // ---- A line of `consequences` (the report profile's lines rulings: what a line is, its address, its shown words) ----

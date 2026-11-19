@@ -168,6 +168,8 @@ Object.assign(DATA, {
   'strandOf#1': 'the reader, as resolveLens takes it',
   'domainsOf#0': 'the world snapshot, as charterOf takes it',
   'domainsOf#1': 'the reader, as charterOf takes it',
+  'designPartsOf#0': 'the world snapshot, as charterOf takes it',
+  'designPartsOf#1': 'the reader, as charterOf takes it',
   'doorWhere#0': 'an entry of doorsOf, as doorsOf gives it',
 });
 

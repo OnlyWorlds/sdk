@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { CHARTER_PAIRS, FIELD_SCHEMA, charterOf, domainsOf, isCharterElement, readingAidOf } from '../dist/index.js';
+import { CHARTER_PAIRS, FIELD_SCHEMA, charterOf, designPartsOf, domainsOf, isCharterElement, readingAidOf } from '../dist/index.js';
 
 const FIXTURE = fileURLToPath(new URL('../codegen/schema-dist/profiles/charter.fixture.json', import.meta.url));
 assert.ok(existsSync(FIXTURE), `no charter fixture at ${FIXTURE}`);
@@ -94,4 +94,86 @@ test('readingAidOf: each of the fixture\'s pairs to its aid, folded, the whole w
 test('charterOf: the owner reading as the public reads a closed world as the public does, nothing', () => {
   const world = doc.worlds.harbour;
   assert.deepEqual(charterOf(world, { rung: 'owner', as: { rung: 'public' } }), { charter: null, guide: null, domains: [] });
+});
+
+// ---- The design state (charter.md, serial 135): designPartsOf ----
+
+/** Design parts compare as a set (the fixture says so). */
+const asSet = (list) => list.map((v) => JSON.stringify(v, Object.keys(v).sort())).sort();
+
+test('the charter fixture holds its design_cases list', () => {
+  assert.ok(Array.isArray(doc.design_cases), 'the fixture holds no design_cases list');
+  assert.equal(doc.design_cases.length, 13, `the fixture holds ${doc.design_cases.length} design cases, serial 135 has 13`);
+});
+
+for (const [i, c] of (doc.design_cases ?? []).entries()) {
+  const name = typeof c?.name === 'string' ? c.name : `case ${i}`;
+  test(`charter fixture, designPartsOf: ${name}`, () => {
+    const world = worldOf(c);
+    const reader = world.readers[c.reader];
+    assert.ok(reader, `no reader ${c.reader}`);
+    assert.ok(Array.isArray(c.want), `${name}: no want list`);
+    assert.deepEqual(asSet(designPartsOf(world, reader)), asSet(c.want));
+  });
+}
+
+// The cases below are the package's own: the fixture does not hold them, the page's rule implies them.
+const W = 'design-world';
+const OWNER = { rung: 'owner', character: null };
+const CHARTER = { id: 'charter-1', type: 'law', name: 'Rules', supertype: 'Charter', x_charter_of: W, created_at: '2026-11-01T12:00:00Z' };
+const part = (id, fields) => ({ id, type: 'object', name: id, created_at: '2026-11-02T12:00:00Z', ...fields });
+const designWorld = (...elements) => ({ id: W, name: 'Design', hidden: [], elements: [CHARTER, ...elements] });
+
+test('designPartsOf (the package\'s own): the subtype is trimmed of White_Space and folded, nothing inside touched', () => {
+  const IDEO = String.fromCodePoint(0x3000);
+  const BOM = String.fromCodePoint(0xfeff);
+  const LONG_S = String.fromCodePoint(0x17f); // simple-folds to "s"
+  const world = designWorld(
+    part('a', { subtype: `${IDEO}LOCKED\t` }),
+    part('b', { type: 'construct', subtype: `In De${LONG_S}ign` }),
+    part('c', { subtype: 'in  design' }),
+    part('d', { subtype: `${BOM}locked` }),
+    part('e', { subtype: 'lock' }),
+    part('f', { subtype: null }),
+    part('g', { subtype: ['locked'] }),
+  );
+  assert.deepEqual(designPartsOf(world, OWNER), [
+    { type: 'object', id: 'a', state: 'locked' },
+    { type: 'construct', id: 'b', state: 'in design' },
+  ]);
+});
+
+test('designPartsOf (the package\'s own): an element written as proposed is in no reader\'s view, so no part', () => {
+  const world = designWorld(part('a', { subtype: 'locked', x_review_proposed: true }), part('b', { subtype: 'locked' }));
+  assert.deepEqual(designPartsOf(world, OWNER), [{ type: 'object', id: 'b', state: 'locked' }]);
+});
+
+test('designPartsOf (the package\'s own): a hidden part is kept from a contributor, and a guest reads only what it is served whole', () => {
+  const world = { ...designWorld(part('a', { subtype: 'locked' }), part('b', { subtype: 'locked' })), hidden: ['a'] };
+  assert.deepEqual(designPartsOf(world, { rung: 'contributor', character: null }), [{ type: 'object', id: 'b', state: 'locked' }]);
+  // A guest that holds the Charter and b whole, and a only as a stub.
+  assert.deepEqual(designPartsOf({ ...world, hidden: [] }, { rung: 'guest', character: null, whole: ['charter-1', 'b'], known_of: ['a'] }), [
+    { type: 'object', id: 'b', state: 'locked' },
+  ]);
+  // The same guest without the Charter in its view has no Charter, so no part at all.
+  assert.deepEqual(designPartsOf({ ...world, hidden: [] }, { rung: 'guest', character: null, whole: ['b'], known_of: [] }), []);
+});
+
+test('designPartsOf (the package\'s own): the public reads nothing of a world that is not open, and parts of one that is', () => {
+  const world = designWorld(part('a', { subtype: 'locked' }));
+  assert.deepEqual(designPartsOf(world, { rung: 'public' }), []);
+  assert.deepEqual(designPartsOf({ ...world, open: true }, { rung: 'public' }), [{ type: 'object', id: 'a', state: 'locked' }]);
+});
+
+test('designPartsOf refuses what charterOf refuses, by its own name', () => {
+  assert.throws(() => designPartsOf({}, OWNER), (e) => e instanceof TypeError && e.message.startsWith('designPartsOf:'));
+  assert.throws(() => designPartsOf({ elements: [] }, { rung: 'keeper' }), (e) => e instanceof TypeError && e.message.startsWith('designPartsOf:'));
+});
+
+test('designPartsOf is pure: the world is not moved', () => {
+  const world = designWorld(part('a', { subtype: 'locked' }));
+  const before = JSON.stringify(world);
+  designPartsOf(world, OWNER)[0].state = 'planted';
+  assert.equal(JSON.stringify(world), before);
+  assert.deepEqual(designPartsOf(world, OWNER), [{ type: 'object', id: 'a', state: 'locked' }]);
 });

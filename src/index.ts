@@ -34,12 +34,13 @@ export type {
 // The room profile (schema-dist profiles/room.md): the pairs a parlor puts in a world, and the
 // matcher a lore view uses to leave them out (ROOM_PAIRS generated from the vendored dist); and the reading
 // aids' matcher (the charter, its guide, its domains: the pair and the mark x_charter_of), and which aid a
-// pair alone makes an element (readingAidOf, the mark ignored)
-export { ROOM_PAIRS, isRoomElement, isCharterElement, readingAidOf } from './room';
+// pair alone makes an element (readingAidOf, the mark ignored); the talks on an element a line is in (talksOf, serial 135)
+export { ROOM_PAIRS, isRoomElement, isCharterElement, readingAidOf, talksOf } from './room';
+export type { OwTalk } from './room';
 // The charter profile (schema-dist profiles/charter.md): a world's reading aids, the Charter, the Guide and the
-// Domains, as one reader sees them (CHARTER_PAIRS generated from the vendored dist)
-export { CHARTER_PAIRS, charterOf, domainsOf } from './charter';
-export type { OwCharterWorld } from './charter';
+// Domains, as one reader sees them (CHARTER_PAIRS generated from the vendored dist); the design parts one reader reads (serial 135)
+export { CHARTER_PAIRS, charterOf, domainsOf, designPartsOf } from './charter';
+export type { OwCharterWorld, OwDesignPart } from './charter';
 // The strand profile (schema-dist profiles/strand.md): a world in miniature, its story, one happening, the place
 // then, the hero and the place now, as one reader sees them
 export { STRAND_FIELD, strandOf } from './strand';
@@ -57,8 +58,9 @@ export { MESSAGE_PAIR, NOTE_PAIR, isMessage, isNote, recipientsOf, isAddressedTo
 export type { OwSender, OwSenderStatus, OwEdited, OwMessageMember } from './message';
 export { instantOf, compareInstants } from './message';
 export type { OwInstant } from './message';
-// The report profile (schema-dist profiles/report.md, rule 9): reports grouped into threads by the parent they name.
-export { reportThreadsOf, readReportLine, readReportLines } from './report';
+// The report profile (schema-dist profiles/report.md, rule 9): reports grouped into threads by the parent they name;
+// the talks a report is shown with (serial 135).
+export { reportThreadsOf, reportTalksOf, readReportLine, readReportLines } from './report';
 export type { OwReportThreads, OwReportGroup, OwReportLint, OwReportParentKind, OwReportLine, OwReportLineOptions } from './report';
 // The review profile (schema-dist profiles/review.md): an element written as proposed, as a reader that
 // shows a world shows the mark, and as a reader that hands a world on leaves it out.

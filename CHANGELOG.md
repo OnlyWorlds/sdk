@@ -7,10 +7,15 @@ earlier history lives in git log only.
 
 ### Changed
 
+- **The schema pin moves to `v0.34.1-dist.136`** (serials 135 and 136; canonical 00.34.01 unchanged, no schema file moved, no generated type changed). Serial 135 adds the talk on an Object or a Construct to the room and report pages and the design state to the charter page, each with a new fixture list, and rules that a Charter the hidden mark keeps from a reader is not that reader's (`charterOf` already read it so: no case moved). Serial 136 gives the packet page a fourth work item state, `standing` (never done, never open work), an optional asker key `x_packet_from`, and the page's first fixture, which no reader of this package reads yet; the report page says a report sets `done` only on open work, never on a `standing` work item.
 - **Built with tsup 9** (was 8). The JavaScript is byte for byte the same. Each declaration file now lists the types it exports in their own `export type { … }` statement beside `export { … }`: the same names, read the same way by TypeScript 4.5 through 7.0. Building the package from source needs Node 22.18 or later; the package itself still runs on Node 18 and later, and CI now tests the one build on Node 18, 20, 22 and 24.
 
 ### Added
 
+- **`talksOf(element)`**: the talks on an element that `element` is in as a line, `{type: 'object' | 'construct', id}` for each id its `objects` and `constructs` name, read as written (untrimmed, with its case); only a line in the room (the pair `narrative` + `Message` and the mark `x_room_of`) is in a talk, any other element answers `[]` (serial 135).
+- **`reportTalksOf(narrative)`**: the talks a reader shows a report with, its `objects` and `constructs` read as `talksOf` reads a line's; a Narrative that is no report (the pair and the mark) answers `[]` (serial 135).
+- **`designPartsOf(world, reader)`**: the design parts a reader reads, each Object or Construct it is served whole whose `subtype`, trimmed and folded, is `in design` or `locked`, as `{type, id, state}`; `[]` where `charterOf` finds no Charter for that reader (serial 135).
+- Tests: the room fixture's 13 talk cases, the report fixture's 6 and the charter fixture's 13 design cases, each by name and compared as a set, and the package's own cases beside them (a space left on an id, a duplicate id, a field that is no list, an id in upper case, a proposed or hidden part, the public rung).
 - Tests: CI compiles a consumer file against the built declarations with TypeScript 4.5, 4.7, 5.0, 6.0 and 7.0, under each module resolution each version has; the peer range's floor (4.5) is the first, and a test holds it there. Before, only the TypeScript this repository installs was run.
 - Tests: every TypeScript example in the README is compiled against the built package (strict, `nodenext`), each block on its own, so a renamed method, an export or an option key the package no longer has fails before the README ships.
 

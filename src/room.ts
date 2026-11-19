@@ -1,9 +1,10 @@
 // The room profile (schema-dist profiles/room.md, serial 45; the mark by presence since serial 83): which elements a parlor puts in
 // a world, told apart by type and supertype together with the mark x_room_of. ROOM_PAIRS and
-// ROOM_MARK are generated from the vendored dist; this file holds only the matcher, so a tool
-// that keeps its own copy of the pairs can drop it for these exports.
+// ROOM_MARK are generated from the vendored dist; this file holds the matcher, so a tool
+// that keeps its own copy of the pairs can drop it for these exports, and the talk on an Object
+// or a Construct a line is in (talksOf, serial 135).
 
-import { CHARTER_PAIRS, READING_AID_MARK, READING_AID_PAIRS, ROOM_MARK, ROOM_PAIRS } from './v2/types.generated';
+import { CHARTER_PAIRS, MESSAGE_PAIR, READING_AID_MARK, READING_AID_PAIRS, ROOM_MARK, ROOM_PAIRS } from './v2/types.generated';
 import { simpleCaseFold } from './case-fold';
 
 export { ROOM_PAIRS };
@@ -101,6 +102,55 @@ export function isRoomElement(
   const type = fold(el.type);
   const supertype = fold(el.supertype);
   return ROOM_PAIRS.some(p => fold(p.type) === type && fold(p.supertype) === supertype);
+}
+
+/** One talk on an element (room.md, serial 135): an Object named in a line's `objects`, or a Construct named in its `constructs`, by its id as written. */
+export interface OwTalk {
+  type: 'object' | 'construct';
+  id: string;
+}
+
+/**
+ * The elements a room element's `objects` and `constructs` name, read entry by entry as the room profile reads a line's
+ * (serial 135): an entry that is not a string, or is empty once trimmed of White_Space, names nothing, a field that is not
+ * a list names nothing, and every other entry is the id as written, untrimmed and with its case; each `{type, id}` once,
+ * in first place, objects before constructs. Module-internal: the room and report readers share it.
+ */
+export function namedTalks(el: Record<string, unknown>): OwTalk[] {
+  const out: OwTalk[] = [];
+  const seen = new Set<string>();
+  for (const [field, type] of [['objects', 'object'], ['constructs', 'construct']] as const) {
+    const list = el[field];
+    if (!Array.isArray(list)) continue;
+    for (const entry of list) {
+      if (typeof entry !== 'string' || trimWhiteSpace(entry) === '') continue;
+      const key = `${type}/${entry}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ type, id: entry });
+    }
+  }
+  return out;
+}
+
+/**
+ * The talks on an element that `element` is in as a line (schema-dist profiles/room.md, serial 135): `{type: 'object', id}`
+ * for each id in its `objects` and `{type: 'construct', id}` for each in its `constructs`. Only a line in the room is in a
+ * talk: a room element (`isRoomElement`, the pair and the mark x_room_of) whose pair is `narrative` + `Message`; any other
+ * element, a Message without the mark, a board entry or a report included, answers `[]`.
+ *
+ * An entry that is not a string, or is empty once trimmed of White_Space (the room profile's set), names nothing, and a
+ * field that is not a list names nothing; every other entry is an id read as written, a space left on it and its case
+ * included, so `ABC` and `abc` are two talks. A line's `characters` are its recipients and make no talk, nor does any other
+ * field. Each `{type, id}` comes once, in the place it is first named, objects before constructs (the page rules no order:
+ * compare as a set when the order does not matter). Pure.
+ */
+export function talksOf(element: unknown): OwTalk[] {
+  if (element === null || typeof element !== 'object' || Array.isArray(element)) return [];
+  const el = element as Record<string, unknown>;
+  if (!isRoomElement(el as { type?: string; supertype?: string | null; x_room_of?: unknown })) return [];
+  if (fold(el.type as string) !== fold(MESSAGE_PAIR.type) || fold(el.supertype as string) !== fold(MESSAGE_PAIR.supertype)) return [];
+  return namedTalks(el);
 }
 
 /** The reading aids' pairs as `types` words, folded: `law/charter`, `construct/guide`, `construct/domain`. Module-internal. */
