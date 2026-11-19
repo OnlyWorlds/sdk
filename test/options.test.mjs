@@ -208,7 +208,7 @@ test('the fenced calls work without the unknown key: a refusal is the key, not t
   assert.equal(parseDate(cfg, '12 Sowmarch 3 FT', { now: 0 }).error, undefined);
   assert.equal(trailByPlace(trailInput).pins.length, 1);
   assert.equal(layoutAround({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, 'a', { steps: 2 }).points.length, 1);
-  assert.equal(layoutByLinks3d({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, null, { held: null, heldUnit: null }).ids.length, 1);
+  assert.equal(layoutByLinks3d({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, null, { held: null, heldUnit: null }).unplaced.length, 1); // a lone node: answered, not placed
   assert.equal(resolveCalendar(elements, undefined, { fallbackToOnly: true })?.id, 'c');
   assert.equal(lookupWorld(index, 'Eknomos', { limit: 1 }).length, 1);
   assert.match(renderElement(elements[0], index, { descMax: 10 }), /Eknomos/);

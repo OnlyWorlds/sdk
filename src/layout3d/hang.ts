@@ -1,9 +1,10 @@
 /**
  * The by-links-3d layout, step 9: everything placed after the force steps. The body takes its relaxed points; the
- * middle; each group's skin; outward(); what hangs from the body; the shelf; last, the pinned elements at their
- * Pins. No recursion, typed arrays, every sum and every tie in a written order.
+ * middle; each group's skin; outward(); what hangs from the body; last, the pinned elements at their Pins. An element
+ * off the main piece that is not pinned is placed by no rule of a run (pieces.ts lays out its piece, or hands it back).
+ * No recursion, typed arrays, every sum and every tie in a written order.
  *
- * hang(ids, body, hangCut, hangDepth, off, taken, group, cpt, plate, kind, degree, relaxed[, opts]) -> answer (below)
+ * hang(ids, body, hangCut, hangDepth, off, taken, group, cpt, plate, degree, relaxed[, opts]) -> answer (below)
  *   ids        the element ids in code point order, as structure() answers them; n = ids.length
  *   body       Uint8Array(n): structure()'s body
  *   hangCut    Int32Array(n): structure()'s hangCut (the body element an element hangs through; -1 none)
@@ -14,7 +15,6 @@
  *   cpt        Float64Array(3k): points()' cpt, row g at 3g
  *   plate      null, or { pinned: Uint8Array(n), at: Float64Array(3n) }: points()' plate (only those two are read);
  *              row v of `at` is a pinned element's place on the map
- *   kind       per element its type word (an array of n strings), for the shelf's order
  *   degree     Int32Array(n): each element's number of distinct neighbours (a self-link is none)
  *   relaxed    Float64Array(3n): each body element's point after the force steps (relax.ts), row v at 3v; rows of
  *              elements outside the body are not read
@@ -32,8 +32,6 @@
  *             member (a pinned one too, which leaves its place in step 7) takes the lowest place j = 0, 1, ... that
  *             is not claimed, not taken by an earlier such member of this cut, and whose point (the formula below
  *             with j and the member's own depth) is not near. Nothing held: j is the member's rank.
- *   6. shelf  zmin, cx, cy read an element of H at its held point. A shelf element in H keeps its held point; any
- *             other takes the lowest spiral place not taken by an earlier such element and not near (no claim).
  *   8. held   (after step 6, before step 7) every element of H stands at its held point.
  *
  * The answer:
@@ -62,25 +60,21 @@
  *             left to right per axis. When c is pinned, the point is instead c's place plus
  *             (cos(ang) * fan * 0.5, sin(ang) * fan * 0.5, REST * d). An element with one neighbour at depth 1 is
  *             one link, any other an arm. (a x b = (a1 b2 - a2 b1, a2 b0 - a0 b2, a0 b1 - a1 b0).)
- *   6. shelf  over every element that is not off, in index order, after step 5, each read where it ends (a pinned
- *             element at its Pin, an element of H at its held point): zmin = the least z - REST * 3, cx and cy the
- *             means of x and y (summed in index order, divided by the count). The elements off the main piece that
- *             are not pinned, by kind (code point order), then index; shelf place j: r = REST * 0.9 * sqrt(j + 1),
- *             point (cx + r * cos(GOLD * j), cy + r * sin(GOLD * j), zmin).
+ *   6. off    every element off the main piece that is not pinned is placed by no rule: its how is OFF and its
+ *             point (0, 0, 0), and the caller leaves it out of its answer (pieces.ts: its own piece's run places it,
+ *             or it is handed back as unplaced).
  *   7. map    last, every pinned element stands at its place.
  * A length is Math.sqrt(dx * dx + dy * dy + dz * dz) in that order. Math.cos and Math.sin are the only runtime
  * functions beyond + - * /, sqrt and floor: nothing iterates on them, so two runtimes agree within a tolerance.
  * Module-internal.
  */
-import { byCodePoint } from './order'; // the shelf's order by type word, then by place
-
 export const REST = 60.0;
 // The golden angle, PI * (3 - sqrt(5)), written as the double it is: an expression at the top level stays in every
 // bundle that never lays out in 3D (the multiplication is not marked pure). test/layout-by-links-3d.test.mjs holds
 // the literal to the expression.
 export const GOLD = 2.399963229728653;
-export const HOW = ['centre', 'with', 'arm', 'link', 'shelf', 'map'] as const;
-export const CENTRE = 0, WITH = 1, ARM = 2, LINK = 3, SHELF = 4, MAP = 5;
+export const HOW = ['centre', 'with', 'arm', 'link', 'off', 'map'] as const;
+export const CENTRE = 0, WITH = 1, ARM = 2, LINK = 3, OFF = 4, MAP = 5;
 export const LINE = REST / 8; // a held element nearer than this to a free place takes it (held points only)
 
 export interface Hang {
@@ -106,7 +100,7 @@ function quantile90(a: Float64Array, m: number): number {
 
 export function hang(ids: readonly string[], body: Uint8Array, hangCut: Int32Array, hangDepth: Int32Array, off: Uint8Array,
   taken: Int32Array, group: Int32Array, cpt: Float64Array, plate: { pinned: Uint8Array; at: Float64Array } | null,
-  kind: readonly string[], degree: Int32Array, relaxed: Float64Array,
+  degree: Int32Array, relaxed: Float64Array,
   opts: { held?: { flag: Uint8Array; at: Float64Array } | null } = {}): Hang {
   const n = ids.length, k = taken.length;
   const pinned = plate ? plate.pinned : new Uint8Array(n);
@@ -255,48 +249,8 @@ export function hang(ids: readonly string[], body: Uint8Array, hangCut: Int32Arr
     }
   }
 
-  // 6. the shelf: what is off the main piece and not pinned, under the shape, by kind then index
-  let anyOff = 0;
-  for (let v = 0; v < n; v++) if (off[v]) anyOff++;
-  if (anyOff) {
-    let zmin = Infinity, sx = 0, sy = 0, cnt = 0;
-    for (let v = 0; v < n; v++) {
-      if (off[v]) continue;
-      const end = pinned[v]; // a pinned element ends at its Pin (step 7 below)
-      const src = end ? at : inH[v] ? hat : pos; // an element of H ends at its held point (step 8 below)
-      const fx = src[3 * v], fy = src[3 * v + 1], fz = src[3 * v + 2];
-      if (fz < zmin) zmin = fz;
-      sx += fx; sy += fy; cnt++;
-    }
-    zmin = zmin - REST * 3;
-    const cx = sx / cnt, cy = sy / cnt;
-    const shelf: number[] = [];
-    for (let v = 0; v < n; v++) if (off[v] && !pinned[v]) shelf.push(v);
-    shelf.sort((x, y) => byCodePoint(kind[x], kind[y]) || (x - y));
-    const shelfPoint = (j: number): void => {
-      const r = REST * 0.9 * Math.sqrt(j + 1);
-      fp[0] = cx + r * Math.cos(GOLD * j);
-      fp[1] = cy + r * Math.sin(GOLD * j);
-      fp[2] = zmin;
-    };
-    const used = H ? new Set<number>() : (null as unknown as Set<number>); // places taken by shelf elements not in H
-    for (let q = 0; q < shelf.length; q++) {
-      const v = shelf[q];
-      how[v] = SHELF;
-      let j = q; // nothing held: its place in the order
-      if (H) {
-        if (inH[v]) continue; // keeps its held point (step 8)
-        for (j = 0; ; j++) {
-          if (used.has(j)) continue;
-          shelfPoint(j);
-          if (!near(fp[0], fp[1], fp[2])) break;
-        }
-        used.add(j);
-      }
-      shelfPoint(j);
-      pos[3 * v] = fp[0]; pos[3 * v + 1] = fp[1]; pos[3 * v + 2] = fp[2];
-    }
-  }
+  // 6. what is off the main piece and not pinned is placed by no rule of this run (pieces.ts places its piece)
+  for (let v = 0; v < n; v++) if (off[v] && !pinned[v]) how[v] = OFF;
 
   // 8. every held element that is not pinned stands at its held point, whatever the rules above gave it
   if (H) {

@@ -1,7 +1,8 @@
 // The by-links-3d layout's directions table, baked into the package: src/layout-directions.generated.ts
 // (LAYOUT_DIRECTIONS) from codegen/layout/directions.json, the table the method's shared fixture names by its sha256
-// (test/fixtures/layout/by-links-3d.fixture.json, its `table_sha256`). For each count of parts k from 1 to 37, k unit
-// vectors [x, y, z] spread over the sphere: the directions the method's groups are packed in. Computed once and kept
+// (codegen/schema-dist/profiles/layout-by-links-3d.fixture.json, its `table_sha256`, beside the same bytes as
+// layout-by-links-3d.directions.json). For each count of parts k from 1 to 37, k unit vectors [x, y, z] spread over
+// the sphere: the directions the method's groups are packed in. Computed once and kept
 // as numbers, so no runtime's own cosine, sine or cube root is ever called for them and every runtime reads the same
 // doubles. Each number is written in JavaScript's own shortest form, which reads back as the same double, and a
 // negative zero as -0.

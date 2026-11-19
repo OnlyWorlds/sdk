@@ -1,14 +1,18 @@
 /**
- * by-links-3d, a 3D layout method read from a world's graph and its Maps and Pins. The method's shared fixture
- * (test/fixtures/layout/by-links-3d.fixture.json, its sha256 pinned here) gives each case's input and the answer the
- * reference implementation gives; the fixture's head (`call`, `compare`) says how a case is run and compared:
- *   exact    every element placed centre, with or map: each of x, y, z the same double (Object.is: -0 is not 0); and
- *            every ids, how, group, part, held and centres entry
- *   within   every element placed arm, link or shelf that is not held: each of x, y, z within 1e-9 of a rest, since
- *            those are placed with the runtime's cosine and sine
+ * by-links-3d, a 3D layout method read from a world's graph and its Maps and Pins. The method's fixture is the layout
+ * profile's own, read from the pinned distribution (codegen/schema-dist/profiles/layout-by-links-3d.fixture.json, its
+ * sha256 pinned here); it gives each case's input and the answer the reference implementation gives, and its head
+ * (`call`, `compare`) says how a case is run and compared:
+ *   pieces   a ring piece is a piece other than the main one (the undirected pairs; the main piece the largest, a tie
+ *            to the lower least id), of two nodes or more, none placed map and none in input.held
+ *   exact    every ids, unplaced, how, group, part, held and centres entry; and every element not of a ring piece
+ *            placed centre, with or map: each of x, y, z the same double, a zero compared by its value
+ *   within   every element placed arm or link that is not held, and every element of a ring piece: each of x, y, z
+ *            within 1e-9 of a rest, since those are placed with the runtime's cosine, sine and arcsine
  *   held     every element answered as held: the very double the case's input.held gives for it
- *   refused  the call throws before anything runs, with the case's code, on a TypeError or a RangeError
+ *   refused  the call throws, with the case's code, on a TypeError or a RangeError
  *   unplaced each case of the unplaced suite: unplacedByLinks3d answers the same ids in the same order
+ * The replay walks every case and names each that disagrees, so one wrong case never hides another.
  * Runs against the compiled public bundle (dist).
  */
 import { test } from 'node:test';
@@ -17,9 +21,10 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { layoutByLinks3d, unplacedByLinks3d, BY_LINKS_3D_REST, BY_LINKS_3D_VERSION } from '../dist/index.js';
 
-const bytes = readFileSync(new URL('./fixtures/layout/by-links-3d.fixture.json', import.meta.url));
+const bytes = readFileSync(new URL('../codegen/schema-dist/profiles/layout-by-links-3d.fixture.json', import.meta.url));
 const fx = JSON.parse(bytes.toString('utf8'));
-const FIXTURE_SHA = 'b29606c379633a5fa13f35f71d449b67cb417013c2bfc223024650c7945edb37';
+const FIXTURE_SHA = 'acd6da7252493485cafc24356a84c53656d078872a28c695c0f7554009b6fb2a';
+const CASES = 116;
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const sha = (b) => createHash('sha256').update(b).digest('hex');
 const EXACT = new Set(['centre', 'with', 'map']);
@@ -35,15 +40,86 @@ function optionsOf(input) {
 }
 const run = (input) => layoutByLinks3d({ nodes: input.nodes, edges: input.edges }, input.rows, optionsOf(input));
 
-test('the fixture is the one the method\'s reference made', () => {
+// compare.pieces: the ids of the case's ring pieces' nodes, read from the graph and the want alone
+function ringIds(c) {
+  const ids = c.input.nodes.map((x) => x.id);
+  const parent = new Map(ids.map((id) => [id, id]));
+  const find = (a) => { while (parent.get(a) !== a) a = parent.get(a); return a; };
+  // code point order (JavaScript's < on strings is UTF-16 order, which differs past U+FFFF)
+  const byCp = (a, b) => { const x = [...a].map((ch) => ch.codePointAt(0)), y = [...b].map((ch) => ch.codePointAt(0)); for (let i = 0; i < Math.min(x.length, y.length); i++) if (x[i] !== y[i]) return x[i] - y[i]; return x.length - y.length; };
+  for (const e of c.input.edges) {
+    if (!parent.has(e.source) || !parent.has(e.target) || e.source === e.target) continue;
+    const a = find(e.source), b = find(e.target);
+    if (a !== b) { if (byCp(a, b) < 0) parent.set(b, a); else parent.set(a, b); }
+  }
+  const pieces = new Map();
+  for (const id of ids) { const r = find(id); if (!pieces.has(r)) pieces.set(r, []); pieces.get(r).push(id); }
+  let main = null;
+  for (const [r, m] of pieces) if (main === null || m.length > pieces.get(main).length || (m.length === pieces.get(main).length && byCp(r, main) < 0)) main = r;
+  const how = new Map(c.want.ids.map((id, i) => [id, c.want.how[i]]));
+  const held = c.input.held && typeof c.input.held === 'object' ? c.input.held : {};
+  const ring = new Set();
+  for (const [r, m] of pieces) {
+    if (r === main || m.length < 2) continue;
+    if (m.some((id) => how.get(id) === 'map' || Object.hasOwn(held, id))) continue;
+    for (const id of m) ring.add(id);
+  }
+  return ring;
+}
+
+// what one case disagrees on, as short lines; none when the port answers the case's want
+function disagree(c) {
+  if (c.steps !== 300) return ['steps is not 300'];
+  if (c.want.refused !== undefined) {
+    try { run(clone(c.input)); } catch (err) {
+      const out = [];
+      if (!(err instanceof ERROR_CLASS[c.want.refused])) out.push(`a ${ERROR_CLASS[c.want.refused].name}, got ${err && err.constructor.name}`);
+      if (err.code !== c.want.refused) out.push(`code ${err.code}, want ${c.want.refused}`);
+      return out;
+    }
+    return [`answered, want refused ${c.want.refused}`];
+  }
+  const want = c.want;
+  let got;
+  try { got = run(clone(c.input)); } catch (err) { return [`threw ${err && err.code ? err.code : err}`]; }
+  const out = [];
+  if (got.method !== 'by-links-3d') out.push(`method ${got.method}`);
+  for (const key of ['ids', 'how', 'group', 'part', 'held', 'centres', 'unplaced']) {
+    try { assert.deepEqual(got[key], want[key]); } catch { out.push(`${key}: ${JSON.stringify(got[key])}, want ${JSON.stringify(want[key])}`); }
+  }
+  if (out.length) return out;
+  if (!(got.points instanceof Float64Array) || got.points.length !== want.points.length) return [`points: ${got.points.length} numbers, want ${want.points.length}`];
+  const ring = ringIds(c);
+  const tolerance = 1e-9 * fx.rest;
+  want.ids.forEach((id, i) => {
+    for (let a = 0; a < 3; a++) {
+      const v = got.points[3 * i + a], w = want.points[3 * i + a];
+      let same;
+      if (want.held[i] === true) {
+        const h = c.input.held[id][a];
+        same = v === h && w === h;
+      } else if (EXACT.has(want.how[i]) && !ring.has(id)) same = v === w; // a zero compared by its value
+      else same = Math.abs(v - w) <= tolerance;
+      if (!same) out.push(`${id}.${'xyz'[a]} (${want.how[i]}${want.held[i] ? ', held' : ''}${ring.has(id) ? ', ring' : ''}): ${fmt(v)}, want ${fmt(w)}`);
+    }
+  });
+  return out;
+}
+
+test('the fixture is the pinned distribution\'s, and its head says what this test reads', () => {
   assert.equal(sha(bytes), FIXTURE_SHA);
   assert.equal(fx.method, 'by-links-3d');
   assert.equal(fx.rest, BY_LINKS_3D_REST);
-  assert.deepEqual(Object.keys(fx.compare), ['exact', 'within', 'held', 'refused', 'unplaced']);
+  assert.equal(fx.ring_gap, 1.8 * BY_LINKS_3D_REST);
+  assert.equal(fx.fit, 0.000001);
+  assert.equal(fx.fit_band, 0.0000001);
+  assert.deepEqual(Object.keys(fx.compare), ['pieces', 'exact', 'within', 'held', 'refused', 'fit', 'unplaced']);
 });
 
-test('the baked directions table is codegen/layout/directions.json, the table the fixture names', () => {
+test('the baked directions table is codegen/layout/directions.json, byte for byte the distribution\'s table', () => {
   const json = readFileSync(new URL('../codegen/layout/directions.json', import.meta.url));
+  const dist = readFileSync(new URL('../codegen/schema-dist/profiles/layout-by-links-3d.directions.json', import.meta.url));
+  assert.ok(json.equals(dist), 'codegen/layout/directions.json is the distribution\'s directions file');
   assert.equal(sha(json), fx.table_sha256);
   const text = readFileSync(new URL('../src/layout-directions.generated.ts', import.meta.url), 'utf8');
   const start = text.indexOf('= {');
@@ -53,42 +129,15 @@ test('the baked directions table is codegen/layout/directions.json, the table th
   assert.deepStrictEqual(JSON.parse(text.slice(start + 2, end + 1)), JSON.parse(json.toString('utf8')).directions);
 });
 
-for (const c of fx.cases) {
-  const kind = c.want.refused !== undefined ? `refused, ${c.want.refused}` : `${c.want.ids.length} elements`;
-  test(`by-links-3d: ${c.name} (${kind})`, () => {
-    assert.equal(c.steps, 300, 'every case runs at the method\'s own 300 steps');
-    if (c.want.refused !== undefined) {
-      assert.throws(() => run(clone(c.input)), (err) => {
-        assert.ok(err instanceof ERROR_CLASS[c.want.refused], `a ${ERROR_CLASS[c.want.refused].name}, got ${err && err.constructor.name}`);
-        assert.equal(err.code, c.want.refused);
-        return true;
-      });
-      return;
-    }
-    const want = c.want;
-    const got = run(clone(c.input));
-    assert.equal(got.method, 'by-links-3d');
-    assert.deepEqual(got.ids, want.ids);
-    for (const key of ['how', 'group', 'part', 'held', 'centres']) assert.deepEqual(got[key], want[key], key);
-    assert.ok(got.points instanceof Float64Array);
-    assert.equal(got.points.length, want.points.length);
-    const tolerance = 1e-9 * fx.rest;
-    const off = [];
-    want.ids.forEach((id, i) => {
-      for (let a = 0; a < 3; a++) {
-        const v = got.points[3 * i + a], w = want.points[3 * i + a];
-        let same;
-        if (want.held[i] === true) {
-          const h = c.input.held[id][a];
-          same = Object.is(v, h) && Object.is(w, h);
-        } else if (EXACT.has(want.how[i])) same = Object.is(v, w);
-        else same = Math.abs(v - w) <= tolerance;
-        if (!same) off.push(`${id}.${'xyz'[a]} (${want.how[i]}${want.held[i] ? ', held' : ''}): ${fmt(v)}, want ${fmt(w)}`);
-      }
-    });
-    assert.deepEqual(off, [], `${off.length} numbers differ`);
-  });
-}
+test('by-links-3d: every case of the fixture, each that disagrees named', () => {
+  const wrong = [];
+  for (const c of fx.cases) {
+    const off = disagree(c);
+    if (off.length) wrong.push(`${c.name}: ${off.length} difference(s), first ${off[0]}`);
+  }
+  assert.deepEqual(wrong, [], `${wrong.length} case(s) disagree`);
+  assert.equal(fx.cases.length, CASES);
+});
 
 // a case with a plate, small plates and every kind of placing, for the tests below
 const named = (name) => {
@@ -108,7 +157,7 @@ test('an unknown option key is refused by name, before anything runs', () => {
 });
 
 test('the answer follows the handed order: shuffled nodes and links give each id the same point', () => {
-  for (const name of ['Moppetopia', 'held: a saved answer, rounded, with heldUnit']) {
+  for (const name of ['Moppetopia', 'held: an earlier answer rounded to whole numbers, with heldUnit', 'pieces: three rings', 'pieces: centres across held and pinned pieces']) {
     const c = named(name);
     const base = run(clone(c.input));
     const input = clone(c.input);
@@ -118,7 +167,9 @@ test('the answer follows the handed order: shuffled nodes and links give each id
     input.edges = [...input.edges].reverse();
     if (input.rows) input.rows = [...input.rows].reverse();
     const got = run(input);
-    assert.deepEqual(got.ids, input.nodes.map((x) => x.id));
+    // the placed nodes in the order handed in; the unplaced by id, whatever the order
+    assert.deepEqual(got.unplaced, base.unplaced);
+    assert.deepEqual(got.ids, input.nodes.map((x) => x.id).filter((id) => !got.unplaced.includes(id)));
     const at = new Map(base.ids.map((id, i) => [id, i]));
     got.ids.forEach((id, i) => {
       const j = at.get(id);
@@ -130,7 +181,7 @@ test('the answer follows the handed order: shuffled nodes and links give each id
 });
 
 test('the call changes none of its inputs', () => {
-  for (const name of ['a small plate taken on the second pass', 'held: a leaf beside a held leaf under a pinned parent', 'held: a saved answer, rounded, with heldUnit']) {
+  for (const name of ['a small plate taken on the second pass', 'held: a leaf beside a held leaf under a pinned parent', 'held: an earlier answer rounded to whole numbers, with heldUnit']) {
     const c = named(name);
     const graph = { nodes: clone(c.input.nodes), edges: clone(c.input.edges) };
     const elements = clone(c.input.rows);
@@ -192,7 +243,7 @@ test('the function and its rest are exported, with its two types', () => {
     assert.match(dts, new RegExp(`(?:interface|type) ${name}\\b`), `${name} is declared`);
   }
   const empty = layoutByLinks3d({ nodes: [], edges: [] });
-  assert.deepEqual({ ...empty, points: [...empty.points] }, { method: 'by-links-3d', ids: [], points: [], how: [], group: [], part: [], centres: [], held: [] });
+  assert.deepEqual({ ...empty, points: [...empty.points] }, { method: 'by-links-3d', ids: [], points: [], how: [], group: [], part: [], centres: [], held: [], unplaced: [] });
 });
 
 // BY_LINKS_3D_VERSION is raised exactly when an answer moves: every case is pinned to its want under the version

@@ -20,11 +20,12 @@
  *   { method: METHOD, ids, points: Float64Array(3n), how: Array(n), group: Array(n), part: Array(n), centres, held }
  *   ids      the nodes' ids in the order handed in; row i of every array below is node i as handed in
  *   points   x, y, z at 3i
- *   how      hang.ts's HOW word: 'centre' 'with' 'arm' 'link' 'shelf' 'map'
+ *   how      hang.ts's HOW word: 'centre' 'with' 'arm' 'link' 'map', or 'off' for an element off the main piece
+ *            that is not pinned, which no rule of a run places (its point (0, 0, 0); pieces.ts leaves it out)
  *   group    the id of the centre the element stands with, or null: a centre's own id (a pinned centre too) and, for
  *            an element placed 'with' a centre, that centre's id; null for every other element
- *   part     null where group is an id; else 'map' (pinned, no centre), 'one-link' ('arm' or 'link'), 'no-link'
- *            ('shelf')
+ *   part     null where group is an id; else 'map' (pinned, no centre), 'one-link' ('arm' or 'link'); null for
+ *            'off'
  *   centres  the centres' ids in rank order
  *   held     Array(n) of booleans: true where the point answered is the element's held point (a held element that
  *            is not pinned); false for every other element, a pinned one included, and everywhere when nothing is held
@@ -45,7 +46,7 @@
  *   6. feedOf(...)                                   below
  *   7. startOf(feed)                                 below
  *   8. relax({ ...feed, pos: start }, { steps: STEPS, cap0: CAP0, cutoff: CUTOFF })
- *   9. hang(ids, body, hangCut, hangDepth, off, taken, group, cpt, plate, kind, degree, relaxed)
+ *   9. hang(ids, body, hangCut, hangDepth, off, taken, group, cpt, plate, degree, relaxed)
  *  10. the answer, rows put back in the handed order
  *
  * The feed, over the body's elements in id order:
@@ -133,7 +134,7 @@ export const FRAME_AGREE = 3;   // how many candidates must agree with a pair fo
 export const REFUSED = { notObject: 'held-not-object', notPoint: 'held-not-point', box: 'held-box', unit: 'held-unit' } as const;
 
 export type HowWord = typeof HOW[number];
-export type PartWord = null | 'map' | 'one-link' | 'no-link';
+export type PartWord = null | 'map' | 'one-link';
 
 export interface Layout3dNode { id: string; type: string; name?: string | null }
 export interface Layout3dEdge { source: string; target: string; field?: string; index?: number }
@@ -181,8 +182,9 @@ function isPoint(p: unknown): p is HeldPoint {
   return true;
 }
 
-// opts.held read and refused (the head's "Held points", 0): null when absent or empty, else its entries [id, [x, y, z]]
-function readHeld(held: unknown): Array<[string, HeldPoint]> | null {
+// opts.held read and refused (the head's "Held points", 0): null when absent or empty, else its entries [id, [x, y, z]].
+// box false: the shape alone (held-not-object, held-not-point), the box left to the runs (pieces.ts)
+export function readHeld(held: unknown, box = true): Array<[string, HeldPoint]> | null {
   if (held === undefined || held === null) return null;
   let entries: Array<[string, unknown]> = [];
   if (held instanceof Map) entries = [...held.entries()];
@@ -192,7 +194,7 @@ function readHeld(held: unknown): Array<[string, HeldPoint]> | null {
     if (!isPoint(p)) refuse(TypeError, REFUSED.notPoint, `layoutByLinks3d: held[${id}] is not three finite numbers`);
   }
   const points = entries as Array<[string, HeldPoint]>;
-  if (points.length) {
+  if (box && points.length) {
     const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
     for (const [, p] of points) for (let a = 0; a < 3; a++) { if (p[a] < lo[a]) lo[a] = p[a]; if (p[a] > hi[a]) hi[a] = p[a]; }
     for (let a = 0; a < 3; a++) {
@@ -203,7 +205,7 @@ function readHeld(held: unknown): Array<[string, HeldPoint]> | null {
   }
   return points.length ? points : null;
 }
-function readUnit(u: unknown): number {
+export function readUnit(u: unknown): number {
   if (u === undefined || u === null) return 0; // null is read as absent, as held null is
   if (typeof u !== 'number' || !Number.isFinite(u) || u < 0 || u > LINE) {
     refuse(RangeError, REFUSED.unit, `layoutByLinks3d: heldUnit ${String(u)} is not a finite number from 0 to ${LINE}`);
@@ -476,12 +478,11 @@ export function layout3d(nodes: readonly Layout3dNode[], edges: readonly Layout3
   }
 
   // 9. what is placed after the steps
-  const kind = sortedNodes.map((x) => x.type);
   const degree = new Int32Array(n);
   for (const [a, b] of ip) { degree[a]++; degree[b]++; }
   const hopts: { held?: { flag: Uint8Array; at: Float64Array } } = {};
   if (heldOpt) hopts.held = { ...heldOpt };
-  const h = hang(s.ids, s.body, s.hangCut, s.hangDepth, s.off, c.taken, c.group, p.cpt, p.plate, kind, degree, relaxed, hopts);
+  const h = hang(s.ids, s.body, s.hangCut, s.hangDepth, s.off, c.taken, c.group, p.cpt, p.plate, degree, relaxed, hopts);
 
   // 10. the answer, in the handed order
   const out = new Float64Array(3 * n), how: HowWord[] = new Array(n), group: Array<string | null> = new Array(n), part: PartWord[] = new Array(n);
@@ -496,7 +497,7 @@ export function layout3d(nodes: readonly Layout3dNode[], edges: readonly Layout3
     if (w === CENTRE || w === WITH || (w === MAP && own)) { group[i] = ids[c.taken[c.group[v]]]; part[i] = null; }
     else if (w === MAP) { group[i] = null; part[i] = 'map'; }
     else if (w === ARM || w === LINK) { group[i] = null; part[i] = 'one-link'; }
-    else { group[i] = null; part[i] = 'no-link'; }
+    else { group[i] = null; part[i] = null; } // OFF: placed by no rule of this run
   }
   return { method: METHOD, ids: handed, points: out, how, group, part, centres: Array.from(c.taken, (t) => ids[t]), held };
 }

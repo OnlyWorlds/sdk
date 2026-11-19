@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+
+- **`layoutByLinks3d` lays out every piece of the graph, and hands back what it does not place.** It follows the layout profile's page as serial 137 publishes it: every other piece of linked elements is laid out by its own links, as the main one is. A piece with a pinned or held element stands where those points put it; every other one stands on a ring round the main shape, the largest first, a ring holding as many as fit before the next opens further out (the ring's angles use the runtime's arcsine, cosine and sine, so those points agree within a billionth of a rest). An element linked to no other and pinned on no map is no longer placed on a shelf under the picture: it is left out of the answer's rows and listed, by id in code point order, in the answer's new `unplaced`, which is `unplacedByLinks3d`'s answer for the Map the layout makes. `OwLayout3dHow` loses `shelf` and `OwLayout3dPart` loses `no-link`. The held box (`held-box`) is now tested per piece on the held points that piece holds (a pinned element's Pin among them in a piece other than the main one), after the shape of `held` and `heldUnit` are read, so a box too wide beside a bad `heldUnit` is refused as `held-unit`. The answers move, so **`BY_LINKS_3D_VERSION` is 2**; the method's test now reads the published fixture (116 cases) from the schema pin, and the package's own copy is gone.
+
 ## [4.181.0] - 2026-11-19
 
 ### Changed

@@ -12,7 +12,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
-const FIXTURE = new URL('../test/fixtures/layout/by-links-3d.fixture.json', import.meta.url);
+const FIXTURE = new URL('../codegen/schema-dist/profiles/layout-by-links-3d.fixture.json', import.meta.url);
 const OUT = new URL('../test/fixtures/layout/by-links-3d.answers.json', import.meta.url);
 const SRC = new URL('../src/layout-by-links-3d.ts', import.meta.url);
 
@@ -43,7 +43,7 @@ if (old) {
     process.exit(1);
   }
 }
-const text = `${JSON.stringify({ note: 'each case of by-links-3d.fixture.json pinned to the sha256 of JSON.stringify of its want, under BY_LINKS_3D_VERSION (scripts/pin-layout-answers.mjs)', version, answers: now }, null, 2)}\n`;
+const text = `${JSON.stringify({ note: 'each case of layout-by-links-3d.fixture.json pinned to the sha256 of JSON.stringify of its want, under BY_LINKS_3D_VERSION (scripts/pin-layout-answers.mjs)', version, answers: now }, null, 2)}\n`;
 const line = `${Object.keys(now).length} cases under version ${version}`;
 if (process.argv.includes('--check')) {
   if (!existsSync(OUT) || readFileSync(OUT, 'utf8') !== text) { console.log(`STALE test/fixtures/layout/by-links-3d.answers.json is not what this writes now (${line})`); process.exit(1); }
