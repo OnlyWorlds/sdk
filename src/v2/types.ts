@@ -47,7 +47,7 @@ export interface OwWorldMeta {
   /** Whether the world can be read without its PIN. Read-only on the wire. */
   public_read?: boolean;
   /**
-   * Whether a Narrative written through an agent seat is narrated by that seat's own Character,
+   * Whether a Narrative written through an AI seat is narrated by that seat's own Character,
    * as a guest's is: set by the owner on the world page; read-only on the wire.
    * With it on, an agent naming another narrator is a 422 (`param: narrator`), and a seat with no
    * Character a 403 `guest_not_supported`.
@@ -68,7 +68,7 @@ export interface OwWorldMeta {
    */
   public_page?: OwWorldPublicPage;
   /**
-   * Whether an agent seat's writes land as proposals: on, a seat's PATCH, PUT, link
+   * Whether an AI seat's writes land as proposals: on, a seat's PATCH, PUT, link
    * edit or /bulk item on an existing element answers 202 with the proposal (this client throws
    * an OwProposedError; a /bulk slot carries `status: 202` and `proposal`) and the element does
    * not change until the owner or a co-builder accepts it; its new elements carry
@@ -244,13 +244,13 @@ export interface OwHiddenRow {
 
 /**
  * The door a write came through, as keel records it on every element (`changed_via`) and on a
- * delete (`deleted_via`): `seat` (an agent seat), `mcp` (the MCP server),
+ * delete (`deleted_via`): `seat` (an AI seat), `mcp` (the MCP server),
  * `declared` (a client that sent `X-OW-Agent`; see {@link OwClientConfig.agent}), then the
  * surface for everything else: `api`, `v1`, `sync`, and `server` for keel's own writes.
  */
 export type OwWriteDoor = NonNullable<OwElementBase['changed_via']>;
 
-/** The doors that mean agent-made: an agent seat, the MCP server, or a client that declared itself. */
+/** The doors that mean agent-made: an AI seat, the MCP server, or a client that declared itself. */
 export const AGENT_DOORS: readonly OwWriteDoor[] = ['seat', 'mcp', 'declared'];
 
 /** Whether a write came through an agent's door (`changed_via` or `deleted_via`); false for null. */
@@ -340,8 +340,8 @@ export interface OwBulkItem {
  * After an `atomic: true` request with `errors` true NOTHING was written, yet the slots of
  * the items that would have succeeded still say 201 (keel's "counterfactual 201s"): do not
  * record their ids as created.
- * On a world that takes an agent seat's writes as proposals (`agent_writes_proposed`),
- * an agent seat's item on an existing element answers `{status: 202, id, proposal}`: the element
+ * On a world that takes an AI seat's writes as proposals (`agent_writes_proposed`),
+ * an AI seat's item on an existing element answers `{status: 202, id, proposal}`: the element
  * did not change, and `proposal` is the row a keeper accepts or declines.
  */
 export interface OwBulkItemResult {
@@ -447,7 +447,7 @@ export interface OwProposal {
   evidence: string;
   /** When it lapses if nobody decides (UTC). */
   expires: string;
-  /** Who proposed it: the membership id (a person, an agent seat or a player seat, as `members()` lists them), or `owner`. */
+  /** Who proposed it: the membership id (a person, an AI seat or a player seat, as `members()` lists them), or `owner`. */
   by: string;
   /** The door it came through, as an element's changed_via. */
   via: string;
@@ -471,7 +471,7 @@ export interface OwProposalList {
 
 /**
  * A row of the world's queue for a new element written as proposed (the document's
- * `ProposedNewElement`): an element carrying `x_review_proposed` (an agent seat's new element on a
+ * `ProposedNewElement`): an element carrying `x_review_proposed` (an AI seat's new element on a
  * world that takes its writes as proposals, or any writer's mark). The element itself is the
  * record, so the row has no id of its own. A keeper settles it with `reviewNewElement`. `by`,
  * `evidence` and `expires` are the mark's own words, null when it lacks one; `evidence` is quoted
@@ -785,7 +785,7 @@ export interface OwFrontDoor {
   /** Your own Character (the owner's: the world's `owner_character`), or null. */
   my_character: string | null;
   /**
-   * The live AI and player seats you answer for, agent seats first (since keel's front door of
+   * The live AI and player seats you answer for, AI seats first (since keel's front door of
    * 2026-10-26). Empty for an AI or a player seat's own key and for anyone who answers for none.
    * A seat made from a link for an email address is listed for the link's maker (since 2026-11-15).
    */
@@ -1159,7 +1159,7 @@ export interface OwSignedIn {
   last4: string;
 }
 
-/** One live agent seat, as GET /account/worlds/{id}/seats lists it. No key or secret. */
+/** One live AI seat, as GET /account/worlds/{id}/seats lists it. No key or secret. */
 /**
  * One world of the account, from GET /account/worlds: owned (`role: 'owner'`) or shared
  * (`'collaborator'`, with `member_role` the membership's role). Keys by name and last four only,
@@ -1631,7 +1631,7 @@ export interface OwFileAddedBy {
   name: string;
   /** Their membership id; null for the owner's files and for a file whose membership no longer exists (`owner` tells the two apart). */
   membership: string | null;
-  /** True when an agent added it: an agent seat, the MCP surface, or a key that declared an agent. */
+  /** True when an agent added it: an AI seat, the MCP surface, or a key that declared an agent. */
   agent: boolean;
   /**
    * True when the world's current owner added the file, through any door (the site, the API, or an agent with the
@@ -1761,7 +1761,7 @@ export interface ListParams {
   filter?: Record<string, string | number | boolean>;
   /**
    * View as, sent as `as`: read as another reader of this world would. A membership
-   * id (a person, an agent seat or a player seat) reads as that member's own key; a Character id
+   * id (a person, an AI seat or a player seat) reads as that member's own key; a Character id
    * reads as a guest of that Character with no membership; `'public'` reads everything not
    * hidden. The owner's keys only (a key with no member): a member key gets 403
    * `view_as_owner_only` (`err.isViewAsOwnerOnly`). An element hidden from that reader is 404,
@@ -1786,7 +1786,7 @@ export interface OwClientConfig {
    */
   apiKey?: string;
   /**
-   * The PIN (or an agent seat's `ow_s_` secret), needed for writes when the world has one, and for
+   * The PIN (or an AI seat's `ow_s_` secret), needed for writes when the world has one, and for
    * legacy-key reads of a world with a PIN. Sent as `API-Pin` only where keel checks it: on every
    * write (any method but GET), on GET /me (me(), the connection test), and on every request of a
    * 10-digit legacy key. A prefixed key's other reads go without it, and an account token never
@@ -1812,7 +1812,7 @@ export interface OwClientConfig {
    * editLinks, bulk) carries `X-OW-Agent`, the operations the API document declares it on, and onlyworlds.com
    * records its writes as agent-made (`changed_via: 'declared'`; the server stores that the header
    * was there, never its value). Off by default, and it must stay off in a tool people use:
-   * it describes the caller, so only the caller can set it. An agent seat's key is recorded
+   * it describes the caller, so only the caller can set it. An AI seat's key is recorded
    * as an agent without it.
    */
   agent?: boolean;

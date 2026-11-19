@@ -36,7 +36,7 @@ Create a world at [onlyworlds.com](https://www.onlyworlds.com); its keys are on 
 - An `ow_r_` key reads, with no PIN. It is the key to give to players or a public site.
 - An `ow_w_` key reads and writes. Writes also send a PIN as `apiPin`.
 - Anyone who loads a web page can read the keys in its code. Ship only an `ow_r_` key to a browser, and keep write keys and seat secrets on a server.
-- For code that writes, give it its own [agent seat](https://onlyworlds.github.io/docs/development/agents), a key for one tool or script. The seat's key and its `ow_s_` secret (sent as `apiPin`) work in one world, and you can remove them without touching your account PIN.
+- For code that writes, give it its own [AI seat](https://onlyworlds.github.io/docs/development/agents), a key for one tool or script. The seat's key and its `ow_s_` secret (sent as `apiPin`) work in one world, and you can remove them without touching your account PIN.
 
 ```typescript
 const writer = new OwV2Client({ apiKey: 'ow_w_…', apiPin: 'ow_s_…' });
@@ -226,7 +226,7 @@ The world's queue also lists each new element written as proposed, as a row with
 
 An accept is refused with nothing written when a proposed field moved since the proposal was made: `OwStaleProposalError` (409, `err.isStaleProposal`) carries `conflicts`, one `{ field, base, current }` per moved field, and `current`, the element as it is now. `listProposals(type, id)` lists one element's rows.
 
-A world's owner can have agent seats propose instead of write (`agent_writes_proposed` on `getWorld()`, set on the world page). An agent seat's `patch`, `upsert` or `editLinks` on an existing element then throws `OwProposedError` (status 202, `err.isProposed`), with the row under `err.proposal`. A `bulk` slot says `status: 202` and carries `proposal` instead. A person's key is never held.
+A world's owner can have AI seats propose instead of write (`agent_writes_proposed` on `getWorld()`, set on the world page). An AI seat's `patch`, `upsert` or `editLinks` on an existing element then throws `OwProposedError` (status 202, `err.isProposed`), with the row under `err.proposal`. A `bulk` slot says `status: 202` and carries `proposal` instead. A person's key is never held.
 
 ## Finding elements in a world
 

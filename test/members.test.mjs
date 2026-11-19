@@ -29,7 +29,7 @@ test('client.me: GET /me with the world key and PIN, the body as keel sends it',
   assert.equal(init.headers['API-Pin'], '1234');
 });
 
-test('client.me: front_door.my_seats read through as keel sends it, agent seats first', async () => {
+test('client.me: front_door.my_seats read through as keel sends it, AI seats first', async () => {
   const seats = [
     { id: 'm7', kind: 'agent', name: 'Quill', character: 'c7' },
     { id: 'm8', kind: 'agent', name: 'Wren', character: null },

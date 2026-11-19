@@ -113,7 +113,7 @@ export class OwV2Client {
    * A person member's write key with its PIN; answers GET /me's body. 422 for a hidden
    * Character (`character_hidden`, `err.isCharacterHidden`), a guest's pick it did not make, or a
    * taken Character (`invalid_request`, `param` character); 404 for one this key cannot see; 403 for
-   * an agent seat, a player, the owner (whose own is the world's `owner_character`, set with
+   * an AI seat, a player, the owner (whose own is the world's `owner_character`, set with
    * patchWorld) or a read key. A guest's view resets once.
    */
   async setMyCharacter(character: string | null): Promise<OwMe> {
@@ -129,7 +129,7 @@ export class OwV2Client {
    * a seat off its Titles' lenses. `null` goes back to never chosen: a seat playing a Character then
    * starts with its Titles' lenses (`lenses_from` says where a list comes from); on the owner's own
    * keys `null` is the empty list. Any write
-   * key of the world, with its PIN, sets its own holder's list: a person member's, an agent seat's, or
+   * key of the world, with its PIN, sets its own holder's list: a person member's, an AI seat's, or
    * on the owner's keys the owner's own; answers GET /me's body. The draught reads the list whenever it
    * is given no lens and no policy. 404 for a lens this key cannot see; 422 `not_a_lens`,
    * `lens_is_template` or `lens_hidden` (`param` lenses); 403 for a read key. A lens only narrows what
@@ -350,7 +350,7 @@ export class OwV2Client {
    * PUT /{type}/{id}/ -- upsert-by-client-id. The local-first write primitive. A known-of
    * stub (`known_of: true`, see isKnownOf) is a TypeError before sending, here and on every
    * element write: a PUT of one would blank every field it does not keep.
-   * An agent seat's PUT on an existing element, in a world that takes its writes as proposals,
+   * An AI seat's PUT on an existing element, in a world that takes its writes as proposals,
    * answers 202 and is thrown as an OwProposedError: the element did not change.
    */
   async upsert(type: ElementType | string, id: string, element: OwElement | Record<string, unknown>): Promise<OwElement> {
@@ -368,7 +368,7 @@ export class OwV2Client {
    * an OwPreconditionFailedError (412) whose `current` is the element as it is now. Omit
    * it for today's unconditional write.
    *
-   * In a world that takes an agent seat's writes as proposals (the world's
+   * In a world that takes an AI seat's writes as proposals (the world's
    * `agent_writes_proposed`), a seat's patch answers 202 with `{proposal}`, never an element:
    * this throws an OwProposedError (`err.isProposed`, the row under `err.proposal`) and the
    * element did not change. If-Match is checked first: a stale one is still a 412.
@@ -404,7 +404,7 @@ export class OwV2Client {
    * Dedupes, tolerates already-present/already-absent ids. Returns the FULL
    * updated element (fixture P5). Use this for all relationship editing; it
    * retires the read-merge-PATCH dance. `ifMatch` works as on patch(): a link write
-   * moves the element too. A 202 (an agent seat's link edit that became a proposal)
+   * moves the element too. A 202 (an AI seat's link edit that became a proposal)
    * is thrown as an OwProposedError, as on patch().
    */
   async editLinks(
@@ -449,7 +449,7 @@ export class OwV2Client {
    * After an atomic:true request with errors:true NOTHING was written, yet the slots of
    * the items that would have succeeded still say 201 with the ids and timestamps they
    * would have had (keel's "counterfactual 201s"): do not record those ids as created.
-   * An agent seat's item on an existing element, in a world that takes its writes as
+   * An AI seat's item on an existing element, in a world that takes its writes as
    * proposals, answers a slot `{status: 202, id, proposal}`: never thrown, the
    * element unchanged, the slot's `proposal` the row a keeper decides.
    * An element without an id gets one, as `create` mints it, by its position in `items`: with an
@@ -635,7 +635,7 @@ export class OwV2Client {
   /**
    * POST /media/remove-ticket -- permission to remove ONE image (a write key and its
    * PIN). The image's uploader may remove it, and so may the world's owner key; an
-   * agent seat answers as its sponsor. Only images uploaded with a ticket qualify.
+   * AI seat answers as its sponsor. Only images uploaded with a ticket qualify.
    * `key` is the object key, or the whole image_url (the part after the host is taken).
    * The reply's `referenced` counts the world's elements still showing the image.
    * Refusals: 403 `permission_error` (neither uploader nor owner), 404 `not_found`
@@ -825,7 +825,7 @@ export class OwV2Client {
   /**
    * DELETE /{type}/{id}/files/{fileId} -- remove a file for real: it leaves the lists and
    * the world's total at once, and its bytes are deleted from the store. The world's owner
-   * key may, and so may the key of whoever added it (an agent seat answers as its sponsor);
+   * key may, and so may the key of whoever added it (an AI seat answers as its sponsor);
    * any other key is 403 `permission_error`. A file that is not there is 404 `not_found`.
    * Deleting an element removes its files too.
    */
@@ -1141,7 +1141,7 @@ export class OwV2Client {
   }
 
   /**
-   * GET /account/worlds/{worldId}/seats -- the live agent seats you can see: your own AI's, or,
+   * GET /account/worlds/{worldId}/seats -- the live AI seats you can see: your own AI's, or,
    * as the world's owner, every seat. No keys or secrets. Needs the client's `ow_a_` token.
    */
   async listSeats(worldId: string): Promise<OwSeat[]> {
@@ -1167,7 +1167,7 @@ export class OwV2Client {
   }
 
   /**
-   * DELETE /account/worlds/{worldId}/seats/{seatId} -- remove an agent seat: its sponsor or the
+   * DELETE /account/worlds/{worldId}/seats/{seatId} -- remove an AI seat: its sponsor or the
    * world's owner may. Its key and secret stop at once; the Character it plays goes with it only
    * while it is as the join left one (made by the join, named as the seat, supertype `Agent` alone,
    * last written by the join, linked from nothing, played by no one else); any other stays, one
@@ -1250,7 +1250,7 @@ export class OwV2Client {
   /**
    * POST /{type}/{id}/proposals -- propose a change to an element without making it. Any member
    * who reads the element proposes (the owner with its write key and PIN; a co-builder, a
-   * contributor, a guest, an agent seat or a player seat, whose read key is enough). `fields` is
+   * contributor, a guest, an AI seat or a player seat, whose read key is enough). `fields` is
    * cleaned as patch() cleans a body (a read body's server keys stripped; a known-of stub is a
    * TypeError before sending) and names only fields this key's view of the element holds;
    * `evidence` is 1 to 2,000 characters; `expires` 1 to 365 days out (keel's default 30). keel
@@ -1321,7 +1321,7 @@ export class OwV2Client {
    * POST /{type}/{id}/proposals/{pid}/accept -- write the proposal's fields to the element as one
    * ordinary write by this key (`changed_by` is the keeper, a new change_seq, a /changes row), and
    * the row turns accepted. The world's owner key or a co-builder's, with its PIN; never the
-   * proposer's own (403 `own_proposal`, `err.isOwnProposal`), never an agent seat's while the
+   * proposer's own (403 `own_proposal`, `err.isOwnProposal`), never an AI seat's while the
    * world holds them (403 `proposed_only`, `err.isProposedOnly`). Refused with nothing written when
    * a proposed field moved since (409 `stale_proposal`: an OwStaleProposalError carrying
    * `conflicts` and `current`; the row stays open) or a proposed link names an element deleted
@@ -1361,7 +1361,7 @@ export class OwV2Client {
    * deletes the element (a tombstone, the links to it scrubbed, its open proposals dropped) and
    * answers `{ deleted }`, its id; the reason is answered back and kept nowhere. Refusals: 422
    * `not_proposed` (`err.isNotProposed`: the element carries no mark), 403 `proposed_only`
-   * (`err.isProposedOnly`: the seat the mark names, or an agent seat under the world's switch), 403
+   * (`err.isProposedOnly`: the seat the mark names, or an AI seat under the world's switch), 403
    * for any key but a keeper's. A proposed change to an existing element is decided with
    * acceptProposal or declineProposal instead.
    */
@@ -2026,7 +2026,7 @@ async function proposedFromResponse(res: Response, method: string, path: string)
     return new OwApiError(202, null, `${method} ${path} answered 202 without a proposal: the write was not applied, and the answer is not an element`, null, body);
   }
   return new OwProposedError(202, null,
-    `${method} ${path} became a proposal (202): this world takes an agent seat's writes as proposals, so the element did not change. err.proposal is the row; the owner or a co-builder accepts or declines it.`,
+    `${method} ${path} became a proposal (202): this world takes an AI seat's writes as proposals, so the element did not change. err.proposal is the row; the owner or a co-builder accepts or declines it.`,
     null, body);
 }
 

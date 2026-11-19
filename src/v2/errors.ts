@@ -423,7 +423,7 @@ export class OwApiError extends Error {
   }
 
   /**
-   * patch, upsert or editLinks became a proposal (202): the world takes an agent seat's
+   * patch, upsert or editLinks became a proposal (202): the world takes an AI seat's
    * writes as proposals (`agent_writes_proposed`), so the element did not change. The error is an
    * OwProposedError; its `proposal` is the row a keeper accepts or declines. Not a failure to retry:
    * the write is waiting for a person.
@@ -462,7 +462,7 @@ export class OwApiError extends Error {
   }
 
   /**
-   * While the world takes agent seats' writes as proposals, an agent seat's key tried
+   * While the world takes AI seats' writes as proposals, an AI seat's key tried
    * what it may not: delete an element it did not create, or accept or decline a proposal (403
    * `proposed_only`). On any world, reviewNewElement by the member the mark names is the same 403.
    * Retrying will not help; a person decides.
@@ -557,7 +557,7 @@ export class OwStaleProposalError extends OwApiError {
 }
 
 /**
- * 202 on patch, upsert or editLinks: the world takes an agent seat's writes as
+ * 202 on patch, upsert or editLinks: the world takes an AI seat's writes as
  * proposals (`agent_writes_proposed`, set by its owner), so the write became a proposal and the
  * element did not change. The answer is `{proposal}`, never an element, so this client throws
  * rather than hand it back as one. `proposal` is the row; a keeper (the owner or a co-builder)
