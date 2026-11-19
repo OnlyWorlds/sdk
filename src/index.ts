@@ -87,6 +87,8 @@ export type { OwMapSpace, OwMapSpaceMap, OwMapSpaceOutline, OwMapSpaceOutReason,
 // Its layout reading (rules 8 to 10): one Map's layout method, the ground it stands on, and the Pins placed by hand.
 export { layoutOf } from './layout-of';
 export type { OwLayoutOf } from './layout-of';
+export { carryOf } from './carry-of';
+export type { OwCarryOf, OwCarryPoint, OwCarryStop, OwCarryLint } from './carry-of';
 
 // A layout method: a world laid out along a route on a ground map, as a Map frame and its Pins (read back by mapSpace).
 export { trailByPlace, TRAIL_TIERS, roundHalfEven } from './layout-trail';
