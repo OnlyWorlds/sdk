@@ -7,8 +7,10 @@
 // Each pin is the sha256 of JSON.stringify of a case's `want`, as the fixture holds it. A case new to the fixture is
 // pinned under the version as it stands. A case whose answer differs from its pin is written only when
 // BY_LINKS_3D_VERSION in src/layout-by-links-3d.ts is greater than the file's version: an answer that moved under the
-// same version is refused, and the run says which cases moved. A case the fixture no longer holds is refused too, so a
-// case is never dropped to hide a move. The `unplaced` suite is not pinned: the version speaks of layoutByLinks3d.
+// same version is refused, and the run says which cases moved. A case the fixture no longer holds counts as moved:
+// under the same version it is refused, so a case is never dropped to hide a move, and under a raised version the pins
+// start fresh and the run names each dropped case and counts them. The `unplaced` suite is not pinned: the version
+// speaks of layoutByLinks3d.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
@@ -29,9 +31,11 @@ for (const c of fx.cases) {
 }
 
 const old = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : null;
+let dropped = []; // pinned cases the fixture no longer holds, let go only under a raised version
 if (old) {
   const gone = Object.keys(old.answers).filter((n) => !Object.hasOwn(now, n));
-  if (gone.length) { console.log(`FAILED ${gone.length} pinned case(s) the fixture no longer holds: ${gone.join(' | ')}`); process.exit(1); }
+  if (gone.length && version <= old.version) { console.log(`FAILED ${gone.length} pinned case(s) the fixture no longer holds: ${gone.join(' | ')}`); process.exit(1); }
+  dropped = gone;
   const moved = Object.keys(old.answers).filter((n) => old.answers[n] !== now[n]);
   if (version < old.version) { console.log(`FAILED BY_LINKS_3D_VERSION is ${version}, under the pinned version ${old.version}`); process.exit(1); }
   if (moved.length && version === old.version) {
@@ -44,7 +48,7 @@ if (old) {
   }
 }
 const text = `${JSON.stringify({ note: 'each case of layout-by-links-3d.fixture.json pinned to the sha256 of JSON.stringify of its want, under BY_LINKS_3D_VERSION (scripts/pin-layout-answers.mjs)', version, answers: now }, null, 2)}\n`;
-const line = `${Object.keys(now).length} cases under version ${version}`;
+const line = `${Object.keys(now).length} cases under version ${version}${dropped.length ? `; ${dropped.length} case(s) dropped under the raised version: ${dropped.join(' | ')}` : ''}`;
 if (process.argv.includes('--check')) {
   if (!existsSync(OUT) || readFileSync(OUT, 'utf8') !== text) { console.log(`STALE test/fixtures/layout/by-links-3d.answers.json is not what this writes now (${line})`); process.exit(1); }
   console.log(`current: ${line}`);
