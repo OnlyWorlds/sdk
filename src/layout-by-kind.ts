@@ -5,10 +5,12 @@
  * number of seeded steps; the answer is fitted into a square. `around`: one element at the centre, its neighbours on
  * rings round it, and at two steps their neighbours further out, near the element that reached them.
  *
- * Both are exact: the same graph gives the same points to the last bit, in every browser and in the Python package.
- * The kinds' points on the circle are read from a table of numbers baked into the package, never computed with the
- * runtime's own cosine and sine (which differ in the last place between runtimes); everything else is addition,
- * subtraction, multiplication, division, square root and floor, which every runtime rounds alike.
+ * `by-kind` is exact: the same graph gives the same points to the last bit, in every browser and in the Python
+ * package. The kinds' points on the circle are read from a table of numbers baked into the package, never computed
+ * with the runtime's own cosine and sine (which differ in the last place between runtimes); everything else is
+ * addition, subtraction, multiplication, division, square root, floor, the greater or the lesser of two numbers, and
+ * the `mod` of the generator's draws, which every runtime answers alike. `around` places its rings with the runtime's
+ * own cosine and sine, so two runtimes agree within the layout profile's `compare.around` band, not to the bit.
  */
 import { ELEMENT_GROUPS, GROUP_ORDER } from './v2/types.generated';
 import type { ElementType } from './v2/types.generated';
