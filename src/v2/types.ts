@@ -250,7 +250,7 @@ export interface OwHiddenRow {
  */
 export type OwWriteDoor = NonNullable<OwElementBase['changed_via']>;
 
-/** The doors that mean agent-made: an AI seat, the MCP server, or a client that declared itself. */
+/** The doors the platform marks as an AI's: an AI seat, the MCP server, or a client that declared itself. */
 export const AGENT_DOORS: readonly OwWriteDoor[] = ['seat', 'mcp', 'declared'];
 
 /** Whether a write came through an agent's door (`changed_via` or `deleted_via`); false for null. */
@@ -1046,7 +1046,7 @@ export interface OwJoinPreview {
   /** The world owner's chosen Character's name, never a username; null when none is set, or when it is hidden. */
   owner_character: string | null;
   role: OwMemberRole;
-  /** Whether joining gives the joiner a Character of their own (agent links). */
+  /** Whether joining gives the joiner a Character of their own (AI links). */
   with_character: boolean | null;
   /** ISO 8601, UTC. */
   expires_at: string;
@@ -1068,7 +1068,7 @@ export interface OwWorldLink {
   /** `person`: accepted signed in, with acceptJoin. `agent`: redeemed by an AI agent at POST /join. `player`: redeemed with no account at POST /join, for a read key. */
   reader: 'person' | 'agent' | 'player';
   role: OwMemberRole;
-  /** The name the owner gave an agent link on the website, or empty. */
+  /** The name the owner gave an AI link on the website, or empty. */
   label: string;
   /** The name the link is signed with, or empty (the invite line then reads "Someone"). */
   inviter_name: string;
@@ -1086,7 +1086,7 @@ export interface OwWorldLink {
   status: 'pending' | 'used' | 'revoked' | 'expired';
   /** The membership (its id in GET /api/v2/members) of the co-builder who minted the link over POST /api/v2/links; null for a link the owner made. */
   minted_by: string | null;
-  /** Whether the link shows the world's name and picture when it is pasted into a chat: then the link is `/join/<world_id>#<code>`, else `/join#<code>`. Never on an agent link. */
+  /** Whether the link shows the world's name and picture when it is pasted into a chat: then the link is `/join/<world_id>#<code>`, else `/join#<code>`. Never on an AI link. */
   preview?: boolean;
   /** A player link only: the Character the player reads as; null while a link for a fresh Character is unused, and always null on a table. `name` is null if that Character was deleted (the redeem then makes a fresh one). */
   character?: { id: string; name: string | null } | null;
@@ -1810,7 +1810,7 @@ export interface OwClientConfig {
   /**
    * Declare this client an AI agent: every element write (create, upsert, patch, delete,
    * editLinks, bulk) carries `X-OW-Agent`, the operations the API document declares it on, and onlyworlds.com
-   * records its writes as agent-made (`changed_via: 'declared'`; the server stores that the header
+   * records its writes as an AI's (`changed_via: 'declared'`; the server stores that the header
    * was there, never its value). Off by default, and it must stay off in a tool people use:
    * it describes the caller, so only the caller can set it. An AI seat's key is recorded
    * as an agent without it.

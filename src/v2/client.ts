@@ -1034,12 +1034,12 @@ export class OwV2Client {
    * `ow_a_` token owns: `reader` is required (`person`, accepted with acceptJoin;
    * `agent`, redeemed at POST /join; `player`, a friend with no account, redeemed with
    * redeemJoin for a read key); `role`, when left out, is the server's default: guest for a
-   * person link, contributor for an agent link (a player link is guest, and refuses any other), `days` (1, 7 or 30) to 7; `withCharacter` (agent links
+   * person link, contributor for an AI link (a player link is guest, and refuses any other), `days` (1, 7 or 30) to 7; `withCharacter` (AI links
    * only) to true; `character` (player links only) a Character's id or `new` (the default):
    * whoever opens the link first reads as it, until removed. `preview` (person and player links)
    * to false: true puts the world's id in the link's path, so a chat that unfurls it
-   * shows the world's name and picture (the code stays after `#`); true on an agent link is
-   * 422, param `preview`. `maxUses` (person and player links; an agent link takes none) to 1, a
+   * shows the world's name and picture (the code stays after `#`); true on an AI link is
+   * 422, param `preview`. `maxUses` (person and player links; an AI link takes none) to 1, a
    * link for one. On a person link 2 to 50 lets in that many accounts, each
    * joining once with the link's role, until every use is taken, it expires or it is revoked;
    * who already joined stays. On a player link 2 to 50 makes a table, one
@@ -1118,7 +1118,7 @@ export class OwV2Client {
   /**
    * POST /account/worlds/{worldId}/seats -- a seat for your own AI in a world you own or are a
    * member of: its own membership, write key and `ow_s_` secret, no join link. You answer for
-   * it, and its writes are marked as an agent's. `name` is required (1 to 80 characters);
+   * it, and its writes are marked as an AI's. `name` is required (1 to 80 characters);
    * `role` is at most your own (the owner may give any; default contributor, or your own role
    * when that is lower); `character` is `new` (default: a Character of its own), `none`, or
    * `mine` (members only: it plays the Character you play). 201 with `key`, `pin` and the
