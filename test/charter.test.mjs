@@ -25,7 +25,7 @@ test('CHARTER_PAIRS is the fixture\'s pairs, in its order, and its tables are wh
     .filter(([, f]) => f.type === 'single_link' || f.type === 'multi_link')
     .map(([field, f]) => ({ field, type: f.target }));
   assert.deepEqual(links, doc.hub_fields);
-  assert.equal(doc.cases.length, 47, `the fixture holds ${doc.cases.length} cases, serial 133 has 47`);
+  assert.equal(doc.cases.length, 57, `the fixture holds ${doc.cases.length} cases, serial 141 has 57`);
 });
 
 /** A case's world: one of the fixture's named worlds, or the case's own. */
@@ -103,7 +103,7 @@ const asSet = (list) => list.map((v) => JSON.stringify(v, Object.keys(v).sort())
 
 test('the charter fixture holds its design_cases list', () => {
   assert.ok(Array.isArray(doc.design_cases), 'the fixture holds no design_cases list');
-  assert.equal(doc.design_cases.length, 16, `the fixture holds ${doc.design_cases.length} design cases, serial 138 has 16`);
+  assert.equal(doc.design_cases.length, 19, `the fixture holds ${doc.design_cases.length} design cases, serial 141 has 19`);
 });
 
 for (const [i, c] of (doc.design_cases ?? []).entries()) {
