@@ -19,9 +19,9 @@ const API = 'https://www.onlyworlds.com/api/v2';
 const EL = '018f0000-0000-7000-8000-0000000000e1';
 const PID = '018f0000-0000-7000-8000-0000000000a1';
 
-/** One row as the document's Proposal component gives it: all nineteen keys (kind and omitted). */
+/** One row as the document's Proposal component gives it: all twenty keys (kind, omitted and house). */
 const PROPOSAL = {
-  kind: 'proposal', id: PID, element_type: 'location', element_id: EL, state: 'open',
+  kind: 'proposal', id: PID, element_type: 'location', element_id: EL, house: null, state: 'open',
   fields: { description: 'A harbour town.' }, omitted: [], base: { description: '' }, base_seq: 41,
   evidence: 'Chapter 3 names the harbour.', expires: '2026-11-21T16:00:00Z',
   by: '018f0000-0000-7000-8000-0000000000b1', via: 'api', client: 'sdk',
@@ -29,10 +29,10 @@ const PROPOSAL = {
   created_at: '2026-10-22T16:00:00Z', updated_at: '2026-10-22T16:00:00Z',
 };
 const LIST = { data: [PROPOSAL], has_more: true, next_cursor: 'c2' };
-/** A queue row for a new element written as proposed (the document's ProposedNewElement): all ten keys. */
+/** A queue row for a new element written as proposed (the document's ProposedNewElement): all eleven keys. */
 const NEW_EL = '018f0000-0000-7000-8000-0000000000e2';
 const NEW_ELEMENT_ROW = {
-  kind: 'new_element', id: NEW_EL, element_type: 'character', element_id: NEW_EL, state: 'open',
+  kind: 'new_element', id: NEW_EL, element_type: 'character', element_id: NEW_EL, house: null, state: 'open',
   by: '018f0000-0000-7000-8000-0000000000b1', evidence: 'Met her in chapter 4.', expires: '2026-11-22',
   created_at: '2026-10-23T07:00:00Z', updated_at: '2026-10-23T07:00:00Z',
 };
@@ -399,7 +399,7 @@ test('every proposal options object refuses an unknown key before sending', asyn
 
 // -- the published types -----------------------------------------------------
 
-test('the published types: OwProposal has the document\'s nineteen keys, the list and the 202 body theirs, the world its switch', () => {
+test('the published types: OwProposal has the document\'s twenty keys, the list and the 202 body theirs, the world its switch', () => {
   const all = readFileSync(new URL('../dist/index.d.ts', import.meta.url), 'utf8');
   const block = (name) => {
     const at = all.indexOf(`interface ${name} {`);
@@ -407,16 +407,19 @@ test('the published types: OwProposal has the document\'s nineteen keys, the lis
     return all.slice(at, all.indexOf('\n}', at));
   };
   const keys = (src) => [...src.matchAll(/^\s{4}(\w+)\??:/gm)].map((m) => m[1]);
-  assert.deepEqual(keys(block('OwProposal')), ['kind', 'id', 'element_type', 'element_id', 'state', 'fields', 'omitted', 'base', 'base_seq', 'evidence',
+  assert.deepEqual(keys(block('OwProposal')), ['kind', 'id', 'element_type', 'element_id', 'house', 'state', 'fields', 'omitted', 'base', 'base_seq', 'evidence',
     'expires', 'by', 'via', 'client', 'decided_by', 'decided_at', 'decline_reason', 'created_at', 'updated_at']);
   assert.match(block('OwProposal'), /\bkind: 'proposal';/);
   assert.match(block('OwProposal'), /\bomitted: string\[\];/);
   assert.match(block('OwProposal'), /\bstate: OwProposalState;/);
-  // The queue's new-element row, its ten keys, and the queue a union told apart by kind
-  assert.deepEqual(keys(block('OwProposedNewElement')), ['kind', 'id', 'element_type', 'element_id', 'state', 'by', 'evidence',
+  assert.match(block('OwProposal'), /\bhouse: OwProposalHouse \| null;/);
+  assert.match(all, /type OwProposalHouse = 'charter' \| 'skill' \| 'new_charter';/);
+  // The queue's new-element row, its eleven keys, and the queue a union told apart by kind
+  assert.deepEqual(keys(block('OwProposedNewElement')), ['kind', 'id', 'element_type', 'element_id', 'house', 'state', 'by', 'evidence',
     'expires', 'created_at', 'updated_at']);
   assert.match(block('OwProposedNewElement'), /\bkind: 'new_element';/);
   assert.match(block('OwProposedNewElement'), /\bstate: 'open' \| 'lapsed';/);
+  assert.match(block('OwProposedNewElement'), /\bhouse: OwProposalHouse \| null;/);
   // The mark's evidence and expires are served as stored, any JSON value (a list, a number, an object)
   assert.match(block('OwProposedNewElement'), /\bevidence: unknown;/);
   assert.match(block('OwProposedNewElement'), /\bexpires: unknown;/);

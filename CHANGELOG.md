@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.186.0] - 2026-11-21
+
+### Added
+
+- **`house` on a proposal and on the queue's new-element row**, typed `OwProposalHouse | null` (`charter`, `skill` or `new_charter`): what part of the world's house rules the row would change. A world's Charter and the Objects it names are now changed only by the owner and co-builders, and anyone else proposes (`403` `keeper_only`); onlyworlds.com works the word out for the owner and co-builders and serves `null` to anyone else.
+
 ## [4.185.0] - 2026-11-21
 
 ### Added

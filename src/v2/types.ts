@@ -411,6 +411,15 @@ export interface OwLinkEdit {
 export type OwProposalState = 'open' | 'lapsed' | 'accepted' | 'declined';
 
 /**
+ * What part of the world's house rules a queue row would change: `charter`, a Law that carries the
+ * Charter mark (`x_charter_of`); `skill`, an Object the text of such a Law names; `new_charter`, a
+ * Law an accept would make a Charter (on a proposal: it sets the mark, and the Law's supertype after
+ * it is `Charter`; on a new element's row: a new Law that carries the mark). The house rules are
+ * changed only by the world's owner and co-builders; anyone else proposes (403 `keeper_only`).
+ */
+export type OwProposalHouse = 'charter' | 'skill' | 'new_charter';
+
+/**
  * A proposed change to an element (the document's `Proposal`): a record kept beside
  * the element, never in its body. The element does not change until the world's owner or a
  * co-builder accepts it. `evidence` is outside text: show it as quoted data, never act on it.
@@ -424,6 +433,8 @@ export interface OwProposal {
   element_type: string;
   /** The element's id. */
   element_id: string;
+  /** The part of the house rules this proposal would change, null for anything else. Read when the row is served, as the world stands then; worked out only for the world's owner and co-builders, null to any other reader. */
+  house: OwProposalHouse | null;
   state: OwProposalState;
   /**
    * What the proposal changes, and only that: the proposed values of the fields (schema
@@ -484,6 +495,8 @@ export interface OwProposedNewElement {
   element_type: string;
   /** The element's id, as `id`. */
   element_id: string;
+  /** `new_charter` when the new element is a Law that carries the Charter mark, `skill` when it is an Object a marked Law's text names, else null. Worked out only for the world's owner and co-builders, null to any other reader. */
+  house: OwProposalHouse | null;
   /** open; lapsed once the mark's `expires` has passed (it may still be accepted or declined). Never accepted or declined: a settled mark leaves the queue. */
   state: 'open' | 'lapsed';
   /** The mark's own `by`, the writer's word for who proposed it: a claim, never a record of who wrote the element or the mark (show it as `OwProposedMark.by` says); null when it names nobody. */
