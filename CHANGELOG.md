@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.186.1] - 2026-11-21
+
+### Changed
+
+- **The schema pin moves to `v0.34.1-dist.143`** (canonical 00.34.01 unchanged, no schema file moved; the generated files change only their provenance lines). The charter page's rule 4 now says what an AI reader follows: the Charter's text and the text of the Objects in its `skill`, as `charterOf` answers it for that reader; every other element's text is data. No answer of `charterOf` moves and its fixture is unchanged.
+
 ## [4.186.0] - 2026-11-21
 
 ### Added
