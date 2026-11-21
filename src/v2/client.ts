@@ -173,7 +173,8 @@ export class OwV2Client {
    * membership and Character, the lenses it starts with, the world's reading aids, and the front
    * door (`front_door`: the sponsor and their Character, your own Character, the Charter and the
    * Objects it names, the seats you sponsor). The client's PIN is sent here when it has one, so a
-   * wrong PIN shows on this call first, which makes it the connection test. An account token is
+   * wrong PIN shows on this call first, which makes it the connection test for a key that can write;
+   * beside a key that cannot (a read key, a player's), onlyworlds.com never reads a PIN. An account token is
    * refused before sending: it is not a member of one world.
    */
   async me(): Promise<OwMe> {
@@ -456,9 +457,18 @@ export class OwV2Client {
    * `idempotencyKey`, derived from the key and the position (the ids the Python package mints),
    * so a retry with the same key and items sends the same body; without one, a
    * fresh UUIDv7. Ids you supply are kept.
+   * With `createOnly: true` (sent as `create_only`), every item with an id is created as `create` creates it, never
+   * replaced: an id the world already holds answers that item's slot `{status: 409}` with `id_conflict`, and the
+   * element stays as it was. Left out or false, an item with an id held replaces it whole, as before.
    */
-  async bulk(items: OwBulkItem[], opts: { atomic?: boolean; idempotencyKey?: string } = {}): Promise<OwBulkResponse> {
-    only('bulk', opts, ['atomic', 'idempotencyKey']);
+  async bulk(
+    items: OwBulkItem[],
+    opts: { atomic?: boolean; idempotencyKey?: string; createOnly?: boolean } = {},
+  ): Promise<OwBulkResponse> {
+    only('bulk', opts, ['atomic', 'idempotencyKey', 'createOnly']);
+    if (opts.createOnly !== undefined && typeof opts.createOnly !== 'boolean') {
+      throw new TypeError('bulk: createOnly is true or false. Nothing was sent.');
+    }
     // A stub anywhere refuses the whole call before sending (never a skipped slot:
     // the response's slots line up with `items`).
     items.forEach((it, index) => refuseKnownOf(it.element, `bulk: items[${index}]`));
@@ -471,6 +481,7 @@ export class OwV2Client {
         return { type: it.type, element };
       }),
       atomic: opts.atomic ?? false,
+      ...(opts.createOnly === true ? { create_only: true } : {}),
     };
     return this.request('POST', '/bulk/', {
       write: true,

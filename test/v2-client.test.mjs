@@ -243,6 +243,23 @@ test('bulk atomic:true is forwarded', async () => {
   assert.equal(lastBody(fetchImpl).atomic, true);
 });
 
+test('bulk createOnly:true is sent as create_only; left out or false, the body is as before', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: FIX_P2a });
+  const items = [{ type: 'character', element: { id: 'mine', name: 'A' } }];
+  await client.bulk(items, { createOnly: true });
+  assert.deepEqual(Object.keys(lastBody(fetchImpl)), ['items', 'atomic', 'create_only']);
+  assert.equal(lastBody(fetchImpl).create_only, true);
+  for (const opts of [{}, { createOnly: false }]) {
+    await client.bulk(items, opts);
+    assert.deepEqual(Object.keys(lastBody(fetchImpl)), ['items', 'atomic'], JSON.stringify(opts));
+  }
+  const before = fetchImpl.calls.length;
+  for (const bad of ['true', 1, null]) {
+    await assert.rejects(client.bulk(items, { createOnly: bad }), (err) => err instanceof TypeError && /createOnly is true or false/.test(err.message));
+  }
+  assert.equal(fetchImpl.calls.length, before, 'a refused createOnly sends nothing');
+});
+
 // -- bulk response parse against literal P2a / P2c bodies -------------------
 
 test('bulk parses P2a success body (items[], numeric status, timestamp echo)', async () => {

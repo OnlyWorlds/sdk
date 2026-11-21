@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.185.0] - 2026-11-21
+
+### Added
+
+- **`bulk(items, { createOnly: true })`**, sent as `create_only`: every item with an id is created as `create` creates it, never replaced. An id the world already holds answers that item's slot `409` `id_conflict`, and the element stays as it was; the rest of the batch goes on as before. Left out or false, the body is the one earlier releases sent. A value that is not `true` or `false` is refused before anything is sent.
+
+### Changed
+
+- `me()`'s comment says a PIN beside a key that cannot write is never read by onlyworlds.com (since 21 November 2026), so the call tests a PIN only for a key that can write.
+
 ## [4.184.1] - 2026-11-21
 
 ### Changed
