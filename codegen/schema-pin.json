@@ -3,15 +3,20 @@
   "_why_manifest_sha256": "Verifying a fetched tree against the MANIFEST.json that came with it only proves the tree is internally consistent. If the tag moved, the manifest moved with it and both agree perfectly about the wrong content — the sha256 would not be broken, it would be complicit (2026-07-28; CVE-2025-30066 is the same shape, 23,000 victims). Recording the hash we FIRST ACCEPTED is what makes a moved tag visible.",
   "_why_dist_serial_is_recorded_here": "Serial 3 shipped with `serial: 1` inside its own VERSION file — the builder's default, with --serial not passed (disclosed 2026-07-28). A consumer reading VERSION to answer 'what do I have?' got the wrong answer while holding a correct tree, and the currency gate cannot catch it: build with the same wrong serial and it agrees with itself. Self-consistent error, one layer over from the moved-tag case. Recording the serial HERE, from the publisher's own announcement rather than from the artifact, is a second witness to the same fact.",
   "repo": "https://github.com/OnlyWorlds/schema-dist",
-  "tag": "v0.34.1-dist.141",
-  "commit": "f87f9abde92a427379c20d0cc60befde6ff06e44",
-  "manifest_sha256": "417be97794478dd39b1ba580c3316a6daf64953ab9ea7cf7ac9eb24f34548c92",
+  "tag": "v0.34.1-dist.142",
+  "commit": "5d5a8beffe1d17abfb5cd279034702f0ec38ca2a",
+  "manifest_sha256": "59d21a4b7a3210bf4cb7cc8c59aece3600681e864fb2e9825e3d592e8b1f6e4e",
   "canonical_version": "00.34.01",
-  "dist_serial": 141,
-  "published": "2026-11-20",
-  "pinned_at": "2026-11-20",
+  "dist_serial": 142,
+  "published": "2026-11-21",
+  "pinned_at": "2026-11-21",
   "pinned_by": "The maintainer: tree from `git archive` of the tag in a schema-dist checkout (216 files: the 215 the MANIFEST lists, and MANIFEST.json itself); files re-hashed against MANIFEST.json by verify_dist.py; MANIFEST self-hash matched against the raw file GitHub serves at the tag, whose ref resolves to the commit above.",
   "previous_pins": [
+    {
+      "tag": "v0.34.1-dist.141",
+      "manifest_sha256": "417be97794478dd39b1ba580c3316a6daf64953ab9ea7cf7ac9eb24f34548c92",
+      "note": "superseded by v0.34.1-dist.142 (map-space: the note under rule 14, rule 4 says placed Markers, three cases; no answer moved)"
+    },
     {
       "tag": "v0.34.1-dist.139",
       "manifest_sha256": "65a3ded94dfce624e823c664c7bcfc317530a872213a217d8e3a63215fe9f4e5",

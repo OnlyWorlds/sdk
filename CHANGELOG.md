@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.184.1] - 2026-11-21
+
+### Changed
+
+- **The schema pin moves to `v0.34.1-dist.142`** (canonical 00.34.01 unchanged; no schema file moved, no generated type changed). The map-space page gains a note at the end of rule 14: where a Zone has an outline on a child Map and on its parent, no reading joins the two outlines or adds a point on the edge of the child's rectangle or of its parent frame, and what a tool draws there is the tool's; rule 4 now says one outline per Map the Zone has placed Markers on. Three new cases (46 in all) hold it: a Zone on a child Map and on its parent, a Zone placed on a parent and only unplaced on its child, and a Zone outlined on a child alone. `mapSpace` already answered all three; no answer on an earlier case moved.
+
 ## [4.184.0] - 2026-11-20
 
 ### Changed
