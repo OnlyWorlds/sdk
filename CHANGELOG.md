@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.186.2] - 2026-11-21
+
+### Changed
+
+- **The schema pin moves to `v0.34.1-dist.144`** (canonical 00.34.01 unchanged, no schema file moved; the generated files change only their provenance lines). The map-space page gains rule 15, bringing a point down to a child Map, with the reading `downOf` and a fourth fixture list, `down_cases` (28 cases). This package does not read it yet; no other case moves.
+
 ## [4.186.1] - 2026-11-21
 
 ### Changed
