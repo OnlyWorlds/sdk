@@ -183,7 +183,8 @@ function byCodePoint(a: string, b: string): number {
 
 // --- the central directory ---------------------------------------------------
 
-interface CdEntry {
+/** One entry of a zip's central directory. Module-internal (the import doors read an export zip through it): not in the package's exports. */
+export interface CdEntry {
   name: string;
   flags: number;
   method: number;
@@ -212,8 +213,8 @@ const MAX32 = 0xffffffff;
 const utf8 = new TextDecoder('utf-8', { fatal: true });
 const latin1 = (b: Uint8Array): string => { let s = ''; for (const x of b) s += String.fromCharCode(x); return s; };
 
-/** Every entry of the central directory, zip64 included, or `not_openable`. Inflates nothing. */
-function centralDirectory(bytes: Uint8Array): CdEntry[] {
+/** Every entry of the central directory, zip64 included, or `not_openable`. Inflates nothing. Module-internal: not in the package's exports. */
+export function centralDirectory(bytes: Uint8Array): CdEntry[] {
   const len = bytes.length;
   let end = -1;
   for (let i = len - 22; i >= Math.max(0, len - 22 - 0xffff); i--) {
@@ -331,8 +332,8 @@ function endsEarly(payload: Uint8Array): boolean {
   return true;
 }
 
-/** An entry's bytes, never inflated much past the size it declares (OW-14's lying size). */
-function inflateEntry(bytes: Uint8Array, e: CdEntry): Uint8Array {
+/** An entry's bytes, never inflated much past the size it declares (OW-14's lying size). Module-internal: not in the package's exports. */
+export function inflateEntry(bytes: Uint8Array, e: CdEntry): Uint8Array {
   const off = e.offset;
   if (off + 30 > bytes.length || u32(bytes, off) !== SIG_LOCAL) refuse('not_openable', `${e.name}: no local header at its offset.`);
   const start = off + 30 + u16(bytes, off + 26) + u16(bytes, off + 28);

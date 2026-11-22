@@ -22,3 +22,7 @@ test/fixtures/address-in-prose.json -text
 codegen/layout/anchors.json -text
 # The by-links-3d layout's directions table, the bytes the method's shared fixture names by its sha256 (codegen/layout_directions.mjs bakes it).
 codegen/layout/directions.json -text
+# The Kanka door's tables and wording, the same bytes as the Python package's copy (both tests hold its sha256).
+src/convert/kanka.json -text
+# Three real Kanka exports, the same bytes as the Python package's test fixtures.
+test/fixtures/kanka/*.zip binary

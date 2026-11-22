@@ -13,6 +13,10 @@
       "import": "./dist/waymark.js"
     },
     "./waymark.css": "./dist/waymark.css",
+    "./convert": {
+      "types": "./dist/convert.d.ts",
+      "import": "./dist/convert.js"
+    },
     "./package.json": "./package.json"
   },
   "types": "dist/index.d.ts",
@@ -20,6 +24,9 @@
     "*": {
       "waymark": [
         "dist/waymark.d.ts"
+      ],
+      "convert": [
+        "dist/convert.d.ts"
       ]
     }
   },
@@ -33,12 +40,12 @@
     "SCHEMA.md"
   ],
   "scripts": {
-    "build": "tsup --entry.index src/index.ts --entry.waymark src/waymark/index.ts --format esm --clean && tsup --entry.index src/index.ts --format esm --dts-only && tsup --entry.waymark src/waymark/index.ts --format esm --dts-only && node -e \"require('fs').copyFileSync('src/waymark/waymark.css', 'dist/waymark.css')\"",
-    "dev": "tsup --entry.index src/index.ts --entry.waymark src/waymark/index.ts --format esm --dts --watch",
+    "build": "tsup --entry.index src/index.ts --entry.waymark src/waymark/index.ts --entry.convert src/convert/index.ts --format esm --clean && tsup --entry.index src/index.ts --format esm --dts-only && tsup --entry.waymark src/waymark/index.ts --format esm --dts-only && tsup --entry.convert src/convert/index.ts --format esm --dts-only && node -e \"require('fs').copyFileSync('src/waymark/waymark.css', 'dist/waymark.css')\"",
+    "dev": "tsup --entry.index src/index.ts --entry.waymark src/waymark/index.ts --entry.convert src/convert/index.ts --format esm --dts --watch",
     "pretest": "npm run build",
     "test": "node --test",
-    "codegen": "python codegen/generate_types.py && node codegen/tools.mjs && node codegen/layout_anchors.mjs && node codegen/layout_directions.mjs",
-    "codegen:check": "python codegen/generate_types.py --check && node codegen/tools.mjs --check && node codegen/layout_anchors.mjs --check && node codegen/layout_directions.mjs --check",
+    "codegen": "python codegen/generate_types.py && node codegen/tools.mjs && node codegen/layout_anchors.mjs && node codegen/layout_directions.mjs && python codegen/html_entities.py",
+    "codegen:check": "python codegen/generate_types.py --check && node codegen/tools.mjs --check && node codegen/layout_anchors.mjs --check && node codegen/layout_directions.mjs --check && python codegen/html_entities.py --check",
     "schema:verify": "python codegen/verify_dist.py",
     "schema:check": "npm run schema:verify && npm run codegen:check",
     "prepublishOnly": "npm run build",

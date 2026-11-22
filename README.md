@@ -339,6 +339,25 @@ An element's author fields, `created_by`, `changed_by`, `changed_via`, `changed_
 const backup = writeWorldFile(files, topDir, { includeAuthorFields: true }); // every file byte for byte
 ```
 
+## Bringing in a Kanka export
+
+`@onlyworlds/sdk/convert` turns another tool's export into a world folder, in memory: bytes in, the folder's files and a report out, with no file system and no network, in the browser and in Node. Kanka is the first tool. `convertKanka` reads the zip Kanka's "Export the campaign" gives for the JSON type and writes the same folder as the Python package's door (`python -m onlyworlds.kanka`), byte for byte, and the same report. Both read their tables and wording from one data file, the same bytes in both packages.
+
+```typescript
+import { convertKanka, kankaReportText } from '@onlyworlds/sdk/convert';
+
+const { files, report } = convertKanka(bytes, { source: 'my-campaign.zip' }); // the zip, as a Uint8Array
+files;                                // [{ path, data }]: world.json and elements/<type>/<slug>--<tail8>.json
+report.counts; report.total;          // elements written, by type
+report.unplaced; report.unresolved;   // keys kept as x_kanka_ extensions, links whose target is not in the folder
+report.madeNames;                     // names the door made (`<entity>: hidden details`), by kind
+const text = kankaReportText(report, 'my-world'); // the report as the Python door prints it
+```
+
+Write `files` under a new folder yourself, each `path` relative to it. Each entity becomes an element of its module's type (a module with no OnlyWorlds type becomes a Narrative with supertype `Article`), its entry and posts the description, its parent, places and memberships links, and every key with no field is kept as `x_kanka_<key>` and named in the report. What Kanka hides comes in carrying `hidden: true`: a private entity whole, a post or a relationship not visible to all, and an entity's private details in one hidden Narrative. Ids are made from the campaign and Kanka's own ids, so the same export gives the same folder every time.
+
+`world.json`'s `producer` line names this package (`{ tool: '@onlyworlds/sdk' }`); pass `producer: { tool, version }` to name your own tool. A file that is not a zip, or a zip with no `campaign.json`, throws an `OwConvertError` with `reason` `not_a_zip` or `not_an_export`. From the repository, `node scripts/convert-kanka.mjs EXPORT.zip OUT-DIR` writes the folder and prints the report.
+
 ## World calendars
 
 A world's time is an integer line (`time_range_current` is a point on it, and so is an Event's `start_date`). A calendar names its points: months, days, eras. Atlas keeps a calendar on an element (a Construct by convention) in its `atlas_calendar` field, and the SDK reads it with Atlas's own calendar code (since 4.20.0). Atlas owns that field and is its only writer; read it, never write it.

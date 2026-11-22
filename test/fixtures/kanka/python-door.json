@@ -1,0 +1,77 @@
+{
+  "about": "The Python package's Kanka door (onlyworlds.kanka) on each export here, run as <name>.zip into folder: the sha256 of every file it wrote and of its report text. Recorded from its output; convert-kanka.test.mjs holds convertKanka to it.",
+  "producer": {
+    "tool": "onlyworlds",
+    "version": "0.139.3"
+  },
+  "exports": {
+    "quay-export-world_20261023_074706.zip": {
+      "files": {
+        "elements/character/ada-okafor--66dc47e1.json": "834f5d36600698b6c540f1128001c886396746cc26db9dd0f4267a56bf4d0e83",
+        "elements/character/allied-character-name--669a0f9a.json": "c44bac944dd1a4f12d5e3544af3b6cd22a240c1b6f0e54b416fd882fef457b78",
+        "elements/character/mara-voss--6fea8495.json": "6564ae0889c22699d67bcaffffd1752a67bcdd49a7a5ac03201a9cfd982f7a59",
+        "elements/character/your-character-name--eacdfad5.json": "6323db4bd2170392d068f523588eca860dfc11cc740c39375ee6e203100a8500",
+        "elements/institution/the-ferry-guild--f0024788.json": "32d3cc9dc07bcc33e6d1c1a56c87e2efe462aee971aa810d97143cde6fbf31d9",
+        "elements/location/the-ferry-crossing--1ab66d52.json": "eb787ac8b64945c215a7b5e0e516b5f7f218b30dd5a953ec44950c3aa139e54a",
+        "elements/location/the-quay--ec06f2f0.json": "f702ba03f780cce175ad594d60acfd7ef855ce79faadaec8e91b8e502ed13b79",
+        "elements/location/your-capital-city--d51766bb.json": "f79c11d86cc44d344bc391a99fc338e3be18861171c020caf7f37194c68060ca",
+        "elements/location/your-kingdom-name--f2d9bfe4.json": "680f557614eb928d872034c3d173344103a49c0e93d55eccd477bf1ac68c8eba",
+        "elements/narrative/allied-character-name-hidden-details--652c02fc.json": "ca1ac45cd65609ca897fa7a0331eb903189602c63af8d95c45a47cab413b41ff",
+        "elements/narrative/the-ledger-of-the-first-crossing--812c8adc.json": "0b7487e3f6ba957c15748d54b58632fac32d89d48a6a1abac6955809e214b0dc",
+        "elements/narrative/your-character-name-hidden-details--c143387d.json": "b4085bf2de5dc390b9c586ec6f6fa93a43d9fefd474966128e7d04e742b857b7",
+        "elements/relation/friend--0aae5f8d.json": "ae5e44412a992b9a8489e584104715e512d59c6e8de1fed4ff2f0be6ae11b17d",
+        "elements/relation/friend-mentor-rival--c8522c7c.json": "ae3b7708595fd0fe5aa16055450fbf6628fd265653141d08a2a194b21fbe430c",
+        "world.json": "b430fecfc8508577170288a3ca606f5afc76ad949da9d67a38e47b864ae0c696"
+      },
+      "report": "ee2f2026a44296d4510a5f379b0899857a6a47c1b058060ec7d2a05daa94ec51"
+    },
+    "quay-export-world_20261024_180340.zip": {
+      "files": {
+        "elements/character/ada-okafor--66dc47e1.json": "834f5d36600698b6c540f1128001c886396746cc26db9dd0f4267a56bf4d0e83",
+        "elements/character/allied-character-name--669a0f9a.json": "c44bac944dd1a4f12d5e3544af3b6cd22a240c1b6f0e54b416fd882fef457b78",
+        "elements/character/mara-voss--6fea8495.json": "6564ae0889c22699d67bcaffffd1752a67bcdd49a7a5ac03201a9cfd982f7a59",
+        "elements/character/orla-pike--dad18be6.json": "3a75ec961e906a56d352019c40d6a008061082b62f98d3fbd835222091aa803f",
+        "elements/character/your-character-name--eacdfad5.json": "6323db4bd2170392d068f523588eca860dfc11cc740c39375ee6e203100a8500",
+        "elements/institution/the-ferry-guild--f0024788.json": "32d3cc9dc07bcc33e6d1c1a56c87e2efe462aee971aa810d97143cde6fbf31d9",
+        "elements/location/the-ferry-crossing--1ab66d52.json": "eb787ac8b64945c215a7b5e0e516b5f7f218b30dd5a953ec44950c3aa139e54a",
+        "elements/location/the-quay--ec06f2f0.json": "f702ba03f780cce175ad594d60acfd7ef855ce79faadaec8e91b8e502ed13b79",
+        "elements/location/your-capital-city--d51766bb.json": "f79c11d86cc44d344bc391a99fc338e3be18861171c020caf7f37194c68060ca",
+        "elements/location/your-kingdom-name--f2d9bfe4.json": "680f557614eb928d872034c3d173344103a49c0e93d55eccd477bf1ac68c8eba",
+        "elements/narrative/allied-character-name-hidden-details--652c02fc.json": "ca1ac45cd65609ca897fa7a0331eb903189602c63af8d95c45a47cab413b41ff",
+        "elements/narrative/lamp-keeper--a7a77dba.json": "5b4a43f29926d9a1ecc40e6eddee14e622e57006cfe82330a84654c2a8cd817f",
+        "elements/narrative/the-ledger-of-the-first-crossing--812c8adc.json": "0b7487e3f6ba957c15748d54b58632fac32d89d48a6a1abac6955809e214b0dc",
+        "elements/narrative/your-character-name-hidden-details--c143387d.json": "b4085bf2de5dc390b9c586ec6f6fa93a43d9fefd474966128e7d04e742b857b7",
+        "elements/relation/friend--0aae5f8d.json": "ae5e44412a992b9a8489e584104715e512d59c6e8de1fed4ff2f0be6ae11b17d",
+        "elements/relation/friend-mentor-rival--c8522c7c.json": "ae3b7708595fd0fe5aa16055450fbf6628fd265653141d08a2a194b21fbe430c",
+        "world.json": "b430fecfc8508577170288a3ca606f5afc76ad949da9d67a38e47b864ae0c696"
+      },
+      "report": "0ecde4ea2ee317bc183e7301b8b482f5af97e3cf138ab75e03a9228c29df4fc0"
+    },
+    "quay-export-world_20261025_011029.zip": {
+      "files": {
+        "elements/character/ada-okafor--66dc47e1.json": "834f5d36600698b6c540f1128001c886396746cc26db9dd0f4267a56bf4d0e83",
+        "elements/character/allied-character-name--669a0f9a.json": "c44bac944dd1a4f12d5e3544af3b6cd22a240c1b6f0e54b416fd882fef457b78",
+        "elements/character/mara-voss--6fea8495.json": "6564ae0889c22699d67bcaffffd1752a67bcdd49a7a5ac03201a9cfd982f7a59",
+        "elements/character/orla-pike--dad18be6.json": "3a75ec961e906a56d352019c40d6a008061082b62f98d3fbd835222091aa803f",
+        "elements/character/perrin-shaw--f88ee27e.json": "5849c577584e2e1d0535198e77669a8b7d48217da19788b4fd2cb55cd2436341",
+        "elements/character/your-character-name--eacdfad5.json": "6323db4bd2170392d068f523588eca860dfc11cc740c39375ee6e203100a8500",
+        "elements/institution/the-ferry-guild--f0024788.json": "32d3cc9dc07bcc33e6d1c1a56c87e2efe462aee971aa810d97143cde6fbf31d9",
+        "elements/location/the-ferry-crossing--1ab66d52.json": "eb787ac8b64945c215a7b5e0e516b5f7f218b30dd5a953ec44950c3aa139e54a",
+        "elements/location/the-quay--ec06f2f0.json": "f702ba03f780cce175ad594d60acfd7ef855ce79faadaec8e91b8e502ed13b79",
+        "elements/location/your-capital-city--d51766bb.json": "f79c11d86cc44d344bc391a99fc338e3be18861171c020caf7f37194c68060ca",
+        "elements/location/your-kingdom-name--f2d9bfe4.json": "680f557614eb928d872034c3d173344103a49c0e93d55eccd477bf1ac68c8eba",
+        "elements/narrative/a-note-admins--ad3c06b7.json": "29e6b11e97e30d15dca4d9a5e2dd375bf821555cb68df30fe0ff68a8ce9d1fc5",
+        "elements/narrative/a-note-members-of-the-campaign--ad51138e.json": "21cd1d14fc5ae47381e7658e3b0f4878302563a32915252399058aa7e6375664",
+        "elements/narrative/a-note-only-me--50c0bbfc.json": "4dbb20e4953a36123d4536c2514713eed5c5e0ce5778d58c692fd18b6635ab1a",
+        "elements/narrative/allied-character-name-hidden-details--652c02fc.json": "ca1ac45cd65609ca897fa7a0331eb903189602c63af8d95c45a47cab413b41ff",
+        "elements/narrative/lamp-keeper--a7a77dba.json": "5b4a43f29926d9a1ecc40e6eddee14e622e57006cfe82330a84654c2a8cd817f",
+        "elements/narrative/the-ledger-of-the-first-crossing--812c8adc.json": "0b7487e3f6ba957c15748d54b58632fac32d89d48a6a1abac6955809e214b0dc",
+        "elements/narrative/your-character-name-hidden-details--c143387d.json": "b4085bf2de5dc390b9c586ec6f6fa93a43d9fefd474966128e7d04e742b857b7",
+        "elements/relation/friend--0aae5f8d.json": "ae5e44412a992b9a8489e584104715e512d59c6e8de1fed4ff2f0be6ae11b17d",
+        "elements/relation/friend-mentor-rival--c8522c7c.json": "ae3b7708595fd0fe5aa16055450fbf6628fd265653141d08a2a194b21fbe430c",
+        "world.json": "b430fecfc8508577170288a3ca606f5afc76ad949da9d67a38e47b864ae0c696"
+      },
+      "report": "4e966b7fc90aeb8b699bfb650d7d8fa92406dba3fc25b9b4571550798b2ca461"
+    }
+  }
+}

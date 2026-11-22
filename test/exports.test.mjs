@@ -22,6 +22,7 @@ const NOT_EXPORTED = {
     DaySlot: "the calendar kernel's internal day slot, reached only through StepPosition",
     StepPosition: "weekdayForStep's internal cache parameter; no exported function makes one",
   },
+  'convert.d.ts': {},
   'waymark.d.ts': {
     OwElementMark: 'exported from the main entry',
     OwTool: 'exported from the main entry',

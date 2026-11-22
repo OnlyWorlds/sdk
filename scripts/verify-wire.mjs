@@ -2237,6 +2237,9 @@ const UNION_OWN = {
   'type OwSignInReason': 'the sign-in flow\'s own outcomes, beside keel\'s codes',
   'OwV2Client.request.accountToken': 'the client\'s own routing option',
   'OwRemovedImage.cache': 'the upload host\'s answer (media.onlyworlds.com), not keel\'s document; its own live checks',
+  'type OwConvertErrorReason': 'the import door\'s own refusals, held by test/convert-kanka.test.mjs',
+  'OwConvertMadeName.source': 'the import doors\' made-name kinds, the same words as the Python package\'s MadeName.source',
+  'OwKankaModule.status': 'the Kanka door\'s data file (src/convert/kanka.json, report.how), held by test/convert-kanka.test.mjs',
 };
 {
   const { unions, unseen } = sdkUnions();
