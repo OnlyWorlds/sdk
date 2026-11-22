@@ -98,7 +98,9 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   the account has none (it becomes the account PIN); either mistake is a 422 with
   `err.param === 'pin'`, so send without it first and again with it on that 422.
 - Invite links (since 4.12.0): `previewJoin(code)` (no credential sent) shows who invites, to
-  which world, in what role; `acceptJoin(code)` with an `ow_a_` account token joins. Bad code:
+  which world, in what role, and since 4.189.0 a `glimpse` (up to five things of the world by
+  name and type and the links among them, no ids; null on a guest's or player's link);
+  `acceptJoin(code)` with an `ow_a_` account token joins. Bad code:
   `err.isNotFound`; `err.isAlreadyMember`, `err.isPinRequired` for the two 409s.
 - Lookup without a model (since 4.11.0): `buildWorldIndex(elements)` then
   `lookupWorld(index, question)` ranks the elements a question is about (names, then kind, one

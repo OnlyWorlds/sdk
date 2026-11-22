@@ -1245,6 +1245,10 @@ const SCHEMA_PAIRS = [
   { sdk: 'OwSortAnswer', sdkPath: ['usage'], at: ['post', '/api/v2/account/ai/sort', '200'], prop: 'usage', route: 'POST /account/ai/sort (usage)', clientOnly: [], needs: 'ai' },
   { sdk: 'OwJoinPreview', sdkPath: ['world'], at: ['post', '/api/v2/join/preview', '200'], prop: 'world', route: 'POST /join/preview (world)', clientOnly: [] },
   { sdk: 'OwJoinPreview', sdkPath: ['characters', '[]'], at: ['post', '/api/v2/join/preview', '200'], items: 'characters', route: 'POST /join/preview (a character)', clientOnly: [] },
+  // The glimpse (4.189.0): the group, each thing and each link, each held to its own named type.
+  { sdk: 'OwJoinGlimpse', at: ['post', '/api/v2/join/preview', '200'], path: ['glimpse'], route: 'POST /join/preview (glimpse)', clientOnly: [] },
+  { sdk: 'OwJoinGlimpseThing', at: ['post', '/api/v2/join/preview', '200'], path: ['glimpse', 'things', '[]'], route: 'POST /join/preview (a glimpse\'s thing)', clientOnly: [] },
+  { sdk: 'OwJoinGlimpseLink', at: ['post', '/api/v2/join/preview', '200'], path: ['glimpse', 'links', '[]'], route: 'POST /join/preview (a glimpse\'s link)', clientOnly: [] },
   { sdk: 'OwCreatedAccountWorld', sdkPath: ['keys', '[]'], at: ['post', '/api/v2/account/worlds', '201'], items: 'keys', route: 'POST /account/worlds (a key)', clientOnly: [], needs: 'createAccountWorld' },
   { sdk: 'OwAgentJoined', sdkPath: ['world'], at: ['post', '/api/v2/join', '201'], path: ['<kind=agent>', 'world'], route: 'POST /join (agent: world)', clientOnly: [], needs: 'redeemJoin' },
   { sdk: 'OwAgentJoined', sdkPath: ['seat'], at: ['post', '/api/v2/join', '201'], path: ['<kind=agent>', 'seat'], route: 'POST /join (agent: seat)', clientOnly: [], needs: 'redeemJoin' },
@@ -2158,6 +2162,7 @@ const UNION_ROWS = {
   'OwMember.status': { at: ['GET /members 200: data[].status'] },
   'OwMember.lenses_from': { at: ['*: **.lenses_from'] },
   'OwJoinPreview.reader': { at: ['POST /join/preview 200: reader'] },
+  'OwJoinGlimpse.picked_by': { at: ['POST /join/preview 200: glimpse.picked_by'] },
   'OwWorldLink.reader': { at: ['GET /account/worlds/{world_id}/links 200: data[].reader'] },
   'OwWorldLink.lands_on': { at: ['GET /account/worlds/{world_id}/links 200: data[].lands_on'] },
   'OwWorldLink.status': { at: ['GET /account/worlds/{world_id}/links 200: data[].status'] },

@@ -1049,6 +1049,34 @@ export interface OwAiSortBody {
   slice?: OwSortRef[];
 }
 
+/** One thing in a join preview's glimpse: its name and its element type (`character`, `location`, ...). It carries no id. */
+export interface OwJoinGlimpseThing {
+  name: string;
+  type: string;
+}
+
+/** One link in a join preview's glimpse. `from` and `to` are places in `things`, counted from 0; `from` is the thing whose field holds the link. */
+export interface OwJoinGlimpseLink {
+  from: number;
+  to: number;
+  /** The name of the field that holds the link. */
+  field: string;
+  /** The words to show for the link. */
+  label: string;
+}
+
+/**
+ * A join preview's `glimpse`: up to five things of the world by name, and the links among them, read as a
+ * visitor with no account would read the world if it were public (nothing hidden, nothing proposed). It names no id.
+ */
+export interface OwJoinGlimpse {
+  /** How the things were chosen. `strand`: the world's chosen story, its happening, where it happened, its hero and where the hero is now. `links`: the most linked thing and the most linked of its neighbours. */
+  picked_by: 'strand' | 'links' | (string & {});
+  /** At most five, in the order `picked_by` gives. */
+  things: OwJoinGlimpseThing[];
+  links: OwJoinGlimpseLink[];
+}
+
 /** POST /join/preview: what a join code holds, read without using it. */
 export interface OwJoinPreview {
   /** `person`: an invite link, accepted with acceptJoin. `agent`: redeemed by an AI agent at POST /join. `player`: a friend with no account redeems it with redeemJoin for a read key. */
@@ -1065,6 +1093,8 @@ export interface OwJoinPreview {
   expires_at: string;
   /** The note the inviter wrote on a person link, or null (an AI or player link keeps none). */
   note: string | null;
+  /** A glimpse of the world for a link whose role reads it (contributor or co-builder). Null for a guest's link, and so for every player's, and when no two things a visitor could see are linked. */
+  glimpse: OwJoinGlimpse | null;
   /** A table only (a player link that works 2 to 50 times): how many times it works. Absent on a link for one. */
   max_uses?: number;
   /** A table only: how many places are left. */

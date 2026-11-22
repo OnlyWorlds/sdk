@@ -853,7 +853,11 @@ export class OwV2Client {
    * this client holds. Every bad code (unknown, used, revoked, expired) is the same
    * 404 `not_found` (`err.isNotFound`). `code` is the part of the link after `#`. A table
    * adds `max_uses`, `uses_left`, `name_required` and `characters`, the
-   * pick screen's list; a link for one answers without them.
+   * pick screen's list; a link for one answers without them. `glimpse` is always
+   * there: for a link whose role reads the world (contributor or co-builder), up to
+   * five things of it by name and type and the links among them, with no id; null
+   * for a guest's or a player's link, and when no two things a visitor could see
+   * are linked.
    */
   async previewJoin(code: string): Promise<OwJoinPreview> {
     return this.request('POST', '/join/preview', { auth: false, body: { code } }) as Promise<OwJoinPreview>;

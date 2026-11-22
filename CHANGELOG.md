@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.189.0] - 2026-11-22
+
+### Added
+
+- **A join preview carries a glimpse of the world.** `previewJoin()` answers `glimpse`, always present: for a link whose role reads the world (contributor or co-builder) it is an `OwJoinGlimpse`, up to five `things` of the world, each a `name` and a `type`, and the `links` among them, each `from` and `to` as places in `things` with the `field` that holds the link and a `label` to show; `picked_by` says whether they are the world's chosen story (`strand`) or its most linked thing and that thing's neighbours (`links`). It is `null` for a guest's link, and so for every player's, and when no two things a visitor could see are linked. It is read as a visitor with no account would read the world if it were public, and names no id. New types: `OwJoinGlimpse`, `OwJoinGlimpseThing`, `OwJoinGlimpseLink`.
+
+### Fixed
+
+- **Seven purity tests read their own copy of the fixture.** Each took its input from the test file's one parsed fixture after earlier tests had run it through the reader, so a reader that wrote into what it was given passed. Tests only.
+
 ## [4.188.0] - 2026-11-22
 
 ### Added

@@ -1403,6 +1403,18 @@ test('previewJoin: POST /join/preview with the code and NO credential, whatever 
   }
 });
 
+test('previewJoin: the glimpse comes back as it was sent, a group or null', async () => {
+  const glimpse = {
+    picked_by: 'links',
+    things: [{ name: 'Gela', type: 'location' }, { name: 'Ada', type: 'character' }],
+    links: [{ from: 1, to: 0, field: 'location', label: 'is at' }],
+  };
+  const withOne = makeClient({ body: { ...PREVIEW, role: 'contributor', note: null, glimpse } });
+  assert.deepEqual((await withOne.client.previewJoin('ow_j_abc')).glimpse, glimpse);
+  const withNone = makeClient({ body: { ...PREVIEW, note: null, glimpse: null } });
+  assert.equal((await withNone.client.previewJoin('ow_j_abc')).glimpse, null);
+});
+
 test('previewJoin: a bad code is one 404 not_found, isNotFound', async () => {
   const { client } = makeClient({ status: 404, body: { error: { type: 'not_found', code: 'not_found', message: 'This join code is not valid.' } } });
   await assert.rejects(client.previewJoin('ow_j_bad'), (e) => e instanceof OwApiError && e.isNotFound && !e.isAlreadyMember);
