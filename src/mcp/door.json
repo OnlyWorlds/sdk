@@ -1,0 +1,2107 @@
+{
+  "_about": "The hosted MCP door's read tools as it serves them, for @onlyworlds/sdk/mcp. Written by scripts/vendor-mcp-tools.mjs from the live door; never edit by hand.",
+  "source": "https://www.onlyworlds.com/mcp: tools/list, resources/list, resources/templates/list, list_element_types and get_element_schema for each type, asked with the public demo key 0000000001",
+  "read_at": "2026-11-22",
+  "schema_version": "00.34.01",
+  "tools": [
+    {
+      "name": "list_element_types",
+      "description": "List all 22 OnlyWorlds element types with a one-line shape summary of each.\n\nEvery world is built from these types; each element has a stable UUID `id`, a\n`name`, and a `type`. Use `get_element_schema(type)` for a type's full field\nlist. Unauthenticated — schema is public reference. Returns a mapping of the 22\ntype slugs (the value you pass as `type` to the data tools) to a summary\nstring.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "here": "Here it answers on this computer, from the schema as onlyworlds.com served it when this package was built."
+    },
+    {
+      "name": "get_element_schema",
+      "description": "Return the field structure of one OnlyWorlds element `type` (a slug from\n`list_element_types`, e.g. \"character\").\n\nThe result groups the type's writable fields by kind so a caller knows how to\nread and write them: `text` (strings), `integer`, `single_link` (one UUID),\n`multi_link` (an array of UUIDs), and `generic` (a type+id pair pointing at any\nelement type). For every link field the target element type is given under\n`link_targets`. All link values are element UUIDs. Unauthenticated. Errors if\n`type` is not one of the 22 types.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "here": "Here it answers on this computer, from the schema as onlyworlds.com served it when this package was built."
+    },
+    {
+      "name": "search_schema",
+      "description": "Search every element type's fields for `query` (case-insensitive substring),\nacross all 22 types. Useful for \"which types have a `location` field?\" or\nfinding where a concept lives in the schema.\n\nReturns a mapping of type slug -> the matching field names in that type (types\nwith no match are omitted); a `query` that also matches a type slug lists that\ntype with an empty field list so the type-name hit is not lost. Unauthenticated.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "here": "Here it answers on this computer, from the schema as onlyworlds.com served it when this package was built."
+    },
+    {
+      "name": "list_worlds",
+      "description": "The worlds you can read here. With an API-Key: the key's one world. Signed\nin through a hosted client (a bearer), where this server offers one: every\nworld your account owns or is a member of, as your account's world list shows\nthem; pass one's `id` as `world` to the other read tools; a\nbearer reads only, and writes need an API-Key and API-Pin. Returns `{data: [{id, slug, name, role}, ...]}`,\n`role` being `owner` or your membership's role (co_builder, contributor, guest),\nand `slug` the world's public page address, or null.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "here": "Here it answers from a world folder on this computer, not from onlyworlds.com; `world` is the id in the folder's world.json."
+    },
+    {
+      "name": "get_me",
+      "description": "Who you are in this world, and its front door: the same body as\n`GET /api/v2/me` for your credential, built by the same function.\n\nReturns GET /me's body: `world` ({id, name}), `scope` (`read` or `write`),\n`kind`, `role`, `membership`, `character`, `lenses`, `lenses_from`,\n`front_door` and `reading_aids` always; `name` for an AI or a player seat;\n`x_served_trimmed` when a lens you chose is left out of `lenses`. `kind` is\n`owner`, `person`, `player` (a player seat: a friend reading as one\nCharacter) or `agent` (an AI seat: an AI's own membership and key, which a\nperson answers for).\nOnly an AI seat's writes are ever held for review, and only in a world whose\nowner chose to review them: there an update, a link edit or a bulk replace is proposed,\nnot applied (the answer names the `proposal`), for a keeper (the owner or a\nco-builder) to accept or decline; a create lands at once, marked\n`x_review_proposed`, and lists and searches leave it out unless `include_proposed` is true. Every\nother key's writes apply at once.\n`front_door.charter` is the id of the world's Charter, the house rules: read\nit first, with `get_element(\"law\", id)`.\n`front_door.charter_skill` lists the ids of the Objects it names, each\nread with `get_element(\"object\", id)`. Each is null, or the list empty,\nwhen there is none you may read. `front_door` also names who answers for\nyou (`sponsor`, `sponsor_character`), your own Character (`my_character`)\nand the seats you answer for (`my_seats`). `reading_aids` is what to read\nfirst, as you read the world: the Charter with its rules and skill, the\nGuide, the Domains and the strand. Its Guide, each Domain and each strand\nslot is a typed pointer, `{id, type, name}` (a Domain's `hubs` and\nfront_door's `charter_element` and `charter_skill_elements` are `{type,\nid}`): fetch any of them with `get_element(type, id)`. The strand's slots\nare `narrative`, `event`, `location`, `character` and `now`, each null when\nthere is none, beside `same`. Signed in through a hosted client (a\nbearer), where this server offers one, it answers as your own read key in\nthat world answers with no PIN sent; a PIN sent beside the bearer is never\nread. Otherwise it requires an\nAPI-Key, and asks of it what GET /api/v2/me asks of it. A PIN sent with a\nkey is treated exactly as that route treats it: refused where the route\nrefuses it, counted toward the lockout where the route counts it, ignored\nwhere the route ignores it.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "world": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The world to read, by id or by its public page's slug. With an API-Key, leave it out (or name the key's own world by its id): a key reads its own world only. list_worlds names the worlds you can read here."
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "here": "Here it answers from a world folder on this computer, not from onlyworlds.com: as the folder's owner with no account behind it (no membership, Character, sponsor, seats or lenses), with scope read, since these tools never write the folder; `world` is the id in the folder's world.json."
+    },
+    {
+      "name": "list_elements",
+      "description": "List elements of one `type` in the world named by your API-Key header,\nnewest-created first.\n\n`type` is a slug from `list_element_types` (e.g. \"character\"). Optional\n`name_contains` filters by case-insensitive name substring; `supertype` is\ntrimmed and matched without regard to case, the whole word, as the profiles\nread it and as GET /api/v2/{type}?supertype= does (\" message \" and \"MESSAGE\"\nmatch Message, \"Messages\" does not; an empty string lists the elements with\nnone); `subtype` is read the same way, as ?subtype= does. `ids` (a list of\n1 to 200 element ids) keeps only those, as ?ids= does. `created_by` (a\nmembership id, as GET /api/v2/members lists them, or \"owner\" for the\nowner's own writes) keeps what that member created, as ?created_by= does.\n`link` filters by the type's single-link fields, as ?<field>=<id> does: one\nobject, each key a single-link field of this type (get_element_schema lists\nthem under `single_link`), each value an element id, or \"\" for the\nelements you are served with none. A key with no member behind it (an\n`ow_r_` or `ow_w_` key the owner made, a classic or demo key) or the\nowner's own sign-in, a co-builder's, and a contributor's while no element\nof the world is hidden are served each stored link, whatever it names, and\nmatch on it. Any other is served a link null where it names no element it\ncan see, and on an element it knows of only as a stub (`known_of`),\nwhatever the stub stores; it matches only what it is served: an element it\ncannot see gives the same empty list as an id that names nothing.\n`list_elements(\"pin\", link={\"map\": \"<map id>\"})` lists the pins on one map;\n`link={\"location\": \"<id>\"}` on a character, the characters there.\n`limit` (default 100, max 1000) and `offset` page the result.\nRequires a READ or WRITE API-Key. Returns `{data: [element, ...], limit,\noffset, has_more, proposed_left_out}` where each element is the full v2 wire\nshape and `id` is a UUID. Use `get_element(type, id)` for a single element.\nA parlor's room elements (marked `x_room_of`) are left out unless\n`include_room` is true, and so are the world's reading aids (its Charter,\nGuide and Domains, marked `x_charter_of`). With `include_room` true both come\nback. The Charter (the house rules) and the skills it names are in `get_me`'s\n`front_door`; a list is never where they are taken from. The strand, the\nstory this world is about, is the World's `x_strand` mark, not an element: no\nlist serves it; `get_me`'s `reading_aids` names its elements, each fetched with\n`get_element`.\nAn element carrying x_review_proposed is proposed, not yet reviewed by a\nkeeper; it is left out unless asked for. Any value counts but null, blank\ntext, [] and {}. `include_proposed` true serves it whole, mark on: treat it\nas proposed, not yet reviewed, never as a fact. A stub (`known_of`) of a\nproposed element shows no mark: its being served under `include_proposed`\nis the sign.\n`proposed_left_out` says how many matching elements were left out (0 with\n`include_proposed`).",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "name_contains": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "supertype": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "subtype": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "link": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "default": 100,
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "type": "integer"
+          },
+          "include_room": {
+            "default": false,
+            "type": "boolean"
+          },
+          "include_proposed": {
+            "default": false,
+            "type": "boolean"
+          },
+          "world": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The world to read, by id or by its public page's slug. With an API-Key, leave it out (or name the key's own world by its id): a key reads its own world only. list_worlds names the worlds you can read here."
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "here": "Here it answers from a world folder on this computer, not from onlyworlds.com; `world` is the id in the folder's world.json."
+    },
+    {
+      "name": "get_element",
+      "description": "Fetch one element by `type` and `id` (a UUID) from the world named by your\nAPI-Key header.\n\n`type` is a slug from `list_element_types`. Returns the full v2 wire shape\n(the same body as `GET /api/v2/{type}/{id}`): `type`, `id`, `name`, scalar\nfields, link fields as UUID arrays, and any extension fields inline. Requires a\nREAD or WRITE API-Key. Errors if no element of that type with that id exists in\nthe world.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "world": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The world to read, by id or by its public page's slug. With an API-Key, leave it out (or name the key's own world by its id): a key reads its own world only. list_worlds names the worlds you can read here."
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "here": "Here it answers from a world folder on this computer, not from onlyworlds.com; `world` is the id in the folder's world.json."
+    },
+    {
+      "name": "search_elements",
+      "description": "Search the world named by your API-Key header for elements whose name or\ntext fields (description and each type's prose fields, such as a\nCharacter's background) hold every word of `query` as a whole word,\nignoring case: \"ore\" does not find \"more\", and \"copper mine\" needs both\nwords somewhere in the element. No stemming.\n\n`query` is 2 to 200 characters. Optional `type` (a slug from\n`list_element_types`) searches one type only; `limit` (default 50, clamped\nto 1-200) caps the results. Name matches come first, then the rest, each by\ntype and then by name. Returns `{query, results: [{type, id, name,\nsupertype, subtype, field, snippet}, ...], count, truncated}`: `field` is\nwhere the words were found (`name` or a text field), `snippet` up to 160\ncharacters of it around the first match, and `truncated` true when more\nmatched than `limit` (no further pages: narrow the query). `id` is a UUID;\ncall `get_element(type, id)` for the full body. Requires a READ or WRITE\nAPI-Key; a guest key searches only what it may read. This mirrors\n`GET /api/v2/search`, except that a parlor's room elements (marked\n`x_room_of`) and the world's reading aids (its Charter, Guide and Domains,\nmarked `x_charter_of`) are left out unless `include_room` is true, and proposed\nelements are too. The Charter (the house rules) and the skills it names are in\n`get_me`'s `front_door`; a search is never where they are taken from.\nAn element carrying x_review_proposed is proposed, not\nyet reviewed by a keeper; it is left out unless asked for. Any value but\nnull counts, an object or not. `include_proposed` true keeps it, its row\ncarrying `x_review_proposed`: treat it as proposed, not yet reviewed, never\nas a fact. A stub's row (`known_of`) of a proposed element shows no mark:\nits being served under `include_proposed` is the sign.\n`proposed_left_out` says how many matching elements were left out (0 with\n`include_proposed`).",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "limit": {
+            "default": 50,
+            "type": "integer"
+          },
+          "include_room": {
+            "default": false,
+            "type": "boolean"
+          },
+          "include_proposed": {
+            "default": false,
+            "type": "boolean"
+          },
+          "world": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The world to read, by id or by its public page's slug. With an API-Key, leave it out (or name the key's own world by its id): a key reads its own world only. list_worlds names the worlds you can read here."
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "here": "Here it answers from a world folder on this computer, not from onlyworlds.com; `world` is the id in the folder's world.json."
+    }
+  ],
+  "resources": [
+    {
+      "name": "element_types",
+      "uri": "onlyworlds://schema",
+      "description": "The 22 OnlyWorlds element types, each with a one-line shape summary (the list_element_types tool's output).",
+      "mimeType": "application/json"
+    },
+    {
+      "name": "world_index",
+      "uri": "onlyworlds://world",
+      "description": "The world named by your API-Key header and its elements by type, names and ids only (at most 100 per type by name, `has_more` beyond; a type's full list is the list_elements tool's, in its own order), for picking one to read as onlyworlds://element/{type}/{id}. Proposed elements (x_review_proposed, not yet reviewed by a keeper) are left out and counted in `proposed_left_out`. The Charter and the skills it names are in the get_me tool's `front_door`, never taken from this index.",
+      "mimeType": "application/json"
+    }
+  ],
+  "resourceTemplates": [
+    {
+      "name": "element_schema",
+      "uriTemplate": "onlyworlds://schema/{type}",
+      "description": "One element type's field structure: fields by kind and each link field's target type (the get_element_schema tool's output). `type` is a slug from onlyworlds://schema, e.g. character.",
+      "mimeType": "application/json"
+    },
+    {
+      "name": "element",
+      "uriTemplate": "onlyworlds://element/{type}/{id}",
+      "description": "One element from the world named by your API-Key header (the get_element tool's output, the v2 wire shape). `type` is a slug from onlyworlds://schema, `id` a UUID from onlyworlds://world.",
+      "mimeType": "application/json"
+    }
+  ],
+  "list_element_types": {
+    "ability": "Ability — 11 scalar field(s), 8 link field(s); links to construct, location, object, phenomenon, trait",
+    "collective": "Collective — 11 scalar field(s), 8 link field(s); links to ability, character, construct, creature, institution, object, phenomenon, species",
+    "character": "Character — 27 scalar field(s), 11 link field(s); links to ability, character, family, institution, language, location, object, species, trait",
+    "construct": "Construct — 11 scalar field(s), 20 link field(s); links to ability, character, collective, construct, creature, event, family, institution, language, location, narrative, object, phenomenon, relation, species, title, trait, zone",
+    "creature": "Creature — 16 scalar field(s), 7 link field(s); links to ability, language, location, species, trait, zone",
+    "event": "Event — 10 scalar field(s), 17 link field(s); links to ability, character, collective, construct, creature, event, family, institution, language, location, object, phenomenon, relation, species, title, trait, zone",
+    "family": "Family — 8 scalar field(s), 9 link field(s); links to ability, character, construct, creature, institution, language, location, object, trait",
+    "institution": "Institution — 8 scalar field(s), 7 link field(s); links to construct, creature, institution, object, zone",
+    "language": "Language — 10 scalar field(s), 3 link field(s); links to construct, language, location",
+    "law": "Law — 8 scalar field(s), 8 link field(s); links to construct, institution, law, location, title, zone",
+    "location": "Location — 14 scalar field(s), 23 link field(s); links to character, collective, construct, institution, location, object, species, title, zone",
+    "map": "Map — 10 scalar field(s), 2 link field(s); links to location, map",
+    "marker": "Marker — 9 scalar field(s), 2 link field(s); links to map, zone",
+    "narrative": "Narrative — 10 scalar field(s), 23 link field(s); links to ability, character, collective, construct, creature, event, family, institution, language, law, location, narrative, object, phenomenon, relation, species, title, trait, zone",
+    "object": "Object — 10 scalar field(s), 9 link field(s); links to ability, construct, language, location, object, phenomenon, trait",
+    "phenomenon": "Phenomenon — 9 scalar field(s), 6 link field(s); links to ability, character, construct, location, object, phenomenon",
+    "pin": "Pin — 8 scalar field(s), 1 link field(s); links to map; plus a generic link to any element type",
+    "relation": "Relation — 9 scalar field(s), 18 link field(s); links to ability, character, collective, construct, creature, event, family, institution, language, location, narrative, object, phenomenon, species, title, trait, zone",
+    "species": "Species — 14 scalar field(s), 8 link field(s); links to ability, construct, location, phenomenon, species, trait, zone",
+    "title": "Title — 11 scalar field(s), 18 link field(s); links to character, collective, construct, creature, family, institution, language, law, location, object, phenomenon, species, title, zone",
+    "trait": "Trait — 17 scalar field(s), 2 link field(s); links to ability, trait",
+    "zone": "Zone — 10 scalar field(s), 5 link field(s); links to collective, construct, phenomenon, title, zone"
+  },
+  "element_schemas": {
+    "ability": {
+      "type": "ability",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "activation",
+        "challenges",
+        "prevalence"
+      ],
+      "integer": [
+        "duration",
+        "potency",
+        "range"
+      ],
+      "single_link": [
+        "tradition",
+        "source",
+        "locus"
+      ],
+      "multi_link": [
+        "effects",
+        "talents",
+        "requisites",
+        "instruments",
+        "systems"
+      ],
+      "generic": [],
+      "link_targets": {
+        "tradition": "construct",
+        "source": "phenomenon",
+        "locus": "location",
+        "effects": "phenomenon",
+        "talents": "trait",
+        "requisites": "construct",
+        "instruments": "object",
+        "systems": "construct"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "activation",
+        "challenges",
+        "prevalence",
+        "duration",
+        "potency",
+        "range",
+        "tradition",
+        "source",
+        "locus",
+        "effects",
+        "talents",
+        "requisites",
+        "instruments",
+        "systems",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "collective": {
+      "type": "collective",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "composition",
+        "activity",
+        "disposition",
+        "state"
+      ],
+      "integer": [
+        "count",
+        "formation_date"
+      ],
+      "single_link": [
+        "operator"
+      ],
+      "multi_link": [
+        "equipment",
+        "abilities",
+        "symbolism",
+        "species",
+        "characters",
+        "creatures",
+        "phenomena"
+      ],
+      "generic": [],
+      "link_targets": {
+        "operator": "institution",
+        "equipment": "object",
+        "abilities": "ability",
+        "symbolism": "construct",
+        "species": "species",
+        "characters": "character",
+        "creatures": "creature",
+        "phenomena": "phenomenon"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "composition",
+        "activity",
+        "disposition",
+        "state",
+        "count",
+        "formation_date",
+        "operator",
+        "equipment",
+        "abilities",
+        "symbolism",
+        "species",
+        "characters",
+        "creatures",
+        "phenomena",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "character": {
+      "type": "character",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "physicality",
+        "mentality",
+        "background",
+        "motivations",
+        "reputation"
+      ],
+      "integer": [
+        "height",
+        "weight",
+        "birth_date",
+        "charisma",
+        "coercion",
+        "competence",
+        "compassion",
+        "creativity",
+        "courage",
+        "level",
+        "hit_points",
+        "STR",
+        "DEX",
+        "CON",
+        "INT",
+        "WIS",
+        "CHA"
+      ],
+      "single_link": [
+        "birthplace",
+        "location"
+      ],
+      "multi_link": [
+        "species",
+        "traits",
+        "abilities",
+        "languages",
+        "objects",
+        "institutions",
+        "family",
+        "friends",
+        "rivals"
+      ],
+      "generic": [],
+      "link_targets": {
+        "birthplace": "location",
+        "location": "location",
+        "species": "species",
+        "traits": "trait",
+        "abilities": "ability",
+        "languages": "language",
+        "objects": "object",
+        "institutions": "institution",
+        "family": "family",
+        "friends": "character",
+        "rivals": "character"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "physicality",
+        "mentality",
+        "background",
+        "motivations",
+        "reputation",
+        "height",
+        "weight",
+        "birth_date",
+        "charisma",
+        "coercion",
+        "competence",
+        "compassion",
+        "creativity",
+        "courage",
+        "level",
+        "hit_points",
+        "STR",
+        "DEX",
+        "CON",
+        "INT",
+        "WIS",
+        "CHA",
+        "birthplace",
+        "location",
+        "species",
+        "traits",
+        "abilities",
+        "languages",
+        "objects",
+        "institutions",
+        "family",
+        "friends",
+        "rivals",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "construct": {
+      "type": "construct",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "rationale",
+        "history",
+        "status",
+        "reach"
+      ],
+      "integer": [
+        "start_date",
+        "end_date"
+      ],
+      "single_link": [
+        "founder",
+        "custodian"
+      ],
+      "multi_link": [
+        "characters",
+        "objects",
+        "locations",
+        "species",
+        "creatures",
+        "institutions",
+        "traits",
+        "collectives",
+        "zones",
+        "abilities",
+        "phenomena",
+        "languages",
+        "families",
+        "relations",
+        "titles",
+        "constructs",
+        "events",
+        "narratives"
+      ],
+      "generic": [],
+      "link_targets": {
+        "founder": "character",
+        "custodian": "institution",
+        "characters": "character",
+        "objects": "object",
+        "locations": "location",
+        "species": "species",
+        "creatures": "creature",
+        "institutions": "institution",
+        "traits": "trait",
+        "collectives": "collective",
+        "zones": "zone",
+        "abilities": "ability",
+        "phenomena": "phenomenon",
+        "languages": "language",
+        "families": "family",
+        "relations": "relation",
+        "titles": "title",
+        "constructs": "construct",
+        "events": "event",
+        "narratives": "narrative"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "rationale",
+        "history",
+        "status",
+        "reach",
+        "start_date",
+        "end_date",
+        "founder",
+        "custodian",
+        "characters",
+        "objects",
+        "locations",
+        "species",
+        "creatures",
+        "institutions",
+        "traits",
+        "collectives",
+        "zones",
+        "abilities",
+        "phenomena",
+        "languages",
+        "families",
+        "relations",
+        "titles",
+        "constructs",
+        "events",
+        "narratives",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "creature": {
+      "type": "creature",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "appearance",
+        "habits",
+        "demeanor",
+        "status"
+      ],
+      "integer": [
+        "weight",
+        "height",
+        "birth_date",
+        "challenge_rating",
+        "hit_points",
+        "armor_class",
+        "speed"
+      ],
+      "single_link": [
+        "location",
+        "zone"
+      ],
+      "multi_link": [
+        "species",
+        "traits",
+        "abilities",
+        "languages",
+        "actions"
+      ],
+      "generic": [],
+      "link_targets": {
+        "location": "location",
+        "zone": "zone",
+        "species": "species",
+        "traits": "trait",
+        "abilities": "ability",
+        "languages": "language",
+        "actions": "ability"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "appearance",
+        "habits",
+        "demeanor",
+        "status",
+        "weight",
+        "height",
+        "birth_date",
+        "challenge_rating",
+        "hit_points",
+        "armor_class",
+        "speed",
+        "location",
+        "zone",
+        "species",
+        "traits",
+        "abilities",
+        "languages",
+        "actions",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "event": {
+      "type": "event",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "history",
+        "challenges",
+        "consequences"
+      ],
+      "integer": [
+        "start_date",
+        "end_date"
+      ],
+      "single_link": [],
+      "multi_link": [
+        "triggers",
+        "characters",
+        "objects",
+        "locations",
+        "species",
+        "creatures",
+        "institutions",
+        "traits",
+        "collectives",
+        "zones",
+        "abilities",
+        "phenomena",
+        "languages",
+        "families",
+        "relations",
+        "titles",
+        "constructs"
+      ],
+      "generic": [],
+      "link_targets": {
+        "triggers": "event",
+        "characters": "character",
+        "objects": "object",
+        "locations": "location",
+        "species": "species",
+        "creatures": "creature",
+        "institutions": "institution",
+        "traits": "trait",
+        "collectives": "collective",
+        "zones": "zone",
+        "abilities": "ability",
+        "phenomena": "phenomenon",
+        "languages": "language",
+        "families": "family",
+        "relations": "relation",
+        "titles": "title",
+        "constructs": "construct"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "history",
+        "challenges",
+        "consequences",
+        "start_date",
+        "end_date",
+        "triggers",
+        "characters",
+        "objects",
+        "locations",
+        "species",
+        "creatures",
+        "institutions",
+        "traits",
+        "collectives",
+        "zones",
+        "abilities",
+        "phenomena",
+        "languages",
+        "families",
+        "relations",
+        "titles",
+        "constructs",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "family": {
+      "type": "family",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "spirit",
+        "history",
+        "reputation"
+      ],
+      "integer": [],
+      "single_link": [],
+      "multi_link": [
+        "traditions",
+        "traits",
+        "abilities",
+        "languages",
+        "ancestors",
+        "estates",
+        "governs",
+        "heirlooms",
+        "creatures"
+      ],
+      "generic": [],
+      "link_targets": {
+        "traditions": "construct",
+        "traits": "trait",
+        "abilities": "ability",
+        "languages": "language",
+        "ancestors": "character",
+        "estates": "location",
+        "governs": "institution",
+        "heirlooms": "object",
+        "creatures": "creature"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "spirit",
+        "history",
+        "reputation",
+        "traditions",
+        "traits",
+        "abilities",
+        "languages",
+        "ancestors",
+        "estates",
+        "governs",
+        "heirlooms",
+        "creatures",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "institution": {
+      "type": "institution",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "doctrine",
+        "status"
+      ],
+      "integer": [
+        "founding_date"
+      ],
+      "single_link": [
+        "parent_institution"
+      ],
+      "multi_link": [
+        "zones",
+        "objects",
+        "creatures",
+        "allies",
+        "adversaries",
+        "constructs"
+      ],
+      "generic": [],
+      "link_targets": {
+        "parent_institution": "institution",
+        "zones": "zone",
+        "objects": "object",
+        "creatures": "creature",
+        "allies": "institution",
+        "adversaries": "institution",
+        "constructs": "construct"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "doctrine",
+        "status",
+        "founding_date",
+        "parent_institution",
+        "zones",
+        "objects",
+        "creatures",
+        "allies",
+        "adversaries",
+        "constructs",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "language": {
+      "type": "language",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "phonology",
+        "grammar",
+        "lexicon",
+        "writing",
+        "status"
+      ],
+      "integer": [],
+      "single_link": [
+        "classification"
+      ],
+      "multi_link": [
+        "spread",
+        "dialects"
+      ],
+      "generic": [],
+      "link_targets": {
+        "classification": "construct",
+        "spread": "location",
+        "dialects": "language"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "phonology",
+        "grammar",
+        "lexicon",
+        "writing",
+        "status",
+        "classification",
+        "spread",
+        "dialects",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "law": {
+      "type": "law",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "declaration",
+        "purpose"
+      ],
+      "integer": [
+        "date"
+      ],
+      "single_link": [
+        "parent_law",
+        "author"
+      ],
+      "multi_link": [
+        "penalties",
+        "locations",
+        "zones",
+        "prohibitions",
+        "adjudicators",
+        "enforcers"
+      ],
+      "generic": [],
+      "link_targets": {
+        "parent_law": "law",
+        "author": "institution",
+        "penalties": "construct",
+        "locations": "location",
+        "zones": "zone",
+        "prohibitions": "construct",
+        "adjudicators": "title",
+        "enforcers": "title"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "declaration",
+        "purpose",
+        "date",
+        "parent_law",
+        "author",
+        "penalties",
+        "locations",
+        "zones",
+        "prohibitions",
+        "adjudicators",
+        "enforcers",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "location": {
+      "type": "location",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "form",
+        "function",
+        "political_climate",
+        "customs",
+        "infrastructure",
+        "architecture",
+        "defensibility"
+      ],
+      "integer": [
+        "founding_date",
+        "elevation"
+      ],
+      "single_link": [
+        "parent_location",
+        "vehicle",
+        "primary_power",
+        "governing_title",
+        "zone",
+        "rival",
+        "partner"
+      ],
+      "multi_link": [
+        "populations",
+        "secondary_powers",
+        "founders",
+        "cults",
+        "delicacies",
+        "extraction_methods",
+        "extraction_goods",
+        "industry_methods",
+        "industry_goods",
+        "extraction_markets",
+        "industry_markets",
+        "currencies",
+        "buildings",
+        "building_methods",
+        "fighters",
+        "defensive_objects"
+      ],
+      "generic": [],
+      "link_targets": {
+        "parent_location": "location",
+        "vehicle": "object",
+        "primary_power": "institution",
+        "governing_title": "title",
+        "zone": "zone",
+        "rival": "location",
+        "partner": "location",
+        "populations": "collective",
+        "secondary_powers": "institution",
+        "founders": "character",
+        "cults": "construct",
+        "delicacies": "species",
+        "extraction_methods": "construct",
+        "extraction_goods": "construct",
+        "industry_methods": "construct",
+        "industry_goods": "construct",
+        "extraction_markets": "location",
+        "industry_markets": "location",
+        "currencies": "construct",
+        "buildings": "object",
+        "building_methods": "construct",
+        "fighters": "construct",
+        "defensive_objects": "object"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "form",
+        "function",
+        "political_climate",
+        "customs",
+        "infrastructure",
+        "architecture",
+        "defensibility",
+        "founding_date",
+        "elevation",
+        "parent_location",
+        "vehicle",
+        "primary_power",
+        "governing_title",
+        "zone",
+        "rival",
+        "partner",
+        "populations",
+        "secondary_powers",
+        "founders",
+        "cults",
+        "delicacies",
+        "extraction_methods",
+        "extraction_goods",
+        "industry_methods",
+        "industry_goods",
+        "extraction_markets",
+        "industry_markets",
+        "currencies",
+        "buildings",
+        "building_methods",
+        "fighters",
+        "defensive_objects",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "map": {
+      "type": "map",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "background_color"
+      ],
+      "integer": [
+        "hierarchy",
+        "width",
+        "height",
+        "depth"
+      ],
+      "single_link": [
+        "parent_map",
+        "location"
+      ],
+      "multi_link": [],
+      "generic": [],
+      "link_targets": {
+        "parent_map": "map",
+        "location": "location"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "background_color",
+        "hierarchy",
+        "width",
+        "height",
+        "depth",
+        "parent_map",
+        "location",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "marker": {
+      "type": "marker",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url"
+      ],
+      "integer": [
+        "x",
+        "y",
+        "z",
+        "order"
+      ],
+      "single_link": [
+        "map",
+        "zone"
+      ],
+      "multi_link": [],
+      "generic": [],
+      "link_targets": {
+        "map": "map",
+        "zone": "zone"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "x",
+        "y",
+        "z",
+        "order",
+        "map",
+        "zone",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "narrative": {
+      "type": "narrative",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "story",
+        "consequences"
+      ],
+      "integer": [
+        "start_date",
+        "end_date",
+        "order"
+      ],
+      "single_link": [
+        "parent_narrative",
+        "protagonist",
+        "antagonist",
+        "narrator",
+        "conservator"
+      ],
+      "multi_link": [
+        "events",
+        "characters",
+        "objects",
+        "locations",
+        "species",
+        "creatures",
+        "institutions",
+        "traits",
+        "collectives",
+        "zones",
+        "abilities",
+        "phenomena",
+        "languages",
+        "families",
+        "relations",
+        "titles",
+        "constructs",
+        "laws"
+      ],
+      "generic": [],
+      "link_targets": {
+        "parent_narrative": "narrative",
+        "protagonist": "character",
+        "antagonist": "character",
+        "narrator": "character",
+        "conservator": "institution",
+        "events": "event",
+        "characters": "character",
+        "objects": "object",
+        "locations": "location",
+        "species": "species",
+        "creatures": "creature",
+        "institutions": "institution",
+        "traits": "trait",
+        "collectives": "collective",
+        "zones": "zone",
+        "abilities": "ability",
+        "phenomena": "phenomenon",
+        "languages": "language",
+        "families": "family",
+        "relations": "relation",
+        "titles": "title",
+        "constructs": "construct",
+        "laws": "law"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "story",
+        "consequences",
+        "start_date",
+        "end_date",
+        "order",
+        "parent_narrative",
+        "protagonist",
+        "antagonist",
+        "narrator",
+        "conservator",
+        "events",
+        "characters",
+        "objects",
+        "locations",
+        "species",
+        "creatures",
+        "institutions",
+        "traits",
+        "collectives",
+        "zones",
+        "abilities",
+        "phenomena",
+        "languages",
+        "families",
+        "relations",
+        "titles",
+        "constructs",
+        "laws",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "object": {
+      "type": "object",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "aesthetics",
+        "utility",
+        "origins"
+      ],
+      "integer": [
+        "weight",
+        "amount"
+      ],
+      "single_link": [
+        "parent_object",
+        "location",
+        "language"
+      ],
+      "multi_link": [
+        "materials",
+        "technology",
+        "effects",
+        "abilities",
+        "consumes",
+        "affinities"
+      ],
+      "generic": [],
+      "link_targets": {
+        "parent_object": "object",
+        "location": "location",
+        "language": "language",
+        "materials": "construct",
+        "technology": "construct",
+        "effects": "phenomenon",
+        "abilities": "ability",
+        "consumes": "construct",
+        "affinities": "trait"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "aesthetics",
+        "utility",
+        "origins",
+        "weight",
+        "amount",
+        "parent_object",
+        "location",
+        "language",
+        "materials",
+        "technology",
+        "effects",
+        "abilities",
+        "consumes",
+        "affinities",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "phenomenon": {
+      "type": "phenomenon",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "expression",
+        "effects",
+        "mythology"
+      ],
+      "integer": [
+        "duration"
+      ],
+      "single_link": [
+        "system"
+      ],
+      "multi_link": [
+        "catalysts",
+        "empowerments",
+        "triggers",
+        "wielders",
+        "environments"
+      ],
+      "generic": [],
+      "link_targets": {
+        "system": "phenomenon",
+        "catalysts": "object",
+        "empowerments": "ability",
+        "triggers": "construct",
+        "wielders": "character",
+        "environments": "location"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "expression",
+        "effects",
+        "mythology",
+        "duration",
+        "system",
+        "catalysts",
+        "empowerments",
+        "triggers",
+        "wielders",
+        "environments",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "pin": {
+      "type": "pin",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url"
+      ],
+      "integer": [
+        "x",
+        "y",
+        "z"
+      ],
+      "single_link": [
+        "map"
+      ],
+      "multi_link": [],
+      "generic": [
+        {
+          "element_type_field": "element_type",
+          "element_id_field": "element_id"
+        }
+      ],
+      "link_targets": {
+        "map": "map"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "x",
+        "y",
+        "z",
+        "map",
+        "element_type",
+        "element_id",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "relation": {
+      "type": "relation",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "background"
+      ],
+      "integer": [
+        "start_date",
+        "end_date",
+        "intensity"
+      ],
+      "single_link": [
+        "actor"
+      ],
+      "multi_link": [
+        "events",
+        "characters",
+        "objects",
+        "locations",
+        "species",
+        "creatures",
+        "institutions",
+        "traits",
+        "collectives",
+        "zones",
+        "abilities",
+        "phenomena",
+        "languages",
+        "families",
+        "titles",
+        "constructs",
+        "narratives"
+      ],
+      "generic": [],
+      "link_targets": {
+        "actor": "character",
+        "events": "event",
+        "characters": "character",
+        "objects": "object",
+        "locations": "location",
+        "species": "species",
+        "creatures": "creature",
+        "institutions": "institution",
+        "traits": "trait",
+        "collectives": "collective",
+        "zones": "zone",
+        "abilities": "ability",
+        "phenomena": "phenomenon",
+        "languages": "language",
+        "families": "family",
+        "titles": "title",
+        "constructs": "construct",
+        "narratives": "narrative"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "background",
+        "start_date",
+        "end_date",
+        "intensity",
+        "actor",
+        "events",
+        "characters",
+        "objects",
+        "locations",
+        "species",
+        "creatures",
+        "institutions",
+        "traits",
+        "collectives",
+        "zones",
+        "abilities",
+        "phenomena",
+        "languages",
+        "families",
+        "titles",
+        "constructs",
+        "narratives",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "species": {
+      "type": "species",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "appearance",
+        "instincts",
+        "sociality",
+        "temperament",
+        "communication",
+        "role"
+      ],
+      "integer": [
+        "life_span",
+        "weight",
+        "aggression"
+      ],
+      "single_link": [
+        "parent_species"
+      ],
+      "multi_link": [
+        "nourishment",
+        "reproduction",
+        "adaptations",
+        "traits",
+        "locations",
+        "zones",
+        "affinities"
+      ],
+      "generic": [],
+      "link_targets": {
+        "parent_species": "species",
+        "nourishment": "species",
+        "reproduction": "construct",
+        "adaptations": "ability",
+        "traits": "trait",
+        "locations": "location",
+        "zones": "zone",
+        "affinities": "phenomenon"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "appearance",
+        "instincts",
+        "sociality",
+        "temperament",
+        "communication",
+        "role",
+        "life_span",
+        "weight",
+        "aggression",
+        "parent_species",
+        "nourishment",
+        "reproduction",
+        "adaptations",
+        "traits",
+        "locations",
+        "zones",
+        "affinities",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "title": {
+      "type": "title",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "authority",
+        "eligibility",
+        "status",
+        "history"
+      ],
+      "integer": [
+        "grant_date",
+        "revoke_date"
+      ],
+      "single_link": [
+        "issuer",
+        "body",
+        "superior_title"
+      ],
+      "multi_link": [
+        "holders",
+        "symbols",
+        "characters",
+        "institutions",
+        "families",
+        "zones",
+        "locations",
+        "objects",
+        "constructs",
+        "laws",
+        "collectives",
+        "creatures",
+        "phenomena",
+        "species",
+        "languages"
+      ],
+      "generic": [],
+      "link_targets": {
+        "issuer": "institution",
+        "body": "institution",
+        "superior_title": "title",
+        "holders": "character",
+        "symbols": "object",
+        "characters": "character",
+        "institutions": "institution",
+        "families": "family",
+        "zones": "zone",
+        "locations": "location",
+        "objects": "object",
+        "constructs": "construct",
+        "laws": "law",
+        "collectives": "collective",
+        "creatures": "creature",
+        "phenomena": "phenomenon",
+        "species": "species",
+        "languages": "language"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "authority",
+        "eligibility",
+        "status",
+        "history",
+        "grant_date",
+        "revoke_date",
+        "issuer",
+        "body",
+        "superior_title",
+        "holders",
+        "symbols",
+        "characters",
+        "institutions",
+        "families",
+        "zones",
+        "locations",
+        "objects",
+        "constructs",
+        "laws",
+        "collectives",
+        "creatures",
+        "phenomena",
+        "species",
+        "languages",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "trait": {
+      "type": "trait",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "social_effects",
+        "physical_effects",
+        "functional_effects",
+        "personality_effects",
+        "behaviour_effects",
+        "significance"
+      ],
+      "integer": [
+        "charisma",
+        "coercion",
+        "competence",
+        "compassion",
+        "creativity",
+        "courage"
+      ],
+      "single_link": [
+        "anti_trait"
+      ],
+      "multi_link": [
+        "empowered_abilities"
+      ],
+      "generic": [],
+      "link_targets": {
+        "anti_trait": "trait",
+        "empowered_abilities": "ability"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "social_effects",
+        "physical_effects",
+        "functional_effects",
+        "personality_effects",
+        "behaviour_effects",
+        "significance",
+        "charisma",
+        "coercion",
+        "competence",
+        "compassion",
+        "creativity",
+        "courage",
+        "anti_trait",
+        "empowered_abilities",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    },
+    "zone": {
+      "type": "zone",
+      "text": [
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "role",
+        "shape",
+        "context"
+      ],
+      "integer": [
+        "start_date",
+        "end_date"
+      ],
+      "single_link": [],
+      "multi_link": [
+        "phenomena",
+        "linked_zones",
+        "populations",
+        "titles",
+        "principles"
+      ],
+      "generic": [],
+      "link_targets": {
+        "phenomena": "phenomenon",
+        "linked_zones": "zone",
+        "populations": "collective",
+        "titles": "title",
+        "principles": "construct"
+      },
+      "output_order": [
+        "id",
+        "name",
+        "description",
+        "supertype",
+        "subtype",
+        "image_url",
+        "role",
+        "shape",
+        "context",
+        "start_date",
+        "end_date",
+        "phenomena",
+        "linked_zones",
+        "populations",
+        "titles",
+        "principles",
+        "created_at",
+        "updated_at",
+        "change_seq",
+        "created_by",
+        "changed_by",
+        "changed_via",
+        "changed_client",
+        "doors"
+      ]
+    }
+  }
+}

@@ -18,7 +18,7 @@ import { byCodePoint, uuidKey, type FolderElement, type FolderSnapshot } from '.
 
 const DOC_BASE = 'https://onlyworlds.github.io/api/errors/#';
 /** The refusal's own page: the docs' errors page holds keel's codes only, and this one is the folder source's. */
-const NOT_IN_A_FOLDER_DOC = 'https://onlyworlds.github.io/docs/development/typescript#a-world-folder-as-the-source';
+export const NOT_IN_A_FOLDER_DOC ='https://onlyworlds.github.io/docs/development/typescript#a-world-folder-as-the-source';
 
 /** The one refusal's code: what a folder cannot answer, because it lives on the platform. */
 export const NOT_IN_A_FOLDER = 'not_in_a_folder';
@@ -72,7 +72,7 @@ const PY_SPACE: ReadonlySet<number> = new Set([
   0x2028, 0x2029, 0x202f, 0x205f, 0x3000,
 ]);
 
-function pyStrip(s: string): string {
+export function pyStrip(s: string): string {
   let a = 0;
   let b = s.length;
   while (a < b && PY_SPACE.has(s.charCodeAt(a))) a++;
@@ -102,7 +102,7 @@ function pyInt(raw: string): number | null {
 }
 
 /** `repr(s)` for the few refusals that quote a value. */
-function pyRepr(s: string): string {
+export function pyRepr(s: string): string {
   const quote = s.includes("'") && !s.includes('"') ? '"' : "'";
   let out = '';
   for (const c of s) {
@@ -661,6 +661,84 @@ function locate(body: Record<string, unknown>, fields: string[], patterns: RegEx
 
 const collator = new Intl.Collator('en');
 
+/** What a search asks, read as keel's `_clean_q`, `_clean_type` and `_clean_limit` read it. */
+export interface SearchAsk {
+  /** `q` trimmed, as the answer's `query` echoes it. */
+  text: string;
+  patterns: RegExp[];
+  only: ElementType | null;
+  limit: number;
+}
+
+/** One element the search found, before the page is cut. */
+export interface SearchHit {
+  tier: number;
+  index: number;
+  body: Record<string, unknown>;
+  type: ElementType;
+}
+
+/** `q`, `type` and `limit` checked in keel's order; a refusal is thrown as keel raises it (read it with `keelAnswerOf`). */
+export function searchAsk(rawQ: unknown, rawType: string | null, rawLimit: string | number | null): SearchAsk {
+  if (typeof rawQ !== 'string' || !pyStrip(rawQ)) throw invalid(`q is required: ${MIN_Q} to ${MAX_Q} characters.`, 'q');
+  const text = pyStrip(rawQ);
+  const length = Array.from(text).length;
+  if (length < MIN_Q || length > MAX_Q) throw invalid(`q must be ${MIN_Q} to ${MAX_Q} characters (it has ${length}).`, 'q');
+  const words = wordsOf(text);
+  if (!words.length) throw invalid('q must hold at least one word (letters or digits).', 'q');
+  let only: ElementType | null = null;
+  if (rawType !== null && rawType !== '') {
+    if (!isType(rawType)) throw invalid(`Unknown type '${rawType}'. Types: ${STANDARD_TYPE_ORDER.join(', ')}.`, 'type');
+    only = rawType;
+  }
+  let limit = SEARCH_LIMIT_DEFAULT;
+  if (rawLimit !== null) {
+    const n = typeof rawLimit === 'number' ? Math.trunc(rawLimit) : pyInt(rawLimit);
+    if (n === null || !Number.isFinite(n)) throw invalid('limit must be an integer.', 'limit');
+    limit = Math.max(1, Math.min(n, SEARCH_LIMIT_MAX));
+  }
+  return { text, patterns: words.map(wordPattern), only, limit };
+}
+
+/** Every element of `rowsOf` that holds each word, in keel's order: tier (name hits first), the type's place, the name, the id. */
+export function searchHits(rowsOf: (type: ElementType) => Iterable<Record<string, unknown>>, ask: SearchAsk): SearchHit[] {
+  const { patterns, only } = ask;
+  const holds = (body: Record<string, unknown>, f: string, p: RegExp) => typeof body[f] === 'string' && p.test(body[f] as string);
+  const hits: SearchHit[] = [];
+  STANDARD_TYPE_ORDER.forEach((type, index) => {
+    if (only !== null && type !== only) return;
+    const fields = SEARCH_FIELDS[type];
+    for (const body of rowsOf(type)) {
+      if (!patterns.every((p) => fields.some((f) => holds(body, f, p)))) continue;
+      const tier = patterns.every((p) => holds(body, 'name', p)) ? 0 : 1;
+      hits.push({ tier, index, body, type });
+    }
+  });
+  // Tier (name hits first), the type's place, then the name as the database sorts it, then the id.
+  hits.sort((a, b) => a.tier - b.tier || a.index - b.index
+    || collator.compare(String(a.body.name).toLowerCase(), String(b.body.name).toLowerCase())
+    || collator.compare(String(a.body.name), String(b.body.name))
+    || byCodePoint(String(a.body.name), String(b.body.name))
+    || byCodePoint(String(a.body.id), String(b.body.id)));
+  return hits;
+}
+
+/** One result row as keel's search writes it: where the words were found, and the snippet around them. */
+export function searchRow(hit: SearchHit, ask: SearchAsk): Record<string, unknown> {
+  const { body, type } = hit;
+  const [field, snip] = locate(body, SEARCH_FIELDS[type], ask.patterns);
+  const row: Record<string, unknown> = {
+    type, id: body.id, name: body.name, supertype: body.supertype, subtype: body.subtype, field, snippet: snip,
+  };
+  if (body.known_of === true) row.known_of = true;
+  return row;
+}
+
+/** A refusal raised by one of this module's checks as keel's envelope, or null for anything else. */
+export function keelAnswerOf(e: unknown): Answer | null {
+  return e instanceof KeelError ? envelopeOf(e) : null;
+}
+
 export function searchAnswer(served: Served, q: Query): Answer {
   try {
     for (const key of q.keys()) {
@@ -668,53 +746,10 @@ export function searchAnswer(served: Served, q: Query): Answer {
         throw invalid(`Unknown query parameter '${key}'. Parameters: ${SEARCH_PARAMS.join(', ')}.`, key);
       }
     }
-    const rawQ = q.get('q');
-    if (rawQ === null || !pyStrip(rawQ)) throw invalid(`q is required: ${MIN_Q} to ${MAX_Q} characters.`, 'q');
-    const text = pyStrip(rawQ);
-    const length = Array.from(text).length;
-    if (length < MIN_Q || length > MAX_Q) throw invalid(`q must be ${MIN_Q} to ${MAX_Q} characters (it has ${length}).`, 'q');
-    const words = wordsOf(text);
-    if (!words.length) throw invalid('q must hold at least one word (letters or digits).', 'q');
-    const rawType = q.get('type');
-    let only: ElementType | null = null;
-    if (rawType !== null && rawType !== '') {
-      if (!isType(rawType)) throw invalid(`Unknown type '${rawType}'. Types: ${STANDARD_TYPE_ORDER.join(', ')}.`, 'type');
-      only = rawType;
-    }
-    const rawLimit = q.get('limit');
-    let limit = SEARCH_LIMIT_DEFAULT;
-    if (rawLimit !== null) {
-      const n = pyInt(rawLimit);
-      if (n === null) throw invalid('limit must be an integer.', 'limit');
-      limit = Math.max(1, Math.min(n, SEARCH_LIMIT_MAX));
-    }
-    const patterns = words.map(wordPattern);
-    const holds = (body: Record<string, unknown>, f: string, p: RegExp) => typeof body[f] === 'string' && p.test(body[f] as string);
-    const hits: { tier: number; index: number; body: Record<string, unknown>; type: ElementType }[] = [];
-    STANDARD_TYPE_ORDER.forEach((type, index) => {
-      if (only !== null && type !== only) return;
-      const fields = SEARCH_FIELDS[type];
-      for (const { body } of served.byType.get(type)!) {
-        if (!patterns.every((p) => fields.some((f) => holds(body, f, p)))) continue;
-        const tier = patterns.every((p) => holds(body, 'name', p)) ? 0 : 1;
-        hits.push({ tier, index, body, type });
-      }
-    });
-    // Tier (name hits first), the type's place, then the name as the database sorts it, then the id.
-    hits.sort((a, b) => a.tier - b.tier || a.index - b.index
-      || collator.compare(String(a.body.name).toLowerCase(), String(b.body.name).toLowerCase())
-      || collator.compare(String(a.body.name), String(b.body.name))
-      || byCodePoint(String(a.body.name), String(b.body.name))
-      || byCodePoint(String(a.body.id), String(b.body.id)));
-    const results = hits.slice(0, limit).map(({ body, type }) => {
-      const [field, snip] = locate(body, SEARCH_FIELDS[type], patterns);
-      const row: Record<string, unknown> = {
-        type, id: body.id, name: body.name, supertype: body.supertype, subtype: body.subtype, field, snippet: snip,
-      };
-      if (body.known_of === true) row.known_of = true;
-      return row;
-    });
-    return { status: 200, body: { query: text, results, count: results.length, truncated: hits.length > limit } };
+    const ask = searchAsk(q.get('q'), q.get('type'), q.get('limit'));
+    const hits = searchHits((type) => served.byType.get(type)!.map((r) => r.body), ask);
+    const results = hits.slice(0, ask.limit).map((hit) => searchRow(hit, ask));
+    return { status: 200, body: { query: ask.text, results, count: results.length, truncated: hits.length > ask.limit } };
   } catch (e) {
     if (e instanceof KeelError) return envelopeOf(e);
     throw e;

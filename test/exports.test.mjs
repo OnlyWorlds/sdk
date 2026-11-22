@@ -24,6 +24,7 @@ const NOT_EXPORTED = {
   },
   'convert.d.ts': {},
   'folder.d.ts': {},
+  'mcp.d.ts': {},
   'waymark.d.ts': {
     OwElementMark: 'exported from the main entry',
     OwTool: 'exported from the main entry',
