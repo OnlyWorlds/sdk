@@ -32,6 +32,13 @@ const DEFAULT_BASE_URL = 'https://www.onlyworlds.com/api/v2';
 const DEFAULT_PAGE_SIZE = 100;
 const DEFAULT_CHANGES_PAGE_SIZE = 100;
 
+/** A join code is the part of an invite link after `#`: an empty or blank one, or no string, is refused before anything is sent (keel would answer it 404 as a bad code). */
+function joinCode(method: string, code: unknown): void {
+  if (typeof code !== 'string' || code.trim() === '') {
+    throw new TypeError(`${method}: the code is empty (it is the part of the invite link after #). Nothing was sent.`);
+  }
+}
+
 export class OwV2Client {
   readonly baseUrl: string;
   readonly keyKind: OwKeyKind;
@@ -855,7 +862,7 @@ export class OwV2Client {
    * which world, in what role, and `reader` (`person`: accept it with acceptJoin;
    * `agent`: an AI agent redeems it at POST /join). Sends no credential, whatever key
    * this client holds. Every bad code (unknown, used, revoked, expired) is the same
-   * 404 `not_found` (`err.isNotFound`). `code` is the part of the link after `#`. A table
+   * 404 `not_found` (`err.isNotFound`). `code` is the part of the link after `#`; an empty one is a TypeError before anything is sent, here, in redeemJoin and in acceptJoin. A table
    * adds `max_uses`, `uses_left`, `name_required` and `characters`, the
    * pick screen's list; a link for one answers without them. `glimpse` is always
    * there: for a link whose role reads the world (contributor or co-builder), up to
@@ -864,6 +871,7 @@ export class OwV2Client {
    * are linked.
    */
   async previewJoin(code: string): Promise<OwJoinPreview> {
+    joinCode('previewJoin', code);
     return this.request('POST', '/join/preview', { auth: false, body: { code } }) as Promise<OwJoinPreview>;
   }
 
@@ -890,11 +898,13 @@ export class OwV2Client {
    * for one ignores `character`.
    */
   async redeemJoin(code: string, opts: { name?: string; agentName?: string; character?: string } = {}): Promise<OwJoined> {
+    joinCode('redeemJoin', code);
     only('redeemJoin', opts, ['name', 'agentName', 'character']);
+    // keel's document types the three as strings, never null: a null option is left out, as undefined is.
     const body: Record<string, unknown> = { code };
-    if (opts.name !== undefined) body.name = opts.name;
-    if (opts.agentName !== undefined) body.agent_name = opts.agentName;
-    if (opts.character !== undefined) body.character = opts.character;
+    if (opts.name != null) body.name = opts.name;
+    if (opts.agentName != null) body.agent_name = opts.agentName;
+    if (opts.character != null) body.character = opts.character;
     return this.request('POST', '/join', { auth: false, body }) as Promise<OwJoined>;
   }
 
@@ -1045,6 +1055,7 @@ export class OwV2Client {
     if (this.keyKind !== 'account') {
       throw new TypeError('acceptJoin needs an account token (ow_a_): a world key cannot join a world');
     }
+    joinCode('acceptJoin', code);
     return this.request('POST', '/account/join', { body: { code } }) as Promise<OwJoinedMembership>;
   }
 
