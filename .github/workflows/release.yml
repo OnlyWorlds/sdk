@@ -3,7 +3,9 @@ name: release
 # Publishes @onlyworlds/sdk to npm when a version tag (v4.8.1) is pushed, through npm's
 # trusted publishing: GitHub proves this workflow's identity to npm (OIDC), so no npm token
 # exists anywhere. Set up once on npmjs.com, the package's settings, "Trusted Publisher":
-# GitHub Actions, organization OnlyWorlds, repository sdk, workflow release.yml.
+# GitHub Actions, organization OnlyWorlds, repository sdk, workflow release.yml, environment npm.
+# The npm environment takes a deployment only from a v* tag (the repository's settings), so a
+# branch that edits this file cannot publish: npm's entry checks the environment, never the ref.
 #
 # Every gate runs first and a red one stops the publish. After the publish the job reads the
 # registry back: the version is live, and its tarball holds exactly what this commit packs.
@@ -30,6 +32,7 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: npm
     steps:
       - uses: actions/checkout@v7
 
