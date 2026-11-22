@@ -356,7 +356,7 @@ const text = kankaReportText(report, 'my-world'); // the report as the Python do
 
 Write `files` under a new folder yourself, each `path` relative to it. Each entity becomes an element of its module's type (a module with no OnlyWorlds type becomes a Narrative with supertype `Article`), its entry and posts the description, its parent, places and memberships links, and every key with no field is kept as `x_kanka_<key>` and named in the report. What Kanka hides comes in carrying `hidden: true`: a private entity whole, a post or a relationship not visible to all, and an entity's private details in one hidden Narrative. Ids are made from the campaign and Kanka's own ids, so the same export gives the same folder every time.
 
-`world.json`'s `producer` line names this package (`{ tool: '@onlyworlds/sdk' }`); pass `producer: { tool, version }` to name your own tool. A file that is not a zip, or a zip with no `campaign.json`, throws an `OwConvertError` with `reason` `not_a_zip` or `not_an_export`. From the repository, `node scripts/convert-kanka.mjs EXPORT.zip OUT-DIR` writes the folder and prints the report.
+`world.json`'s `producer` line names this package and its version (`{ tool: '@onlyworlds/sdk', version, input: 'kanka-export' }`); pass `producer: { tool, version }` to name your own tool. A file that is not a zip, or a zip with no `campaign.json`, throws an `OwConvertError` with `reason` `not_a_zip` or `not_an_export`. From the repository, `node scripts/convert-kanka.mjs EXPORT.zip OUT-DIR` writes the folder and prints the report.
 
 ## World calendars
 

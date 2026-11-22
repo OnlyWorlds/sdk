@@ -5,8 +5,8 @@
 //   node scripts/convert-kanka.mjs EXPORT.zip --plan
 //
 // OUT-DIR must not exist yet, or be empty: a folder is written whole, once. `--plan` prints what would
-// become what and writes nothing. The producer line names this package and its version unless
-// `--producer` names another (the Python door's, to compare the two folders byte for byte).
+// become what and writes nothing. The producer line names this package and its version (the library's
+// default) unless `--producer` names another: the Python door's, to compare the two folders byte for byte.
 // Paths in the report are written as Python writes them on this platform. Exit 0 written or planned,
 // 2 on bad arguments (a missing export, an OUT-DIR that is not empty, a file that is not a zip, an
 // export with no campaign.json).
@@ -14,10 +14,7 @@
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, existsSync } from 'node:fs';
 import { EOL } from 'node:os';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { convertKanka, kankaReportText, OwConvertError } from '../dist/convert.js';
-
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** A path as Python's `str(pathlib.Path(p))` gives it on this platform. */
 function pyPath(p) {
@@ -67,7 +64,6 @@ for (let i = 0; i < args.length; i++) {
 const [source, out] = rest;
 if (!source || rest.length > 2) fail('usage: node scripts/convert-kanka.mjs EXPORT.zip OUT-DIR [--plan] [--producer TOOL VERSION]');
 if (out === undefined && !plan) fail('give OUT-DIR, or --plan');
-producer ??= { tool: '@onlyworlds/sdk', version: JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version };
 
 if (!plan && existsSync(out) && (!statSync(out).isDirectory() || readdirSync(out).length > 0)) {
   fail(`${pyPath(out)} exists and is not an empty directory; a folder is written whole, once`);

@@ -56,9 +56,14 @@ test('the same export twice gives the same folder', () => {
   assert.deepEqual(a.files.map((f) => [f.path, sha(f.data)]), b.files.map((f) => [f.path, sha(f.data)]));
 });
 
-test('the producer line names this package unless the caller names another', () => {
+test('the producer line names this package and its version unless the caller names another', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   const world = (opts) => JSON.parse(new TextDecoder().decode(convertKanka(read('quay-export-world_20261023_074706.zip'), opts).files.find((f) => f.path === 'world.json').data));
-  assert.deepEqual(world().producer, { tool: '@onlyworlds/sdk', input: 'kanka-export' });
+  assert.deepEqual(world().producer, { tool: pkg.name, version: pkg.version, input: 'kanka-export' });
+  assert.ok(pkg.version, 'the version is not empty');
+  // The built entry carries the version as one string, never the whole package.json.
+  const built = readFileSync(new URL('../dist/convert.js', import.meta.url), 'utf8');
+  assert.ok(built.includes(JSON.stringify(pkg.version)) && !built.includes('devDependencies'));
   assert.deepEqual(world({ producer: { tool: 'my-tool', version: '1.2.3' } }).producer, { tool: 'my-tool', version: '1.2.3', input: 'kanka-export' });
 });
 

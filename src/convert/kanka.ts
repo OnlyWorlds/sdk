@@ -34,6 +34,8 @@ import {
 import { NotAZip, readExportZip } from './tree';
 import { byCodePoint as byCodePointOf } from '../message';
 import { uuid5 } from '../v2/keyed-id';
+// A named import: the bundler inlines the one key, never the whole package.json.
+import { name as PACKAGE_NAME, version as PACKAGE_VERSION } from '../../package.json';
 
 // --- the data ---------------------------------------------------------------------
 
@@ -232,7 +234,7 @@ export interface OwKankaConversion {
 export interface OwConvertKankaOptions {
   /** How the report names the export (the Python door prints the path it was given). Default `export.zip`. */
   source?: string;
-  /** The tool `world.json`'s `producer` line names, and its version. Default `{ tool: '@onlyworlds/sdk' }`. */
+  /** The tool `world.json`'s `producer` line names, and its version. Default this package and its version, `{ tool: '@onlyworlds/sdk', version: '<the installed version>' }`. */
   producer?: OwConvertProducer;
 }
 
@@ -1043,7 +1045,7 @@ export function convertKanka(bytes: Uint8Array, opts: OwConvertKankaOptions = {}
   if (opts.producer !== undefined) refuseUnknownOptions('convertKanka', opts.producer, PRODUCER_KEYS, '(in producer)');
   if (!(bytes instanceof Uint8Array)) throw new TypeError("convertKanka: the export is the zip's bytes, a Uint8Array.");
   const source = opts.source ?? 'export.zip';
-  const producer: OwConvertProducer = opts.producer ?? { tool: '@onlyworlds/sdk' };
+  const producer: OwConvertProducer = opts.producer ?? { tool: PACKAGE_NAME, version: PACKAGE_VERSION };
   let tree;
   try {
     tree = readExportZip(bytes);
