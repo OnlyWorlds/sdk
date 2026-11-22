@@ -220,6 +220,7 @@ export class OwV2Client {
       fields: params.fields?.join(','),
       ids: params.ids?.join(','),
       created_by: params.createdBy,
+      page_hint: '1',
       ...params.filter,
       as: params.viewAs,
     }, new Set(Object.keys(params.filter ?? {})));
