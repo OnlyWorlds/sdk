@@ -274,6 +274,18 @@ export class Served {
     return this.byKey.get(`${type}:${key}`);
   }
 
+  private readonly walks = new Map<ElementType, { body: Record<string, unknown>; place: Place }[]>();
+
+  /** A type's elements in the list's order (the cursor's walk), sorted once: the snapshot never changes. */
+  walkOf(type: ElementType): readonly { body: Record<string, unknown>; place: Place }[] {
+    let walk = this.walks.get(type);
+    if (!walk) {
+      walk = this.byType.get(type)!.map(({ body }) => ({ body, place: placeOf(body) })).sort((a, b) => comparePlaces(a.place, b.place));
+      this.walks.set(type, walk);
+    }
+    return walk;
+  }
+
   /** `_stub_from_row`: what an expanded link carries. */
   stub(type: string, value: unknown): Record<string, unknown> | null {
     const key = uuidKey(value);
@@ -462,47 +474,48 @@ export function listAnswer(served: Served, type: ElementType, q: Query): Answer 
       }
       if (!allowed.has(key)) throw invalid(`Unknown filter '${key}'. Filters: ${filters.join(', ')}.`, key);
     }
-    let rows = served.byType.get(type)!.map((r) => r.body);
+    // The type's walk, sorted once per snapshot; each filter keeps its order.
+    let rows = served.walkOf(type);
     if (q.has('name')) {
       const name = q.get('name');
-      rows = rows.filter((b) => b.name === name);
+      rows = rows.filter(({ body: b }) => b.name === name);
     }
     const contains = q.get('name__icontains');
     if (contains) {
       const needle = upperEach(contains);
-      rows = rows.filter((b) => typeof b.name === 'string' && upperEach(b.name).includes(needle));
+      rows = rows.filter(({ body: b }) => typeof b.name === 'string' && upperEach(b.name).includes(needle));
     }
     for (const field of ['supertype', 'subtype']) {
       if (q.has(field)) {
         // Both sides trimmed by the profiles' White_Space and simply case-folded, the whole value (core/room.py).
         const want = fold(q.get(field) as string);
-        rows = rows.filter((b) => typeof b[field] === 'string' && fold(b[field] as string) === want);
+        rows = rows.filter(({ body: b }) => typeof b[field] === 'string' && fold(b[field] as string) === want);
       }
     }
     if (filters.includes('characters') && q.has('characters')) {
       const cid = linkFilterValue(q.get('characters') as string, 'characters');
       rows = cid === null
-        ? rows.filter((b) => Array.isArray(b.characters) && b.characters.length === 0)
-        : rows.filter((b) => Array.isArray(b.characters) && b.characters.some((v) => uuidKey(v) === cid));
+        ? rows.filter(({ body: b }) => Array.isArray(b.characters) && b.characters.length === 0)
+        : rows.filter(({ body: b }) => Array.isArray(b.characters) && b.characters.some((v) => uuidKey(v) === cid));
     }
     for (const field of linkFilters(type)) {
       if (!q.has(field)) continue;
       const target = linkFilterValue(q.get(field) as string, field);
       const generic = KINDS[type].generic.find(([n]) => n === field);
       const column = generic ? generic[2] : field;
-      rows = target === null ? rows.filter((b) => unset(b[column])) : rows.filter((b) => uuidKey(b[column]) === target);
+      rows = target === null ? rows.filter(({ body: b }) => unset(b[column])) : rows.filter(({ body: b }) => uuidKey(b[column]) === target);
     }
     if (q.has('ids')) {
       const ids = parseIds(q.get('ids') as string);
-      rows = rows.filter((b) => ids.has(uuidKey(b.id) as string));
+      rows = rows.filter(({ body: b }) => ids.has(uuidKey(b.id) as string));
     }
     if (q.has('created_by')) {
       const value = pyStrip(q.get('created_by') as string);
-      if (value === 'owner') rows = rows.filter((b) => b.created_by === undefined || b.created_by === null);
+      if (value === 'owner') rows = rows.filter(({ body: b }) => b.created_by === undefined || b.created_by === null);
       else {
         const member = uuidKey(value);
         if (member === null) throw invalid('created_by must be a membership id (as GET /members lists them) or owner.', 'created_by');
-        rows = rows.filter((b) => uuidKey(b.created_by) === member);
+        rows = rows.filter(({ body: b }) => uuidKey(b.created_by) === member);
       }
     }
     const expand = validateExpand(type, q.get('expand'));
@@ -510,13 +523,19 @@ export function listAnswer(served: Served, type: ElementType, q: Query): Answer 
     const limit = Math.max(1, Math.min(parseLimit(q.get('limit'), LIST_LIMIT_DEFAULT), LIST_LIMIT_MAX));
     const cursor = q.get('cursor');
 
-    let walk = rows.map((body) => ({ body, place: placeOf(body) })).sort((a, b) => comparePlaces(a.place, b.place));
+    // The first row past the cursor, found by halving: the rows are in the walk's order.
+    let from = 0;
     if (cursor) {
       const after = decodeCursor(cursor);
-      walk = walk.filter((r) => comparePlaces(r.place, after) > 0);
+      let hi = rows.length;
+      while (from < hi) {
+        const mid = (from + hi) >>> 1;
+        if (comparePlaces(rows[mid].place, after) > 0) hi = mid;
+        else from = mid + 1;
+      }
     }
-    const hasMore = walk.length > limit;
-    const page = walk.slice(0, limit);
+    const hasMore = rows.length - from > limit;
+    const page = rows.slice(from, from + limit);
     const nextCursor = hasMore && page.length ? encodeCursor(page[page.length - 1].place) : null;
     const data = page.map((r) => served.shape(type, r.body, expand, fields));
     return { status: 200, body: { data, has_more: hasMore, next_cursor: nextCursor } };
