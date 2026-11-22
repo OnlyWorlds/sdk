@@ -222,7 +222,9 @@ const isApiError = (e: unknown): e is { name: string; status: number; detail: un
 function notServed(value: string, ids: string[]): Refusal {
   return new Refusal(refusalText({
     error: {
-      message: `No world served here is named ${pyStrRepr(value)}: the worlds served here are ${ids.join(', ')}.`,
+      message: ids.length
+        ? `No world served here is named ${pyStrRepr(value)}: the worlds served here are ${ids.join(', ')}.`
+        : `No world served here is named ${pyStrRepr(value)}: no world is served here yet.`,
       type: 'api_error', code: NOT_IN_A_FOLDER, param: 'world', doc_url: NOT_IN_A_FOLDER_DOC,
     },
   }));
@@ -309,6 +311,8 @@ function sameId(a: string, b: string): boolean {
 // --- the layer ------------------------------------------------------------------------------------
 
 const WORLD_KEYS = ['entries', 'client'];
+/** The answer of a world read while no world is served: the schema tools and list_worlds still answer. */
+const NO_WORLD = 'No world is served here yet: list_worlds lists none. The schema tools answer without one.';
 const IDS_MAX = 200;
 const LIST_MAX = 1000;
 const INDEX_PER_TYPE = 100;
@@ -316,14 +320,16 @@ const INDEX_PER_TYPE = 100;
 /**
  * The hosted door's read tools over `worlds`, each a world folder's `entries` or a client that reads
  * it. Nothing is read until the first call; each call reads through the world's client then. With one
- * world served, a call without `world` reads it; with more, it names one (`list_worlds` lists them).
+ * world served, a call without `world` reads it; with more, it names one (`list_worlds` lists them). With
+ * none (a server that starts before a folder is added), the schema tools answer, `list_worlds` answers an
+ * empty list, and every read of a world is refused by one sentence.
  * `opts.asServed` keeps the descriptions exactly as the door serves them. A key it does not know is
- * refused with a TypeError, as is a world without `entries` or `client`, or with both.
+ * refused with a TypeError, as is a world without `entries` or `client`, or with both, and a `worlds` that is no list.
  */
 export function folderMcpTools(worlds: readonly OwMcpWorld[], opts: OwMcpToolsOptions = {}): OwMcpTools {
   refuseUnknownOptions('folderMcpTools', opts, ['asServed']);
   if (opts.asServed !== undefined && typeof opts.asServed !== 'boolean') throw new TypeError('folderMcpTools: asServed is true or false');
-  if (!Array.isArray(worlds) || worlds.length === 0) throw new TypeError('folderMcpTools takes the worlds it serves, a list of at least one { entries } or { client }');
+  if (!Array.isArray(worlds)) throw new TypeError('folderMcpTools takes the worlds it serves, a list of { entries } or { client } (empty while none is held)');
   const given = worlds.map((w, i) => {
     if (!w || typeof w !== 'object') throw new TypeError(`folderMcpTools: world ${i} is { entries } or { client }`);
     refuseUnknownOptions(`folderMcpTools: world ${i}`, w, WORLD_KEYS);
@@ -371,6 +377,7 @@ export function folderMcpTools(worlds: readonly OwMcpWorld[], opts: OwMcpToolsOp
     const all = await ready();
     if (world === null || world === undefined) {
       if (all.length === 1) return all[0];
+      if (all.length === 0) throw new Refusal(NO_WORLD);
       throw new Refusal(`More than one world is served here: name one as world (${all.map((h) => h.id).join(', ')}); list_worlds shows them.`);
     }
     const value = pyStrip(String(world));

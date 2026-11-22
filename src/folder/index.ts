@@ -38,11 +38,11 @@ import {
 } from './serve';
 
 export { NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_MESSAGE, NOT_IN_A_FOLDER_STATUS };
-export type { OwFolderReadReport, OwFolderSkip, OwFolderSkipReason } from './read';
+export type { OwFolderReadReport, OwFolderServed, OwFolderSkip, OwFolderSkipReason } from './read';
 export type { OwWorldFileEntry };
 
 export interface OwFolderFetchOptions {
-  /** Called once, when the first request reads the entries: how many elements are served, and each file skipped with why. */
+  /** Called once, when the first request reads the entries: each file served (its path, type, id and name), and each file skipped with why. */
   onRead?: (report: OwFolderReadReport) => void;
 }
 

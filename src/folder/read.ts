@@ -27,14 +27,27 @@ export interface OwFolderSkip {
   id?: string;
 }
 
+/** A file under a type folder that is served as an element: what it became. */
+export interface OwFolderServed {
+  path: string;
+  /** The element's type: the one its body declares when that is one of the 22 slugs, else its folder's. */
+  type: ElementType;
+  /** The id as the file writes it. */
+  id: string;
+  /** The name as the file writes it, or null when the file holds no string name. */
+  name: string | null;
+}
+
 /** What one read of the entries found: handed to `onRead` once, when the first request reads them. */
 export interface OwFolderReadReport {
   /** `world.json` parsed with an id (false: every route answers 500, saying so). */
   world: boolean;
-  /** How many elements are served. */
+  /** How many elements are served (the length of `served`). */
   elements: number;
   /** Of those, how many came from the legacy `spatial/` layout. */
   legacy: number;
+  /** Each file served as an element, in the order they were read: `elements/` first, then by path in code point order. */
+  served: OwFolderServed[];
   /** The files under a type folder that are not served, each with why, in the order they were read. */
   skipped: OwFolderSkip[];
 }
@@ -158,5 +171,8 @@ export function readFolder(entries: readonly OwWorldFileEntry[]): FolderSnapshot
     elements.push({ type, id: body.id, key, body, path: f.path });
     if (f.rank === 1) legacy++;
   }
-  return { world, elements, report: { world: world !== null, elements: elements.length, legacy, skipped } };
+  const served: OwFolderServed[] = elements.map((e) => ({
+    path: e.path, type: e.type, id: e.id, name: typeof e.body.name === 'string' ? e.body.name : null,
+  }));
+  return { world, elements, report: { world: world !== null, elements: elements.length, legacy, served, skipped } };
 }

@@ -4,7 +4,7 @@
 // https://www.onlyworlds.com/mcp with the practice world's key and on `folderMcpTools` over the folder;
 // each pair compared key by key. Reads only, through the built package (dist/).
 //
-//   node scripts/compare-mcp.mjs --practice PATH [--cache FILE] [--plant] [--list]
+//   node scripts/compare-mcp.mjs --practice PATH [--cache FILE] [--plant] [--list] [--calls FILE] [--folder DIR]
 //
 // PATH is the practice world's published contract (practice.json: its world id and key; the PIN is
 // never read, since nothing here writes). The schema tools are asked with the public demo key, which
@@ -14,12 +14,17 @@
 // calls are spaced, a 429 waits out its Retry-After before the same call is sent again, and the run
 // stops past CALL_CAP live calls. `--plant` changes one element's name in the folder after it is made,
 // to show the comparison names the difference. `--list` prints each call with the size of each answer.
+// `--calls FILE` writes every call this run made of the local tools, in order, each with its MCP method,
+// its params and the answer the local tools gave (a JSON-RPC error as `{code, message}`), and `--folder
+// DIR` writes the folder they were made on (DIR must not exist): together the means to hold anything that
+// carries these tools (a server, a bridge) to the same calls, with no second list kept by hand.
 //
 // One line per difference: the call, the key path, live against local, then the named reason when the
 // difference is on NAMED below. Exit 0 when every difference is named, 1 when any is not, 2 when a live
 // read could not be made (a network failure, an answer the call did not expect, the cap).
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { OwV2Client, OwApiError, OwNetworkError, ELEMENT_TYPES } from '../dist/index.js';
 import { folderMcpTools, OwMcpError } from '../dist/mcp.js';
 
@@ -38,8 +43,14 @@ const arg = (name) => {
 const practicePath = arg('--practice');
 const cachePath = arg('--cache');
 const plant = args.includes('--plant');
+const callsPath = arg('--calls');
+const folderDir = arg('--folder');
+if (folderDir && existsSync(folderDir)) {
+  console.error(`--folder ${folderDir}: it exists; name a folder to make`);
+  process.exit(2);
+}
 if (!practicePath) {
-  console.error('usage: node scripts/compare-mcp.mjs --practice PATH [--cache FILE] [--plant] [--list]');
+  console.error('usage: node scripts/compare-mcp.mjs --practice PATH [--cache FILE] [--plant] [--list] [--calls FILE] [--folder DIR]');
   process.exit(2);
 }
 const practice = JSON.parse(readFileSync(practicePath, 'utf8'));
@@ -203,6 +214,8 @@ function resourceView(r) {
 /** Every pair: [label, live view, local view, live text, local text]. */
 const pairs = [];
 const couldNotSee = [];
+/** Every call made of the local tools, for --calls: { label, method, params, answer }. */
+const made = [];
 let local;
 
 async function tool(label, name, argsOf, { demo = false, expectError = false } = {}) {
@@ -219,7 +232,9 @@ async function tool(label, name, argsOf, { demo = false, expectError = false } =
     throw e;
   }
   if (l.view.isError && !expectError) couldNotSee.push(`${label}: the door refused: ${l.text}`);
-  const f = toolView(await local.callTool(name, argsOf));
+  const got = await local.callTool(name, argsOf);
+  made.push({ label, method: 'tools/call', params: { name, arguments: argsOf }, answer: got });
+  const f = toolView(got);
   pairs.push([label, l.view, f.view, l.text, f.text]);
   return [l.view, f.view];
 }
@@ -237,9 +252,12 @@ async function resource(label, uri, { demo = false } = {}) {
   }
   let f;
   try {
-    f = resourceView({ result: await local.readResource(uri) });
+    const result = await local.readResource(uri);
+    made.push({ label, method: 'resources/read', params: { uri }, answer: result });
+    f = resourceView({ result });
   } catch (e) {
     if (!(e instanceof OwMcpError)) throw e;
+    made.push({ label, method: 'resources/read', params: { uri }, error: { code: e.code, message: e.message } });
     f = resourceView({ error: { code: e.code, message: e.message } });
   }
   pairs.push([label, l.view, f.view, l.text, f.text]);
@@ -303,6 +321,16 @@ async function main() {
     console.log(`plant: ${busiest} ${target.id} renamed "${target.name} (planted)" in the folder only`);
   }
   local = folderMcpTools([{ entries }]);
+  if (folderDir) {
+    for (const e of entries) {
+      mkdirSync(dirname(join(folderDir, e.path)), { recursive: true });
+      writeFileSync(join(folderDir, e.path), e.data);
+    }
+    console.log(`folder written: ${folderDir}`);
+  }
+  for (const [method, key] of [['tools/list', 'tools'], ['resources/list', 'resources'], ['resources/templates/list', 'resourceTemplates']]) {
+    made.push({ label: method, method, params: {}, answer: { [key]: local[key] } });
+  }
 
   // (b) the lists: the read tools' definitions as served, the resources and the templates.
   const lists = {};
@@ -444,6 +472,10 @@ try {
   else throw e;
 }
 if (cachePath && !cache) writeFileSync(cachePath, JSON.stringify(recorded));
+if (callsPath) {
+  writeFileSync(callsPath, JSON.stringify({ world: practice.world_id, planted: plant, calls: made }, null, 2) + '\n');
+  console.log(`calls written: ${made.length} to ${callsPath}`);
+}
 
 let namedCount = 0;
 let unnamed = 0;

@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **A folder's read report says what each file became.** The report `folderFetch`'s `onRead` receives gains `served`: each file served as an element, as `{ path, type, id, name }` (the declared or the folder's type, the id and the name as the file writes them, `name` null when the file holds no string name), in the order the files were read. A tool that watches a folder can tell a new, a changed and a removed element by comparing two reports, without reading the files' rules itself. The type `OwFolderServed` is exported from `@onlyworlds/sdk/folder`.
+
+### Changed
+
+- **`folderMcpTools([])` serves no world instead of throwing**, for a server that starts before a folder is added: `list_worlds` answers an empty list, the three schema tools and the schema resources answer, and every read of a world (`get_me`, `list_elements`, `get_element`, `search_elements`, the world and element resources) is refused with one sentence saying no world is served yet. A `worlds` that is not a list still throws a `TypeError`.
+
 ## [4.191.0] - 2026-11-22
 
 ### Added

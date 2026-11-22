@@ -442,7 +442,28 @@ test('the folder as the spec reads it: elements/ over spatial/, first file by co
     { path: 'elements/trait/list.json', reason: 'no_id' },
     { path: 'spatial/map/old.json', reason: 'duplicate', id: id(7) },
   ]);
+  assert.deepEqual(report.served, [
+    { path: 'elements/map/new.json', type: 'map', id: id(7), name: 'New copy' },
+    { path: 'elements/trait/A.json', type: 'trait', id: id(8).toUpperCase(), name: 'A' },
+  ], 'each file served, what it became, in the order read');
   assert.equal(report.elements, 2);
+});
+
+test('the read report\'s served list says the declared type, and null for a file with no string name', async () => {
+  let report;
+  const f = folderFetch([
+    file('world.json', { id: W, name: 'W' }),
+    file('elements/character/x.json', { id: id(20), type: 'creature', name: 'Declared' }),
+    file('elements/character/y.json', { id: id(21), type: 'Character', name: 7 }),
+    file('elements/character/z.json', { id: id(22) }),
+  ], { onRead: (r) => { report = r; } });
+  await call(f, '/world/');
+  assert.deepEqual(report.served, [
+    { path: 'elements/character/x.json', type: 'creature', id: id(20), name: 'Declared' },
+    { path: 'elements/character/y.json', type: 'character', id: id(21), name: null },
+    { path: 'elements/character/z.json', type: 'character', id: id(22), name: null },
+  ]);
+  assert.equal(report.elements, report.served.length);
 });
 
 test('folderFetch refuses an unknown option, and its options are the only object parameter of the subpath', () => {

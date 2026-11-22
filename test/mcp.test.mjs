@@ -420,11 +420,30 @@ test('folderMcpTools refuses an unknown option, and its options are the only obj
   assert.throws(() => folderMcpTools([{ entries: harbour() }], { __unknown__: 1 }), (e) => e instanceof TypeError && /unknown option '__unknown__'/.test(e.message));
   assert.throws(() => folderMcpTools([{ entries: harbour(), __unknown__: 1 }]), (e) => e instanceof TypeError && /world 0: unknown option '__unknown__'/.test(e.message));
   assert.throws(() => folderMcpTools([{ entries: harbour() }], { asServed: 'yes' }), TypeError);
-  assert.throws(() => folderMcpTools([]), TypeError);
+  assert.throws(() => folderMcpTools(), TypeError);
+  assert.throws(() => folderMcpTools({ entries: harbour() }), TypeError);
   assert.throws(() => folderMcpTools([{}]), TypeError);
   assert.throws(() => folderMcpTools([{ entries: harbour(), client: new OwV2Client({ fetch: folderFetch(harbour()) }) }]), TypeError);
   assert.throws(() => folderMcpTools([{ entries: 'nope' }]), TypeError);
   assert.deepEqual(objectParameters('../src/mcp/index.ts'), ['folderMcpTools#1']);
+});
+
+test('with no world served, the schema tools and list_worlds answer, and every read of a world is one refusal', async () => {
+  const mcp = folderMcpTools([]);
+  const none = 'No world is served here yet: list_worlds lists none. The schema tools answer without one.';
+  assert.deepEqual(await ok(mcp, 'list_worlds', {}), { data: [] });
+  assert.ok(Object.keys(await ok(mcp, 'list_element_types', {})).length === 22);
+  assert.equal((await ok(mcp, 'get_element_schema', { type: 'pin' })).type, 'pin');
+  assert.ok('location' in (await ok(mcp, 'search_schema', { query: 'loc' })));
+  assert.equal(await refused(mcp, 'get_me', {}), none);
+  assert.equal(await refused(mcp, 'list_elements', { type: 'character' }), none);
+  assert.equal(await refused(mcp, 'get_element', { type: 'character', id: id(1) }), none);
+  assert.equal(await refused(mcp, 'search_elements', { query: 'mill' }), none);
+  assert.equal(await refused(mcp, 'list_elements', { type: 'character', world: W }),
+    envelope(`No world served here is named '${W}': no world is served here yet.`, 'world', 'not_in_a_folder', 'api_error', FOLDER_DOC));
+  await assert.rejects(mcp.readResource('onlyworlds://world'), (e) => e instanceof OwMcpError && e.code === 0 && e.message === none);
+  await assert.rejects(mcp.readResource(`onlyworlds://element/character/${id(1)}`), (e) => e instanceof OwMcpError && e.code === 0 && e.message === none);
+  assert.equal(JSON.parse((await mcp.readResource('onlyworlds://schema')).contents[0].text).character !== undefined, true);
 });
 
 test('a folder whose world.json does not read answers the folder source\'s refusal; the schema tools still answer', async () => {
