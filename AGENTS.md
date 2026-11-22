@@ -1,4 +1,5 @@
 # For AI agents using @onlyworlds/sdk
+If you are changing this package's source rather than using it, read [CONTRIBUTING.md](https://github.com/OnlyWorlds/sdk/blob/main/CONTRIBUTING.md) in the repository.
 
 **Current as of**: SDK **4.x** · schema-dist **v0.34.1-dist.144** (canonical 00.34.01).
 This line is asserted by `codegen:check` in CI — if the pin moves and this file is not

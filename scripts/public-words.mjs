@@ -30,6 +30,7 @@ const PUBLISHED = [
   '.github',
   'README.md',
   'AGENTS.md',
+  'CONTRIBUTING.md',
   'SECURITY.md',
   'SCHEMA.md',
   'package.json',
