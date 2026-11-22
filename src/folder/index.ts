@@ -40,6 +40,8 @@ import {
 export { NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_MESSAGE, NOT_IN_A_FOLDER_STATUS };
 export type { OwFolderReadReport, OwFolderServed, OwFolderSkip, OwFolderSkipReason } from './read';
 export type { OwWorldFileEntry };
+/** The 22 element type slugs, as a served file's `type` names one (the main entry's `ElementType`). */
+export type { ElementType } from '../v2/types.generated';
 
 export interface OwFolderFetchOptions {
   /** Called once, when the first request reads the entries: each file served (its path, type, id and name), and each file skipped with why. */
