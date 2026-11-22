@@ -244,7 +244,7 @@ export class OwV2Client {
    * empty means the serving is partial (`cut.proposed` also counts proposed elements left out because
    * the component was not named). `compact: true` leaves out every empty section and an empty `cut`,
    * the frame and every null kept, and leaves out each element body's empty fields (`null`, `""`,
-   * `[]`, `{}`; `id`, `type` and `name` always stay), answered as `OwDraughtCompact`; left out, `compact=false` is sent, so the answer is the fixed `OwDraught` shape whatever the server's own default (keel serves the compact packet by default since 2026-11-02). A Message
+   * `[]`, `{}`; `id`, `type` and `name` always stay), answered as `OwDraughtCompact`; left out, `compact=false` is sent, so the answer is the fixed `OwDraught` shape whatever the server's own default (keel's is `false` until 2027-05-02, when it becomes `true`; the MCP tool `get_draught` defaults to `true` already). A Message
    * without the room mark is placed as any Narrative unless `messages` is named, when it is there
    * and in no other section; a room-marked Message is in `messages` or nowhere. `lens` (a lens id)
    * adds `lenses`, one frame with that lens read for this key's own view (beside `depth` or `budget`
