@@ -5,6 +5,21 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.191.0] - 2026-11-22
+
+### Added
+
+- **The MCP door's read tools on a world folder** (`@onlyworlds/sdk/mcp`). `folderMcpTools(worlds)` gives the hosted MCP server's eight read tools (`list_element_types`, `get_element_schema`, `search_schema`, `list_worlds`, `get_me`, `list_elements`, `get_element`, `search_elements`), its two resources and its two resource templates, each answered from a world folder (its `entries`, or a client that reads it) in the hosted server's own shape: `callTool(name, args)` answers an MCP `CallToolResult` ready to send, a refusal included (`isError`), and `readResource(uri)` a `ReadResourceResult` or an `OwMcpError` carrying the JSON-RPC code. The tool definitions and the schema answers are those onlyworlds.com served when the package was built, with one sentence added to each description saying it answers on this computer (`asServed: true` keeps them exactly as served). Lists are newest-created first and paged by `offset`; room, reading-aid and proposed elements are left out unless asked for, as on the hosted server; `get_me` reads the front door through the charter and strand readers and answers the account's own state as the owner's with nothing in it. A call's `world` is the folder's own id. No transport and no file system: a server wraps it. Nothing writes.
+
+### Changed
+
+- **The join calls refuse no code before sending.** `previewJoin`, `redeemJoin` and `acceptJoin` throw a `TypeError` for an empty, blank or non-string code, and send nothing; before, the code went to the server, which answers it 404 as any bad code. `redeemJoin` leaves a `null` `name`, `agentName` or `character` out, as an undefined one, since the API types all three as strings.
+
+### Fixed
+
+- **A folder source's lists no longer slow down with each page.** Every page sorted and filtered the type's whole list again; the list is now sorted once per snapshot and a cursor's place found by halving. One type of 100,000 elements read in pages of 1000 went from about 30 s to under 3 s, with the same answers.
+- `draught()`'s documentation said the server serves the compact packet by default; its default is `compact=false` until 2027-05-02 (the MCP tool `get_draught` defaults to compact). The method already sent `compact=false` when it was left out, so no answer changes.
+
 ## [4.190.0] - 2026-11-22
 
 ### Added
