@@ -7,8 +7,8 @@ name: release
 #
 # Every gate runs first and a red one stops the publish. After the publish the job reads the
 # registry back: the version is live, and its tarball holds exactly what this commit packs.
-# The wire check against keel's OpenAPI document runs on the
-# maintainer's machine before the tag is pushed; it is not repeated here.
+# The wire check against keel's OpenAPI document (scripts/verify-wire.mjs) runs as the `wire`
+# job in ci.yml, on every pull request and push to main; it is not repeated here.
 #
 # Releases are the maintainer's (Titus, 2026-10-11); a major version asks him first.
 #

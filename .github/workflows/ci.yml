@@ -130,6 +130,25 @@ jobs:
         env:
           OW_LIVE: '1'
 
+  wire:
+    # The built package run against keel's public API document (/api/v2/openapi.json) through a recording
+    # fetch: every route, parameter, header, body and answer type it uses is held to what the document
+    # declares, and two checks ask production a few keyless reads. Keyless and public, so no secret. Exit 2
+    # (the document could not be read) fails the job too: nothing was measured, which is not a pass.
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - run: node scripts/verify-wire.mjs
+
   schema:
     # The schema guards. Before 2026-07-28 these could not run here at all:
     # codegen read a sibling checkout of the PRIVATE keel repo, which does not

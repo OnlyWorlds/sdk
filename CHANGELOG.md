@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- Tests: CI now checks the built package against onlyworlds.com's public API document (`/api/v2/openapi.json`) on every pull request and push to main, as the `wire` job (`scripts/verify-wire.mjs`): the routes, query parameters, headers and bodies the client sends, and the types it declares for the answers, are held to what the document declares, and two checks ask production a few reads without a key. Until now this check ran on a maintainer's machine before each release.
+
 ## [4.186.2] - 2026-11-21
 
 ### Changed
