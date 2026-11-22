@@ -106,8 +106,8 @@ const MENTION = /\[entity:(\p{Nd}+)(?:\|([^\]]*))?\]/gu;
 const FILE_ID = /_(\p{Nd}+)\.json$/u;
 const INT = new RegExp(`^[${PY_SPACE}]*(-?)(\\p{Nd}+)[${PY_SPACE}]*$`, 'u');
 
-/** A moment as Python's `datetime.fromisoformat` reads the forms an export writes: microseconds, and whether it has an offset. */
-interface Moment { us: bigint; aware: boolean }
+/** A moment as Python's `datetime.fromisoformat` reads the forms an export writes, in microseconds since 1970 UTC. */
+type Moment = bigint;
 
 const ISO = /^(\d{4})-(\d{2})-(\d{2})(?:[^](\d{2})(?::(\d{2})(?::(\d{2})(?:[.,](\d+))?)?)?(?:([+-])(\d{2})(?::?(\d{2})(?::?(\d{2})(?:[.,](\d{1,6}))?)?)?)?)?$/u;
 
@@ -120,7 +120,7 @@ function daysFromCivil(y: number, m: number, d: number): number {
   return era * 146097 + doe - 719468;
 }
 
-/** `_when`: a string read as a moment, or null when it is not one (Python's ValueError). */
+/** `_when`: a string read as a moment, or null when it is not one (Python's ValueError). A time with no offset is UTC, the zone Kanka writes. */
 function when(v: PyValue): Moment | null {
   if (!isStr(v) || !v) return null;
   const m = ISO.exec(v.split('Z').join('+00:00'));
@@ -131,21 +131,19 @@ function when(v: PyValue): Moment | null {
   const dim = [31, y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   if (y < 1 || mo < 1 || mo > 12 || d < 1 || d > dim[mo - 1] || h > 23 || mi > 59 || s > 59) return null;
   let us = BigInt(daysFromCivil(y, mo, d)) * 86400000000n + BigInt(((h * 60 + mi) * 60 + s)) * 1000000n + BigInt(frac);
-  const aware = m[8] !== undefined;
-  if (aware) {
+  if (m[8] !== undefined) {
     const [oh, om, os] = [Number(m[9]), Number(m[10] ?? 0), Number(m[11] ?? 0)];
     const ofrac = Number((m[12] ?? '').padEnd(6, '0'));
     if (oh > 23 || om > 59 || os > 59) return null;
     const off = BigInt(((oh * 60 + om) * 60 + os)) * 1000000n + BigInt(ofrac);
     us = m[8] === '-' ? us + off : us - off;
   }
-  return { us, aware };
+  return us;
 }
 
-/** Seconds from `a` to `b`; Python refuses to subtract a moment with an offset from one without. */
+/** Seconds from `a` to `b`. */
 function secondsBetween(a: Moment, b: Moment): number {
-  if (a.aware !== b.aware) throw new TypeError("can't subtract offset-naive and offset-aware datetimes");
-  return Number(b.us - a.us) / 1e6;
+  return Number(b - a) / 1e6;
 }
 
 // --- the report ---------------------------------------------------------------------

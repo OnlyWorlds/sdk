@@ -10,6 +10,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { unzipSync, zipSync } from 'fflate';
 
 import { convertKanka, kankaReportText, KANKA_MADE_NAMES, OwConvertError } from '../dist/convert.js';
 import { objectParameters } from './options-surface.mjs';
@@ -65,6 +66,23 @@ test('the producer line names this package and its version unless the caller nam
   const built = readFileSync(new URL('../dist/convert.js', import.meta.url), 'utf8');
   assert.ok(built.includes(JSON.stringify(pkg.version)) && !built.includes('devDependencies'));
   assert.deepEqual(world({ producer: { tool: 'my-tool', version: '1.2.3' } }).producer, { tool: 'my-tool', version: '1.2.3', input: 'kanka-export' });
+});
+
+test('a time with no offset is read as UTC, so a campaign\'s and an entity\'s compare whichever carries one', () => {
+  const name = 'quay-export-world_20261023_074706.zip';
+  const starter = convertKanka(read(name)).report.possiblyStarter;
+  assert.ok(starter.length > 0, 'the export holds starter entries to find');
+  const naive = (path, holder) => {
+    const files = unzipSync(read(name));
+    const doc = JSON.parse(new TextDecoder().decode(files[path]));
+    const row = holder ? doc[holder] : doc;
+    assert.ok(row.created_at.endsWith('.000000Z'), row.created_at);
+    row.created_at = row.created_at.slice(0, -'.000000Z'.length);
+    files[path] = new TextEncoder().encode(JSON.stringify(doc));
+    return zipSync(files);
+  };
+  assert.deepEqual(convertKanka(naive('campaign.json')).report.possiblyStarter, starter);
+  assert.deepEqual(convertKanka(naive('characters/your-character-name_10074596.json', 'entity')).report.possiblyStarter, starter);
 });
 
 test('the report counts what the Python report counts, made names included', () => {
