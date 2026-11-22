@@ -207,7 +207,7 @@ if (!BASE) gap(`could not read OwElementBase from ${SDK_DIR}/dist/**/*.d.ts — 
 const OPTION_VALUES = {
   reader: 'player', role: 'guest', days: 7, inviterName: 'x', withCharacter: true, character: '0190a2b4-0000-7000-8000-000000000001',
   preview: true, maxUses: 2, characters: ['0190a2b4-0000-7000-8000-000000000001'], name: 'x', agentName: 'x',
-  landsOn: 'dashboard',
+  landsOn: 'dashboard', note: 'x',
 };
 function allOptions(method, fallback) {
   const text = distFiles('.d.ts').map((rel) => readFileSync(join(SDK_DIR, rel), 'utf8')).join('\n');

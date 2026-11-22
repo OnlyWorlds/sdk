@@ -57,6 +57,18 @@ test('createWorldLink: landsOn goes as lands_on, and only when set', async () =>
   assert.equal(f.calls.length, 3, 'nothing sent for the refused call');
 });
 
+test('createWorldLink: note goes as note, as given and only when set', async () => {
+  const f = fake(201, CREATED);
+  const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });
+  const note = 'Come and help with the harbour.\nBring the maps.';
+  await c.createWorldLink('w1', { reader: 'person', note });
+  assert.deepEqual(JSON.parse(f.calls[0].init.body), { reader: 'person', note }, 'the text untouched, its line break kept');
+  await c.createWorldLink('w1', { reader: 'person' });
+  assert.deepEqual(JSON.parse(f.calls[1].init.body), { reader: 'person' }, 'left out: no note key');
+  await assert.rejects(() => c.createWorldLink('w1', { reader: 'person', notes: 'x' }), /notes/, 'a misspelling is refused by name, never dropped');
+  assert.equal(f.calls.length, 2, 'nothing sent for the refused call');
+});
+
 test('createWorldLink: a table sends max_uses and characters in keel\'s spelling, the list in the order given', async () => {
   const f = fake(201, CREATED);
   const c = new OwV2Client({ apiKey: 'ow_a_acct', fetch: f.fetch });

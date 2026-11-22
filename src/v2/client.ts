@@ -1063,7 +1063,11 @@ export class OwV2Client {
    * made, so a full world refuses the pick, never the link. `landsOn` (a person link only):
    * `site`, the default, opens onlyworlds.com's /join page; `dashboard` opens the Dashboard's,
    * for someone invited to work there; either page takes the same code, and `dashboard` on an
-   * agent or player link is refused. 201 with the code, shown in this answer only. Owner only: anyone else, and a world that doesn't exist, gets 404
+   * agent or player link is refused. `note` (a person link): a note for whoever opens it, at most
+   * 500 characters and 8 line breaks, which previewJoin answers as `note` and no link row
+   * carries; an AI or player link keeps none. The note and `inviterName` refuse control
+   * characters, a tab included, and the characters that override or isolate text direction:
+   * 422, param the field. 201 with the code, shown in this answer only. Owner only: anyone else, and a world that doesn't exist, gets 404
    * `not_found` (`err.isNotFound`). A world key is a TypeError before anything is sent.
    */
   async createWorldLink(
@@ -1079,9 +1083,10 @@ export class OwV2Client {
       maxUses?: number;
       characters?: string[];
       landsOn?: 'site' | 'dashboard';
+      note?: string;
     },
   ): Promise<OwCreatedWorldLink> {
-    only('createWorldLink', opts, ['reader', 'role', 'days', 'inviterName', 'withCharacter', 'character', 'preview', 'maxUses', 'characters', 'landsOn']);
+    only('createWorldLink', opts, ['reader', 'role', 'days', 'inviterName', 'withCharacter', 'character', 'preview', 'maxUses', 'characters', 'landsOn', 'note']);
     if (this.keyKind !== 'account') {
       throw new TypeError('createWorldLink needs an account token (ow_a_): only the world\'s owner makes links');
     }
@@ -1095,6 +1100,7 @@ export class OwV2Client {
     if (opts.maxUses !== undefined) body.max_uses = opts.maxUses;
     if (opts.characters !== undefined) body.characters = opts.characters;
     if (opts.landsOn !== undefined) body.lands_on = opts.landsOn;
+    if (opts.note !== undefined) body.note = opts.note;
     return this.request('POST', `/account/worlds/${seg('worldId', worldId)}/links`, { body }) as Promise<OwCreatedWorldLink>;
   }
 

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.188.0] - 2026-11-22
+
+### Added
+
+- **An invite link's note**: `createWorldLink(worldId, { reader: 'person', note })` sends a note for whoever opens the link, at most 500 characters and 8 line breaks; `previewJoin` answers it as `note` on `OwJoinPreview`, a string or null (an AI's or a player's link keeps none). No link row carries the note. onlyworlds.com refuses control characters, a tab included, and the characters that override or isolate text direction in the note, in `inviterName` and in an AI link's label, with a 422 whose `param` names the field.
+
 ## [4.187.0] - 2026-11-22
 
 ### Added

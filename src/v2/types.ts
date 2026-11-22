@@ -1063,6 +1063,8 @@ export interface OwJoinPreview {
   with_character: boolean | null;
   /** ISO 8601, UTC. */
   expires_at: string;
+  /** The note the inviter wrote on a person link, or null (an AI or player link keeps none). */
+  note: string | null;
   /** A table only (a player link that works 2 to 50 times): how many times it works. Absent on a link for one. */
   max_uses?: number;
   /** A table only: how many places are left. */
