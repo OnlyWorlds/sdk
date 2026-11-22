@@ -118,9 +118,11 @@
  * PASS about the rest only.
  *
  * EXIT CODES: 0 PASS (about what it can see) · 1 DRIFT, or a gap IN THIS CHECKER · 2 SKIPPED:
- * the document was unreachable, nothing was measured. A skip is not a failure (a check that goes
- * red for the network teaches people to ignore it), but it is not 0: before a release tag, `&&`
- * must stop on it (it exited 0 until 2026-10-14).
+ * the document was unreachable, nothing was measured; or BLIND: a live check (7b, 5t) could not see,
+ * its host unreachable or still answering 429 after one wait of its Retry-After. A skip is not a
+ * failure (a check that goes red for the network teaches people to ignore it), but it is not 0: before
+ * a release tag, `&&` must stop on it (it exited 0 until 2026-10-14; a live check's 429 read as DRIFT in
+ * 7b and as a pass in 5t until 2026-11-22).
  */
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
@@ -142,6 +144,11 @@ let checks = 0;
 const ok = () => { checks++; };
 const bad = (msg) => { drift.push(msg); console.log(`  DRIFT  ${msg}`); };
 const gap = (msg) => { gaps.push(msg); console.log(`  GAP    ${msg}   (in this checker: the unchecked part was NOT checked)`); };
+// A live check that could not see (an unreachable host, a 429 after one wait): named, never counted, exit 2.
+const blind = [];
+const unseen = (msg) => { blind.push(msg); console.log(`  BLIND  ${msg}   (could not see: not a pass)`); };
+// One wait of the host's own Retry-After (seconds), at least 1 and at most 70; 5 when it names none.
+const waitRetryAfter = (sec) => new Promise((r) => setTimeout(r, Math.min(Math.max(Number(sec) || 5, 1), 70) * 1000));
 
 // ---- the document ---------------------------------------------------------------------
 
@@ -1853,10 +1860,17 @@ if (!argv.includes('--no-live')) {
   try {
     const probe = new OwV2Client({ apiKey: '0000000001', baseUrl: `${origin}/api/v2-no-such-base` });
     let err = null;
-    try { await probe.getWorld(); } catch (e) { err = e; }
+    for (let attempt = 0; attempt < 2; attempt++) {
+      err = null;
+      try { await probe.getWorld(); } catch (e) { err = e; }
+      if (!(err instanceof sdk.OwApiError && err.status === 429) || attempt === 1) break;
+      await waitRetryAfter(err.retryAfter);
+    }
     const listed = schemas.Error?.['x-ow-error-codes']?.not_found;
-    if (err instanceof sdk.OwNetworkError) LIVE_PROBE = `NOT RUN (${err.message}): the unrouted-path envelope went unchecked`;
-    else if (err && !(err instanceof sdk.OwApiError) && /fetch failed|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|timed? ?out|network|aborted/i.test(`${err.message} ${err.cause?.code ?? ''}`)) LIVE_PROBE = `NOT RUN (${err.message}): the unrouted-path envelope went unchecked`;
+    const notRun = (why) => { LIVE_PROBE = `NOT RUN (${why}): the unrouted-path envelope went unchecked`; unseen(`7b, the unrouted-path envelope: ${why}`); };
+    if (err instanceof sdk.OwApiError && err.status === 429) notRun('production answered 429 twice, the second after its Retry-After');
+    else if (err instanceof sdk.OwNetworkError) notRun(err.message);
+    else if (err && !(err instanceof sdk.OwApiError) && /fetch failed|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|timed? ?out|network|aborted/i.test(`${err.message} ${err.cause?.code ?? ''}`)) notRun(err.message);
     else if (!err) bad('a base URL no route matches did not raise: the SDK returned a result');
     else if (!(err instanceof sdk.OwApiError)) bad(`a base URL no route matches raised ${err?.constructor?.name}: ${err?.message}, not an OwApiError (keel answers its JSON envelope since 2026-10-09)`);
     else if (err.status !== 404 || err.code !== 'not_found' || !err.docUrl) bad(`an unrouted path surfaced as status ${err.status}, code ${err.code}, docUrl ${err.docUrl ? 'set' : 'missing'}; keel's envelope is 404 / not_found / a doc_url`);
@@ -1864,6 +1878,7 @@ if (!argv.includes('--no-live')) {
     else { ok(); LIVE_PROBE = `ran: ${origin}, an unrouted base answers an OwApiError 404 not_found with a doc_url`; }
   } catch (e) {
     LIVE_PROBE = `NOT RUN (${e.message}): the unrouted-path envelope went unchecked`;
+    unseen(`7b, the unrouted-path envelope: ${e.message}`);
   }
 }
 
@@ -1908,8 +1923,12 @@ const TOKEN_DEAD = [];
     if (!argv.includes('--no-live')) {
       const origin = arg('--api-origin', 'https://www.onlyworlds.com');
       try {
+        let unseenRoutes = 0;
         for (const r of routes) {
-          const res = await fetch(`${origin}/api/v2${r.path.split('?')[0]}`, { method: r.method, headers: { Accept: 'application/json' } });
+          const ask = () => fetch(`${origin}/api/v2${r.path.split('?')[0]}`, { method: r.method, headers: { Accept: 'application/json' } });
+          let res = await ask();
+          if (res.status === 429) { await waitRetryAfter(res.headers.get('retry-after')); res = await ask(); }
+          if (res.status === 429) { unseenRoutes++; unseen(`5t, TokenResource.${r.m} (${r.method} ${r.path.split('?')[0]}): production answered 429 twice, the second after its Retry-After`); continue; }
           let code = null;
           try { const j = await res.json(); code = j?.error?.code ?? j?.code ?? null; } catch { /* not JSON */ }
           const unrouted = res.status === 404 && code === 'not_found';
@@ -1918,10 +1937,10 @@ const TOKEN_DEAD = [];
           else if (deprecated(r.m)) bad(`TokenResource.${r.m} is @deprecated, but production answers ${r.method} ${r.path} with ${res.status}, not an unrouted 404`);
           else ok();
         }
-        TOKEN_PROBE = `ran: ${routes.length} route(s) asked of ${origin} without credentials`;
+        TOKEN_PROBE = `ran: ${routes.length} route(s) asked of ${origin} without credentials${unseenRoutes ? `, ${unseenRoutes} of them unseen (429)` : ''}`;
       } catch (e) {
         TOKEN_PROBE = `NOT RUN (${e.message})`;
-        gap(`the TokenResource routes could not be asked of production (${e.message}), so they went unchecked`);
+        unseen(`5t, the TokenResource routes could not be asked of production (${e.message}), so they went unchecked`);
       }
     }
   }
@@ -2439,6 +2458,10 @@ if (drift.length) {
 if (gaps.length) {
   console.log(`INCOMPLETE — ${gaps.length} gap(s) IN THIS CHECKER, ${checks} check(s) passed. The unchecked parts were not checked.`);
   process.exit(1);
+}
+if (blind.length) {
+  console.log(`BLIND — ${blind.length} live check(s) could not see (above), ${checks} check(s) passed. This is not a pass (exit 2).`);
+  process.exit(2);
 }
 console.log(`PASS — ${checks} check(s): @onlyworlds/sdk ${pkg.version} sends only routes and parameters the document has, knows exactly its fields, and reads its envelopes. Blind spots above.`);
 process.exit(0);
