@@ -103,7 +103,9 @@ test('a ground named by a Map row the reader cannot read as an element is no gro
 });
 
 test('layoutOf is pure: the rows are not moved, and the answer is the caller\'s own', () => {
-  const c = cases.find((x) => x.name === 'board-every-pin-is-hand');
+  // Its own parse of the fixture: the shared `cases` have been through the reader in the tests above, so a reader
+  // that writes into the rows has written before this test looks, and before would equal after.
+  const c = (JSON.parse(readFileSync(FIXTURE, 'utf8')).layout_cases ?? []).find((x) => x.name === 'board-every-pin-is-hand');
   const before = JSON.stringify(c.elements);
   const [got] = readAll(c);
   got.hand.push('planted');

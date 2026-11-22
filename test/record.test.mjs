@@ -39,7 +39,9 @@ for (const c of doc.cases) {
 }
 
 test('recordsOf is pure: the elements are not moved, and the records are the caller\'s own', () => {
-  const world = Object.values(doc.worlds)[0];
+  // Its own parse of the fixture: the shared `doc` has been through the reader in the tests above, so a reader
+  // that writes into the elements has written before this test looks, and before would equal after.
+  const world = Object.values(JSON.parse(readFileSync(FIXTURE, 'utf8')).worlds)[0];
   const before = JSON.stringify(world);
   const who = doc.cases.find((c) => c.kind === 'records' && c.want.length).character;
   const got = recordsOf(who, world.elements);

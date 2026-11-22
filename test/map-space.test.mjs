@@ -36,7 +36,9 @@ test('every answer holds its four keys in order, and the same input gives the sa
 });
 
 test('mapSpace is pure: the elements are not moved, and the answer is the caller\'s own', () => {
-  const c = doc.cases.find((x) => x.name === 'plan-of-record-whole');
+  // Its own parse of the fixture: the shared `doc` has been through the reader in the tests above, so a reader
+  // that writes into the elements has written before this test looks, and before would equal after.
+  const c = JSON.parse(readFileSync(FIXTURE, 'utf8')).cases.find((x) => x.name === 'plan-of-record-whole');
   const before = JSON.stringify(c.elements);
   const got = mapSpace(c.elements);
   got.maps[0].id = 'planted';

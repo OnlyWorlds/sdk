@@ -181,9 +181,15 @@ test('workOf refuses items that are no list and a world that is no object', () =
 });
 
 test('workOf is pure: the items are not moved, and the answer is the caller\'s own', () => {
-  const items = doc.state_cases[3].items;
+  // Its own parse of the fixture: the shared `doc` has been through the reader in the tests above, so a reader
+  // that writes into the bodies has written before this test looks, and before would equal after.
+  const own = JSON.parse(readFileSync(FIXTURE, 'utf8'));
+  const items = own.state_cases[3].items;
   const before = JSON.stringify(items);
-  const got = workOf(items, doc.world);
+  const worldBefore = JSON.stringify(own.world);
+  const got = workOf(items, own.world);
+  assert.equal(JSON.stringify(items), before, 'workOf wrote into the items it was given');
+  assert.equal(JSON.stringify(own.world), worldBefore, 'workOf wrote into the world it was given');
   got.elements[items[0].id][0].id = 'planted';
-  assert.equal(JSON.stringify(items), before);
+  assert.equal(JSON.stringify(items), before, 'a change to the answer reached the items');
 });

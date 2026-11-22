@@ -50,7 +50,9 @@ for (const c of doc.cases) {
 }
 
 test('charterOf is pure: the world is not moved, and the packet is the caller\'s own copy', () => {
-  const world = doc.worlds.harbour;
+  // Its own parse of the fixture: the shared `doc` has been through the reader in the tests above, so a reader
+  // that writes into the world has written before this test looks, and before would equal after.
+  const world = JSON.parse(readFileSync(FIXTURE, 'utf8')).worlds.harbour;
   const before = JSON.stringify(world);
   const got = charterOf(world, world.readers.owner);
   got.charter.rules[0].rule = 'planted';

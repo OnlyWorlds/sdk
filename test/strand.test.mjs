@@ -37,7 +37,9 @@ for (const c of doc.cases) {
 }
 
 test('strandOf is pure: the world is not moved, and the strand is the caller\'s own', () => {
-  const world = doc.worlds.harbour;
+  // Its own parse of the fixture: the shared `doc` has been through the reader in the tests above, so a reader
+  // that writes into the world has written before this test looks, and before would equal after.
+  const world = JSON.parse(readFileSync(FIXTURE, 'utf8')).worlds.harbour;
   const before = JSON.stringify(world);
   const got = strandOf(world, { rung: 'owner' });
   got.narrative.name = 'planted';

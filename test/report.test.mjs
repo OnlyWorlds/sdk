@@ -142,7 +142,9 @@ test('anything but a list gives the empty answer', () => {
 });
 
 test('reportThreadsOf is pure: the narratives are not moved', () => {
-  const c = doc.thread_cases[0];
+  // Its own parse of the fixture: the shared `doc` has been through the reader in the tests above, so a reader
+  // that writes into the narratives has written before this test looks, and before would equal after.
+  const c = JSON.parse(readFileSync(FIXTURE, 'utf8')).thread_cases[0];
   const before = JSON.stringify(c.narratives);
   reportThreadsOf(c.narratives);
   assert.equal(JSON.stringify(c.narratives), before);
