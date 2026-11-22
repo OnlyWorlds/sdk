@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.190.0] - 2026-11-22
+
+### Added
+
+- **A world folder as the source** (`@onlyworlds/sdk/folder`). `folderFetch(entries)` returns a `fetch` that answers the client's reads from a world folder, so `new OwV2Client({ fetch: folderFetch(entries) })` reads a folder with the same calls as an online world, and no key. `entries` is the `{path, data}` list `readWorldFile` already returns, so a `.owworld` file is a source too; `entriesFromDirectory(path)` makes the list from a folder on disk in Node. It answers `getWorld`, the lists (onlyworlds.com's filters, `limit`, `cursor`, `fields` and `expand`, in its order: by `change_seq`, then id, an element with no `change_seq` after every one that has it), one element and `search`, each as onlyworlds.com answers it; the files are read as the folder format reads them (the id in the file, `elements/` with the legacy `spatial/`, a file that does not parse or has no id skipped and counted, dot-folders never read). Every other route, and `as` or `world` on any read, is refused before anything is read: status 501, code `not_in_a_folder`, so a tool can tell "not here" from "not found". Reads only, as a snapshot: a folder that changes is read again by making a new fetch. Held by the folder format's reader conformance fixture and by a comparison of 151 reads of a world online against the same world as a folder, answered identically.
+
+### Changed
+
+- A client with no key sends any read through a folder source: the check that stops a keyless call the platform would refuse steps aside when the fetch answers on this machine and sends nothing.
+
 ## [4.189.0] - 2026-11-22
 
 ### Added

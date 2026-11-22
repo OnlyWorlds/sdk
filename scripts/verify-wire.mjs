@@ -2192,6 +2192,7 @@ const UNION_ROWS = {
   'OwV2Client.mintWorldKey.scope': { at: ['POST /account/worlds/{world_id}/keys body: scope'], rule: 'within' },
 };
 const UNION_OWN = {
+  'type OwFolderSkipReason': 'the folder source\'s own words for a file it does not serve (src/folder/read.ts): one that does not parse, one with no id, a second file for an id (the folder format spec, section 4: one id, one file)',
   'OwTalk.type': 'the room profile\'s talk on an element (schema-dist, serial 135; room.fixture.json\'s talk_cases)',
   'OwDesignPart.type': 'the charter profile\'s design parts (schema-dist, serial 135; charter.fixture.json\'s design_cases)',
   'OwDesignPart.state': 'the charter profile\'s two design states (schema-dist, serial 135)',

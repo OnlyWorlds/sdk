@@ -23,6 +23,7 @@ const NOT_EXPORTED = {
     StepPosition: "weekdayForStep's internal cache parameter; no exported function makes one",
   },
   'convert.d.ts': {},
+  'folder.d.ts': {},
   'waymark.d.ts': {
     OwElementMark: 'exported from the main entry',
     OwTool: 'exported from the main entry',

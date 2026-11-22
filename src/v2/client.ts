@@ -25,6 +25,7 @@ import { keyedId } from './keyed-id';
 import { unknownKey } from '../options';
 import { OwApiError, OwNetworkError, OwProposedError, OwSignInError, errorFromResponse, parseErrorEnvelope, parseRetryAfter } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
+import { isLocalFetch } from './local-fetch';
 import { beginSignIn, completeSignIn as completeOAuthSignIn, aiTokenParams, type OwSignInBegin, type OwSignInBegun, type OwSignInComplete, type OwSignInResult } from './oauth';
 
 const DEFAULT_BASE_URL = 'https://www.onlyworlds.com/api/v2';
@@ -47,6 +48,8 @@ export class OwV2Client {
   private readonly headPoll = new HeadPollState();
   /** The world an account token or a keyless client reads (`world=`); undefined otherwise. */
   private readonly world: string | undefined;
+  /** The fetch answers on this machine (a world folder, `@onlyworlds/sdk/folder`): nothing is sent, so no key is needed. */
+  private readonly local: boolean;
 
   constructor(config: OwClientConfig = {}) {
     // The constructor's options object refuses an unknown key like every other (4.52.0's rule):
@@ -61,6 +64,7 @@ export class OwV2Client {
     this.pageSize = config.pageSize ?? DEFAULT_PAGE_SIZE;
     this.changesPageSize = config.changesPageSize ?? DEFAULT_CHANGES_PAGE_SIZE;
     this.fetchImpl = config.fetch ?? globalThis.fetch.bind(globalThis);
+    this.local = isLocalFetch(config.fetch);
     this.agent = config.agent === true;
     if (typeof this.fetchImpl !== 'function') {
       throw new Error('OwV2Client: no fetch available -- supply config.fetch');
@@ -1879,7 +1883,8 @@ export class OwV2Client {
     // The one rule for what an account token or no key may send, read from the request itself.
     const worldRead = opts.auth !== false && opts.worldRead === true && method.toUpperCase() === 'GET';
     const accountToken = opts.auth !== false && this.keyKind === 'account' ? opts.accountToken : undefined;
-    if (opts.auth !== false && this.keyKind === 'none' && !(worldRead && this.world !== undefined)) {
+    // A local fetch (a world folder) sends nothing, so a keyless client may call any route: the folder answers it or refuses it.
+    if (opts.auth !== false && this.keyKind === 'none' && !this.local && !(worldRead && this.world !== undefined)) {
       throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin, redeemJoin and signInWithPassword work, and list, listAll, get, search, getWorld and draught with \`world\` set`);
     }
     if (opts.auth !== false && this.keyKind === 'account' && !ACCOUNT_ROUTE.test(path)) {
