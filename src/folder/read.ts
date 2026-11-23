@@ -5,20 +5,27 @@
  * body declares one of the 22 types is that type wherever it sits (the directory decides whether a
  * file is found, the body what it is). `elements/` wins over `spatial/` on a shared id, and within
  * one layout the first path in code point order wins (§4). A file that does not parse, or has no
- * non-empty string `id`, is skipped and counted, never fatal. Dot-prefixed folders and files are
- * never read.
+ * non-empty string `id`, is skipped and counted, never fatal. So is a file this reader cannot
+ * hold as written: one nested more than 200 deep, or holding a number too large for a double,
+ * which would otherwise be served as `null`. Dot-prefixed folders and files are never read.
  *
  * Module-internal: not in the package's exports.
  */
 
 import { ELEMENT_TYPES, type ElementType } from '../v2/types.generated';
+import { parseOutsideJson, type OutsideJsonFault } from '../outside-json';
 import type { OwWorldFileEntry } from '../world-file';
 
 const TYPES: ReadonlySet<string> = new Set(ELEMENT_TYPES);
 const SPATIAL: ReadonlySet<string> = new Set(['map', 'pin', 'zone', 'marker']);
 
-/** Why a file under a type folder was not served as an element. */
-export type OwFolderSkipReason = 'not_json' | 'no_id' | 'duplicate';
+/**
+ * Why a file under a type folder was not served as an element: it is no JSON (`not_json`), it is
+ * nested more than 200 deep (`too_deep`), it holds a number too large for a double, which no
+ * answer could carry as written (`number_out_of_range`), it has no non-empty string `id`
+ * (`no_id`), or an earlier file holds its id (`duplicate`).
+ */
+export type OwFolderSkipReason = 'not_json' | 'too_deep' | 'number_out_of_range' | 'no_id' | 'duplicate';
 
 export interface OwFolderSkip {
   path: string;
@@ -115,12 +122,14 @@ function layoutOf(segments: string[]): { rank: 0 | 1; dir: ElementType } | null 
 
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
-function parseJson(data: Uint8Array): { ok: true; value: unknown } | { ok: false } {
+function parseJson(data: Uint8Array): { ok: true; value: unknown } | { ok: false; fault: OutsideJsonFault } {
+  let text: string;
   try {
-    return { ok: true, value: JSON.parse(decoder.decode(data)) };
+    text = decoder.decode(data);
   } catch {
-    return { ok: false };
+    return { ok: false, fault: 'not_json' };
   }
+  return parseOutsideJson(text);
 }
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -184,7 +193,7 @@ export function readFolder(entries: readonly OwWorldFileEntry[]): FolderSnapshot
   for (const f of found) {
     const parsed = parseJson(f.data);
     if (!parsed.ok) {
-      skipped.push({ path: f.path, reason: 'not_json' });
+      skipped.push({ path: f.path, reason: parsed.fault });
       continue;
     }
     const body = parsed.value;

@@ -1033,7 +1033,9 @@ function render(r: Omit<OwKankaReport, 'lines'>): string[] {
 /**
  * Read a Kanka JSON export (the zip's bytes) into a world folder, in memory: its files and the
  * report. Nothing is written; the caller writes `files` under a new folder. The same folder as the
- * Python package's door byte for byte, given the same `producer`. What Kanka hides comes in
+ * Python package's door byte for byte, given the same `producer` (one input differs: a file
+ * holding an integer past 2^53 is skipped here with a note, where Python reads it exactly). A file
+ * that is no JSON, or JSON too deep or with a number too large to hold, is skipped with a note. What Kanka hides comes in
  * carrying `hidden: true`, counted in the report. Throws `OwConvertError` for bytes that are not a
  * zip or an export with no `campaign.json`, and a `TypeError` for an unknown option, before anything
  * is read.

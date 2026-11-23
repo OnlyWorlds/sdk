@@ -5,6 +5,18 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.195.0] - 2026-11-23
+
+### Fixed
+
+- **The folder source no longer serves a file it cannot hold.** An element file nested very deep (100,000 levels) was counted as served, and then every read that held it failed with `OwNetworkError`, the whole list of its type included. A number too large for a double (`1e400`, an integer of hundreds of digits) was served as `null`, a value the file does not hold. Both files are now skipped, each with a reason of its own in the read report (`too_deep` past 200 levels, `number_out_of_range`), and every other read answers. A `world.json` like that is no world, as one that does not parse.
+- **`writeWorldFile` stops on an element file it must read and cannot hold.** The writer reads an element file only to leave something out: the hidden (`includeHidden: false`) or the author fields (the default). On a file nested 100,000 deep it threw a `RangeError` from the runtime, and a file holding a number too large for a double was rewritten with `null` in its place. Now it throws a `TypeError` naming the file and why, and writes nothing: whether such a file is hidden cannot be told, and nothing is carried by guess. `{ includeHidden: true, includeAuthorFields: true }` reads no element file and carries every one byte for byte. Text that is no JSON at all is no element and travels as it is, as before.
+- **The Kanka door skips a file it cannot hold, with a note.** A file nested 100,000 deep ended the conversion with a `RangeError`, and a number too large for a double with a `RangeError` or a plain `Error` at the write. Each is now skipped as a file that is no JSON is (`…: not readable JSON (ValueError); skipped`), the line the Python package's door writes from its 0.143.0: nested more than 200 deep, a number that is not finite, `NaN`, `Infinity` and `-Infinity`. One difference from that door stays: a file holding an integer past 2^53 is skipped here, where Python reads the integer exactly; before, this door read it rounded.
+
+### Changed
+
+- `OwFolderSkipReason` gains `'too_deep'` and `'number_out_of_range'`. A tool that maps each reason to a sentence needs one for each; a tool that only counts the skipped files needs nothing.
+
 ## [4.194.0] - 2026-11-23
 
 ### Added

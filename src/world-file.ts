@@ -51,6 +51,7 @@ import { Inflate, inflateSync, zipSync, type Zippable } from 'fflate';
 import { refuseUnknownOptions } from './options';
 import { nfc } from './nfc';
 import { simpleCaseFold } from './case-fold';
+import { OUTSIDE_JSON_MAX_DEPTH, parseOutsideJson } from './outside-json';
 
 const WORLD_FILE = 'world.json';
 const MARKER_NAME = 'mimetype';
@@ -630,16 +631,29 @@ function writeOptions(opts: unknown): WriteOptions {
  * An element file's JSON object: a `.json` file directly in a type folder of
  * `elements/` or the legacy `spatial/`, holding UTF-8 JSON that is an object.
  * Anything else is no element, and null.
+ *
+ * A file that is JSON this package cannot hold as written (nested more than
+ * 200 deep, or holding a number too large for a double) is a `TypeError`
+ * naming it: the writer reads a file only to leave something out, and what
+ * such a file holds cannot be told, so nothing is carried by guess (as with a
+ * records manifest it cannot read).
  */
 function elementObject(f: OwWorldFileEntry): Record<string, unknown> | null {
   const segs = f.path.split('/');
   if (segs.length !== 3 || (segs[0] !== 'elements' && segs[0] !== 'spatial') || !/\.json$/i.test(segs[2])) return null;
-  let doc: unknown;
+  let text: string;
   try {
-    doc = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(f.data));
+    text = new TextDecoder('utf-8', { fatal: true }).decode(f.data);
   } catch {
     return null;
   }
+  const parsed = parseOutsideJson(text);
+  if (!parsed.ok) {
+    if (parsed.fault === 'not_json') return null;
+    const why = parsed.fault === 'too_deep' ? `nested more than ${OUTSIDE_JSON_MAX_DEPTH} deep` : 'it holds a number too large for a double';
+    throw new TypeError(`writeWorldFile: ${f.path} cannot be read (${why}), so whether it is hidden and which author fields it holds cannot be told, and nothing is carried by guess. Fix or remove the file, or pass { includeHidden: true, includeAuthorFields: true } to carry every file as it is.`);
+  }
+  const doc = parsed.value;
   if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) return null;
   return doc as Record<string, unknown>;
 }

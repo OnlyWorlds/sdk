@@ -226,15 +226,46 @@ export function format(template: string, values: Record<string, FormatValue>): s
 
 /** Python's `json.JSONDecodeError`: the door names its class in a note. */
 export class PyJsonError extends Error {
-  readonly pyName = 'JSONDecodeError';
+  readonly pyName: string = 'JSONDecodeError';
 }
+
+/**
+ * A plain `ValueError` from the Python package's reader of outside text: JSON by the grammar that
+ * the reader refuses, for its depth or for a number it cannot hold.
+ */
+export class PyJsonValueError extends PyJsonError {
+  override readonly pyName: string = 'ValueError';
+}
+
+/** The deepest nesting read, as the Python reader counts it: an object or array at the top is depth 1. */
+export const LOADS_MAX_DEPTH = 200;
+/**
+ * Past this depth the parse stops at once, where the Python reader stops on the interpreter's own
+ * limit or reads on, by platform: up to here the two name the same error for every text.
+ */
+const LOADS_HARD_DEPTH = 1000;
+const TOO_DEEP = `nested more than ${LOADS_MAX_DEPTH} deep`;
 
 const NUMBER = /-?(?:0|[1-9][0-9]*)(\.[0-9]+)?([eE][-+]?[0-9]+)?/y;
 const WS = /[ \t\n\r]*/y;
 
-/** `json.loads(text)`: objects as ordered maps, a float apart from an int, NaN and Infinity read. */
+/**
+ * The Python package's reader of outside text (`json.loads` behind its checks): objects as ordered
+ * maps, a float apart from an int. Text that is no JSON is a `PyJsonError`. JSON the reader refuses
+ * is a `PyJsonValueError`: nested more than 200 deep, a number too large for a double, or `NaN`,
+ * `Infinity` and `-Infinity`, which Python's `json` would read. One difference from Python stays,
+ * and is refused rather than read wrong: an integer past 2^53, which Python holds exactly up to
+ * 4,300 digits and a double rounds.
+ */
 export function loads(text: string): PyValue {
   let i = 0;
+  let depth = 0;
+  let tooDeep = false;
+  const enter = (): void => {
+    depth++;
+    if (depth > LOADS_MAX_DEPTH) tooDeep = true;
+    if (depth > LOADS_HARD_DEPTH) throw new PyJsonValueError(TOO_DEEP);
+  };
   const fail = (what: string): never => {
     throw new PyJsonError(`${what} at ${i}`);
   };
@@ -285,10 +316,12 @@ export function loads(text: string): PyValue {
     if (c === '"') return string();
     if (c === '{') {
       i++;
+      enter();
       const d: PyDict = new Map();
       ws();
       if (text[i] === '}') {
         i++;
+        depth--;
         return d;
       }
       for (;;) {
@@ -306,6 +339,7 @@ export function loads(text: string): PyValue {
         }
         if (text[i] === '}') {
           i++;
+          depth--;
           return d;
         }
         fail("Expecting ',' delimiter");
@@ -313,10 +347,12 @@ export function loads(text: string): PyValue {
     }
     if (c === '[') {
       i++;
+      enter();
       const a: PyValue[] = [];
       ws();
       if (text[i] === ']') {
         i++;
+        depth--;
         return a;
       }
       for (;;) {
@@ -328,17 +364,20 @@ export function loads(text: string): PyValue {
         }
         if (text[i] === ']') {
           i++;
+          depth--;
           return a;
         }
         fail("Expecting ',' delimiter");
       }
     }
-    for (const [word, v] of [['null', null], ['true', true], ['false', false], ['NaN', new PyFloat(NaN)],
-      ['Infinity', new PyFloat(Infinity)], ['-Infinity', new PyFloat(-Infinity)]] as const) {
+    for (const [word, v] of [['null', null], ['true', true], ['false', false]] as const) {
       if (text.startsWith(word, i)) {
         i += word.length;
         return v;
       }
+    }
+    for (const word of ['NaN', 'Infinity', '-Infinity']) {
+      if (text.startsWith(word, i)) throw new PyJsonValueError(`${word} is not JSON`);
     }
     NUMBER.lastIndex = i;
     const m = NUMBER.exec(text);
@@ -346,13 +385,17 @@ export function loads(text: string): PyValue {
     i = NUMBER.lastIndex;
     if (m[1] === undefined && m[2] === undefined) {
       const n = Number(m[0]);
+      if (!Number.isSafeInteger(n)) throw new PyJsonValueError('an integer past 2^53, which a double rounds');
       return n === 0 ? 0 : n; // Python's int has no -0
     }
-    return new PyFloat(Number(m[0]));
+    const f = Number(m[0]);
+    if (!Number.isFinite(f)) throw new PyJsonValueError('a number too large to hold');
+    return new PyFloat(f);
   };
   const v = value();
   ws();
   if (i !== text.length) fail('Extra data');
+  if (tooDeep) throw new PyJsonValueError(TOO_DEEP);
   return v;
 }
 
