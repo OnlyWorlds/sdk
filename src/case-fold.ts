@@ -37,6 +37,21 @@ let foldTable: Map<number, number> | null = null;
  * map folds to itself.
  */
 export function simpleCaseFold(text: string): string {
+  const table = folds();
+  let out = '';
+  for (const c of text) {
+    const to = table.get(c.codePointAt(0)!);
+    out += to === undefined ? c : String.fromCodePoint(to);
+  }
+  return out;
+}
+
+/** One code point's simple case fold, by the same table: itself when the table does not map it. Module-internal: not in the package's exports. */
+export function foldCodePoint(codePoint: number): number {
+  return folds().get(codePoint) ?? codePoint;
+}
+
+function folds(): Map<number, number> {
   if (!foldTable) {
     foldTable = new Map();
     for (const run of FOLD_RUNS.split(',')) {
@@ -48,10 +63,5 @@ export function simpleCaseFold(text: string): string {
       for (let k = 0; k < n; k++) foldTable.set(s + k * step, s + k * step + d);
     }
   }
-  let out = '';
-  for (const c of text) {
-    const to = foldTable.get(c.codePointAt(0)!);
-    out += to === undefined ? c : String.fromCodePoint(to);
-  }
-  return out;
+  return foldTable;
 }

@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.194.0] - 2026-11-23
+
+### Added
+
+- **`nameFinder(elements, { case })`**: a world's element names found in prose. It reads the names once and answers `find(text)`, which lists every `{ start, end, element }` in order, `element` being the object that was passed in, so a page can mark the words that are elements (a hover, a suggestion, a link a person chooses to make). It finds and never writes. `case` must be given, `'exact'` or `'folded'` (simple case folding, Unicode 15.1), with no default; `names` gives the names an element is found by, by default its `name` alone. The rule: a whole name only, where the character on each side is not a letter, a combining mark, a decimal digit or an underscore in any script (so `Kira's` holds the name and `Kiran` does not, and a name that starts or ends with a letter outside ASCII is found); trimmed, three characters at least; the longest whole name where several start at one place; a name two elements share is never answered, nor anything inside it; nothing inside an address or a Markdown link. Limits: text is compared as written, with no Unicode normalisation; a space in a name matches that one space; in a script written without spaces between words a name is whole only between punctuation or spaces. The work for one text is at most its length times the longest name's length, whatever the number of names, with no pattern that backtracks: seven hostile or large texts are timed in the tests. The Python package's `name_finder` is the same rule on the same file of cases (`test/fixtures/name-finder.cases.json`, 47 cases, each want written by hand).
+
+### Fixed
+
+- The README said that finding an address inside other text was the caller's work; `findOwLinks` has done it since 4.165.0, and the Addresses section now says so.
+
 ## [4.193.0] - 2026-11-23
 
 ### Added

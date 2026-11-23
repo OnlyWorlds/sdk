@@ -2227,6 +2227,7 @@ const UNION_OWN = {
   'OwMapSpaceOutline.shape': 'the map-space profile (schema-dist)',
   'type OwMapSpaceOutReason': 'the map-space reader\'s own reasons',
   'type OwAddressForm': 'the address profile\'s reader',
+  'type OwNameCase': 'nameFinder\'s own two words for how a name is compared with the text, held by the SDK\'s test to its file of cases (pinned by sha256)',
   'type OwAddressReason': 'the address profile\'s reader',
   'type OwElementMark': 'the SDK\'s reading of an element\'s marks',
   'type OwGraphMark': 'the graph reader\'s marks',

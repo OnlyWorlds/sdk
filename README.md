@@ -491,7 +491,30 @@ const r = parseOwLink(text); // { form, world, worldIsSlug, type, id, lens, mome
 // a refusal throws OwAddressError: err.reason is the profile's name ('bad_id', 'uppercase', ...)
 ```
 
-A field that holds an address is text: never fetch or resolve it on the server, and show one wording ("private or missing") for a world you cannot read and an element that is not there. `parseOwLink` reads one string whole; finding a link inside other text is yours. The profile: [`profiles/address.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/address.md), with its fixture, which is these functions' test.
+A field that holds an address is text: never fetch or resolve it on the server, and show one wording ("private or missing") for a world you cannot read and an element that is not there. `parseOwLink` reads one string whole; `findOwLinks(text)` finds every address inside other text, each with where it starts and ends. The profile: [`profiles/address.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/address.md), with its fixture, which is these functions' test.
+
+### Names in prose
+
+`nameFinder` reads a world's element names once and answers a function that finds them in any text, so a page can show which words are elements: a hover, a suggestion, a link a person chooses to make. It finds and never writes.
+
+```typescript
+import { nameFinder } from '@onlyworlds/sdk';
+
+const elements = [{ id: 'a1', name: 'Iron Gate' }, { id: 'b2', name: 'Kira' }];
+const find = nameFinder(elements, { case: 'exact' }); // once per world
+const found = find("Kira's watch ends at the Iron Gate.");
+// [{ start: 0, end: 4, element: elements[1] }, { start: 25, end: 34, element: elements[0] }]
+```
+
+`case` must be given: `'exact'` for a page that marks names unasked, `'folded'` (case ignored) for an editor that only suggests. The rule, the same in the Python package's `name_finder`:
+
+- A whole name only: the character on each side is not a letter, a combining mark, a decimal digit or an underscore, in any script. `Kira's` and `Kira-led` hold the name; `Kiran` does not.
+- A name is trimmed and is three characters at least. Where several names start at one place, the longest whole one is taken.
+- A name two elements share is never answered, and nothing inside it is: the text stays plain there.
+- Nothing is read inside an address or a Markdown link `[label](target)`.
+- Every mention is answered, in order. `element` is the object you passed in; `start` and `end` are string indexes into the text.
+
+`names` gives the names an element is found by, such as a tool's own aliases: `nameFinder(elements, { case: 'folded', names: (el) => [el.name, ...aliases(el)] })`. Which elements go in is yours to choose. Three limits: text is compared as written, with no Unicode normalisation; a space in a name matches that one space; and in a script written without spaces between words (Chinese, Japanese, Thai) a name is whole only between punctuation or spaces. The work for one text is at most its length times the longest name's length, whatever the number of names.
 
 ### Open with
 

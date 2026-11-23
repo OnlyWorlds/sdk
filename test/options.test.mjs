@@ -18,7 +18,7 @@ import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
   preparePhoto, parseDate, resolveCalendar, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
   isToEveryone, hasUnseenRecipients, readMarkOf,
-  elementAddress, resolveLens, worldGraph, openersFor, landingOf, trailByPlace, layoutAround, unplacedAround, layoutByLinks3d, readReportLine, readReportLines,
+  elementAddress, resolveLens, worldGraph, openersFor, landingOf, trailByPlace, layoutAround, unplacedAround, layoutByLinks3d, readReportLine, readReportLines, nameFinder,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
 
@@ -111,6 +111,7 @@ const FENCED = {
   'resolveLens#3': () => resolveLens({ elements: [] }, { type: 'construct', supertype: 'Lens', name: 'L' }, { rung: 'owner' }, U),
   'worldGraph#2': () => worldGraph({ elements: [] }, { rung: 'owner' }, U),
   'landingOf#1': () => landingOf({ nodes: [], edges: [] }, U),
+  'nameFinder#1': () => nameFinder([{ id: 'k', name: 'Kira' }], { case: 'exact', ...U }),
   // 4.135.0: a layout method's input, its settings and its places, fenced at every level.
   'trailByPlace#0': () => trailByPlace({ ...trailInput, ...U }),
   'layoutAround#2': () => layoutAround({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, 'a', U),
