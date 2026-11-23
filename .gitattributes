@@ -28,3 +28,5 @@ codegen/layout/directions.json -text
 src/convert/kanka.json -text
 # Three real Kanka exports, the same bytes as the Python package's test fixtures.
 test/fixtures/kanka/*.zip binary
+# The folder readers' shared declared-type cases, the same bytes as the Python package's copy (both tests hold its sha256).
+test/fixtures/declared-type.cases.json -text
