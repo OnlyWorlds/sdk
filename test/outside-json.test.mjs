@@ -3,8 +3,8 @@
  * number too large for a double. The folder source skips it with its own reason and goes on; the
  * Kanka door skips it with a note, as the Python package's door does. Neither serves a value the
  * file does not hold, and neither fails a read of anything else. The world file's writer, which
- * reads an element file only to leave out the hidden or the author fields, stops rather than
- * carry such a file by guess.
+ * reads an element file only to leave out the hidden or the author fields, leaves a file it could
+ * not read out of a share and counts it apart, and carries it byte for byte in a copy.
  *
  * Each case sits at the line and one past it, so every runtime in CI shows both. The last test
  * lists every `JSON.parse` in `src/`: one that reads text from outside goes through
@@ -111,31 +111,36 @@ const hiddenFolder = (planted) => {
   return files;
 };
 const inFile = (bytes) => readWorldFile(bytes).files.find((f) => f.path === PLANTED);
+/** Whether two files hold the same bytes. A boolean, so a failure names the test at once: printing a 200 KB file takes the reporter minutes. */
+const same = (a, b) => a !== undefined && Buffer.from(a.data).equals(Buffer.from(b.data));
 
 for (const [name, [planted, reason]] of Object.entries(CASES)) {
-  test(`the world file's writer, ${name}: ${reason ? 'a file it must read and cannot hold stops the write' : 'read, so a share leaves the hidden element out'}`, () => {
+  test(`the world file's writer, ${name}: ${reason ? 'not read as an element, so a share leaves it out as unread and a copy carries it as it is' : 'read, so a share leaves the hidden element out'}`, () => {
     const files = hiddenFolder(planted);
+    const write = (opts) => { let r; const bytes = writeWorldFile(files, 'Hold', { ...opts, report: (x) => { r = x; } }); return { file: inFile(bytes), report: r }; };
     // A copy that leaves nothing out reads no element file: every case travels byte for byte.
-    assert.deepEqual(inFile(writeWorldFile(files, 'Hold', { includeAuthorFields: true })).data, files[1].data);
-    const share = () => writeWorldFile(files, 'Hold', { includeHidden: false, includeAuthorFields: true });
-    const plain = () => writeWorldFile(files, 'Hold');
+    assert.ok(same(write({ includeAuthorFields: true }).file, files[1]), 'a copy that leaves nothing out carries it byte for byte');
+    const share = write({ includeHidden: false });
+    const plain = write({});
+    assert.ok(share.file === undefined, 'never in a share');
     if (reason === null) {
-      assert.equal(inFile(share()), undefined, 'hidden: left out of a share');
-      assert.ok(!new TextDecoder().decode(inFile(plain()).data).includes('changed_by'), 'a plain copy leaves the author field out');
+      assert.deepEqual(share.report, { hiddenLeftOut: 1, authorFieldsLeftOut: 0, unreadLeftOut: 0, unreadPaths: [] });
+      assert.ok(!new TextDecoder().decode(plain.file.data).includes('changed_by'), 'a plain copy leaves the author field out');
       return;
     }
-    const why = reason === 'too_deep' ? 'nested more than 200 deep' : 'a number too large for a double';
-    for (const write of [share, plain]) {
-      assert.throws(write, (e) => e instanceof TypeError && e.message.startsWith(`writeWorldFile: ${PLANTED} cannot be read (`)
-        && e.message.includes(why) && e.message.includes('nothing is carried by guess'));
-    }
+    assert.deepEqual(share.report, { hiddenLeftOut: 0, authorFieldsLeftOut: 0, unreadLeftOut: 1, unreadPaths: [PLANTED] }, 'counted apart from the hidden');
+    assert.ok(same(plain.file, files[1]), 'a copy carries it byte for byte: no number rewritten as null, no error from the runtime');
+    assert.deepEqual(plain.report, { hiddenLeftOut: 0, authorFieldsLeftOut: 0, unreadLeftOut: 0, unreadPaths: [] });
   });
 }
 
-test('the world file\'s writer: text that is no JSON is no element, and travels as it is', () => {
+test('the world file\'s writer: a hidden element\'s file cut short is left out of a share, and carried by a copy', () => {
   const files = hiddenFolder('"plain"');
   files[1] = { path: PLANTED, data: enc.encode('{"id":"a","hidden":true,') };
-  assert.deepEqual(inFile(writeWorldFile(files, 'Hold', { includeHidden: false })).data, files[1].data);
+  let report;
+  assert.ok(inFile(writeWorldFile(files, 'Hold', { includeHidden: false, report: (r) => { report = r; } })) === undefined);
+  assert.deepEqual(report.unreadPaths, [PLANTED]);
+  assert.ok(same(inFile(writeWorldFile(files, 'Hold')), files[1]));
 });
 
 // --- the Kanka door ---------------------------------------------------------------------------

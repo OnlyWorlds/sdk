@@ -51,7 +51,7 @@ import { Inflate, inflateSync, zipSync, type Zippable } from 'fflate';
 import { refuseUnknownOptions } from './options';
 import { nfc } from './nfc';
 import { simpleCaseFold } from './case-fold';
-import { OUTSIDE_JSON_MAX_DEPTH, parseOutsideJson } from './outside-json';
+import { parseOutsideJson } from './outside-json';
 
 const WORLD_FILE = 'world.json';
 const MARKER_NAME = 'mimetype';
@@ -587,6 +587,15 @@ export interface OwWriteWorldFileReport {
   hiddenLeftOut: number;
   /** Element files written without their author fields (the default); 0 with `includeAuthorFields: true`. */
   authorFieldsLeftOut: number;
+  /**
+   * Files in a type folder left out of a share (`includeHidden: false`) because they could not be read as an
+   * element, so their hidden mark could not be told: not UTF-8 JSON (a write cut short), nested more than
+   * 200 deep, holding a number too large for a double, or not an object. 0 otherwise. Counted apart from
+   * `hiddenLeftOut`: these are broken files a person may want to mend.
+   */
+  unreadLeftOut: number;
+  /** Their paths, in code point order. */
+  unreadPaths: string[];
 }
 
 /** Every key `writeWorldFile`'s options take; any other is refused by name, never dropped. A new option joins this list in the same commit. */
@@ -630,44 +639,40 @@ function writeOptions(opts: unknown): WriteOptions {
 /**
  * An element file's JSON object: a `.json` file directly in a type folder of
  * `elements/` or the legacy `spatial/`, holding UTF-8 JSON that is an object.
- * Anything else is no element, and null.
+ * A file anywhere else is no element file, and null.
  *
- * A file that is JSON this package cannot hold as written (nested more than
- * 200 deep, or holding a number too large for a double) is a `TypeError`
- * naming it: the writer reads a file only to leave something out, and what
- * such a file holds cannot be told, so nothing is carried by guess (as with a
- * records manifest it cannot read).
+ * A file there that the writer cannot read as an element is `UNREAD`: not
+ * UTF-8, not JSON (a write cut short), JSON this package cannot hold as
+ * written (nested more than 200 deep, or holding a number too large for a
+ * double), or not an object. What such a file holds cannot be told, its
+ * hidden mark included.
  */
-function elementObject(f: OwWorldFileEntry): Record<string, unknown> | null {
+function elementObject(f: OwWorldFileEntry): Record<string, unknown> | typeof UNREAD | null {
   const segs = f.path.split('/');
   if (segs.length !== 3 || (segs[0] !== 'elements' && segs[0] !== 'spatial') || !/\.json$/i.test(segs[2])) return null;
   let text: string;
   try {
     text = new TextDecoder('utf-8', { fatal: true }).decode(f.data);
   } catch {
-    return null;
+    return UNREAD;
   }
   const parsed = parseOutsideJson(text);
-  if (!parsed.ok) {
-    if (parsed.fault === 'not_json') return null;
-    const why = parsed.fault === 'too_deep' ? `nested more than ${OUTSIDE_JSON_MAX_DEPTH} deep` : 'it holds a number too large for a double';
-    throw new TypeError(`writeWorldFile: ${f.path} cannot be read (${why}), so whether it is hidden and which author fields it holds cannot be told, and nothing is carried by guess. Fix or remove the file, or pass { includeHidden: true, includeAuthorFields: true } to carry every file as it is.`);
-  }
+  if (!parsed.ok) return UNREAD;
   const doc = parsed.value;
-  if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) return null;
+  if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) return UNREAD;
   return doc as Record<string, unknown>;
 }
 
+/** An element file the writer could not read as an element (`elementObject`). */
+const UNREAD = 'unread' as const;
+
 /**
- * Whether a file is an element file carrying the hidden mark (spec §4.8): an
- * element file (`elementObject`) with a top-level `hidden` that is present
- * and neither `null` nor `false` (a doubtful value, `"true"` or 1, counts as
- * marked: a share leaves a doubt out rather than handing it on, as the Python
- * package's `is_hidden` does). A file that is no element is kept.
+ * Whether an element file's object carries the hidden mark (spec §4.8): a
+ * top-level `hidden` that is present and neither `null` nor `false` (a
+ * doubtful value, `"true"` or 1, counts as marked: a share leaves a doubt out
+ * rather than handing it on, as the Python package's `is_hidden` does).
  */
-function isHiddenElement(f: OwWorldFileEntry): boolean {
-  const doc = elementObject(f);
-  if (!doc) return false;
+function hasHiddenMark(doc: Record<string, unknown>): boolean {
   const mark = doc.hidden;
   return mark !== undefined && mark !== null && mark !== false;
 }
@@ -675,13 +680,14 @@ function isHiddenElement(f: OwWorldFileEntry): boolean {
 /**
  * An element file without its author fields, in the folder's own form
  * (`JSON.stringify(doc, null, 2)` and a newline, the other keys in their
- * order), or null when it holds none of them or is no element: then it
- * travels byte for byte. Only top-level keys go; an `x_*` value that holds
- * one of the names is the extension's, and stays.
+ * order), or null when it holds none of them, is no element file or could
+ * not be read as an element: then it travels byte for byte. Only top-level
+ * keys go; an `x_*` value that holds one of the names is the extension's,
+ * and stays.
  */
 function withoutAuthorFields(f: OwWorldFileEntry): Uint8Array | null {
   const doc = elementObject(f);
-  if (!doc) return null;
+  if (doc === null || doc === UNREAD) return null;
   const present = AUTHOR_FIELDS.filter(k => k in doc);
   if (!present.length) return null;
   for (const k of present) delete doc[k];
@@ -742,10 +748,17 @@ function privateProducers(files: OwWorldFileEntry[]): string[] {
  * tool's question: pass `{ includeHidden: false }` for a file made to hand to
  * someone else, and every element file under `elements/<type>/` or
  * `spatial/<type>/` whose JSON carries a top-level `hidden` (anything but
- * absent, `null` or `false`) is left out whole. A file there that is not
- * JSON is kept. Nothing else is rewritten: a visible element's link to a
+ * absent, `null` or `false`) is left out whole. A share carries a file there
+ * only when it was read as an element and no mark was found: one that could
+ * not be read (not UTF-8 JSON, a write cut short, nested more than 200 deep,
+ * a number too large for a double, not an object) is left out too, counted
+ * apart, since its mark cannot be told (versions before 4.196.0 carried one
+ * that was not JSON, and 4.195.0 threw on one too deep). A copy carries such
+ * a file byte for byte, as it is how a person moves their own world, broken
+ * file included. Nothing else is rewritten: a visible element's link to a
  * hidden one keeps its id, which then names no file. Pass
- * `report: r => …` to learn `r.hiddenLeftOut`, the count left out.
+ * `report: r => …` to learn `r.hiddenLeftOut`, the count left out, and
+ * `r.unreadLeftOut` with `r.unreadPaths`, the files that could not be read.
  *
  * The author fields, `created_by`, `changed_by`, `changed_via`,
  * `changed_client` and `doors`, record which member and which tool wrote
@@ -786,11 +799,17 @@ export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: 
     return segs.length > 2 && segs[0] === 'records' && left.has(foldName(segs[1]));
   };
   let hiddenLeftOut = 0;
+  const unreadPaths: string[] = [];
   const kept = files.filter(f => {
     if (!carried(f.path) || inPrivate(f.path)) return false;
-    if (!includeHidden && isHiddenElement(f)) { hiddenLeftOut++; return false; }
+    if (includeHidden) return true;
+    // A share carries an element file only when it was read as an element and no mark was found.
+    const doc = elementObject(f);
+    if (doc === UNREAD) { unreadPaths.push(f.path); return false; }
+    if (doc !== null && hasHiddenMark(doc)) { hiddenLeftOut++; return false; }
     return true;
   });
+  unreadPaths.sort(byCodePoint);
   if (!kept.some(f => f.path === WORLD_FILE)) throw new OwWorldFileError('not_a_world');
   const keys = kept.map(f => `${topDir}/${f.path}`);
   for (const key of keys) {
@@ -815,6 +834,6 @@ export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: 
     input[`${topDir}/${f.path}`] = [data, { level: /\.json$/i.test(f.path) ? 6 : 0, mtime: STAMP }];
   }
   const zip = zipSync(input);
-  report?.({ hiddenLeftOut, authorFieldsLeftOut });
+  report?.({ hiddenLeftOut, authorFieldsLeftOut, unreadLeftOut: unreadPaths.length, unreadPaths });
   return zip;
 }

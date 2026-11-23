@@ -772,7 +772,7 @@ test('§4.8: by default a hidden element file travels byte for byte, and the rep
     const ada = back.find(f => f.path === 'elements/character/ada-0001.json');
     assert.deepEqual(ada.data, files[1].data, 'the hidden file is byte-identical');
   }
-  assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: 0 }]);
+  assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: 0, unreadLeftOut: 0, unreadPaths: [] }]);
   // Determinism: the same input, the same bytes, by default and as a share.
   assert.deepEqual(writeWorldFile(files, 'w'), writeWorldFile([...files].reverse(), 'w'));
   assert.deepEqual(writeWorldFile(files, 'w', { includeHidden: false }), writeWorldFile([...files].reverse(), 'w', { includeHidden: false }));
@@ -783,7 +783,7 @@ test('§4.8: includeHidden: false leaves a hidden element file out whole, counts
   const files = hiddenFiles();
   const reports = [];
   const back = entriesOf(writeWorldFile(files, 'w', { includeHidden: false, report: r => reports.push(r) }));
-  assert.deepEqual(reports, [{ hiddenLeftOut: 1, authorFieldsLeftOut: 0 }]);
+  assert.deepEqual(reports, [{ hiddenLeftOut: 1, authorFieldsLeftOut: 0, unreadLeftOut: 0, unreadPaths: [] }]);
   assert.deepEqual(back.map(f => f.path), ['elements/character/bo-0002.json', 'elements/location/keep-0003.json', 'world.json']);
   // Bo's link to Ada keeps its id, now naming no file; hidden: false is no mark.
   for (const f of back) assert.deepEqual(f.data, files.find(g => g.path === f.path).data, f.path);
@@ -794,7 +794,7 @@ test('§4.8: what counts as a hidden element file, and what is kept', () => {
     const reports = [];
     const paths = readWorldFile(writeWorldFile([wj, ...files], 'w', { includeHidden: false, report: r => reports.push(r) })).files
       .map(f => f.path).filter(p => p !== 'world.json');
-    return { paths, left: reports[0].hiddenLeftOut };
+    return { paths, left: reports[0].hiddenLeftOut, unread: reports[0].unreadPaths, unreadLeftOut: reports[0].unreadLeftOut };
   };
   // The legacy spatial/ layout, an upper-case .JSON, and a doubtful mark ("true", 1) are left out.
   assert.deepEqual(kept([
@@ -802,13 +802,25 @@ test('§4.8: what counts as a hidden element file, and what is kept', () => {
     el('elements/map/M.JSON', { id: 'm', hidden: true }),
     el('elements/event/e.json', { id: 'e', hidden: 'true' }),
     el('elements/event/f.json', { id: 'f', hidden: 1 }),
-  ]), { paths: [], left: 4 });
-  // Kept: not JSON, not UTF-8, not an object, a null mark, a nested mark, a file deeper than a
-  // type folder, one that is not .json, and hidden: true outside the element folders.
-  const keep = [
+  ]), { paths: [], left: 4, unread: [], unreadLeftOut: 0 });
+  // Left out and counted apart (since 4.196.0; kept before): a file in a type folder that could not be
+  // read as an element, so its mark cannot be told. Cut short, not UTF-8, not an object.
+  const unread = [
     el('elements/character/broken.json', '{"id": "x", "hidden": true'),
     { path: 'elements/character/latin.json', data: new Uint8Array([0x7b, 0x22, 0xe9, 0x22, 0x3a, 0x31, 0x7d]) },
     el('elements/character/list.json', [{ hidden: true }]),
+    el('spatial/pin/cut.JSON', '{"id": "p"'),
+  ];
+  assert.deepEqual(kept([el('elements/character/a.json', { id: 'a' }), ...unread]),
+    { paths: ['elements/character/a.json'], left: 0, unread: unread.map(f => f.path).sort(), unreadLeftOut: 4 });
+  // A copy carries each of them byte for byte.
+  const copy = readWorldFile(writeWorldFile([wj, ...unread], 'w', { includeAuthorFields: true })).files;
+  for (const f of unread) assert.deepEqual(copy.find(c => c.path === f.path).data, f.data, f.path);
+  assert.deepEqual(readWorldFile(writeWorldFile([wj, ...unread], 'w')).files.map(c => c.path).sort(), ['world.json', ...unread.map(f => f.path)].sort(),
+    'and so does a copy that leaves author fields out: a file it cannot read is not rewritten');
+  // Kept: a null mark, a nested mark, a file deeper than a type folder, one that is not .json, and
+  // hidden: true outside the element folders.
+  const keep = [
     el('elements/character/n.json', { id: 'n', hidden: null }),
     el('elements/character/deep.json', { id: 'd', x_meta: { hidden: true } }),
     el('elements/character/sub/s.json', { id: 's', hidden: true }),
@@ -816,7 +828,7 @@ test('§4.8: what counts as a hidden element file, and what is kept', () => {
     el('media/m.json', { hidden: true }),
     el('records/lab/r.json', { hidden: true }),
   ];
-  assert.deepEqual(kept(keep), { paths: keep.map(f => f.path).sort(), left: 0 });
+  assert.deepEqual(kept(keep), { paths: keep.map(f => f.path).sort(), left: 0, unread: [], unreadLeftOut: 0 });
 });
 
 test('§4.8: the report is not called on a refusal', () => {
@@ -857,7 +869,7 @@ test('author fields: every case of the shared fixture, left out by default and c
     assert.deepEqual(textsOf(byDefault), c.default, c.name);
     const asked = writeWorldFile(files, 'w', { includeAuthorFields: true, report: r => reports.push(r) });
     assert.deepEqual(bytesOf(asked), Object.fromEntries(files.map(f => [f.path, f.data])), `${c.name}: asked, byte for byte`);
-    assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: c.stripped }, { hiddenLeftOut: 0, authorFieldsLeftOut: 0 }], c.name);
+    assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: c.stripped, unreadLeftOut: 0, unreadPaths: [] }, { hiddenLeftOut: 0, authorFieldsLeftOut: 0, unreadLeftOut: 0, unreadPaths: [] }], c.name);
     // No options at all is the default.
     assert.deepEqual(writeWorldFile(files, 'w'), byDefault, c.name);
   }
@@ -893,7 +905,7 @@ test('author fields: the example world, Hyperion, its element files without the 
     if (sha256(out) !== sha256(f.data)) rewritten++;
   }
   assert.ok(rewritten > 0, 'the example carries author fields');
-  assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: rewritten }]);
+  assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: rewritten, unreadLeftOut: 0, unreadPaths: [] }]);
 });
 
 test('author fields: a share counts only the files it keeps; a tool\'s dot-folder is no element folder', () => {
@@ -905,7 +917,7 @@ test('author fields: a share counts only the files it keeps; a tool\'s dot-folde
   ];
   const reports = [];
   const out = textsOf(writeWorldFile(files, 'w', { includeHidden: false, report: r => reports.push(r) }));
-  assert.deepEqual(reports, [{ hiddenLeftOut: 1, authorFieldsLeftOut: 1 }]);
+  assert.deepEqual(reports, [{ hiddenLeftOut: 1, authorFieldsLeftOut: 1, unreadLeftOut: 0, unreadPaths: [] }]);
   assert.deepEqual(Object.keys(out), ['.atlas/elements/character/c.json', 'elements/character/bo.json', 'world.json']);
   assert.equal(out['elements/character/bo.json'], j({ id: 'b' }));
   assert.equal(out['.atlas/elements/character/c.json'], j({ id: 'c', created_by: 'u' }));

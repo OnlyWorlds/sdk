@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.196.0] - 2026-11-23
+
+### Changed
+
+- **A share leaves out a file it could not read as an element.** `writeWorldFile(files, top, { includeHidden: false })` carries a `.json` file in a type folder only when it read the file as an element and found no hidden mark. A file there that could not be read is left out too, since its mark cannot be told: one that is not UTF-8 JSON (a write cut short), is nested more than 200 deep, holds a number too large for a double, or is not an object. Until now a share carried a file that was no JSON as it was, so a hidden element whose file was cut short travelled with its text. The report gains `unreadLeftOut`, their count, and `unreadPaths`, their paths, apart from `hiddenLeftOut`: a broken file is one a person may want to mend. This is the folder format's rule for a share, as ruled on 2026-11-23.
+- **A copy carries such a file byte for byte, and `writeWorldFile` no longer throws on one.** 4.195.0 threw a `TypeError` on an element file nested too deep or holding a number too large, in a share and in a copy that leaves author fields out. A copy is how a person moves their own world, broken file included: it now carries the file as it is, with whatever author fields it holds, and never rewrites it.
+
 ## [4.195.0] - 2026-11-23
 
 ### Fixed
