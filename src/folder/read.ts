@@ -4,7 +4,11 @@
  * `spatial/{map,pin,zone,marker}/`. Identity is the `id` in the file, never its name; a file whose
  * body declares one of the 22 types is that type wherever it sits (the directory decides whether a
  * file is found, the body what it is). `elements/` wins over `spatial/` on a shared id, and within
- * one layout the first path in code point order wins (§4). A file that does not parse, or has no
+ * one layout the first path in code point order wins (§4). Two ids are the same id when they are
+ * written the same: one UUID in capitals in one file and in lower case in another is two elements.
+ * Names are read as written: the extension is `.json` in lower case and a type folder is the type
+ * word in lower case, so `M.JSON` is skipped by name and `elements/Character/` is no type folder.
+ * A file that does not parse, or has no
  * non-empty string `id`, is skipped and counted, never fatal. So is a file this reader cannot
  * hold as written: one nested more than 200 deep, or holding a number too large for a double,
  * which would otherwise be served as `null`. Dot-prefixed folders and files are never read.
@@ -23,9 +27,10 @@ const SPATIAL: ReadonlySet<string> = new Set(['map', 'pin', 'zone', 'marker']);
  * Why a file under a type folder was not served as an element: it is no JSON (`not_json`), it is
  * nested more than 200 deep (`too_deep`), it holds a number too large for a double, which no
  * answer could carry as written (`number_out_of_range`), it has no non-empty string `id`
- * (`no_id`), or an earlier file holds its id (`duplicate`).
+ * (`no_id`), an earlier file holds its id, written the same (`duplicate`), or its extension is
+ * `.json` in another spelling, such as `.JSON`, which the format does not read (`extension`).
  */
-export type OwFolderSkipReason = 'not_json' | 'too_deep' | 'number_out_of_range' | 'no_id' | 'duplicate';
+export type OwFolderSkipReason = 'not_json' | 'too_deep' | 'number_out_of_range' | 'no_id' | 'duplicate' | 'extension';
 
 export interface OwFolderSkip {
   path: string;
@@ -63,7 +68,10 @@ export interface FolderElement {
   type: ElementType;
   /** The id as the file writes it. */
   id: string;
-  /** The id as a UUID compares it (lower case, hyphenated), or null when the id is no UUID. */
+  /**
+   * The id as a UUID compares it (lower case, hyphenated), or null when the id is no UUID. What a
+   * request finds an element by, as the API does; never what makes two files one element.
+   */
   key: string | null;
   body: Record<string, unknown>;
   path: string;
@@ -169,7 +177,7 @@ export function countsPath(path: string): boolean {
 /** Read the entries once: the world, the elements in the order they were kept, and what was skipped. */
 export function readFolder(entries: readonly OwWorldFileEntry[]): FolderSnapshot {
   let world: Record<string, unknown> | null = null;
-  const found: { path: string; rank: 0 | 1; dir: ElementType; data: Uint8Array }[] = [];
+  const found: { path: string; rank: 0 | 1; dir: ElementType; data: Uint8Array; misspelt?: true }[] = [];
   for (const entry of entries) {
     const segments = entry.path.split('/');
     if (passedOver(entry.path, segments)) continue;
@@ -183,6 +191,11 @@ export function readFolder(entries: readonly OwWorldFileEntry[]): FolderSnapshot
     }
     const at = layoutOf(segments);
     if (at) found.push({ path: entry.path, data: entry.data, ...at });
+    else if (segments.length === 3 && /\.json$/i.test(segments[2])) {
+      // In a type folder, with the extension in another spelling: not read, and said so.
+      const typed = layoutOf([segments[0], segments[1], 'x.json']);
+      if (typed) found.push({ path: entry.path, data: entry.data, ...typed, misspelt: true });
+    }
   }
   found.sort((a, b) => a.rank - b.rank || byCodePoint(a.path, b.path));
 
@@ -191,6 +204,10 @@ export function readFolder(entries: readonly OwWorldFileEntry[]): FolderSnapshot
   const seen = new Set<string>();
   let legacy = 0;
   for (const f of found) {
+    if (f.misspelt) {
+      skipped.push({ path: f.path, reason: 'extension' });
+      continue;
+    }
     const parsed = parseJson(f.data);
     if (!parsed.ok) {
       skipped.push({ path: f.path, reason: parsed.fault });
@@ -201,13 +218,13 @@ export function readFolder(entries: readonly OwWorldFileEntry[]): FolderSnapshot
       skipped.push({ path: f.path, reason: 'no_id' });
       continue;
     }
-    const key = uuidKey(body.id);
-    const identity = key ?? body.id;
-    if (seen.has(identity)) {
+    // The same id is the id written the same (the address profile's rule): another spelling is another element.
+    if (seen.has(body.id)) {
       skipped.push({ path: f.path, reason: 'duplicate', id: body.id });
       continue;
     }
-    seen.add(identity);
+    seen.add(body.id);
+    const key = uuidKey(body.id);
     const type = typeof body.type === 'string' && TYPES.has(body.type) ? (body.type as ElementType) : f.dir;
     elements.push({ type, id: body.id, key, body, path: f.path });
     if (f.rank === 1) legacy++;

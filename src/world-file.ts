@@ -51,7 +51,7 @@ import { Inflate, inflateSync, zipSync, type Zippable } from 'fflate';
 import { refuseUnknownOptions } from './options';
 import { nfc } from './nfc';
 import { simpleCaseFold } from './case-fold';
-import { parseOutsideJson } from './outside-json';
+import { readFolder } from './folder/read';
 
 const WORLD_FILE = 'world.json';
 const MARKER_NAME = 'mimetype';
@@ -563,8 +563,10 @@ export interface OwWriteWorldFileOptions {
    * Carry element files marked hidden (spec §4.8). Left out or true, they
    * travel byte for byte: a world file is a copy. Pass false when the file is
    * a share, made to hand to someone else: then every element file whose JSON
-   * carries the hidden mark is left out whole, and `report` counts them. The
-   * default is the opposite of `includePrivateRecords`'s on purpose.
+   * carries the hidden mark is left out whole, and so is every other file
+   * under `elements/` or `spatial/` that was not read as an element, and
+   * `report` counts both. The default is the opposite of
+   * `includePrivateRecords`'s on purpose.
    */
   includeHidden?: boolean;
   /**
@@ -588,10 +590,13 @@ export interface OwWriteWorldFileReport {
   /** Element files written without their author fields (the default); 0 with `includeAuthorFields: true`. */
   authorFieldsLeftOut: number;
   /**
-   * Files in a type folder left out of a share (`includeHidden: false`) because they could not be read as an
-   * element, so their hidden mark could not be told: not UTF-8 JSON (a write cut short), nested more than
-   * 200 deep, holding a number too large for a double, or not an object. 0 otherwise. Counted apart from
-   * `hiddenLeftOut`: these are broken files a person may want to mend.
+   * Files under `elements/` or `spatial/` left out of a share (`includeHidden: false`) because the package's
+   * folder reader does not serve them as an element, so their hidden mark could not be told: not UTF-8 JSON
+   * (a write cut short, or text after the one JSON value), nested more than 200 deep, holding a number too
+   * large for a double, not an object, without a non-empty string `id`, holding an id another file holds
+   * too (neither travels), with another extension than `.json`, deeper than a type folder, or in a folder
+   * that is no type.
+   * 0 otherwise. Counted apart from `hiddenLeftOut`: these are files a person may want to mend or move.
    */
   unreadLeftOut: number;
   /** Their paths, in code point order. */
@@ -637,34 +642,35 @@ function writeOptions(opts: unknown): WriteOptions {
 }
 
 /**
- * An element file's JSON object: a `.json` file directly in a type folder of
- * `elements/` or the legacy `spatial/`, holding UTF-8 JSON that is an object.
- * A file anywhere else is no element file, and null.
+ * The element files among `files`, by path, each with its JSON object: the
+ * files the package's folder reader serves as an element (`readFolder`, the
+ * reader behind `@onlyworlds/sdk/folder`), and no others. So "read as an
+ * element" is one verdict in the package, the reader's own: a `.json` file
+ * directly in `elements/<type>/` for one of the 22 types, or in the legacy
+ * `spatial/{map,pin,zone,marker}/`, that holds one JSON object with a
+ * non-empty string `id`. An id that two files hold is in neither: the
+ * reader serves the first and skips the second, and which of the two marks
+ * is the element's cannot be said.
  *
- * A file there that the writer cannot read as an element is `UNREAD`: not
- * UTF-8, not JSON (a write cut short), JSON this package cannot hold as
- * written (nested more than 200 deep, or holding a number too large for a
- * double), or not an object. What such a file holds cannot be told, its
- * hidden mark included.
+ * Every other file under `elements/` or `spatial/` (`underElementFolders`)
+ * was not read as an element: one that is not UTF-8 JSON (a write cut
+ * short, or text after the one JSON value), is nested more than 200 deep,
+ * holds a number too large for a double, is not an object, has no id,
+ * holds an id another file holds too, has another extension, sits deeper
+ * than a type folder or in a folder that is no type. What such a file
+ * holds cannot be told, its hidden mark included.
  */
-function elementObject(f: OwWorldFileEntry): Record<string, unknown> | typeof UNREAD | null {
-  const segs = f.path.split('/');
-  if (segs.length !== 3 || (segs[0] !== 'elements' && segs[0] !== 'spatial') || !/\.json$/i.test(segs[2])) return null;
-  let text: string;
-  try {
-    text = new TextDecoder('utf-8', { fatal: true }).decode(f.data);
-  } catch {
-    return UNREAD;
-  }
-  const parsed = parseOutsideJson(text);
-  if (!parsed.ok) return UNREAD;
-  const doc = parsed.value;
-  if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) return UNREAD;
-  return doc as Record<string, unknown>;
+function elementFiles(files: OwWorldFileEntry[]): Map<string, Record<string, unknown>> {
+  const { elements, report } = readFolder(files);
+  // The reader's own identity: the id as written.
+  const twice = new Set(report.skipped.filter(s => s.reason === 'duplicate').map(s => s.id));
+  return new Map(elements.filter(e => !twice.has(e.id)).map(e => [e.path, e.body]));
 }
 
-/** An element file the writer could not read as an element (`elementObject`). */
-const UNREAD = 'unread' as const;
+/** Whether a path sits under `elements/` or the legacy `spatial/`, where a share carries only what was read as an element. */
+function underElementFolders(path: string): boolean {
+  return path.startsWith('elements/') || path.startsWith('spatial/');
+}
 
 /**
  * Whether an element file's object carries the hidden mark (spec §4.8): a
@@ -680,16 +686,15 @@ function hasHiddenMark(doc: Record<string, unknown>): boolean {
 /**
  * An element file without its author fields, in the folder's own form
  * (`JSON.stringify(doc, null, 2)` and a newline, the other keys in their
- * order), or null when it holds none of them, is no element file or could
- * not be read as an element: then it travels byte for byte. Only top-level
- * keys go; an `x_*` value that holds one of the names is the extension's,
- * and stays.
+ * order), or null when it holds none of them or was not read as an element
+ * (`doc` undefined): then it travels byte for byte. Only top-level keys go;
+ * an `x_*` value that holds one of the names is the extension's, and stays.
  */
-function withoutAuthorFields(f: OwWorldFileEntry): Uint8Array | null {
-  const doc = elementObject(f);
-  if (doc === null || doc === UNREAD) return null;
+function withoutAuthorFields(doc: Record<string, unknown> | undefined): Uint8Array | null {
+  if (doc === undefined) return null;
   const present = AUTHOR_FIELDS.filter(k => k in doc);
   if (!present.length) return null;
+  // The object is this write's own read of the file (`elementFiles`), so the keys go from it in place.
   for (const k of present) delete doc[k];
   return new TextEncoder().encode(JSON.stringify(doc, null, 2) + '\n');
 }
@@ -746,30 +751,41 @@ function privateProducers(files: OwWorldFileEntry[]): string[] {
  * Element files marked hidden (spec §4.8) travel byte for byte by default: a
  * world file is a copy, also of a person's own world. A share is the offering
  * tool's question: pass `{ includeHidden: false }` for a file made to hand to
- * someone else, and every element file under `elements/<type>/` or
- * `spatial/<type>/` whose JSON carries a top-level `hidden` (anything but
- * absent, `null` or `false`) is left out whole. A share carries a file there
- * only when it was read as an element and no mark was found: one that could
- * not be read (not UTF-8 JSON, a write cut short, nested more than 200 deep,
- * a number too large for a double, not an object) is left out too, counted
- * apart, since its mark cannot be told (versions before 4.196.0 carried one
- * that was not JSON, and 4.195.0 threw on one too deep). A copy carries such
- * a file byte for byte, as it is how a person moves their own world, broken
- * file included. Nothing else is rewritten: a visible element's link to a
- * hidden one keeps its id, which then names no file. Pass
- * `report: r => …` to learn `r.hiddenLeftOut`, the count left out, and
- * `r.unreadLeftOut` with `r.unreadPaths`, the files that could not be read.
+ * someone else, and every element file whose JSON carries a top-level
+ * `hidden` (anything but absent, `null` or `false`) is left out whole. A
+ * share carries a file under `elements/` or the legacy `spatial/` only when
+ * it was read as an element and no mark was found, and "read as an element"
+ * is the folder reader's own verdict (the reader behind
+ * `@onlyworlds/sdk/folder`): a `.json` file directly in a type folder, one
+ * JSON object with a non-empty string `id` that no other file holds. Every
+ * other file there is left out too, counted apart, since its mark cannot be
+ * told: one that is not UTF-8 JSON (a write cut short, or text after the one
+ * JSON value), nested more than 200 deep, holding a number too large for a
+ * double, not an object, without an id, holding an id another file holds
+ * too (neither of the two travels: which mark is the element's cannot be
+ * said), with another extension, deeper than a type folder (a hidden
+ * element's file moved into `old/` by hand) or in a folder that is no type.
+ * Versions before 4.197.0 carried a file with another extension, or one
+ * not directly in a type folder, whatever it held, and judged a file of
+ * the other kinds by its own mark alone, so a hidden element's second,
+ * unmarked file travelled; versions before 4.196.0 carried one that was not
+ * JSON, and 4.195.0 threw on one too deep. A copy carries every such file
+ * byte for byte and never rewrites it, as it is how a person moves their own
+ * world, broken file included. Nothing else is rewritten: a visible
+ * element's link to a hidden one keeps its id, which then names no file.
+ * Pass `report: r => …` to learn `r.hiddenLeftOut`, the count left out, and
+ * `r.unreadLeftOut` with `r.unreadPaths`, the files not read as an element.
  *
  * The author fields, `created_by`, `changed_by`, `changed_via`,
  * `changed_client` and `doors`, record which member and which tool wrote
  * each element (a membership id, a door), which means nothing to someone the
- * world is handed to. So by default every element file under
- * `elements/<type>/` or `spatial/<type>/` leaves them out; `created_at` and
+ * world is handed to. So by default every element file (one the folder
+ * reader serves, as above) leaves them out; `created_at` and
  * `updated_at` stay. A file holding any of them is
  * rewritten without them in the folder's own form (two-space indent, a
  * trailing newline, the other keys in their order); one holding none, or
- * that is not a JSON object, travels byte for byte, and nothing outside the
- * element files is touched. `r.authorFieldsLeftOut` counts the files
+ * that was not read as an element, travels byte for byte, and nothing
+ * outside the element files is touched. `r.authorFieldsLeftOut` counts the files
  * rewritten. Pass `{ includeAuthorFields: true }` for a byte copy of your own
  * folder, as an archive of your own world.
  *
@@ -800,13 +816,15 @@ export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: 
   };
   let hiddenLeftOut = 0;
   const unreadPaths: string[] = [];
+  // Read only when something is to be left out: a byte copy of everything reads no element file.
+  const elements = includeHidden && includeAuthorFields ? new Map<string, Record<string, unknown>>() : elementFiles(files);
   const kept = files.filter(f => {
     if (!carried(f.path) || inPrivate(f.path)) return false;
-    if (includeHidden) return true;
-    // A share carries an element file only when it was read as an element and no mark was found.
-    const doc = elementObject(f);
-    if (doc === UNREAD) { unreadPaths.push(f.path); return false; }
-    if (doc !== null && hasHiddenMark(doc)) { hiddenLeftOut++; return false; }
+    if (includeHidden || !underElementFolders(f.path)) return true;
+    // A share carries a file under elements/ or spatial/ only when it was read as an element and no mark was found.
+    const doc = elements.get(f.path);
+    if (doc === undefined) { unreadPaths.push(f.path); return false; }
+    if (hasHiddenMark(doc)) { hiddenLeftOut++; return false; }
     return true;
   });
   unreadPaths.sort(byCodePoint);
@@ -828,7 +846,7 @@ export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: 
     if (f.path === WORLD_FILE) {
       data = withoutLink(data, parseWorld(data)).data;
     } else if (!includeAuthorFields) {
-      const bare = withoutAuthorFields(f);
+      const bare = withoutAuthorFields(elements.get(f.path));
       if (bare) { data = bare; authorFieldsLeftOut++; }
     }
     input[`${topDir}/${f.path}`] = [data, { level: /\.json$/i.test(f.path) ? 6 : 0, mtime: STAMP }];

@@ -199,6 +199,19 @@ test('the Kanka door: text that is no JSON is named a decode error even when it 
   assert.deepEqual(got.notes.filter((n) => n.startsWith(ENTITY)), [`${ENTITY}: not readable JSON (JSONDecodeError); skipped`]);
 });
 
+test('the Kanka door: text after the one JSON value is no JSON, and whitespace after it is nothing', () => {
+  const whole = convert(new Uint8Array(readFileSync(KANKA)));
+  const broken = convert(exportWith((t) => t.slice(0, -1)));
+  for (const tail of [' {"hidden": true}', ' x', '{}']) {
+    const got = convert(exportWith((t) => t + tail));
+    assert.deepEqual(got.notes.filter((n) => n.startsWith(ENTITY)), [`${ENTITY}: not readable JSON (JSONDecodeError); skipped`], tail);
+    assert.deepEqual(got.paths, broken.paths, tail);
+  }
+  const spaced = convert(exportWith((t) => t + ' \n\t\r\n'));
+  assert.deepEqual(spaced.paths, whole.paths);
+  assert.deepEqual(spaced.notes, whole.notes);
+});
+
 // --- every JSON.parse in src --------------------------------------------------------------------
 
 /** Each `JSON.parse` in `src/` outside `outside-json.ts`, by file, with how many and what they read. */

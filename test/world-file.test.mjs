@@ -796,39 +796,86 @@ test('§4.8: what counts as a hidden element file, and what is kept', () => {
       .map(f => f.path).filter(p => p !== 'world.json');
     return { paths, left: reports[0].hiddenLeftOut, unread: reports[0].unreadPaths, unreadLeftOut: reports[0].unreadLeftOut };
   };
-  // The legacy spatial/ layout, an upper-case .JSON, and a doubtful mark ("true", 1) are left out.
+  // The legacy spatial/ layout and a doubtful mark ("true", 1) are left out as hidden.
   assert.deepEqual(kept([
     el('spatial/pin/p.json', { id: 'p', hidden: true }),
-    el('elements/map/M.JSON', { id: 'm', hidden: true }),
+    el('elements/map/m.json', { id: 'm', hidden: true }),
     el('elements/event/e.json', { id: 'e', hidden: 'true' }),
     el('elements/event/f.json', { id: 'f', hidden: 1 }),
   ]), { paths: [], left: 4, unread: [], unreadLeftOut: 0 });
-  // Left out and counted apart (since 4.196.0; kept before): a file in a type folder that could not be
-  // read as an element, so its mark cannot be told. Cut short, not UTF-8, not an object.
+  // Left out and counted apart: every other file under elements/ or spatial/ that the folder reader
+  // does not serve as an element, so its mark cannot be told (since 4.196.0 the first three; since
+  // 4.197.0 the rest). A file that holds a mark is among them: unread, whatever else it holds.
+  const marked = { name: 'H', hidden: true, changed_by: 'm-1' };
+  const plain = { name: 'P', changed_by: 'm-1' };
   const unread = [
+    // Cut short, not UTF-8, not an object.
     el('elements/character/broken.json', '{"id": "x", "hidden": true'),
     { path: 'elements/character/latin.json', data: new Uint8Array([0x7b, 0x22, 0xe9, 0x22, 0x3a, 0x31, 0x7d]) },
     el('elements/character/list.json', [{ hidden: true }]),
+    // The extension in another spelling, another extension, a swap file.
     el('spatial/pin/cut.JSON', '{"id": "p"'),
+    el('elements/map/M.JSON', { id: 'M', ...marked }),
+    el('elements/map/N.JSON', { id: 'N', ...plain }),
+    el('elements/character/notes.txt', j({ id: 't', ...marked })),
+    el('spatial/pin/notes.txt', j({ id: 't2', ...marked })),
+    el('elements/character/x.json.crswap', j({ id: 'sw', ...marked })),
+    // Deeper than a type folder (a hidden element's file moved into old/ by hand), directly under
+    // elements/, and in a folder that is no type or no legacy type.
+    el('elements/character/old/s.json', { id: 's', ...marked }),
+    el('elements/top.json', { id: 'top', ...marked }),
+    el('elements/widgets/w.json', { id: 'w', ...marked }),
+    el('elements/Relation/c.json', { id: 'C', ...plain }),
+    el('spatial/character/x.json', { id: 'sc', ...plain }),
+    // No id: absent, empty, not a string; with a mark and without.
+    el('elements/character/noid-h.json', marked),
+    el('elements/character/noid.json', plain),
+    el('elements/character/empty-id.json', { id: '', ...plain }),
+    el('elements/character/number-id.json', { id: 7, ...plain }),
+    // Text after the one JSON value.
+    el('elements/character/two.json', '{"id": "c-9"} {"hidden": true}'),
+    el('elements/character/tail.json', '{"id": "c-8"} x'),
+    // An id two files hold travels in neither, in either order and across the two layouts.
+    el('elements/event/t1-first.json', { id: 't1', ...marked }),
+    el('elements/event/t1-second.json', { id: 't1', ...plain }),
+    el('elements/event/t2-first.json', { id: 't2', ...plain }),
+    el('elements/event/t2-second.json', { id: 't2', ...marked }),
+    el('elements/pin/both.json', { id: 'b1', ...marked }),
+    el('spatial/pin/both.json', { id: 'b1', ...plain }),
   ];
   assert.deepEqual(kept([el('elements/character/a.json', { id: 'a' }), ...unread]),
-    { paths: ['elements/character/a.json'], left: 0, unread: unread.map(f => f.path).sort(), unreadLeftOut: 4 });
-  // A copy carries each of them byte for byte.
-  const copy = readWorldFile(writeWorldFile([wj, ...unread], 'w', { includeAuthorFields: true })).files;
+    { paths: ['elements/character/a.json'], left: 0, unread: unread.map(f => f.path).sort(), unreadLeftOut: unread.length });
+  // One at a time too, so no file's verdict rests on another's (the pairs go together).
+  const groups = [...unread.slice(0, 20).map(f => [f]), unread.slice(20, 22), unread.slice(22, 24), unread.slice(24, 26)];
+  assert.equal(groups.flat().length, unread.length);
+  for (const g of groups) {
+    assert.deepEqual(kept(g), { paths: [], left: 0, unread: g.map(f => f.path).sort(), unreadLeftOut: g.length }, g[0].path);
+  }
+  // A copy carries each of them byte for byte, beside an element it does read.
+  const served = el('elements/character/a.json', { id: 'a', changed_by: 'm-1' });
+  const copy = readWorldFile(writeWorldFile([wj, served, ...unread], 'w', { includeAuthorFields: true })).files;
   for (const f of unread) assert.deepEqual(copy.find(c => c.path === f.path).data, f.data, f.path);
-  assert.deepEqual(readWorldFile(writeWorldFile([wj, ...unread], 'w')).files.map(c => c.path).sort(), ['world.json', ...unread.map(f => f.path)].sort(),
-    'and so does a copy that leaves author fields out: a file it cannot read is not rewritten');
-  // Kept: a null mark, a nested mark, a file deeper than a type folder, one that is not .json, and
-  // hidden: true outside the element folders.
+  // And so does a copy that leaves author fields out: a file not read as an element is never rewritten.
+  const reports = [];
+  const bare = readWorldFile(writeWorldFile([wj, served, ...unread], 'w', { report: r => reports.push(r) })).files;
+  assert.deepEqual(bare.map(c => c.path).sort(), ['world.json', served.path, ...unread.map(f => f.path)].sort());
+  assert.equal(text(bare.find(c => c.path === served.path).data), j({ id: 'a' }), 'the element it read loses its author field');
+  for (const f of unread) assert.deepEqual(bare.find(c => c.path === f.path).data, f.data, f.path);
+  assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: 1, unreadLeftOut: 0, unreadPaths: [] }]);
+  // Kept: a null mark, a nested mark, whitespace after the value, a byte order mark, hidden: true
+  // outside the element folders, and one UUID in two spellings, which is two ids, each judged by its own mark.
   const keep = [
     el('elements/character/n.json', { id: 'n', hidden: null }),
     el('elements/character/deep.json', { id: 'd', x_meta: { hidden: true } }),
-    el('elements/character/sub/s.json', { id: 's', hidden: true }),
-    el('elements/character/notes.txt', '{"hidden": true}'),
+    el('elements/character/space.json', '{"id": "sp"} \n\t\r\n'),
+    { path: 'elements/character/bom.json', data: new Uint8Array([0xef, 0xbb, 0xbf, ...strToU8('{"id": "bom"}')]) },
+    el('elements/trait/lower.json', { id: 'abcdef00-0000-4000-8000-00000000000a' }),
     el('media/m.json', { hidden: true }),
     el('records/lab/r.json', { hidden: true }),
   ];
   assert.deepEqual(kept(keep), { paths: keep.map(f => f.path).sort(), left: 0, unread: [], unreadLeftOut: 0 });
+  assert.deepEqual(kept([...keep, el('elements/trait/UPPER.json', { id: 'ABCDEF00-0000-4000-8000-00000000000A', hidden: true })]),
+    { paths: keep.map(f => f.path).sort(), left: 1, unread: [], unreadLeftOut: 0 }, 'another spelling is another id');
 });
 
 test('§4.8: the report is not called on a refusal', () => {
@@ -841,7 +888,7 @@ test('§4.8: the report is not called on a refusal', () => {
 
 // The same bytes as the Python package's tests/fixtures/author-fields.fixture.json (both suites hold its sha256).
 const AUTHOR_FIXTURE = fileURLToPath(new URL('./fixtures/author-fields.fixture.json', import.meta.url));
-const AUTHOR_FIXTURE_SHA256 = 'ed9e2a6161b0b6b276b71680750943f7ee6fe5d49fdbd932995a1b93555a1e4f';
+const AUTHOR_FIXTURE_SHA256 = '481db037f008ceff9989bbe44b2c27a41ba4205d7e7fd258792cbadc2365787d';
 const AUTHOR_CASES = 5;
 // writeWorldFile before includeAuthorFields (4.108.1) on each case's files, the archives one after another.
 const BEFORE_SHA256 = '57b381b3e03faf4f2d030a6cd6ad63cad8360fe9b44cc7f9666c6d848d8abf97';

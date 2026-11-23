@@ -449,6 +449,40 @@ test('the folder as the spec reads it: elements/ over spatial/, first file by co
   assert.equal(report.elements, 2);
 });
 
+test('names are read as written: another spelling of an id is another element, .JSON is skipped by name, Character/ is no type folder', async () => {
+  const UPPER = 'ABCDEF00-0000-4000-8000-00000000000A';
+  const lower = UPPER.toLowerCase();
+  let report;
+  const f = folderFetch([
+    file('world.json', { id: W, name: 'W' }),
+    file('elements/trait/a.json', { id: UPPER, name: 'Capitals' }),
+    file('elements/trait/b.json', { id: lower, name: 'Lower case' }),
+    file('elements/trait/c.json', { id: lower, name: 'Lower case again' }),
+    file('elements/map/M.JSON', { id: id(21), name: 'Upper extension' }),
+    file('spatial/pin/P.Json', { id: id(22), name: 'Mixed extension' }),
+    file('elements/Character/x.json', { id: id(23), name: 'Upper folder' }),
+    file('elements/widgets/w.JSON', { id: id(24), name: 'No type folder' }),
+    file('elements/trait/deeper/D.JSON', { id: id(25), name: 'Deeper' }),
+  ], { onRead: (r) => { report = r; } });
+  // One UUID in capitals and in lower case is two ids (two ids are the same when written the same): both listed.
+  assert.deepEqual((await call(f, '/trait/')).body.data.map((e) => e.name).sort(), ['Capitals', 'Lower case']);
+  assert.deepEqual(report.served.map((s) => [s.path, s.id]), [['elements/trait/a.json', UPPER], ['elements/trait/b.json', lower]]);
+  // A request names an element by its UUID, as the API does: the first read answers either spelling.
+  assert.equal((await call(f, `/trait/${lower}/`)).body.name, 'Capitals');
+  assert.equal((await call(f, `/trait/${UPPER}/`)).body.name, 'Capitals');
+  // The same id written the same is still one element; a .json in another spelling, in a type folder, is
+  // skipped by name; a folder that is no type word in lower case is not read at all.
+  assert.deepEqual(report.skipped, [
+    { path: 'elements/map/M.JSON', reason: 'extension' },
+    { path: 'elements/trait/c.json', reason: 'duplicate', id: lower },
+    { path: 'spatial/pin/P.Json', reason: 'extension' },
+  ]);
+  assert.deepEqual((await call(f, '/map/')).body.data, []);
+  assert.deepEqual((await call(f, '/pin/')).body.data, []);
+  assert.deepEqual((await call(f, '/character/')).body.data, []);
+  assert.equal(report.elements, 2);
+});
+
 test('the read report\'s served list says the declared type, and null for a file with no string name', async () => {
   let report;
   const f = folderFetch([

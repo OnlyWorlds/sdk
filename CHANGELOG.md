@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.197.0] - 2026-11-23
+
+### Changed
+
+- **A share carries under `elements/` and `spatial/` only what the folder reader serves.** `writeWorldFile(files, top, { includeHidden: false })` now asks the package's own folder reader which files are elements, and carries those that hold no hidden mark. Every other file there is left out and named in `unreadPaths`: a file with another extension (`notes.txt`, a browser's swap file), one deeper than a type folder (a hidden element's file moved into `old/` by hand), one directly under `elements/`, one in a folder that is no type and an object with no non-empty string `id`. Until now a share carried a file with another extension, or one not directly in a type folder, whatever it held, a hidden element's text included, and judged the other kinds by their own mark alone. A file that holds a mark and is not served as an element is counted with the unread, not the hidden.
+- **An id that two files hold travels in neither file on a share.** Each file was judged by its own mark, so a hidden element's second, unmarked file travelled. Both files are now left out and named in `unreadPaths`, within one layout or across `elements/` and `spatial/`: with two files for one id, which mark is the element's cannot be said.
+- **A copy never rewrites a file that was not read as an element.** The default copy takes the author fields out of element files only. A file of the kinds above keeps its bytes, author fields included; before, any JSON object directly in a folder of `elements/` or `spatial/` was rewritten.
+- **The folder reader compares ids as written.** One UUID in capitals in one file and in lower case in another is two elements: two ids are the same id when they are written the same (the address profile's rule). The folder source read the two as one element and skipped the second file as a `duplicate`. Both are now served and listed. A request by id still names an element by its UUID, as the API does, and the first file read answers either spelling.
+- **`OwFolderSkipReason` gains `'extension'`.** A file in a type folder whose extension is `.json` in another spelling (`M.JSON`) is no element file by the format. The reader never read such a file, and said nothing; it now names it among the skipped. A tool that maps each reason to a sentence needs one more.
+
 ## [4.196.0] - 2026-11-23
 
 ### Changed

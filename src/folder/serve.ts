@@ -266,7 +266,9 @@ export class Served {
     for (const el of snapshot.elements) {
       const body = serveBody(el);
       this.byType.get(el.type)!.push({ el, body });
-      if (el.key) this.byKey.set(`${el.type}:${el.key}`, body);
+      // A request names an element by its UUID, as the API does. Two files whose ids are one UUID in two
+      // spellings are two elements (ids are compared as written), both listed; by id, the first read answers.
+      if (el.key && !this.byKey.has(`${el.type}:${el.key}`)) this.byKey.set(`${el.type}:${el.key}`, body);
     }
   }
 
