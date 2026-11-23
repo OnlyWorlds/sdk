@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.193.0] - 2026-11-23
+
+### Added
+
+- **`countsPath(path)`** (`@onlyworlds/sdk/folder`): whether the folder source reads the file at a path relative to the world's folder: `world.json`, a `*.json` directly under `elements/<type>/` for one of the 22 types or under the legacy `spatial/{map,pin,zone,marker}/`, and never a dot-prefixed folder or file or a swap file. It is the reader's own test (the reader now calls it too), so a tool that watches a folder can ask which new files to take in instead of writing the rule again: a change under `.git/`, an editor's swap file or a `records/` folder needs no read. A path ending in `/` names a folder, and counts when a file the reader reads can sit in it, for a folder moved in whole. A path that is absolute, holds a backslash, or has an empty, `.` or `..` part is a `TypeError`.
+
 ## [4.192.0] - 2026-11-22
 
 ### Added

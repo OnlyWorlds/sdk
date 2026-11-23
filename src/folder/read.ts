@@ -125,13 +125,45 @@ function parseJson(data: Uint8Array): { ok: true; value: unknown } | { ok: false
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
+/** A path the reader never reads: under a dot-prefixed folder, dot-prefixed itself, or a swap file. */
+const passedOver = (path: string, segments: string[]) => segments.some((s) => s.startsWith('.')) || isTransientPath(path);
+
+/**
+ * Whether the folder source reads the file at `path` (relative to the world's folder, `/`-separated, as
+ * an entry's path is): `world.json`, a `*.json` directly under `elements/<type>/` for one of the 22
+ * types, or under the legacy `spatial/{map,pin,zone,marker}/`, never under a dot-prefixed folder,
+ * dot-prefixed itself, or a swap file. It is the reader's own test, so a tool that watches a folder
+ * asks it which new files to take in, rather than writing the rule a second time. A path that ends in
+ * `/` names a folder, and counts when a file the reader reads can sit in it (`elements/`,
+ * `elements/character/`, `spatial/pin/`): a folder moved in whole arrives as one change. Whether a file
+ * that counts is served is the reader's next question (it may not parse, or have no id). Names are
+ * matched exactly, case included, as the reader matches them. A path that is not a string, is
+ * absolute, holds a backslash or an empty, `.` or `..` part is a TypeError: pass it as an entry's path.
+ */
+export function countsPath(path: string): boolean {
+  if (typeof path !== 'string' || path === '') throw new TypeError('countsPath takes a path relative to the world\'s folder, a non-empty string');
+  if (path.includes('\\')) throw new TypeError(`countsPath: ${JSON.stringify(path)} holds a backslash; pass the path /-separated, as an entry's path is`);
+  const folder = path.endsWith('/');
+  const segments = (folder ? path.slice(0, -1) : path).split('/');
+  if (segments.some((s) => s === '' || s === '.' || s === '..')) {
+    throw new TypeError(`countsPath: ${JSON.stringify(path)} is not a path relative to the world's folder (an empty, "." or ".." part, or a leading /)`);
+  }
+  if (passedOver(path, segments)) return false;
+  if (folder) {
+    if (segments.length === 1) return segments[0] === 'elements' || segments[0] === 'spatial';
+    if (segments.length === 2) return (segments[0] === 'elements' && TYPES.has(segments[1])) || (segments[0] === 'spatial' && SPATIAL.has(segments[1]));
+    return false;
+  }
+  return path === 'world.json' || layoutOf(segments) !== null;
+}
+
 /** Read the entries once: the world, the elements in the order they were kept, and what was skipped. */
 export function readFolder(entries: readonly OwWorldFileEntry[]): FolderSnapshot {
   let world: Record<string, unknown> | null = null;
   const found: { path: string; rank: 0 | 1; dir: ElementType; data: Uint8Array }[] = [];
   for (const entry of entries) {
     const segments = entry.path.split('/');
-    if (segments.some((s) => s.startsWith('.')) || isTransientPath(entry.path)) continue;
+    if (passedOver(entry.path, segments)) continue;
     if (entry.path === 'world.json') {
       const parsed = parseJson(entry.data);
       if (parsed.ok && isObject(parsed.value) && typeof parsed.value.id === 'string' && parsed.value.id !== '') {

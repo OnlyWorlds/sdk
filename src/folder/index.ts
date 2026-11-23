@@ -25,19 +25,20 @@
  *
  * The client needs no key with this fetch (nothing leaves the process); one given is never read.
  * `entriesFromDirectory` is for Node and loads `node:fs` only when called, so a browser imports
- * this subpath safely; there a tool builds the entries from its own files.
+ * this subpath safely; there a tool builds the entries from its own files. A tool that watches a
+ * folder asks `countsPath(path)` whether a new file is one the source reads, before reading again.
  */
 
 import { refuseUnknownOptions } from '../options';
 import { LOCAL_FETCH } from '../v2/local-fetch';
 import type { OwWorldFileEntry } from '../world-file';
-import { byCodePoint, isTransientPath, readFolder, type FolderSnapshot, type OwFolderReadReport } from './read';
+import { byCodePoint, countsPath, isTransientPath, readFolder, type FolderSnapshot, type OwFolderReadReport } from './read';
 import {
   NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_MESSAGE, NOT_IN_A_FOLDER_STATUS, Query, Served, asksThePlatform, getAnswer, isType,
   listAnswer, refusal, searchAnswer, unreadable, worldAnswer, type Answer,
 } from './serve';
 
-export { NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_MESSAGE, NOT_IN_A_FOLDER_STATUS };
+export { NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_MESSAGE, NOT_IN_A_FOLDER_STATUS, countsPath };
 export type { OwFolderReadReport, OwFolderServed, OwFolderSkip, OwFolderSkipReason } from './read';
 export type { OwWorldFileEntry };
 /** The 22 element type slugs, as a served file's `type` names one (the main entry's `ElementType`). */

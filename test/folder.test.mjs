@@ -17,7 +17,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { OwV2Client, OwApiError } from '../dist/index.js';
-import { folderFetch, entriesFromDirectory, NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_MESSAGE, NOT_IN_A_FOLDER_STATUS } from '../dist/folder.js';
+import { folderFetch, entriesFromDirectory, countsPath, NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_MESSAGE, NOT_IN_A_FOLDER_STATUS } from '../dist/folder.js';
 import { objectParameters } from './options-surface.mjs';
 
 const enc = new TextEncoder();
@@ -464,6 +464,37 @@ test('the read report\'s served list says the declared type, and null for a file
     { path: 'elements/character/z.json', type: 'character', id: id(22), name: null },
   ]);
   assert.equal(report.elements, report.served.length);
+});
+
+test('countsPath is the reader\'s own test: a file counts exactly when the reader serves it from a sound body', async () => {
+  const paths = [
+    'elements/character/a.json', 'elements/creature/sub.json', 'spatial/pin/p.json', 'spatial/map/m.json',
+    'spatial/character/c.json', 'elements/bogus/x.json', 'elements/Character/x.json', 'Elements/character/x.json',
+    'elements/character/x.JSON', 'elements/character/x.txt', 'elements/character/deeper/x.json', 'elements/x.json',
+    'x.json', 'records/kael/x.json', '.git/elements/character/x.json', 'elements/.hidden/x.json',
+    'elements/character/.swap.json', 'elements/character/x.json.tmp', 'elements/character/x.json.crswap',
+    '.atlas/lock', 'spatial/zone/z.json', 'spatial/marker/k.json',
+  ];
+  let report;
+  const entries = [file('world.json', { id: W, name: 'W' }), ...paths.map((p, i) => file(p, { id: id(100 + i), name: p }))];
+  const f = folderFetch(entries, { onRead: (r) => { report = r; } });
+  await call(f, '/world/');
+  const served = new Set(report.served.map((s) => s.path));
+  for (const p of paths) assert.equal(countsPath(p), served.has(p), `${p}: countsPath ${countsPath(p)}, served ${served.has(p)}`);
+  assert.equal(served.size, 6, 'the six that count are served, and only they');
+  assert.equal(countsPath('world.json'), true);
+  assert.equal(countsPath('.world.json'), false);
+});
+
+test('countsPath on a folder (a trailing /): true where a file the reader reads can sit', () => {
+  for (const p of ['elements/', 'spatial/', 'elements/character/', 'elements/phenomenon/', 'spatial/pin/', 'spatial/marker/']) assert.equal(countsPath(p), true, p);
+  for (const p of ['.git/', 'records/', 'elements/bogus/', 'spatial/character/', 'elements/character/deeper/', 'elements/.atlas/', 'media/']) assert.equal(countsPath(p), false, p);
+});
+
+test('countsPath refuses what is not a path relative to the folder', () => {
+  for (const p of [undefined, null, 7, '', '/elements/character/a.json', 'elements\\character\\a.json', 'elements//a.json', './world.json', 'elements/../world.json', '/']) {
+    assert.throws(() => countsPath(p), TypeError, String(p));
+  }
 });
 
 test('folderFetch refuses an unknown option, and its options are the only object parameter of the subpath', () => {
