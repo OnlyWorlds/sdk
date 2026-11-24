@@ -71,519 +71,82 @@ for await (const character of writer.listAll('character')) { /* ... */ }
 
 A link field has one name in both directions (`location`, not `location_id`). Only `name` is required, and an empty name is stored as `''`. A `world` field in a payload is ignored: the key decides the world, and the client strips it anyway.
 
-## Bulk writes
+The rest of the package is below, one line each, with a link to the page that holds it in full. Every method, with the route it calls and what it returns, is in the [reference](https://onlyworlds.github.io/docs/development/typescript#reference).
 
-`/bulk` answers 200 even when some items fail, so check `errors`:
+## Writing safely
 
-```typescript
-const res = await writer.bulk(
-  [
-    { type: 'character', element: { name: 'A' } },
-    { type: 'event', element: { name: 'B' } },
-  ],
-  { idempotencyKey: crypto.randomUUID() }, // a new key per attempt: a failed batch is cached under its key
-);
-if (res.errors) {
-  for (const slot of res.items.filter((s) => s.status >= 400)) {
-    console.warn(slot.error?.code, slot.error?.message, slot.error?.doc_url);
-  }
-}
-```
+- **Bulk writes.** `writer.bulk(items, { idempotencyKey })` answers 200 even when some items fail, so check `res.errors` and each slot's `status`; `{ atomic: true }` makes the batch all or nothing. [Bulk writes](https://onlyworlds.github.io/docs/development/typescript#bulk-writes)
+- **Only if unchanged.** Pass the `change_seq` you read as `ifMatch` to `patch`, `editLinks` or `delete`: if someone changed the element since, nothing is written and `OwPreconditionFailedError` carries it as `current`. The server never merges, so send again or ask the user which to keep. [Only if unchanged](https://onlyworlds.github.io/docs/development/api/writes#only-if-unchanged)
+- **Errors.** Every non-2xx answer throws `OwApiError` (`status`, `code`, `param` and `docUrl`, which is worth showing your users), and a transport failure throws `OwNetworkError`. [Errors](https://onlyworlds.github.io/docs/development/typescript#errors)
 
-Pass `{ atomic: true }` for all or nothing. After a failed atomic batch nothing was written, but the slots that would have succeeded still read 201: don't record those ids as created. `res.wasReplay` marks an idempotent replay.
-
-## Images
+## Images and files
 
 ```typescript
 const image = await writer.uploadImage(file); // a Blob, File, ArrayBuffer or Uint8Array
 await writer.patch('character', id, { image_url: image.url });
 ```
 
-In a browser, shrink a phone photo first: `const photo = await preparePhoto(file)` gives a webp of at most 2048 px on its longest side (where the browser can't encode webp, a JPEG, or a PNG when the picture has transparency); upload `photo.blob`.
-
-The SDK asks the API for a single-use ticket, then sends the bytes straight to the upload host, which never sees your key. webp, png, jpeg or avif (no SVG or gif), up to 15 MB. Each upload counts toward the world's daily limit and the account's storage. To upload yourself (for a progress bar), call `createMediaTicket()` and POST the bytes to its `upload_url` with `Authorization: Bearer <ticket>`.
-
-```typescript
-await writer.removeImage(image.url); // the image_url, or its object key
-await writer.patch('character', id, { image_url: null });
-```
-
-The image's uploader or the world's owner can remove an uploaded image; the space goes back to the uploader's storage. Removal leaves elements as they are, so clear their `image_url` yourself (`createRemovalTicket(key).referenced` says how many still show it). A copy the network already holds can keep answering for a while.
-
-## Files on elements
-
-A pdf, a text file (txt, md, json, csv, yaml, toml) or a world's own bundle (zip), attached to an element. Files are not fields: they never appear in the element's body, its `change_seq` or `/changes`.
-
-```typescript
-const rows = await writer.listFiles('location', id);   // newest first: name, kind, size, label, added_by, added_at
-const stored = await writer.uploadFile('location', id, file, {
-  label: 'description',                                   // optional: a field the file belongs to, or your own words
-  onProgress: (loaded, total) => bar.set(loaded / total),
-});
-const { url, exp } = await writer.fileDownloadLink('location', id, rows[0].id); // fetch it now: the link lives 5 minutes
-await writer.removeFile('location', id, rows[0].id);      // the world's owner or whoever added it
-const { data, used_bytes, cap_bytes } = await writer.worldFiles();               // every file, and the world's total
-```
-
-`uploadFile` takes a File, Blob, ArrayBuffer or Uint8Array. It asks the API for a single-use ticket (`createFileTicket` alone, if you send the bytes yourself), then sends the bytes to the upload host. The name is a File's own unless you pass `name`; the kind comes from its extension (`.yml` and `.markdown` count). Up to 25 MB a file, 250 MB a world, 200 tickets a world a day: the refusals are `err.isFileTooLarge` (413), `err.isFilesFull` (403) and `err.isQuotaExceeded` (429, see `retryAfter`). In a browser, progress comes through XMLHttpRequest; elsewhere `onProgress` is called once, at the end. The download link is the credential to the file: ask for it when the file is opened, and don't keep it.
-
-## Signing in
-
-An app where people sign in with their OnlyWorlds email (or username) and password turns that into an account token for the device. A client with no key can do it:
-
-```typescript
-const { token } = await new OwV2Client().signInWithPassword({
-  email, password, tokenName: 'My app on iPhone', // the name the account's tokens page lists it under
-});
-const account = new OwV2Client({ apiKey: token }); // keep the token; the password is not kept anywhere
-```
-
-The SDK signs in, mints the token, and ends the sign-in session. A refusal is an `OwSignInError` whose `reason` is `invalid_credentials`, `email_unverified`, `rate_limited` (see `retryAfter`), `offline`, `mint_failed` or `failed`.
-
-The account token lists the account's worlds (`listAccountWorlds()`), mints a key for one (`mintWorldKey(worldId, { scope, name })`), and makes a new one with its write key (since 4.66.0):
-
-```typescript
-const world = await account.createAccountWorld({ name: 'Ostvik', keyName: 'My app' }); // world.key: shown once
-```
-
-An account's first world sends `pin` too, which becomes the account PIN; an account that has one leaves it out. Either way the wrong choice is a 422 with `err.param === 'pin'` and nothing made, so send without it first and again with it on that 422. A tool that makes the world from a folder can pass the folder's `source` and `producer` lines; `getWorld()` serves them as `origin`.
-
-## Invite links
-
-A world's owner can invite a person with a link (`https://www.onlyworlds.com/join#ow_j_…`). The code is the part after `#`:
-
-```typescript
-const invite = await client.previewJoin(code);   // who invites, which world, what role; sends no key
-const membership = await account.acceptJoin(code); // account = a client with an ow_a_ token
-```
-
-A bad code (unknown, used, revoked, expired) is one 404 (`err.isNotFound`). Accepting can answer `err.isAlreadyMember`; it needs no account PIN, though a write key for the new membership waits for one. A refusal never uses up the code.
-
-The owner makes, lists and revokes the links with the account token (since 4.24.0). The code comes back once, in the answer that makes it:
-
-```typescript
-const made = await account.createWorldLink(worldId, { reader: 'person', role: 'contributor', days: 7 });
-// made.line: the one line to send (who invites, to which world, the link); made.code: the ow_j_ code
-const links = await account.listWorldLinks(worldId);  // no codes: status pending | used | revoked | expired
-await account.revokeWorldLink(worldId, made.id);
-```
-
-`reader: 'agent'` makes a link an AI agent redeems for a seat instead. Anyone but the owner gets a 404.
-
-Once in, a world key can ask who it is and who else is there (since 4.22.0):
-
-```typescript
-const me = await client.me();           // { world, scope, kind, role, membership, character, front_door, reading_aids }: reading_aids.charter is the house rules, read first
-const roster = await client.members();  // [{ id, kind, role, character, status }], the owner's id is null
-```
-
-An account token reads the roster too, of the world the client's `world` names, with the token's grant there (since 4.116.0); `me()` stays a world key's. `me.membership` is what `created_by` holds on the elements this key creates; `me.role` decides what it may change.
-
-## Sync
-
-```typescript
-let cursor; // opaque and never expires: keep it
-for await (const change of client.changesAll(cursor)) {
-  // changes arrive in order; apply them in order and you converge
-}
-```
-
-To poll for news cheaply, `client.changesHead()` returns `{ head, cursor, epoch, unchanged }` without reading any element: walk `changesAll` only when `head` or `epoch` moved past what you last applied. Since 4.57.0 the client sends the last answer's ETag back, so when nothing moved keel answers 304 (refunded against your request budget) and `unchanged` is true. Sleep on it; the interval is yours.
-
-Edits to the world itself (its name, calendar, `public_read`) don't appear in the change feed. Read `client.getWorld()` and compare `updated_at`.
-
-`client.patchWorld(partial)` writes the world's own settings, and takes a `getWorld()` body back: the keys keel does not take (`id`, `origin`, `slug`, `public_page` and the owner's switches) are left out. The world's `origin` is written as the plain keys `source` and `producer` (each an object or `null`), and extension keys (`x_*`, `atlas_*`, `shadow_*`) are sent as given; `null` removes one.
-
-### Only if unchanged
-
-A client that edits offline, or from a copy it has held a while, can ask for an update to land only if nobody changed the element since it was read: pass the `change_seq` you read as `ifMatch`, on `patch`, `editLinks` or `delete` (since 4.61.0: a delete of an element someone changed since you read it is refused, nothing deleted).
-
-```typescript
-try {
-  await client.patch('character', el.id, { name: 'Mine' }, { ifMatch: el.change_seq });
-} catch (err) {
-  if (err instanceof OwPreconditionFailedError) {
-    // nothing was written; err.current is the element as it is now
-  }
-}
-```
-
-The check is per element and the server never merges. Compare the copy you edited from with `err.current`: when the fields you changed are not the ones that moved, send again with `ifMatch: err.current.change_seq`; when the same field moved on both sides, ask the user which to keep. Without `ifMatch` a write is unconditional, as before.
-
-## Proposals
-
-A member can propose a change instead of making it. The element stays as it is until the world's owner or a co-builder accepts.
-
-```typescript
-const p = await member.propose('location', id, { fields: { description: 'A harbour town.' }, evidence: 'Chapter 3' });
-const queue = await owner.worldProposals();               // { data, has_more, next_cursor }, newest first
-const { element } = await owner.acceptProposal('location', id, p.id);   // the write is the owner's
-await owner.declineProposal('location', id, p.id, { reason: 'Not canon.' });
-await member.withdrawProposal('location', id, p.id);
-```
-
-The world's queue also lists each new element written as proposed, as a row with `kind: 'new_element'` beside the `kind: 'proposal'` rows (since 4.66.0). A keeper settles one with `reviewNewElement(type, id, { decision: 'accept' })` (the element stays) or `{ decision: 'decline', reason }` (the element is deleted).
-
-An accept is refused with nothing written when a proposed field moved since the proposal was made: `OwStaleProposalError` (409, `err.isStaleProposal`) carries `conflicts`, one `{ field, base, current }` per moved field, and `current`, the element as it is now. `listProposals(type, id)` lists one element's rows.
-
-A world's owner can have AI seats propose instead of write (`agent_writes_proposed` on `getWorld()`, set on the world page). An AI seat's `patch`, `upsert` or `editLinks` on an existing element then throws `OwProposedError` (status 202, `err.isProposed`), with the row under `err.proposal`. A `bulk` slot says `status: 202` and carries `proposal` instead. A person's key is never held.
-
-## Finding elements in a world
-
-To ask onlyworlds.com, `search` finds the elements whose name or text holds every word you give, as whole words:
-
-```typescript
-const { results, truncated } = await client.search('APP-142', { limit: 200 });
-results[0].field; results[0].snippet;             // where the words were, and a piece of that field
-```
-
-A word is a run of letters, digits or underscores, so `APP-142` is two words; read an element before relying on a key it must hold whole. There are no pages: `truncated` means more matched than `limit` (at most 200) let through.
-
-When you hold a world's elements in memory (from a sync, or a world file), `lookupWorld` finds the ones a plain question is about, with no model and no network:
-
-```typescript
-import { buildWorldIndex, lookupWorld, renderElement } from '@onlyworlds/sdk';
-
-const index = buildWorldIndex(elements);          // once per world; each element needs id and type
-const hits = lookupWorld(index, 'who runs the mill in Ostvik?');
-hits[0].element; hits[0].reasons;                 // best first, with why each matched
-renderElement(hits[0].element, index);            // a short text card, links by name
-```
-
-Names come first, then supertype and subtype, then one link step in either direction, then the elements' other text.
-
-To have an answer written from what you found, OnlyWorlds runs a small AI proxy for signed-in accounts, its AI uses (`aiUses()` lists them):
-
-```typescript
-const shown = hits.slice(0, 8);                          // what your screen lists
-const { context, kept, leftOut } = buildAskContext(shown, index); // within the proxy's limits; kept = what was sent
-const reply = await account.ai('ask', { world_id: worldId, question, context }, { idempotencyKey: crypto.randomUUID() });
-reply.answer;                                            // from those elements only, or "The world doesn't say."
-```
-
-`account` is a client with an `ow_a_` token. Keep the idempotency key until the answer lands: a retry under it is answered from the first call and billed nothing. (`account.ask({ worldId, question, context })` still works; it is deprecated since 4.139.0 and leaves in 5.0.)
-
-`buildAskContext` hands world elements to an AI, so it leaves three kinds out unless you ask (since 4.72.0): elements marked proposed (`x_review_proposed` present: an empty mark, `""`, white space only, `[]` or `{}`, reads as settled since 4.102.1), elements marked hidden (`hidden` anything but absent, null or false) and room elements (`isRoomElement`). Their ids come back in `leftOut.proposed`, `leftOut.hidden` and `leftOut.room`, so you can say how many were held back; an element both hidden and proposed is listed under `hidden` only. Pass `{ includeProposed: true }`, `{ includeHidden: true }` or `{ includeRoom: true }` to send them; a proposed element sent carries `[proposed, not yet reviewed]` (`REVIEW_PROPOSED_LABEL`) on its first line. A sent element's link to one left out reads as not present, never by its name. `dropped` stays the proxy's limits: past the 8th, or past the 12,000 characters, counted over what remains.
-
-The same proxy sorts loose notes into changes for the user to review. Send the elements your own lookup found for them as the `slice`; every id in a row comes from it, and nothing is written until your app applies what the user accepts.
-
-```typescript
-const slice = hits.slice(0, 100).map(({ element: e }) => ({ id: e.id, type: e.type, name: e.name }));
-const { rows, not_proposed } = await account.ai('sort', { world_id: worldId, notes: ['Mira moved to Ostvik.'], slice });
-// rows: make (a new element), add_to (text for a field), link (one element to another), ask (which one?)
-```
-
-(`account.sort({ worldId, notes, slice })` is deprecated the same way.)
-
-Asking and sorting spend tokens from the account's token rating, its daily budget, the same meter the Council uses. Each answer carries `tokens_remaining` and `token_rating`; `allowance()` reads the meter without spending anything (since 4.21.0):
-
-```typescript
-const { token_rating, tokens_remaining, resets_at } = await account.allowance(); // resets_at: the next midnight UTC
-```
-
-### A Character's context as text
-
-`draughtText(draught)` gives one Character's context packet (`draught(characterId)`, full or `compact`) as plain text to paste into a prompt or a note. It reads the packet alone and calls nothing, and the Python package's `draught_text` gives the same bytes. The title claims only the read's horizon ("dated up to Year 300"), never what the Character knew, and the last line says only what the budget left out (`cut`).
-
-```typescript
-const text = draughtText(await client.draught(characterId));
-```
-
-## World files
-
-A world file (`.owworld`, a `.zip` by another name) is one archive holding a whole world folder (`world.json` and `elements/<type>/*.json`, as Atlas keeps a world on disk), the way Atlas downloads and opens one. It needs no account and works in the browser and in Node. Both functions follow the Folder Format spec's §4.7 and pass its fixture set.
-
-```typescript
-import { readWorldFile, writeWorldFile, OwWorldFileError } from '@onlyworlds/sdk';
-
-const world = readWorldFile(bytes);   // a Uint8Array
-world.worldId; world.name; world.world; // world.json, parsed
-world.files;                            // [{ path, data }], relative to the world's folder, in code point order
-
-const zip = writeWorldFile(world.files, 'hollow-reach-0192a000'); // one top-level folder
-```
-
-The reader checks every entry before it inflates anything, and refuses the file before returning anything. Check `err.reason` on the `OwWorldFileError` it throws:
-
-| `reason` | what the file holds |
-|---|---|
-| `not_openable` | not a zip, a spanned one, or a broken entry |
-| `unsafe_path` | a path that could land outside the folder, or a path that is both a file and a folder |
-| `name` | a name some disk cannot hold: `CON` and the other device names, a trailing dot or space, `<>:"\|?*`, a control character, a non-ASCII name without the UTF-8 flag |
-| `duplicate`, `collision` | two entries with one name, or two names that differ only in case or in how an accent is written |
-| `link`, `method` | a link or special file, an encrypted entry, or a method other than stored or deflate |
-| `too_big`, `too_many` | more than 2 GiB or 500,000 files uncompressed (`maxBytes`, `maxEntries` to change them), or an entry bigger than it says |
-| `marker` | a `mimetype` entry with other bytes than `WORLD_FILE_MEDIA_TYPE` (a marker is never required) |
-| `not_a_world`, `more_than_one` | no `world.json` with an `id`, two worlds, or a second `world.json` inside the world (one under `records/` is data) |
-
-Two names are one when they match after NFC and then simple case folding, both as Unicode 15.1 defines them, from Unicode's own files built into the package (`nfc`, `simpleCaseFold`), never the runtime's Unicode: every reader, in any browser or Node version, joins the same names.
-
-Files beside the world's folder and archive junk (`__MACOSX`, `.DS_Store`) are ignored. The world's OnlyWorlds link and key (`world.json`'s `api`) never travel: both functions remove them. A tool's own folder (`.atlas/` and the like) comes back like any other file; pass `skip: path => …` to leave files out.
-
-The writer gives the same bytes for the same files: the `mimetype` marker first, then every entry in the UTF-8 order of its name, stamped 1980-01-01 00:00. It writes `world.json`, `elements/`, `spatial/`, `media/` and `records/`, and leaves any other file out. A tool's dot-folder you hand it travels too, which makes the file a private copy rather than a portable `.owworld`.
-
-`records/` travels byte for byte, except a producer's directory that `records/RECORDS.json` marks `"private": true`: that one is left out whole, and `RECORDS.json` itself travels unchanged, so the reader can see a producer was left out. Pass `writeWorldFile(files, topDir, { includePrivateRecords: true })` to carry private records too. A `RECORDS.json` that is not a JSON array of objects is refused with a `TypeError` unless you pass that option, since the writer cannot tell which records are private.
-
-An element file marked hidden (`"hidden": true` at the top of its JSON, spec §4.8) travels byte for byte by default: a world file is a copy, also of your own world. When the file is a share, made to hand to someone else, pass `includeHidden: false`: every hidden file under `elements/<type>/` (or the old `spatial/<type>/`) is left out whole, and `report` tells you how many. Nothing else changes: a visible element's link to a hidden one keeps its id. A share carries a file under `elements/` or the old `spatial/` only when the package's folder reader serves it as an element and it holds no mark. Every other file there is left out too, and the report names it apart, in `unreadLeftOut` and `unreadPaths`: a file that is not UTF-8 JSON (a write cut short, or text after the one JSON value), is nested more than 200 deep, holds a number too large for a double, is not an object or has no `id`; a file with another extension, deeper than a type folder (a hidden element's file moved into `old/` by hand) or in a folder that is no type; and both files of an id that two files hold, since which mark is the element's cannot be said (since 4.197.0; 4.196.0 left out only a file in a type folder that it could not parse, and before that such a file was kept). A copy carries every such file byte for byte and never rewrites it.
-
-```typescript
-let left = 0;
-const share = writeWorldFile(files, topDir, { includeHidden: false, report: r => { left = r.hiddenLeftOut; } });
-```
-
-The two defaults differ on purpose: private records stay out unless you ask, hidden elements stay in unless the write is a share.
-
-An element's author fields, `created_by`, `changed_by`, `changed_via`, `changed_client` and `doors`, record which member and which tool wrote it (a membership id, a door), which means nothing to someone the world is handed to. So by default every element file leaves them out (since 4.109.0). `created_at` and `updated_at` stay. A file holding any of the five is rewritten without them, two-space indented with a trailing newline and its other keys in their order; a file holding none travels byte for byte, and nothing outside `elements/<type>/` (or `spatial/<type>/`) changes. `report` counts the files rewritten in `r.authorFieldsLeftOut`. To archive your own world as it is on disk, pass `includeAuthorFields: true`:
-
-```typescript
-const backup = writeWorldFile(files, topDir, { includeAuthorFields: true }); // every file byte for byte
-```
-
-## Bringing in a Kanka export
-
-`@onlyworlds/sdk/convert` turns another tool's export into a world folder, in memory: bytes in, the folder's files and a report out, with no file system and no network, in the browser and in Node. Kanka is the first tool. `convertKanka` reads the zip Kanka's "Export the campaign" gives for the JSON type and writes the same folder as the Python package's door (`python -m onlyworlds.kanka`), byte for byte, and the same report. Both read their tables and wording from one data file, the same bytes in both packages.
-
-```typescript
-import { convertKanka, kankaReportText } from '@onlyworlds/sdk/convert';
-
-const { files, report } = convertKanka(bytes, { source: 'my-campaign.zip' }); // the zip, as a Uint8Array
-files;                                // [{ path, data }]: world.json and elements/<type>/<slug>--<tail8>.json
-report.counts; report.total;          // elements written, by type
-report.unplaced; report.unresolved;   // keys kept as x_kanka_ extensions, links whose target is not in the folder
-report.madeNames;                     // names the door made (`<entity>: hidden details`), by kind
-const text = kankaReportText(report, 'my-world'); // the report as the Python door prints it
-```
-
-Write `files` under a new folder yourself, each `path` relative to it. Each entity becomes an element of its module's type (a module with no OnlyWorlds type becomes a Narrative with supertype `Article`), its entry and posts the description, its parent, places and memberships links, and every key with no field is kept as `x_kanka_<key>` and named in the report. What Kanka hides comes in carrying `hidden: true`: a private entity whole, a post or a relationship not visible to all, and an entity's private details in one hidden Narrative. Ids are made from the campaign and Kanka's own ids, so the same export gives the same folder every time.
-
-`world.json`'s `producer` line names this package and its version (`{ tool: '@onlyworlds/sdk', version, input: 'kanka-export' }`); pass `producer: { tool, version }` to name your own tool. A file that is not a zip, or a zip with no `campaign.json`, throws an `OwConvertError` with `reason` `not_a_zip` or `not_an_export`. From the repository, `node scripts/convert-kanka.mjs EXPORT.zip OUT-DIR` writes the folder and prints the report.
-
-## World calendars
-
-A world's time is an integer line (`time_range_current` is a point on it, and so is an Event's `start_date`). A calendar names its points: months, days, eras. Atlas keeps a calendar on an element (a Construct by convention) in its `atlas_calendar` field, and the SDK reads it with Atlas's own calendar code (since 4.20.0). Atlas owns that field and is its only writer; read it, never write it.
-
-```typescript
-import { worldCalendars, resolveCalendar, formatStep, formatYearLabel, parseDate } from '@onlyworlds/sdk';
-
-const calendars = worldCalendars(elements);  // [{ id, name, config }]: every element with a valid atlas_calendar
-const cal = resolveCalendar(elements, chosenId, { fallbackToOnly: true }); // a world with one calendar uses it
-if (cal) {
-  formatStep(cal.config, 400);      // "4 Alturiak, 1 DR" (with Harptos, from Atlas's tests)
-  formatYearLabel(cal.config, 400); // "1 DR"
-  parseDate(cal.config, '4 Alturiak, 1 DR'); // { step: 400 }; a bare number is always the raw step
-}
-```
-
-No calendar, or a broken one, gives null: show the bare number. `breakdownStep` gives the parts (year, era, month, day, weekday, an intercalary day). The rules are Atlas's calendar design, §5 and §5b.
-
-A page with no build step takes the same names from `@onlyworlds/sdk/calendar` (since 4.199.0): `dist/calendar.js` is one file of about 26 KB that imports nothing, so a `<script type="module">` can load it as it ships. A tool that bundles takes them from the main entry, as above.
-
-## Errors
-
-Every non-2xx response throws `OwApiError` with the API's envelope: `.status`, `.type`, `.code`, `.param` (the field that failed) and `.docUrl`, which is worth showing to your users. A transport failure throws `OwNetworkError`. `err.isValidationError` covers the common case. A write sent with `ifMatch` that found the element moved throws `OwPreconditionFailedError` (412, `err.isPreconditionFailed`), an `OwApiError` that also carries `current`. Proposals add `OwStaleProposalError` (409) and `OwProposedError` (202), and the predicates `isFieldNotVisible`, `isTooManyOpen`, `isStaleProposal`, `isProposedOnly` and `isOwnProposal`.
-
-## Schema constants
-
-```typescript
-import {
-  ELEMENT_TYPES,    // the 22 type slugs (and the ElementType union)
-  ELEMENT_ICONS,    // a Material Symbols icon per type
-  ELEMENT_LABELS,   // plural display labels
-  ELEMENT_SECTIONS, // field grouping and display order
-  FIELD_SCHEMA,     // per-field type and link target
-  PUBLIC_FIELDS,    // per type, the fields a known-of stub carries besides the base fields
-  elementColor,     // colour by colour group; the icon carries the type
-  groupOf,          // a type's colour group: 'blue', 'green', 'pink' or 'amber'
-  dragField,        // the link a drag between two types writes
-} from '@onlyworlds/sdk';
-
-elementColor('character', 'dark'); // '#3987e5'
-dragField('location', 'character'); // { on: 'character', field: 'location', holds: true }
-```
-
-The four colour groups (`ELEMENT_GROUPS`, `GROUP_ORDER`, `GROUP_COLORS`, from the schema distribution's presentation defaults) are named by their colour, `blue`, `green`, `pink` and `amber`: a visual aid for drawing the 22 types, not part of the standard, so never show the word as a label. They are checked for colour-blind separation. Show colour with the icon and label, never alone. `ELEMENT_FAMILIES`, `FAMILY_COLORS`, `FAMILY_ORDER`, `familyOf` and `ElementFamily`, the names before 4.102.0, still answer in their old words (`agents`, `world`, `abstract`, `temporal`), are deprecated and leave in 5.0. `dragField(a, b)` gives, in either order, the link a drag between an element of type `a` and one of type `b` writes, from the schema distribution's `pairs.json` (also presentation, not the standard): `on` the type that carries the field, `field` the link field, `holds` whether the drop puts one element inside the other or only draws a line; null for the same type twice, a pair the table leaves out, or anything that is not a type slug, and such a pair offers no drag. [SCHEMA.md](SCHEMA.md) (generated, in the package) describes every field; AI agents should read [AGENTS.md](AGENTS.md) first.
-
-### The room
-
-A parlor (a chat room on a world) keeps its lines, board entries, work items, specs, hearts, votes, sittings and member cards in the world as ordinary elements, and a world's working layer keeps its reports the same way (the report profile), told apart by type and supertype and marked with `x_room_of` (the id of the world or sitting the room belongs to). `ROOM_PAIRS` is the room profile's list of those pairs, and `isRoomElement(el)` is true when an element matches one (type and supertype trimmed, case-blind, the whole word) and carries the mark (read by presence since 4.100.0: any value but null, a string only when something is left after trimming). A pair without the mark is lore: a novel's letters are Narratives with supertype Message.
-
-```typescript
-import { isRoomElement } from '@onlyworlds/sdk';
-
-const lore = elements.filter(el => !isRoomElement(el)); // a lore view, unless the person asks for the room
-```
-
-The world's charter (a Law with supertype `Charter`), its guide and its domains (Constructs with supertype `Guide` or `Domain`) are reading aids when they carry the mark `x_charter_of`, the id of the world they belong to: `isCharterElement(el)` is true for one (pair and mark, matched as `isRoomElement` matches). A tool's front door shows them first and a lore view leaves them out; the pair without the mark is lore (a kingdom's Charter in a novel's world). A reading aid is not a room element. `readingAidOf(el)` reads the pair alone, mark or not, and answers `'charter'`, `'guide'`, `'domain'` or null: which aid a tool would offer to mark it as.
-
-`charterOf(world, reader)` (since 4.100.0) reads the three as one reader sees a world snapshot, the packet keel serves as `reading_aids` beside `front_door` on `me()` and an agent's join: `charter` (`{ id, name, rules, skill }`, the newest marked Charter; `skill` the Objects its text names, at most five), `guide` (`{ id, name }`), and `domains` (`{ id, name, sentence, hubs }`, in the Guide's order, then by name). `domainsOf(world, reader)` is the list alone, and `CHARTER_PAIRS` the three pairs. The reader is a lens reader (below); the public reads nothing of a world unless it carries `open: true`. The profile: [`profiles/charter.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/charter.md).
-
-A lore view (a list, a count, search, a graph, a link picker, a story's context) leaves room elements out unless the person asks to see them; the room's own views show them whole, and a tool that writes the world writes them like any element. A Law with supertype `Charter` is lore on purpose. The profile: [`profiles/room.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/room.md) in the schema distribution.
-
-### Messages
-
-A message between a world's members is a Narrative with supertype `Message` (`MESSAGE_PAIR`; `isMessage(el)` matches it trimmed and case-blind): `narrator` is the sender, `characters` the recipients, and an empty `characters` is addressed to everyone, unless the server trimmed the list for you (`x_served_trimmed` names `characters`: `hasUnseenRecipients` is true and `isToEveryone` false) or you read it with no credential (`isToEveryone(msg, { keyless: true })` is never true). The sender is a claim until the server's `created_by` proves it, so `senderStatus` answers `verified`, `mismatch`, `unverifiable` or `unseen` (a sender hidden from you), and a reader shows anything but `verified` as a claim. `editedBy(msg, members)` says whether a later hand changed it and whose Character that is. A reader's read mark is a Relation with supertype `Read` and the reader as `actor`, counted only when every write on it was the reader's own hand (its `created_by`, and its `changed_by` where the reader can see it). Read with no credential, no mark counts (`readMarkOf(marks, me, members, { keyless: true })` is null): those bodies carry no hands to check.
-
-```typescript
-import { isMessage, isNote, readMarkOf, senderStatus, editedBy, unreadFor, threadOf, noteOf } from '@onlyworlds/sdk';
-
-const messages = (await client.list('narrative', { filter: { supertype: 'Message' } })).data.filter(isMessage);
-const marks = (await client.list('relation', { filter: { supertype: 'Read' } })).data;
-const members = await client.members();
-const unread = unreadFor(messages, me, readMarkOf(marks, me, members), members); // created_at order
-const { status, claimed, writtenBy } = senderStatus(unread[0], members);
-const { edited, by } = editedBy(unread[0], members); // "edited by <by>", or by another hand when by is null
-const thread = threadOf(messages, rootId); // the root and every reply under it
-const notes = (await client.list('narrative', { filter: { supertype: 'Note' } })).data.filter(isNote);
-const line = noteOf(notes, me, members); // the id of my newest own-hand Note, or null
-```
-
-Both lists are in `created_at` order, equal times keep the order of the list given, and a `created_at` that cannot be read comes after every one that can. The grammar is exported as `instantOf(value)` (`{ seconds, microseconds }`, or `null`) with `compareInstants(a, b)` to sort by: `YYYY-MM-DDTHH:MM:SS`, an optional fraction counted to its sixth digit, then `Z`, `+HH:MM`, `-HH:MM` or nothing (read as UTC); a date alone, a space for the `T`, a time without seconds, `+0200` and a leap second are not read. A Note (a Narrative with supertype `Note`) is a member's own line, never a message: the readers never address it, list it as unread or put it in a thread. A message the reader sent is not unread for them, but on the wire only a verified sender counts: pass `members` to `unreadFor`, or every message claiming to be from the reader stays unread. A world folder carries no `created_by`, so there `narrator` is trusted and `members` can be left out. The profile: [`profiles/message.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/message.md) in the schema distribution.
-
-### Lenses
-
-A lens is a saved way of reading a world: a Construct with supertype `Lens` (`isLens(el)`) whose links are its anchors and whose `x_lens` is the recipe (`depth`, `types`, `window` or `from` and `to`, `undated`, `changed_within`, `show`, `budget`, `mail`, `notes`). `resolveLens(world, lens, reader)` resolves it for one reader over a world snapshot, the same answer as the Python package's `resolve_lens`: the kept ids and their rows in the profile's order, the cut counted by reason, and the mail part when the lens names a mail rule. A template (`isTemplate(el)`, subtype `Template`) resolves to nothing; `lensesInUse(membership, character.x_lens_uses)` gives the lenses a seat reads (the membership's choice wins).
-
-```typescript
-import { isLens, resolveLens } from '@onlyworlds/sdk';
-
-const lens = elements.find(isLens);
-if (!lens) throw new Error('this world holds no lens');
-const r = resolveLens({ elements, members, now: 1200 }, lens, { rung: 'contributor', character: me }, { asOf: 1194 });
-r.kept; r.rows; r.cut; // ids in order, rows as show makes them, e.g. { budget: 3, after_as_of: 1 }
-if (r.unreadable) console.warn(`x_lens.${r.unreadable} is outside the profile's table`);
-```
-
-The world holds the elements as the owner is served them; the reader's `rung` (`owner`, `contributor`, `guest` with its `whole` and `known_of` ids, `public`) decides what it sees (a hidden element a guest's `known_of` names is not in its view at all: hidden beats `known_of`, and only the guest's own creations, in `whole`, stay), and an owner reading `as` another reader keeps the owner's two counts (`anchor_not_visible`, `not_visible`), which no other reader ever carries. A row is the body as the reader is served it: below the owner, every link holds only ids the reader sees (a Pin's pair aimed elsewhere reads `""` and null), and `x_served_trimmed` names a Message's trimmed `characters` or `narrator` and a lens's trimmed anchors, never for the public; the owner's rows are the bodies as stored, and a body under the hidden mark carries `hidden: true` (the owner's, and a guest's of its own hidden creation). The profile: [`profiles/lens.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/lens.md).
-
-`DATE_FIELD` is the profile's date table (each dated type's date field; the ten timeless types are not in it), and `dateOf(el)` is an element's date as that table reads it: the whole number in its type's date field, else null. A timeline or a horizon dates elements exactly as the lens reader's fence does.
-
-`worldGraph(world, reader, options)` reads the same snapshot, for the same reader, as nodes and edges: `nodes` (`{ id, type, name, family, icon }`, by id; `family` is the type's colour word), `edges` (`{ source, field, target, index }`, one per link, by source, field and index), `edgesCut` (links to elements that are not nodes, by reason; with a lens, `outside_lens` counts links to elements the reader sees that the lens left out), `cut` and `unreadable` (the `x_lens` key a lens could not be read by, else null). Room elements, hidden and proposed ones and map space (Maps, Pins and Markers; a Zone is a node like any other) are out unless `rooms`, `hidden`, `proposed` or `mapSpace` brings them back (`hidden` and `proposed` are a keeper's alone, the owner's or a co-builder's, and a public reader takes no flag); the reading aids are out too, counted `reading_aid`, and no flag brings them back; with `{ lens }` the nodes are exactly what the lens kept, an aid among them when the lens names its pair in `types`.
-
-```typescript
-import { degreeOf, worldGraph } from '@onlyworlds/sdk';
-
-const g = worldGraph({ elements }, { rung: 'owner' }, { rooms: true });
-g.nodes; g.edges; g.edgesCut; // e.g. { map_space: 2, hidden: 1 }
-degreeOf(g); // each node's edges, in or out: { [id]: count }, "most linked" for a finder
-```
-
-### A world's own words for the types
-
-A world may carry `x_names` on the World: its own word for a type (Character shown as *Employee* in a work world), and a finer word for a supertype inside one. `typeWord(world, type, { supertype, many })` returns that word, or `null` for the standard's name. `world` is a `getWorld()` body (keel serves `x_` keys on the World) or a folder's `world.json`. The API, the folder, the schema and every id keep the standard's names; the word is for display only.
-
-```typescript
-import { typeWord } from '@onlyworlds/sdk';
-
-const world = await client.getWorld();
-const heading = typeWord(world, 'character', { many: true }) ?? 'Characters';
-const label = typeWord(world, el.type, { supertype: el.supertype }) ?? el.type;
-```
-
-The word is printed as written, never re-cased; folder names are never translated. The profile: [`profiles/names.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/names.md) in the schema distribution, with its fixture, which is this function's test.
-
-### Addresses
-
-An element has one address in three spellings: the site's `https://www.onlyworlds.com/w/<world id>/<type>/<id>`, `ow://<type>/<id>` inside a world, and `ow://<world id>/<type>/<id>` across worlds. A world by itself is `https://www.onlyworlds.com/w/<world id>` or `ow://<world id>`. Any of them may carry a moment, `@<step>` on the world's time line, and a lens, `?lens=<id>`.
-
-```typescript
-import { elementAddress, parseOwLink, OwAddressError } from '@onlyworlds/sdk';
-
-const link = elementAddress({ form: 'human', world: worldId, type: 'character', id: el.id });
-const r = parseOwLink(text); // { form, world, worldIsSlug, type, id, lens, moment, canonical }
-// a refusal throws OwAddressError: err.reason is the profile's name ('bad_id', 'uppercase', ...)
-```
-
-A field that holds an address is text: never fetch or resolve it on the server, and show one wording ("private or missing") for a world you cannot read and an element that is not there. `parseOwLink` reads one string whole; `findOwLinks(text)` finds every address inside other text, each with where it starts and ends. The profile: [`profiles/address.md`](https://github.com/OnlyWorlds/schema-dist/blob/main/profiles/address.md), with its fixture, which is these functions' test.
-
-### Names in prose
-
-`nameFinder` reads a world's element names once and answers a function that finds them in any text, so a page can show which words are elements: a hover, a suggestion, a link a person chooses to make. It finds and never writes.
-
-```typescript
-import { nameFinder } from '@onlyworlds/sdk';
-
-const elements = [{ id: 'a1', name: 'Iron Gate' }, { id: 'b2', name: 'Kira' }];
-const find = nameFinder(elements, { case: 'exact' }); // once per world
-const found = find("Kira's watch ends at the Iron Gate.");
-// [{ start: 0, end: 4, element: elements[1] }, { start: 25, end: 34, element: elements[0] }]
-```
-
-`case` must be given: `'exact'` for a page that marks names unasked, `'folded'` (case ignored) for an editor that only suggests. The rule, the same in the Python package's `name_finder`:
-
-- A whole name only: the character on each side is not a letter, a combining mark, a decimal digit or an underscore, in any script. `Kira's` and `Kira-led` hold the name; `Kiran` does not.
-- A name is trimmed and is three characters at least. Where several names start at one place, the longest whole one is taken.
-- A name two elements share is never answered, and nothing inside it is: the text stays plain there. `find.shared` lists those names, each as `{ name, elements }`, so a tool can say why a name never links.
-- Nothing is read inside an address or a Markdown link `[label](target)`.
-- Every mention is answered, in order. `element` is the object you passed in; `start` and `end` are string indexes into the text.
-
-`names` gives the names an element is found by, such as a tool's own aliases: `nameFinder(elements, { case: 'folded', names: (el) => [el.name, ...aliases(el)] })`. Which elements go in is yours to choose. Three limits: text is compared as written, with no Unicode normalisation; a space in a name matches that one space; and in a script written without spaces between words (Chinese, Japanese, Thai) a name is whole only between punctuation or spaces. The work for one text grows with its length alone, whatever the names and however many.
-
-### Open with
-
-The rows of an "Open with" menu for a world or one of its elements: the site's page first, then each listed tool that has a link for it, in the tools list's order, each with the word it says when it cannot open now. `TOOLS` is the [OnlyWorlds tools list](https://github.com/OnlyWorlds/tools) as of this release.
-
-```typescript
-import { openersFor, parseOwLink, TOOLS } from '@onlyworlds/sdk';
-
-const rows = openersFor(TOOLS, 'element', parseOwLink(link), { audience: 'member', signedIn: false, tool: 'mytool' }, { element });
-// [{ id: 'onlyworlds', name: 'onlyworlds.com', href, state: null }, { id: 'atlas', name: 'Atlas', href, state: 'Sign in to Atlas first' }, ...]
-```
-
-Pass the element as you were served it (`{ element }`): a tool whose element door does not open what it carries (a room element, a hidden or proposed one, a Map, Pin or Marker, a reading aid: the list's `open.element_skips`, each read as `worldGraph` reads it) has no row, rather than a link to a page that cannot open it. Without it, every row is there.
-
-`surface` says what the page knows and nothing is guessed: `audience` (`member` or `public`, the signed-out reader: the public sees the rows that need nothing, and a tool that needs an account as a row that says "Needs an account" and opens nothing, unless its row says it opens a public world with no account (`open.opens_public`); a tool that needs the device is not there), `signedIn` (`null` when the page cannot know, and then no row says so), `browser` (false in a desktop app), `phone`, `online` (false with no connection: every row whose link is a web address then says "Needs a connection"), and `tool`, the page's own client name, whose row says "You are here". Draw the rows as given; the words are decided here, so every surface says the same.
-
-### The Waymark: Open with, beside a name
-
-A web page can draw the rows above for a person: the OnlyWorlds mark beside a world's or an element's name, which opens a small menu (the fan-out) with the name line, the Open with rows, the lenses the page offers, and Copy link. It ships at its own subpath with its own stylesheet, so the core stays free of the DOM:
-
-```typescript
-import { mountWaymark } from '@onlyworlds/sdk/waymark';
-import '@onlyworlds/sdk/waymark.css'; // or <link rel="stylesheet"> to the file
-
-const dispose = mountWaymark(document.querySelector('h1.name')!, {
-  world: { id: worldId, name: 'Moppetopia' },
-  element,                 // the element's body as the API serves it; leave it out for the world's own fan-out
-  reader: 'member',        // 'member', 'guest' or 'public'
-  signedIn: false, tool: 'mytool', phone: false, browser: true,  // what the page knows, as openersFor takes it
-  ground: 'dark',          // or 'paper'
-});
-// later: dispose() removes every node, listener and timer it added
-```
-
-What it draws is decided in the core, never in the component: the rows and their words are `openersFor`'s, a member's "Last shaped in Atlas, 12 Oct" line is `doorsOf`'s newest entry in `doorWhere`'s words with its date, and Copy link copies `elementAddress`'s site address with the world's id (never a slug) and says "Link copied". When the page has no clipboard or the copy is refused, the fan-out stays open and the toast says "Could not copy the link." over the same address in a read-only line, selected for a copy by hand; it stays until the fan-out closes or Escape. The public face (`reader: 'public'`) shows the name and type, only the rows that need nothing first, and Copy link: no last door, no lenses. A row that cannot open now says why ("Sign in to Atlas first", "Needs the world on this phone", "Needs a connection") and is grey; grey means nothing else. The connection is read from `navigator.onLine` at each open, and while the fan-out is open its rows follow the window's `online` and `offline` events; offline, a web row is a link with no href, `aria-disabled="true"`, that does nothing when pressed. The page's own tool says "You are here", and its row leads nowhere: a button with `aria-current="page"`, not a link, which closes the fan-out and returns focus to what opened it.
-
-Options, each refused by name when unknown, before anything is drawn: `world` (its `x_names`, when present, words the type), `element`, `reader`, `tool`, `signedIn`, `browser`, `phone`, `tools` (default `TOOLS`), `lenses` (`[{ id, name }]`, the Through row; absent, no row; a lens chosen rides on the copied link as `?lens=`), `ground`, `entry` and `returnFocus`.
-
-**No inline style.** The component sets no `style` attribute and never touches `element.style`, so it runs under `style-src 'self'`; bundle `waymark.css` with the page. Every colour in it is one of the Waymark's two grounds, declared once at the top of the file.
-
-**Keyboard and small screens.** The mark is a button and the fan-out a menu: Tab goes from the mark through the rows in order, the arrow keys, Home and End move between rows, Escape closes it and returns focus to what opened it, and stops there: every Escape the fan-out handles calls `stopPropagation()`, so a page's own Escape listener does not also run (an Escape while it is closed is the page's). Focus moving out of it (Tab off the last row, Shift+Tab off the first, a click elsewhere) closes it too, and focus stays where it was moved; off the last row at the end of the page, where focus lands on the page itself, as well. The window losing focus (switching to another app) leaves it open. It opens below the name at its start; at each open it measures itself against the box that clips it (the nearest ancestor whose `overflow` on that axis is not `visible`, else the window) and opens at the name's end (`ow-waymark__pop--end`) when the start would cross that box's right edge, or above the name (`ow-waymark__pop--up`) when below would cross its bottom, and the toast takes the same side. At 480 px wide and below it is a sheet from the bottom, with no side chosen, its rows at least 44 px tall: every portrait phone (they run to about 430 px) and a desktop window as narrow, by width alone; the mark's tap area is at least 44 by 44 px at every width, without moving the glyph.
-
-**The ways in, one setting.** `entry: 'mark'` draws the mark beside the name as the button that opens the fan-out. `entry: 'menu'` draws no mark and gives back an "Open with" entry for the page's own "..." menu, as `dispose.entry` (a button; put it in the menu, and the disposer takes it out again), which opens the same fan-out. `entry: 'both'` draws the mark and gives the entry. Escape returns focus to the one that opened the fan-out: the mark, or for the entry `returnFocus`, the page's own element to take focus back (its "..." button, which stays visible when its menu closes), else the entry itself. `returnFocus` is refused with `entry: 'mark'` and when it is not an HTMLElement. The default is `'mark'`; which way in is the default for everyone waits on a round with people who have never seen the tools, so a surface that sets `entry` explicitly is unaffected when it changes.
-
-Not in this version: an element in a folder (no address on a server, so Copy link would copy the `ow://` text form), the moment picker (it needs a time bar), and the tools' own marks (every tool row wears one generic glyph for now). Try it locally with `npm run demo`, which builds the package and serves `demo/waymark.html` (`?current=atlas` makes the page Atlas, so its row says "You are here").
-
-## Tokens
-
-The account's token rating, which some OnlyWorlds tools use. `getStatus()` and `getEncryptionInfo()` are what keel still serves under `/tokens/`; `consume()`, `getAccessKey()` and the two session revokes are deprecated (keel answers 404) and leave in 5.0. To read the token rating, prefer `account.allowance()` above.
-
-```typescript
-import { TokenResource } from '@onlyworlds/sdk';
-const tokens = new TokenResource(writer);
-const status = await tokens.getStatus();
-```
-
-## SDK or MCP
-
-Use this SDK for known operations in your own code (CRUD, sync, bulk). To let an AI assistant that speaks MCP (the Model Context Protocol) explore a world in a chat, connect it to `https://www.onlyworlds.com/mcp` with the same key and PIN as `API-Key` and `API-Pin` headers.
-
-## Version 3 and the old API
-
-4.x speaks the current (v2) API only. The v1 client (`OnlyWorldsClient`) and CommonJS `require()` stay on 3.x, which remains published and supported: see [the migration guide](docs/migrating-3-to-4.md).
+- **Images.** `uploadImage` takes webp, png, jpeg or avif up to 15 MB and sends it straight to the upload host, which never sees your key; in a browser, `preparePhoto(file)` shrinks a phone photo first. [Images](https://onlyworlds.github.io/docs/development/typescript#images)
+- **Removing an image.** `writer.removeImage(image.url)` works for the image's uploader or the world's owner; the elements that show it keep their `image_url` until you clear it. [Removing an image](https://onlyworlds.github.io/docs/development/api/images#removing-an-image)
+- **Files on elements.** `uploadFile(type, id, file, { label, name, onProgress })` attaches a File, Blob, ArrayBuffer or Uint8Array (a pdf, a text file, an image or a world bundle) beside `listFiles`, `fileDownloadLink`, `removeFile` and `worldFiles`. Its refusals read as `err.isFileTooLarge`, `err.isFilesFull` and `err.isQuotaExceeded`. [Files](https://onlyworlds.github.io/docs/development/api/files)
+
+## Following a world
+
+- **Sync.** Poll `client.changesHead()`, which reads no element, and walk `client.changesAll(cursor)` from your saved cursor (opaque, and it never expires) when `head` or `epoch` moved. Edits to the world itself are not in the feed: compare `getWorld()`'s `updated_at`. [Follow changes](https://onlyworlds.github.io/docs/development/typescript#follow-changes)
+- **The world's own settings.** `client.patchWorld(partial)` writes them and takes a `getWorld()` body back, leaving out the keys the API does not take; `origin` is sent as `source` and `producer`. [The world](https://onlyworlds.github.io/docs/development/api/writes#the-world)
+
+## Accounts and sharing
+
+- **Signing in.** `new OwV2Client().signInWithPassword({ email, password, tokenName })` turns an OnlyWorlds email (or username) and password into an `ow_a_` account token for the device; a refusal is an `OwSignInError` with a `reason`. [Sign in with a password](https://onlyworlds.github.io/docs/development/typescript-accounts#sign-in-with-a-password)
+- **A world on the account.** The account token lists the account's worlds (`listAccountWorlds()`), mints keys (`mintWorldKey`) and makes a world with its one write key (`createAccountWorld`, the key shown once); an account's first world sends `pin`, which becomes the account PIN. [A world on the account](https://onlyworlds.github.io/docs/development/typescript-accounts#a-world-on-the-account)
+- **Invite links.** The owner makes, lists and revokes links with the account token (`createWorldLink`, `listWorldLinks`, `revokeWorldLink`); the invited person previews the code with `previewJoin` and accepts it with `acceptJoin`. [Invite links](https://onlyworlds.github.io/docs/development/typescript-accounts#invite-links)
+- **Who is in a world.** `client.me()` says who a key is (its `membership` is what `created_by` holds on what it creates, and `reading_aids.charter` is the house rules, to read first), and `client.members()` lists the roster, the owner's row with id `null`. [Who is in a world](https://onlyworlds.github.io/docs/development/typescript-accounts#who-is-in-a-world)
+- **Proposals.** A member can `propose` a change for the owner or a co-builder to accept or decline from `worldProposals()`. Under the world's switch an AI seat's edit throws `OwProposedError` (202) instead of writing; a person's key is never held. [Proposed changes](https://onlyworlds.github.io/docs/development/typescript-accounts#proposed-changes)
+
+## Finding and asking
+
+- **Search.** `client.search(q, { limit })` finds the elements whose name or text holds every word of `q` as a whole word (`APP-142` is two words). There are no pages: `truncated` means more matched than `limit` (at most 200). [Search](https://onlyworlds.github.io/docs/development/api/reads#search)
+- **Lookup in memory.** With a world's elements in hand, `buildWorldIndex(elements)` and `lookupWorld(index, question)` find the ones a plain question is about, with no model and no network; `renderElement` writes a short text card. [Find elements in a world](https://onlyworlds.github.io/docs/development/typescript-readers#find-elements-in-a-world)
+- **Ask and sort.** A signed-in account can have the OnlyWorlds AI proxy answer from the elements you found (`buildAskContext`, then `account.ai('ask', …)`), or sort loose notes into rows for the user to review (`account.ai('sort', …)`). Proposed, hidden and room elements stay out unless you ask. [Find elements in a world](https://onlyworlds.github.io/docs/development/typescript-readers#find-elements-in-a-world)
+- **The token rating.** Asking and sorting spend the account's daily token rating, the same meter the Council uses; `account.allowance()` reads it without spending anything, and `aiUses()` lists the uses the proxy runs. [Ask your world](https://onlyworlds.github.io/docs/development/ai#ask-your-world-without-a-key-of-your-own)
+- **A Character's context as text.** `draughtText(await client.draught(characterId))` gives one Character's context packet as plain text for a prompt, the same bytes as the Python package's `draught_text`. [As text](https://onlyworlds.github.io/docs/development/api/draught#as-text)
+
+## World files and folders
+
+- **World files.** `readWorldFile(bytes)` opens an `.owworld` file (a zip of a world folder) in the browser or in Node, and refuses an unsafe file before returning anything, with `err.reason` on an `OwWorldFileError`. `writeWorldFile(files, topDir)` gives the same bytes for the same files; neither carries the world's `api` key. [World files](https://onlyworlds.github.io/docs/development/typescript#world-files)
+- **What a world file leaves out.** By default the writer leaves out author fields and private records and keeps hidden elements: pass `includeHidden: false` for a share, `includeAuthorFields: true` or `includePrivateRecords: true` for your own archive. [Writing a world file](https://onlyworlds.github.io/docs/development/typescript#writing-a-world-file)
+- **A folder as the source.** `folderFetch(entries)` from `@onlyworlds/sdk/folder` lets the same client read a world folder or a world file, with no account and no key. [A world folder as the source](https://onlyworlds.github.io/docs/development/typescript#a-world-folder-as-the-source)
+- **The MCP tools on a folder.** `folderMcpTools` from `@onlyworlds/sdk/mcp` answers the MCP server's read tools from a world folder, for your own MCP server to carry. [The MCP tools on a world folder](https://onlyworlds.github.io/docs/development/typescript#the-mcp-tools-on-a-world-folder)
+- **A Kanka export.** `convertKanka(bytes)` from `@onlyworlds/sdk/convert` turns a Kanka JSON export into a world folder's files and a report, in memory, the same folder as the Python package's Kanka import. [Kanka](https://onlyworlds.github.io/docs/development/python-import#kanka)
+
+## Reading worlds as a tool
+
+These readers take a world you have read, as its viewer is served it, and give back what a tool shows.
+
+- **World calendars.** `worldCalendars`, `resolveCalendar`, `formatStep` and `parseDate` read the calendars Atlas keeps in an element's `atlas_calendar` (read it, never write it); with no calendar, show the bare number. `@onlyworlds/sdk/calendar` loads in a page with no build step. [World calendars](https://onlyworlds.github.io/docs/development/typescript-readers#world-calendars)
+- **The room.** `isRoomElement(el)` is true for an element of a world's chat room (one of the `ROOM_PAIRS`, marked `x_room_of`); a lore view leaves those out unless the person asks. [Schema constants](https://onlyworlds.github.io/docs/development/typescript#schema-constants)
+- **Reading aids.** `charterOf(world, reader)` reads a world's charter (its house rules), guide and domains as one reader sees them, the packet `me()` serves as `reading_aids`. [Reading aids](https://onlyworlds.github.io/docs/development/typescript-readers#reading-aids)
+- **Messages.** `isMessage`, `senderStatus`, `readMarkOf`, `unreadFor` and `threadOf` read a world's messages (Narratives with supertype `Message`). A sender is a claim until the server's `created_by` proves it. [Messages](https://onlyworlds.github.io/docs/development/typescript-readers#messages)
+- **Lenses.** `resolveLens(world, lens, reader)` reads a world through a saved lens (a Construct with supertype `Lens`) for one reader, and returns the kept ids and what was cut. [Lenses](https://onlyworlds.github.io/docs/development/typescript-readers#lenses)
+- **A world as a graph.** `worldGraph(world, reader, options)` gives one reader's nodes and edges, with room, hidden and proposed elements, map space and reading aids left out unless an option brings them back. [A world as a graph](https://onlyworlds.github.io/docs/development/typescript-readers#a-world-as-a-graph)
+- **A world's own words for the types.** `typeWord(world, type, { supertype, many })` gives the word a world prints for a type (*Employee* for Character in a work world), or `null` for the standard's name. [Schema constants](https://onlyworlds.github.io/docs/development/typescript#schema-constants)
+- **Addresses.** `parseOwLink(text)` reads an element's address in any of its three spellings and `elementAddress` writes one; `findOwLinks` finds every address in a text. [Addresses](https://onlyworlds.github.io/docs/development/typescript-readers#addresses)
+- **Names in prose.** `nameFinder(elements, { case })` finds a world's element names in any text, whole names only, and never writes. [Names in prose](https://onlyworlds.github.io/docs/development/typescript-readers#names-in-prose)
+- **Open with.** `openersFor(TOOLS, kind, address, surface)` gives the rows of an Open with menu: the site first, then each listed tool, each with the words it shows when it cannot open now. [Open with](https://onlyworlds.github.io/docs/development/typescript-readers#open-with)
+- **The Waymark.** `mountWaymark` from `@onlyworlds/sdk/waymark`, with `waymark.css`, draws that menu beside a name on a web page. `npm run demo` in this repository serves a demo page. [The Open with menu, drawn](https://onlyworlds.github.io/docs/development/typescript-readers#the-open-with-menu-drawn)
+- **More readers.** Landing, map space, layouts, records, report threads, work items and proposed elements are on the same page. [Reading worlds as a tool](https://onlyworlds.github.io/docs/development/typescript-readers)
+
+## More
+
+- **Schema constants.** `ELEMENT_TYPES`, `ELEMENT_ICONS`, `FIELD_SCHEMA`, `elementColor`, `dragField` and the rest come from the schema distribution; show a type's colour with its icon and label, never alone. `SCHEMA.md` in the package describes every field, and AI agents should read `AGENTS.md` first. [Schema constants](https://onlyworlds.github.io/docs/development/typescript#schema-constants)
+- **Hidden elements.** The world's owner and co-builders can `hide(type, id)` an element and `unhide` it; only they and its creator still see it. [Hidden elements](https://onlyworlds.github.io/docs/development/typescript#hidden-elements)
+- **Tokens.** `TokenResource` keeps `getStatus()` and `getEncryptionInfo()`; its `consume()`, `getAccessKey()` and two session revokes are deprecated and leave in 5.0. [Deprecated names](https://onlyworlds.github.io/docs/development/typescript#deprecated-names)
+- **SDK or MCP.** Use this SDK for known operations in your own code. To let an AI assistant that speaks MCP (the Model Context Protocol) explore a world in a chat, connect it to `https://www.onlyworlds.com/mcp` with the same key and PIN as `API-Key` and `API-Pin` headers. [SDK or MCP?](https://onlyworlds.github.io/docs/development/typescript#sdk-or-mcp)
+- **Version 3 and the old API.** 4.x speaks the current (v2) API only; the v1 client (`OnlyWorldsClient`) and CommonJS `require()` stay on 3.x, which remains published. [TypeScript SDK](https://onlyworlds.github.io/docs/development/typescript)
 
 ## Links
 
-[Docs](https://onlyworlds.github.io/docs/development/typescript) · [Games](https://onlyworlds.github.io/docs/development/games) · [API reference](https://www.onlyworlds.com/api/docs) · [Issues](https://github.com/OnlyWorlds/sdk/issues) · [Changelog](https://github.com/OnlyWorlds/sdk/blob/main/CHANGELOG.md)
+[Docs](https://onlyworlds.github.io/docs/development/typescript) · [Accounts, members and sharing](https://onlyworlds.github.io/docs/development/typescript-accounts) · [Reading worlds as a tool](https://onlyworlds.github.io/docs/development/typescript-readers) · [Games](https://onlyworlds.github.io/docs/development/games) · [API reference](https://www.onlyworlds.com/api/docs) · [Migrating from 3.x](docs/migrating-3-to-4.md) · [Issues](https://github.com/OnlyWorlds/sdk/issues) · [Changelog](https://github.com/OnlyWorlds/sdk/blob/main/CHANGELOG.md)
 
 ## Licence and contributions
 
