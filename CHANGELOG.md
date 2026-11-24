@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.201.1] - 2026-11-24
+
+### Fixed
+
+- **`readWorldFile` no longer refuses a world file whose world holds a tool's own `world.json` under a dot-folder** (`abbey/.atlas/world.json`, or deeper, `abbey/elements/character/.trash/world.json`). A dot-folder is never a world, wherever it sits, as the folder reader already had it: it never reads a dot-folder. So the same world now opens as a file and as a folder. Only the check for a second `world.json` inside the world skips those paths; every other check still runs on their entries (paths, names, duplicates, collisions, size and count), and they are still returned in `files`. A nested `world.json` outside a dot-folder and outside `records/` (`abbey/inner/world.json`) is still refused. This follows a ruling on the world-file conformance checks OW-4 and OW-5; the conformance case comes with the next schema distribution serial.
+
 ## [4.201.0] - 2026-11-24
 
 ### Fixed

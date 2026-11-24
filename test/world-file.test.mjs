@@ -11,7 +11,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -20,6 +21,7 @@ import {
   readWorldFile, writeWorldFile, OwWorldFileError, WORLD_FILE_MAX_BYTES, WORLD_FILE_MAX_ENTRIES, WORLD_FILE_MEDIA_TYPE,
   simpleCaseFold, nfc,
 } from '../dist/index.js';
+import { folderFetch, entriesFromDirectory } from '../dist/folder.js';
 
 const j = (v) => JSON.stringify(v, null, 2) + '\n';
 const text = (b) => new TextDecoder().decode(b);
@@ -272,7 +274,6 @@ test('refuses two worlds in one file (OW-2)', () => {
 test('refuses a world nested inside the world, at the root or in its folder (OW-5)', () => {
   refuses(zipSync({ 'world.json': strToU8(j({ id: WID, name: 'W' })), 'other/world.json': strToU8(j({ id: 'o', name: 'O' })) }), 'more_than_one');
   refuses(zipSync({ ...world, 'w/inner/world.json': strToU8(j({ id: 'o', name: 'O' })) }), 'more_than_one');
-  refuses(zipSync({ ...world, 'w/.atlas/world.json': strToU8(j({ id: 'o', name: 'O' })) }), 'more_than_one');
 });
 
 test('refuses something that is not a zip at all (OW-1)', () => {
@@ -312,6 +313,78 @@ test('OW-5: a producer\'s world.json under records/ is data, never a second worl
   assert.deepEqual(back.files.map(f => f.path), ['records/lab/world.json', 'world.json']);
   assert.deepEqual(back.files[0].data, lab);
   refuses(zipSync({ ...world, 'w/elements/world.json': lab }), 'more_than_one');
+});
+
+// A dot-folder is never a world, wherever it sits: OW-5 does not look under one. The same five
+// cases, in the same order, are in the Python package's tests/test_worldfile.py.
+const ABBEY = '0192a000-aaaa-7bbb-8ccc-0000000000ab';
+const ADA = '0192a000-aaaa-7bbb-8ccc-0000000000a1';
+const ELSEWHERE = j({ id: '0192a000-aaaa-7bbb-8ccc-0000000000ef', name: 'Elsewhere' });
+/** Abbey's world folder, as path -> text: its world.json, one character, and `more`. */
+const abbeyTree = (more = {}) => ({
+  'world.json': j({ id: ABBEY, name: 'Abbey' }),
+  'elements/character/ada.json': j({ id: ADA, name: 'Ada' }),
+  ...more,
+});
+/** The tree zipped under one top-level folder `abbey/`, built here: the writer never emits a dot-folder unprompted. */
+const abbeyZip = (tree) => zipSync(Object.fromEntries(Object.entries(tree).map(([p, t]) => [`abbey/${p}`, strToU8(t)])));
+/** What the folder source makes of some entries: the world it answers and each file it serves and skips. */
+async function folderView(entries) {
+  let report;
+  const fetchFolder = folderFetch(entries, { onRead: (r) => { report = r; } });
+  const world = await (await fetchFolder('http://folder.invalid/api/v2/world/')).json();
+  return { world, served: report.served, skipped: report.skipped };
+}
+/** The file is accepted as abbey, carries every entry, and reads to exactly what the folder on disk reads to. */
+async function readsAsItsFolder(tree) {
+  const back = readWorldFile(abbeyZip(tree));
+  assert.equal(back.worldId, ABBEY);
+  assert.equal(back.name, 'Abbey');
+  assert.deepEqual(back.files.map(f => f.path), Object.keys(tree).sort());
+  const fromFile = await folderView(back.files);
+  assert.deepEqual(fromFile.served.map(s => s.path), ['elements/character/ada.json']);
+  assert.equal(fromFile.world.counts.total, 1);
+  const dir = mkdtempSync(join(tmpdir(), 'ow-dot-folder-'));
+  try {
+    for (const [path, t] of Object.entries(tree)) {
+      mkdirSync(join(dir, ...path.split('/').slice(0, -1)), { recursive: true });
+      writeFileSync(join(dir, ...path.split('/')), t);
+    }
+    assert.deepEqual(fromFile, await folderView(await entriesFromDirectory(dir)));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('OW-5: a tool\'s world.json in a dot-folder at the world\'s root is no second world; the file reads as its folder', async () => {
+  await readsAsItsFolder(abbeyTree({ '.atlas/world.json': ELSEWHERE, '.atlas/world-prefs.json': j({ zoom: 2 }) }));
+});
+
+test('OW-5: a dot-folder deeper in the world (elements/character/.trash/) is no second world either', async () => {
+  await readsAsItsFolder(abbeyTree({ 'elements/character/.trash/world.json': ELSEWHERE }));
+});
+
+test('OW-5: a name that is dots and more (..atlas) is a dot-folder name', async () => {
+  await readsAsItsFolder(abbeyTree({ '..atlas/world.json': ELSEWHERE }));
+});
+
+test('OW-5: still refused, each by its own reason: a nested world.json outside a dot-folder, a . or .. segment, one beside a dot-folder or a dot file', () => {
+  refuses(abbeyZip(abbeyTree({ 'inner/world.json': ELSEWHERE })), 'more_than_one');
+  refuses(abbeyZip(abbeyTree({ 'inner/.atlas/../world.json': ELSEWHERE })), 'unsafe_path');
+  refuses(abbeyZip(abbeyTree({ '.atlas/./world.json': ELSEWHERE })), 'unsafe_path');
+  // Only a folder's name counts: the dot-folder beside it is skipped, inner/world.json is not, and a dot file is no folder.
+  for (const beside of [{ 'inner/.hidden/world.json': ELSEWHERE }, { 'inner/.hidden': 'x' }]) {
+    assert.throws(
+      () => readWorldFile(abbeyZip(abbeyTree({ ...beside, 'inner/world.json': ELSEWHERE }))),
+      (e) => e instanceof OwWorldFileError && e.reason === 'more_than_one' && e.message === 'A second world.json sits inside the world: abbey/inner/world.json.',
+    );
+  }
+});
+
+test('OW-5: records/ is still excepted', () => {
+  const back = readWorldFile(abbeyZip(abbeyTree({ 'records/lab/world.json': ELSEWHERE })));
+  assert.equal(back.worldId, ABBEY);
+  assert.deepEqual(back.files.map(f => f.path), ['elements/character/ada.json', 'records/lab/world.json', 'world.json']);
 });
 
 test('OW-6: the mimetype marker is never required, refused with other bytes, and never returned', () => {

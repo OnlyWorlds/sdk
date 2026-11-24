@@ -27,7 +27,8 @@
  *   type. A marker is never required.
  * - `not_a_world`, `more_than_one` (OW-2, OW-3, OW-5): no world, two worlds, a
  *   second `world.json` inside the world (one under `records/` is a
- *   producer's data), a `world.json` that will not parse or has no string id.
+ *   producer's data; one under a dot-folder is a tool's, since a dot-folder is
+ *   never a world), a `world.json` that will not parse or has no string id.
  * Files beside the world's folder and archive junk (`__MACOSX`, `.DS_Store`,
  * `Thumbs.db`) are ignored (OW-4), still checked and counted.
  *
@@ -497,10 +498,13 @@ export function readWorldFile(bytes: Uint8Array, opts: OwReadWorldFileOptions = 
     if (roots.size > 1) refuse('more_than_one', `The file holds worlds in ${[...roots].join(', ')}.`);
     prefix = [...roots][0];
   }
-  // OW-5: no world.json inside the world but its own, except a producer's under records/.
+  // OW-5: no world.json inside the world but its own, except a producer's under records/. A dot-folder is
+  // never a world, wherever it sits: a tool's own world.json under one is not looked at here, as a folder
+  // reader never reads it. Only this check skips those paths; every check above ran on them.
   const inside = new Set(candidates.filter(n => n.startsWith(prefix)));
   for (const n of inside) {
     const rel = n.slice(prefix.length);
+    if (rel.split('/').slice(0, -1).some(seg => seg.startsWith('.'))) continue;
     if (rel !== WORLD_FILE && rel.endsWith(`/${WORLD_FILE}`) && !rel.startsWith('records/')) {
       refuse('more_than_one', `A second world.json sits inside the world: ${n}.`);
     }
