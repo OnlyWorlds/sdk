@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.203.0] - 2026-11-24
+
+### Added
+
+- **`mostLinkedOf(graph, { perType })`: the most linked elements of each type.** From the graph `worldGraph` answers for a reader, so only what that reader is served is counted (map space, hidden, proposed and room elements stay out unless the graph brought them in). For each type, at most `perType` (default 3) of its elements by the landing profile's degree, highest first, ties by id in code point order; a node of degree 0 and a known-of node are never picked, and a type with nothing to pick is left out. It answers `{ per_type, by_type }`, each entry `{ id, name, degree }`, the name as the graph holds it or null. A few of every type, never one ranking; it is "the most linked", not "where to start": in a world with a secret, the secret is often the hub, so where a world has a Guide, the Guide is the start. A draft reading, held to the package's own fixture (`test/fixtures/most-linked.fixture.json`, the same bytes as the Python package's) until the landing profile takes it. An unknown option, or a `perType` that is not a whole number of 1 or more, is refused by name.
+
 ## [4.202.0] - 2026-11-24
 
 ### Added

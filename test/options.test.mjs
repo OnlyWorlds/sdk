@@ -18,7 +18,7 @@ import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
   preparePhoto, parseDate, resolveCalendar, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
   isToEveryone, hasUnseenRecipients, readMarkOf,
-  elementAddress, resolveLens, worldGraph, openersFor, landingOf, trailByPlace, layoutAround, unplacedAround, layoutByLinks3d, readReportLine, readReportLines, nameFinder,
+  elementAddress, resolveLens, worldGraph, openersFor, landingOf, mostLinkedOf, trailByPlace, layoutAround, unplacedAround, layoutByLinks3d, readReportLine, readReportLines, nameFinder,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
 
@@ -111,6 +111,7 @@ const FENCED = {
   'resolveLens#3': () => resolveLens({ elements: [] }, { type: 'construct', supertype: 'Lens', name: 'L' }, { rung: 'owner' }, U),
   'worldGraph#2': () => worldGraph({ elements: [] }, { rung: 'owner' }, U),
   'landingOf#1': () => landingOf({ nodes: [], edges: [] }, U),
+  'mostLinkedOf#1': () => mostLinkedOf({ nodes: [], edges: [] }, U),
   'nameFinder#1': () => nameFinder([{ id: 'k', name: 'Kira' }], { case: 'exact', ...U }),
   // 4.135.0: a layout method's input, its settings and its places, fenced at every level.
   'trailByPlace#0': () => trailByPlace({ ...trailInput, ...U }),
@@ -157,6 +158,7 @@ Object.assign(DATA, {
   'degreeOf#0': 'the graph worldGraph answered',
   'outDegreeOf#0': 'the graph worldGraph answered',
   'landingOf#0': 'the graph worldGraph answered',
+  'mostLinkedOf#0': 'the graph worldGraph answered',
   'layoutByKind#0': 'the graph worldGraph answered',
   'layoutAround#0': 'the graph worldGraph answered',
   'unplacedByKind#0': 'the graph worldGraph answered',
@@ -222,6 +224,7 @@ test('the fenced calls work without the unknown key: a refusal is the key, not t
   assert.deepEqual(resolveLens({ elements: [] }, { type: 'construct', supertype: 'Lens', name: 'L' }, { rung: 'owner' }, { asOf: 1, clock: '2026-10-27T12:00:00Z' }).cut, {});
   assert.deepEqual(worldGraph({ elements: [] }, { rung: 'owner' }, { lens: null, asOf: 1, clock: '2026-10-27T12:00:00Z', rooms: true, hidden: true, proposed: true, mapSpace: true }).nodes, []);
   assert.equal(landingOf({ nodes: [], edges: [] }, { heads: 1, hops: 1, size: 1 }).size, 1);
+  assert.equal(mostLinkedOf({ nodes: [], edges: [] }, { perType: 1 }).per_type, 1);
   assert.equal(openersFor([], 'world', { form: 'human', world: '0199c3a1-7b2e-7c3d-8e4f-5a6b7c8d9e0f' }, { tool: null, audience: 'member', signedIn: null, browser: true, phone: false }).length, 1);
 });
 

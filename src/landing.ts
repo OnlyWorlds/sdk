@@ -156,3 +156,74 @@ export function landingOf(graph: OwWorldGraph, options?: OwLandingOptions | null
 
   return { mode: graph.nodes.length < size ? 'gaps' : 'graph', size, clusters, unclustered, gaps };
 }
+
+/** `perType` (default 3), a whole number, 1 or more; null is the default. */
+export interface OwMostLinkedOptions {
+  perType?: number | null;
+}
+
+/** One of the most linked: its id, its name as the graph holds it (null when none), its degree. */
+export interface OwLinked {
+  id: string;
+  name: string | null;
+  degree: number;
+}
+
+export interface OwMostLinked {
+  /** The count per type it was read at. */
+  per_type: number;
+  /** By type, the types in code point order; a type with nothing to pick is left out. */
+  by_type: Record<string, OwLinked[]>;
+}
+
+const MOST_LINKED_OPTION_KEYS = ['perType'] as const;
+
+/**
+ * The most linked elements of each type, from the graph `worldGraph` answered for the asker, so it holds exactly what that
+ * reader may see (map space, hidden, proposed and room elements are out unless the graph brought them in). For each
+ * type, its most linked elements by the landing profile's degree (`degreeOf`'s count), highest first, ties by id in
+ * code point order, at most `perType` of each: a few of every type, never one ranking. It is "the most linked",
+ * never "where to start": where a world has a Guide, the Guide is the start, and a door says so. A node of degree 0 and a
+ * known-of node are never picked. It reads the graph it is given and folds nothing: a node's type and name are
+ * echoed as written. The same graph and options give the same answer, byte for byte. A draft reading, held to the
+ * package's own fixture until the landing profile takes it. An unknown option, or one that is not a whole number
+ * of 1 or more, is refused by name.
+ */
+export function mostLinkedOf(graph: OwWorldGraph, options?: OwMostLinkedOptions | null): OwMostLinked {
+  if (!isBody(graph) || !Array.isArray((graph as unknown as Record<string, unknown>).nodes)
+    || !Array.isArray((graph as unknown as Record<string, unknown>).edges)) {
+    throw new TypeError('mostLinkedOf: graph is what worldGraph answers, an object with nodes and edges lists.');
+  }
+  if (options !== undefined && options !== null && !isBody(options)) {
+    throw new TypeError(`mostLinkedOf: options is an object, such as { perType: 3 }; got ${JSON.stringify(options) ?? typeof options}.`);
+  }
+  refuseUnknownOptions('mostLinkedOf', options, MOST_LINKED_OPTION_KEYS);
+  const opts = (isBody(options) ? options : {}) as Record<string, unknown>;
+  const raw = valueOf(opts, 'perType');
+  if (raw !== null && (typeof raw !== 'number' || !Number.isSafeInteger(raw) || raw < 1)) {
+    throw new RangeError(`mostLinkedOf: perType is a whole number, 1 or more; got ${JSON.stringify(raw) ?? typeof raw}.`);
+  }
+  const per = raw === null ? 3 : raw;
+
+  // A Map, not an object, while counting: an id such as `constructor` is no inherited key here.
+  const degree = new Map<string, number>(graph.nodes.map((n) => [n.id, 0]));
+  const add = (id: string) => { const d = degree.get(id); if (d !== undefined) degree.set(id, d + 1); };
+  for (const e of graph.edges) {
+    add(e.source);
+    if (e.target !== e.source) add(e.target);
+  }
+
+  const byType = new Map<string, OwLinked[]>();
+  for (const n of graph.nodes) {
+    const d = degree.get(n.id) ?? 0;
+    if (d === 0 || n.known_of === true) continue;
+    const list = byType.get(n.type) ?? [];
+    list.push({ id: n.id, name: typeof n.name === 'string' ? n.name : null, degree: d });
+    byType.set(n.type, list);
+  }
+  const byTypeOut: Record<string, OwLinked[]> = {};
+  for (const t of [...byType.keys()].sort(byCodePoint)) {
+    byTypeOut[t] = byType.get(t)!.sort((a, b) => (b.degree - a.degree) || byCodePoint(a.id, b.id)).slice(0, per);
+  }
+  return { per_type: per, by_type: byTypeOut };
+}

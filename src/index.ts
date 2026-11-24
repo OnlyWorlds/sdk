@@ -79,8 +79,8 @@ export type { OwLensReader, OwLensWorld, OwLensOptions, OwLensReading, OwLensMai
 export { worldGraph, degreeOf, outDegreeOf, DECLARED_LINKS } from './graph';
 export type { OwGraphOptions, OwGraphMark, OwGraphCutReason, OwGraphNode, OwGraphEdge, OwWorldGraph } from './graph';
 // The landing profile (schema-dist profiles/landing.md): a world's first picture at a door, read from its graph.
-export { landingOf } from './landing';
-export type { OwLanding, OwLandingCluster, OwLandingGap, OwLandingGapKind, OwLandingMember, OwLandingMode, OwLandingOptions } from './landing';
+export { landingOf, mostLinkedOf } from './landing';
+export type { OwLanding, OwLandingCluster, OwLandingGap, OwLandingGapKind, OwLandingMember, OwLandingMode, OwLandingOptions, OwLinked, OwMostLinked, OwMostLinkedOptions } from './landing';
 // The map-space profile (schema-dist profiles/map-space.md): a world's Maps, Zone outlines and Pins as geometry in the Map's pixels.
 export { mapSpace } from './mapspace';
 export type { OwMapSpace, OwMapSpaceMap, OwMapSpaceOutline, OwMapSpaceOutReason, OwMapSpacePin, OwMapSpacePoint } from './mapspace';
