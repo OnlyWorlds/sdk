@@ -96,12 +96,55 @@ const FIXTURE = [
   ['world/world.json', 'b303008ad2dfa867a9f4eb4568e881297c410fc78d45f35c1ec5cecba22f7fa9'],
 ];
 
+/**
+ * One file from the host, asked up to three times: a thrown fetch, a 429 or a 5xx is the host's bad minute and is
+ * asked again after `waitMs`; any other answer is returned as it came. The bytes are held to a pinned hash by the
+ * caller, so asking again can only bring the same file or none.
+ */
+async function fetchHeld(url, { fetchImpl = fetch, waitMs = 1500 } = {}) {
+  let last;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    if (attempt > 1) await new Promise((resolve) => setTimeout(resolve, waitMs));
+    try {
+      const res = await fetchImpl(url);
+      if (res.status !== 429 && res.status < 500) return res;
+      last = res;
+    } catch (cause) {
+      last = cause;
+    }
+  }
+  if (last instanceof Error) throw last;
+  return last;
+}
+
+test('the fixture\'s fetch asks again on a 503, a 429 and a thrown fetch, three times at most, and never on a 404', async () => {
+  const host = (answers) => { let calls = 0; return { fetchImpl: async () => { const a = answers[calls++]; if (a instanceof Error) throw a; return { status: a }; }, calls: () => calls, waitMs: 0 }; };
+  let h = host([503, 429, 200]);
+  assert.equal((await fetchHeld('x', h)).status, 200);
+  assert.equal(h.calls(), 3);
+  h = host([new Error('reset'), 200]);
+  assert.equal((await fetchHeld('x', h)).status, 200);
+  assert.equal(h.calls(), 2);
+  h = host([503, 503, 503, 200]);
+  assert.equal((await fetchHeld('x', h)).status, 503, 'the third bad answer is the answer');
+  assert.equal(h.calls(), 3);
+  h = host([new Error('one'), new Error('two'), new Error('three'), 200]);
+  await assert.rejects(fetchHeld('x', h), /three/);
+  assert.equal(h.calls(), 3);
+  h = host([404, 200]);
+  assert.equal((await fetchHeld('x', h)).status, 404, 'a missing file is not asked for again');
+  assert.equal(h.calls(), 1);
+  h = host([200, 503]);
+  assert.equal((await fetchHeld('x', h)).status, 200);
+  assert.equal(h.calls(), 1);
+});
+
 /** Every fixture file, fetched and held to its hash; any failure throws, so the test fails. */
 async function fetchFixture() {
   return Promise.all(FIXTURE.map(async ([path, sha]) => {
     let res;
     try {
-      res = await fetch(ATLAS + path);
+      res = await fetchHeld(ATLAS + path);
     } catch (cause) {
       throw new Error(`the conformance fixture could not be fetched (${path}): ${cause}`);
     }
