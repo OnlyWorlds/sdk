@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.202.0] - 2026-11-24
+
+### Added
+
+- **The MCP tools on a folder count, as the server does.** `folderMcpTools` gains `count_elements`: how many elements `list_elements` serves, by type, with its filters (`name_contains`, `supertype`, `subtype`, `ids`, `created_by`, `link` with a `type`, `include_room`, `include_proposed`); with no `type`, all 22, 0 included. It answers `{counts, total, proposed_left_out, room_left_out}`, each left-out number what its own flag adds with the other as given. Every `list_elements` page now carries `total`, the whole list's length before the page is cut. The tool definitions are read again from the server, so the descriptions also say what a sign-in reads. Compared with onlyworlds.com's MCP server on the practice world: 104 calls, no difference outside the ten already named (the practice world holds no room element, reading aid or proposed element, so the two left-out numbers are held by the tests).
+
 ## [4.201.2] - 2026-11-24
 
 ### Fixed

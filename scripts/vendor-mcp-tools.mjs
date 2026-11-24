@@ -26,7 +26,7 @@ const OUT = new URL('../src/mcp/door.json', import.meta.url);
 const PIN = new URL('../codegen/schema-pin.json', import.meta.url);
 
 /** The tools a world folder can answer, in the order the door lists them; every other tool is left out. */
-const READ_TOOLS = ['list_element_types', 'get_element_schema', 'search_schema', 'list_worlds', 'get_me', 'list_elements', 'get_element', 'search_elements'];
+const READ_TOOLS = ['list_element_types', 'get_element_schema', 'search_schema', 'list_worlds', 'get_me', 'list_elements', 'count_elements', 'get_element', 'search_elements'];
 const SCHEMA_TOOLS = new Set(['list_element_types', 'get_element_schema', 'search_schema']);
 const HERE_WORLD = "Here it answers from a world folder on this computer, not from onlyworlds.com; `world` is the id in the folder's world.json.";
 const HERE_SCHEMA = 'Here it answers on this computer, from the schema as onlyworlds.com served it when this package was built.';

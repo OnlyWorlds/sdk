@@ -1,7 +1,7 @@
 {
   "_about": "The hosted MCP door's read tools as it serves them, for @onlyworlds/sdk/mcp. Written by scripts/vendor-mcp-tools.mjs from the live door; never edit by hand.",
   "source": "https://www.onlyworlds.com/mcp: tools/list, resources/list, resources/templates/list, list_element_types and get_element_schema for each type, asked with the public demo key 0000000001",
-  "read_at": "2026-11-22",
+  "read_at": "2026-11-24",
   "schema_version": "00.34.01",
   "tools": [
     {
@@ -96,7 +96,7 @@
     },
     {
       "name": "get_me",
-      "description": "Who you are in this world, and its front door: the same body as\n`GET /api/v2/me` for your credential, built by the same function.\n\nReturns GET /me's body: `world` ({id, name}), `scope` (`read` or `write`),\n`kind`, `role`, `membership`, `character`, `lenses`, `lenses_from`,\n`front_door` and `reading_aids` always; `name` for an AI or a player seat;\n`x_served_trimmed` when a lens you chose is left out of `lenses`. `kind` is\n`owner`, `person`, `player` (a player seat: a friend reading as one\nCharacter) or `agent` (an AI seat: an AI's own membership and key, which a\nperson answers for).\nOnly an AI seat's writes are ever held for review, and only in a world whose\nowner chose to review them: there an update, a link edit or a bulk replace is proposed,\nnot applied (the answer names the `proposal`), for a keeper (the owner or a\nco-builder) to accept or decline; a create lands at once, marked\n`x_review_proposed`, and lists and searches leave it out unless `include_proposed` is true. Every\nother key's writes apply at once.\n`front_door.charter` is the id of the world's Charter, the house rules: read\nit first, with `get_element(\"law\", id)`.\n`front_door.charter_skill` lists the ids of the Objects it names, each\nread with `get_element(\"object\", id)`. Each is null, or the list empty,\nwhen there is none you may read. `front_door` also names who answers for\nyou (`sponsor`, `sponsor_character`), your own Character (`my_character`)\nand the seats you answer for (`my_seats`). `reading_aids` is what to read\nfirst, as you read the world: the Charter with its rules and skill, the\nGuide, the Domains and the strand. Its Guide, each Domain and each strand\nslot is a typed pointer, `{id, type, name}` (a Domain's `hubs` and\nfront_door's `charter_element` and `charter_skill_elements` are `{type,\nid}`): fetch any of them with `get_element(type, id)`. The strand's slots\nare `narrative`, `event`, `location`, `character` and `now`, each null when\nthere is none, beside `same`. Signed in through a hosted client (a\nbearer), where this server offers one, it answers as your own read key in\nthat world answers with no PIN sent; a PIN sent beside the bearer is never\nread. Otherwise it requires an\nAPI-Key, and asks of it what GET /api/v2/me asks of it. A PIN sent with a\nkey is treated exactly as that route treats it: refused where the route\nrefuses it, counted toward the lockout where the route counts it, ignored\nwhere the route ignores it.",
+      "description": "Who you are in this world, and its front door: the same body as\n`GET /api/v2/me` for your credential, built by the same function.\n\nReturns GET /me's body: `world` ({id, name}), `scope` (`read` or `write`),\n`kind`, `role`, `membership`, `character`, `lenses`, `lenses_from`,\n`front_door` and `reading_aids` always; `name` for an AI or a player seat;\n`x_served_trimmed` when a lens you chose is left out of `lenses`. `kind` is\n`owner`, `person`, `player` (a player seat: a friend reading as one\nCharacter) or `agent` (an AI seat: an AI's own membership and key, which a\nperson answers for).\nHow many elements a world holds, by type, is asked of `count_elements`,\nnever counted off the feed (`get_changes`).\nOnly an AI seat's writes are ever held for review, and only in a world whose\nowner chose to review them: there an update, a link edit or a bulk replace is proposed,\nnot applied (the answer names the `proposal`), for a keeper (the owner or a\nco-builder) to accept or decline; a create lands at once, marked\n`x_review_proposed`, and lists and searches leave it out unless `include_proposed` is true. Every\nother key's writes apply at once.\n`front_door.charter` is the id of the world's Charter, the house rules: read\nit first, with `get_element(\"law\", id)`.\n`front_door.charter_skill` lists the ids of the Objects it names, each\nread with `get_element(\"object\", id)`. Each is null, or the list empty,\nwhen there is none you may read. `front_door` also names who answers for\nyou (`sponsor`, `sponsor_character`), your own Character (`my_character`)\nand the seats you answer for (`my_seats`). `reading_aids` is what to read\nfirst, as you read the world: the Charter with its rules and skill, the\nGuide, the Domains and the strand. Its Guide, each Domain and each strand\nslot is a typed pointer, `{id, type, name}` (a Domain's `hubs` and\nfront_door's `charter_element` and `charter_skill_elements` are `{type,\nid}`): fetch any of them with `get_element(type, id)`. The strand's slots\nare `narrative`, `event`, `location`, `character` and `now`, each null when\nthere is none, beside `same`. Signed in through a hosted client (a\nbearer), where this server offers one, it answers as your own read key in\nthat world answers with no PIN sent; a PIN sent beside the bearer is never\nread. Otherwise it requires an\nAPI-Key, and asks of it what GET /api/v2/me asks of it. A PIN sent with a\nkey is treated exactly as that route treats it: refused where the route\nrefuses it, counted toward the lockout where the route counts it, ignored\nwhere the route ignores it.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -128,7 +128,7 @@
     },
     {
       "name": "list_elements",
-      "description": "List elements of one `type` in the world named by your API-Key header,\nnewest-created first.\n\n`type` is a slug from `list_element_types` (e.g. \"character\"). Optional\n`name_contains` filters by case-insensitive name substring; `supertype` is\ntrimmed and matched without regard to case, the whole word, as the profiles\nread it and as GET /api/v2/{type}?supertype= does (\" message \" and \"MESSAGE\"\nmatch Message, \"Messages\" does not; an empty string lists the elements with\nnone); `subtype` is read the same way, as ?subtype= does. `ids` (a list of\n1 to 200 element ids) keeps only those, as ?ids= does. `created_by` (a\nmembership id, as GET /api/v2/members lists them, or \"owner\" for the\nowner's own writes) keeps what that member created, as ?created_by= does.\n`link` filters by the type's single-link fields, as ?<field>=<id> does: one\nobject, each key a single-link field of this type (get_element_schema lists\nthem under `single_link`), each value an element id, or \"\" for the\nelements you are served with none. A key with no member behind it (an\n`ow_r_` or `ow_w_` key the owner made, a classic or demo key) or the\nowner's own sign-in, a co-builder's, and a contributor's while no element\nof the world is hidden are served each stored link, whatever it names, and\nmatch on it. Any other is served a link null where it names no element it\ncan see, and on an element it knows of only as a stub (`known_of`),\nwhatever the stub stores; it matches only what it is served: an element it\ncannot see gives the same empty list as an id that names nothing.\n`list_elements(\"pin\", link={\"map\": \"<map id>\"})` lists the pins on one map;\n`link={\"location\": \"<id>\"}` on a character, the characters there.\n`limit` (default 100, max 1000) and `offset` page the result.\nRequires a READ or WRITE API-Key. Returns `{data: [element, ...], limit,\noffset, has_more, proposed_left_out}` where each element is the full v2 wire\nshape and `id` is a UUID. Use `get_element(type, id)` for a single element.\nA parlor's room elements (marked `x_room_of`) are left out unless\n`include_room` is true, and so are the world's reading aids (its Charter,\nGuide and Domains, marked `x_charter_of`). With `include_room` true both come\nback. The Charter (the house rules) and the skills it names are in `get_me`'s\n`front_door`; a list is never where they are taken from. The strand, the\nstory this world is about, is the World's `x_strand` mark, not an element: no\nlist serves it; `get_me`'s `reading_aids` names its elements, each fetched with\n`get_element`.\nAn element carrying x_review_proposed is proposed, not yet reviewed by a\nkeeper; it is left out unless asked for. Any value counts but null, blank\ntext, [] and {}. `include_proposed` true serves it whole, mark on: treat it\nas proposed, not yet reviewed, never as a fact. A stub (`known_of`) of a\nproposed element shows no mark: its being served under `include_proposed`\nis the sign.\n`proposed_left_out` says how many matching elements were left out (0 with\n`include_proposed`).",
+      "description": "List elements of one `type` in the world named by your API-Key header or, signed in, by `world`,\nnewest-created first.\n\n`type` is a slug from `list_element_types` (e.g. \"character\"). Optional\n`name_contains` filters by case-insensitive name substring; `supertype` is\ntrimmed and matched without regard to case, the whole word, as the profiles\nread it and as GET /api/v2/{type}?supertype= does (\" message \" and \"MESSAGE\"\nmatch Message, \"Messages\" does not; an empty string lists the elements with\nnone); `subtype` is read the same way, as ?subtype= does. `ids` (a list of\n1 to 200 element ids) keeps only those, as ?ids= does. `created_by` (a\nmembership id, as GET /api/v2/members lists them, or \"owner\" for the\nowner's own writes) keeps what that member created, as ?created_by= does.\n`link` filters by the type's single-link fields, as ?<field>=<id> does: one\nobject, each key a single-link field of this type (get_element_schema lists\nthem under `single_link`), each value an element id, or \"\" for the\nelements you are served with none. A key with no member behind it (an\n`ow_r_` or `ow_w_` key the owner made, a classic or demo key) or the\nowner's own sign-in, a co-builder's, and a contributor's while no element\nof the world is hidden are served each stored link, whatever it names, and\nmatch on it. Any other is served a link null where it names no element it\ncan see, and on an element it knows of only as a stub (`known_of`),\nwhatever the stub stores; it matches only what it is served: an element it\ncannot see gives the same empty list as an id that names nothing.\n`list_elements(\"pin\", link={\"map\": \"<map id>\"})` lists the pins on one map;\n`link={\"location\": \"<id>\"}` on a character, the characters there.\n`limit` (default 100, max 1000) and `offset` page the result.\nRequires a READ or WRITE API-Key, or a sign-in. Returns `{data: [element, ...], limit,\noffset, has_more, total, proposed_left_out}` where each element is the full v2 wire\nshape and `id` is a UUID; `total` is how many elements the whole list holds, all\npages, with these arguments. Use `get_element(type, id)` for a single element.\nA parlor's room elements (marked `x_room_of`) are left out unless\n`include_room` is true, and so are the world's reading aids (its Charter,\nGuide and Domains, marked `x_charter_of`). With `include_room` true both come\nback. The Charter (the house rules) and the skills it names are in `get_me`'s\n`front_door`; a list is never where they are taken from. The strand, the\nstory this world is about, is the World's `x_strand` mark, not an element: no\nlist serves it; `get_me`'s `reading_aids` names its elements, each fetched with\n`get_element`.\nAn element carrying x_review_proposed is proposed, not yet reviewed by a\nkeeper; it is left out unless asked for. Any value counts but null, blank\ntext, [] and {}. `include_proposed` true serves it whole, mark on: treat it\nas proposed, not yet reviewed, never as a fact. A stub (`known_of`) of a\nproposed element shows no mark: its being served under `include_proposed`\nis the sign.\n`proposed_left_out` says how many matching elements were left out as\nproposed: what `include_proposed` adds to this list (0 with\n`include_proposed`). A proposed room element or reading aid is among them\nonly with `include_room` true.\nHow many elements a world holds, by type, is asked of `count_elements`,\nnever counted off the feed (`get_changes`).",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -251,8 +251,129 @@
       "here": "Here it answers from a world folder on this computer, not from onlyworlds.com; `world` is the id in the folder's world.json."
     },
     {
+      "name": "count_elements",
+      "description": "How many elements `list_elements` serves you, by type: the number you\nreach by paging it to its end with the same arguments. Ask the size of a\nworld here.\n\nWith no `type`: every one of the 22 types, 0 included. With `type` (a slug\nfrom `list_element_types`): that type only. `name_contains`, `supertype`,\n`subtype`, `ids`, `created_by`, `link`, `include_room` and\n`include_proposed` are list_elements' own and filter as there; `link`\nneeds a `type`. Requires a READ or WRITE API-Key, or a sign-in. Returns `{counts: {type:\nn, ...}, total, proposed_left_out, room_left_out}`; `total` is the sum of\n`counts`.\nA parlor's room elements (marked `x_room_of`) are left out unless\n`include_room` is true, and so are the world's reading aids (its Charter,\nGuide and Domains, marked `x_charter_of`). `room_left_out` is how many room\nelements and reading aids turning `include_room` on adds (0 with\n`include_room`); in a world with no parlor, all it counts is reading aids.\nAn element carrying x_review_proposed is proposed, not yet reviewed by a\nkeeper; it is left out unless asked for. `proposed_left_out` is how many\nproposed elements turning `include_proposed` on adds (0 with\n`include_proposed`).\nEach left-out number is what its own flag adds, with the other flag as you\nset it. A proposed element that is also a room element or a reading aid is\nin neither number: it comes back only with both flags true. So for every\nproposed element, read `proposed_left_out` with `include_room` true; for\neverything you may read, read `total` with both flags true. An edit held for\nreview as a proposal is not an element: it is in no number here.\nA key or a sign-in counts only what it may read; a stub (`known_of`)\ncounts as one element.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "name_contains": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "supertype": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "subtype": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "link": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "include_room": {
+            "default": false,
+            "type": "boolean"
+          },
+          "include_proposed": {
+            "default": false,
+            "type": "boolean"
+          },
+          "world": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The world to read, by id or by its public page's slug. With an API-Key, leave it out (or name the key's own world by its id): a key reads its own world only. list_worlds names the worlds you can read here."
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "here": "Here it answers from a world folder on this computer, not from onlyworlds.com; `world` is the id in the folder's world.json."
+    },
+    {
       "name": "get_element",
-      "description": "Fetch one element by `type` and `id` (a UUID) from the world named by your\nAPI-Key header.\n\n`type` is a slug from `list_element_types`. Returns the full v2 wire shape\n(the same body as `GET /api/v2/{type}/{id}`): `type`, `id`, `name`, scalar\nfields, link fields as UUID arrays, and any extension fields inline. Requires a\nREAD or WRITE API-Key. Errors if no element of that type with that id exists in\nthe world.",
+      "description": "Fetch one element by `type` and `id` (a UUID) from the world named by your\nAPI-Key header or, signed in, by `world`.\n\n`type` is a slug from `list_element_types`. Returns the full v2 wire shape\n(the same body as `GET /api/v2/{type}/{id}`): `type`, `id`, `name`, scalar\nfields, link fields as UUID arrays, and any extension fields inline. Requires a\nREAD or WRITE API-Key, or a sign-in. Errors if no element of that type with that id exists in\nthe world.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -294,7 +415,7 @@
     },
     {
       "name": "search_elements",
-      "description": "Search the world named by your API-Key header for elements whose name or\ntext fields (description and each type's prose fields, such as a\nCharacter's background) hold every word of `query` as a whole word,\nignoring case: \"ore\" does not find \"more\", and \"copper mine\" needs both\nwords somewhere in the element. No stemming.\n\n`query` is 2 to 200 characters. Optional `type` (a slug from\n`list_element_types`) searches one type only; `limit` (default 50, clamped\nto 1-200) caps the results. Name matches come first, then the rest, each by\ntype and then by name. Returns `{query, results: [{type, id, name,\nsupertype, subtype, field, snippet}, ...], count, truncated}`: `field` is\nwhere the words were found (`name` or a text field), `snippet` up to 160\ncharacters of it around the first match, and `truncated` true when more\nmatched than `limit` (no further pages: narrow the query). `id` is a UUID;\ncall `get_element(type, id)` for the full body. Requires a READ or WRITE\nAPI-Key; a guest key searches only what it may read. This mirrors\n`GET /api/v2/search`, except that a parlor's room elements (marked\n`x_room_of`) and the world's reading aids (its Charter, Guide and Domains,\nmarked `x_charter_of`) are left out unless `include_room` is true, and proposed\nelements are too. The Charter (the house rules) and the skills it names are in\n`get_me`'s `front_door`; a search is never where they are taken from.\nAn element carrying x_review_proposed is proposed, not\nyet reviewed by a keeper; it is left out unless asked for. Any value but\nnull counts, an object or not. `include_proposed` true keeps it, its row\ncarrying `x_review_proposed`: treat it as proposed, not yet reviewed, never\nas a fact. A stub's row (`known_of`) of a proposed element shows no mark:\nits being served under `include_proposed` is the sign.\n`proposed_left_out` says how many matching elements were left out (0 with\n`include_proposed`).",
+      "description": "Search the world named by your API-Key header or, signed in, by `world` for elements whose name or\ntext fields (description and each type's prose fields, such as a\nCharacter's background) hold every word of `query` as a whole word,\nignoring case: \"ore\" does not find \"more\", and \"copper mine\" needs both\nwords somewhere in the element. No stemming.\n\n`query` is 2 to 200 characters. Optional `type` (a slug from\n`list_element_types`) searches one type only; `limit` (default 50, clamped\nto 1-200) caps the results. Name matches come first, then the rest, each by\ntype and then by name. Returns `{query, results: [{type, id, name,\nsupertype, subtype, field, snippet}, ...], count, truncated}`: `field` is\nwhere the words were found (`name` or a text field), `snippet` up to 160\ncharacters of it around the first match, and `truncated` true when more\nmatched than `limit` (no further pages: narrow the query). `id` is a UUID;\ncall `get_element(type, id)` for the full body. Requires a READ or WRITE\nAPI-Key, or a sign-in; a guest key searches only what it may read. This mirrors\n`GET /api/v2/search`, except that a parlor's room elements (marked\n`x_room_of`) and the world's reading aids (its Charter, Guide and Domains,\nmarked `x_charter_of`) are left out unless `include_room` is true, and proposed\nelements are too. The Charter (the house rules) and the skills it names are in\n`get_me`'s `front_door`; a search is never where they are taken from.\nAn element carrying x_review_proposed is proposed, not\nyet reviewed by a keeper; it is left out unless asked for. Any value but\nnull counts, an object or not. `include_proposed` true keeps it, its row\ncarrying `x_review_proposed`: treat it as proposed, not yet reviewed, never\nas a fact. A stub's row (`known_of`) of a proposed element shows no mark:\nits being served under `include_proposed` is the sign.\n`proposed_left_out` says how many matching elements were left out as\nproposed: what `include_proposed` adds to the matches (0 with\n`include_proposed`). A proposed room element or reading aid is among them\nonly with `include_room` true.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -364,7 +485,7 @@
     {
       "name": "world_index",
       "uri": "onlyworlds://world",
-      "description": "The world named by your API-Key header and its elements by type, names and ids only (at most 100 per type by name, `has_more` beyond; a type's full list is the list_elements tool's, in its own order), for picking one to read as onlyworlds://element/{type}/{id}. Proposed elements (x_review_proposed, not yet reviewed by a keeper) are left out and counted in `proposed_left_out`. The Charter and the skills it names are in the get_me tool's `front_door`, never taken from this index.",
+      "description": "The world named by your API-Key header or by a sign-in to an account with one world, and its elements by type, names and ids only (at most 100 per type by name, `has_more` beyond; a type's full list is the list_elements tool's, in its own order), for picking one to read as onlyworlds://element/{type}/{id}. Proposed elements (x_review_proposed, not yet reviewed by a keeper) are left out and counted in `proposed_left_out`. The Charter and the skills it names are in the get_me tool's `front_door`, never taken from this index.",
       "mimeType": "application/json"
     }
   ],
@@ -378,7 +499,7 @@
     {
       "name": "element",
       "uriTemplate": "onlyworlds://element/{type}/{id}",
-      "description": "One element from the world named by your API-Key header (the get_element tool's output, the v2 wire shape). `type` is a slug from onlyworlds://schema, `id` a UUID from onlyworlds://world.",
+      "description": "One element from the world named by your API-Key header or by a sign-in to an account with one world (the get_element tool's output, the v2 wire shape). `type` is a slug from onlyworlds://schema, `id` a UUID from onlyworlds://world.",
       "mimeType": "application/json"
     }
   ],

@@ -405,6 +405,18 @@ async function main() {
   await tool(`list_elements ${type} created_by not a member`, 'list_elements', { type, created_by: 'x' }, { expectError: true });
   await tool(`list_elements ${type} limit="x"`, 'list_elements', { type, limit: 'x' }, { expectError: true });
 
+  // (d2) count_elements (keel 630): each flag alone and together, one type, a filter, a link, its refusals.
+  await tool('count_elements', 'count_elements', {});
+  await tool('count_elements include_room', 'count_elements', { include_room: true });
+  await tool('count_elements include_proposed', 'count_elements', { include_proposed: true });
+  await tool('count_elements include_room include_proposed', 'count_elements', { include_room: true, include_proposed: true });
+  await tool(`count_elements ${type}`, 'count_elements', { type });
+  if (withSuper) await tool(`count_elements ${type} supertype`, 'count_elements', { type, supertype: withSuper.supertype });
+  await tool(`count_elements ${type} created_by=owner`, 'count_elements', { type, created_by: 'owner' });
+  if (linkField) await tool(`count_elements ${type} link ${linkField}=""`, 'count_elements', { type, link: { [linkField]: '' } });
+  await tool('count_elements link with no type', 'count_elements', { link: { location: OTHER_WORLD } }, { expectError: true });
+  await tool('count_elements bogus type', 'count_elements', { type: 'bogus' }, { expectError: true });
+
   // (e) get_element.
   await tool(`get_element ${type} first`, 'get_element', { type, id: els[0].id });
   const odd = proposed[0] ?? room[0] ?? els[els.length - 1];

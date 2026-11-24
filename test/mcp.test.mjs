@@ -71,7 +71,7 @@ const names = (page) => page.data.map((e) => e.name);
 
 test('tools/list, resources and templates: the door\'s read tools as served, with one sentence each', () => {
   const mcp = folderMcpTools([{ entries: harbour() }]);
-  assert.deepEqual(mcp.tools.map((t) => t.name), ['list_element_types', 'get_element_schema', 'search_schema', 'list_worlds', 'get_me', 'list_elements', 'get_element', 'search_elements']);
+  assert.deepEqual(mcp.tools.map((t) => t.name), ['list_element_types', 'get_element_schema', 'search_schema', 'list_worlds', 'get_me', 'list_elements', 'count_elements', 'get_element', 'search_elements']);
   for (const t of mcp.tools) {
     const served = door.tools.find((d) => d.name === t.name);
     assert.deepEqual(Object.keys(t), ['name', 'description', 'inputSchema', 'outputSchema', 'annotations']);
@@ -154,12 +154,13 @@ test('list_worlds names each world served, as its owner; world names one by the 
 test('list_elements: newest-created first, then by id; no created_at after every stamped one, by id', async () => {
   const mcp = folderMcpTools([{ entries: harbour() }]);
   const page = await ok(mcp, 'list_elements', { type: 'character' });
-  assert.deepEqual(Object.keys(page), ['data', 'limit', 'offset', 'has_more', 'proposed_left_out']);
+  assert.deepEqual(Object.keys(page), ['data', 'limit', 'offset', 'has_more', 'total', 'proposed_left_out']);
   // Bram (00:00Z) and Cora (01:00+01:00) are the same instant: by id, Cora's id(2) first.
   assert.deepEqual(names(page), ['Cora', 'Bram', 'Ada Copper', 'Settled', 'Eli', 'Dov']);
   assert.equal(page.limit, 100);
   assert.equal(page.offset, 0);
   assert.equal(page.has_more, false);
+  assert.equal(page.total, 6);
   // The room's Seat is left out, uncounted; the proposed Pell is left out and counted; a blank mark is settled.
   assert.equal(page.proposed_left_out, 1);
   // Each row is the element as the platform's list serves it to the owner.
@@ -172,6 +173,7 @@ test('list_elements: include_room and include_proposed bring back what they name
   const all = await ok(mcp, 'list_elements', { type: 'character', include_room: true, include_proposed: true });
   assert.deepEqual(names(all), ['Seat', 'Pell Copper', 'Cora', 'Bram', 'Ada Copper', 'Settled', 'Eli', 'Dov']);
   assert.equal(all.proposed_left_out, 0);
+  assert.equal(all.total, 8);
   assert.deepEqual(all.data[1].x_review_proposed, { by: 'an AI seat' });
   // The reading aid (a Law with supertype Charter and the mark) is aside; a Charter without the mark is lore.
   assert.deepEqual(names(await ok(mcp, 'list_elements', { type: 'law' })), ['The King’s Charter']);
@@ -226,6 +228,39 @@ test('list_elements: name_contains, supertype, subtype, ids, created_by and link
   assert.equal(await refused(mcp, 'list_elements', { type: 'character', created_by: 'x' }), envelope('created_by must be a membership id (as GET /members lists them) or owner.', 'created_by'));
   // The door's order: the link's own check before the ids', the route's link check before its ids'.
   assert.match(await refused(mcp, 'list_elements', { type: 'character', link: { location: 'nope' }, ids: ['also nope'] }), /location must be a UUID/);
+});
+
+// --- count_elements ---------------------------------------------------------------------------------
+
+test('count_elements: every type, 0 included; what include_room and include_proposed each add', async () => {
+  const mcp = folderMcpTools([{ entries: harbour() }]);
+  const all = await ok(mcp, 'count_elements', {});
+  assert.deepEqual(Object.keys(all), ['counts', 'total', 'proposed_left_out', 'room_left_out']);
+  assert.equal(Object.keys(all.counts).length, 22);
+  assert.deepEqual(Object.fromEntries(Object.entries(all.counts).filter(([, n]) => n)), { character: 6, location: 1, law: 1, pin: 1 });
+  assert.equal(all.total, 9);
+  // Pell is proposed; the Seat, the Charter (the reading aid) and the room Message are aside.
+  assert.equal(all.proposed_left_out, 1);
+  assert.equal(all.room_left_out, 3);
+  const room = await ok(mcp, 'count_elements', { include_room: true });
+  assert.deepEqual([room.total, room.proposed_left_out, room.room_left_out], [12, 1, 0]);
+  const proposed = await ok(mcp, 'count_elements', { include_proposed: true });
+  assert.deepEqual([proposed.total, proposed.proposed_left_out, proposed.room_left_out], [10, 0, 3]);
+  const both = await ok(mcp, 'count_elements', { include_room: true, include_proposed: true });
+  assert.deepEqual([both.total, both.proposed_left_out, both.room_left_out], [13, 0, 0]);
+  // The number list_elements serves, type by type, paged to its end with the same arguments.
+  for (const [type, n] of Object.entries(all.counts)) {
+    assert.equal((await ok(mcp, 'list_elements', { type, limit: 1 })).total, n, type);
+  }
+});
+
+test('count_elements: list_elements own filters, one type, and its refusals', async () => {
+  const mcp = folderMcpTools([{ entries: harbour() }]);
+  assert.deepEqual(await ok(mcp, 'count_elements', { type: 'character', supertype: 'sailor' }), { counts: { character: 2 }, total: 2, proposed_left_out: 0, room_left_out: 0 });
+  assert.deepEqual((await ok(mcp, 'count_elements', { type: 'character', link: { location: LOC } })).counts, { character: 1 });
+  assert.equal(await refused(mcp, 'count_elements', { link: { location: LOC } }), "link filters by one type's single-link fields: name that type.");
+  assert.equal(await refused(mcp, 'count_elements', { type: 'ship' }), await refused(mcp, 'list_elements', { type: 'ship' }));
+  assert.equal(await refused(mcp, 'count_elements', { type: 'character', link: { birthplace: 'no' } }), envelope('birthplace must be a UUID.', 'birthplace'));
 });
 
 // --- get_element ------------------------------------------------------------------------------------

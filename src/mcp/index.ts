@@ -17,7 +17,7 @@
  *
  * The tools are the door's read tools a folder can answer, by the door's names, parameters and
  * answers: `list_element_types`, `get_element_schema`, `search_schema`, `list_worlds`, `get_me`,
- * `list_elements`, `get_element` and `search_elements`; the resources `onlyworlds://schema` and
+ * `list_elements`, `count_elements`, `get_element` and `search_elements`; the resources `onlyworlds://schema` and
  * `onlyworlds://world`, the templates `onlyworlds://schema/{type}` and
  * `onlyworlds://element/{type}/{id}`. What a folder cannot answer (`get_changes`, `get_draught`,
  * `list_files`, `read_file`, the writes) is not listed, and a call to it is the door's answer to a
@@ -315,6 +315,8 @@ const WORLD_KEYS = ['entries', 'client'];
 const NO_WORLD = 'No world is served here yet: list_worlds lists none. The schema tools answer without one.';
 const IDS_MAX = 200;
 const LIST_MAX = 1000;
+/** keel's mcp_server.tools_read.LINK_NEEDS_TYPE, count_elements' refusal of a `link` with no `type`. */
+const LINK_NEEDS_TYPE = "link filters by one type's single-link fields: name that type.";
 const INDEX_PER_TYPE = 100;
 
 /**
@@ -417,7 +419,24 @@ export function folderMcpTools(worlds: readonly OwMcpWorld[], opts: OwMcpToolsOp
     limit = Math.min(limit, LIST_MAX);
     if (offset < 0) throw new Refusal('offset must be zero or a positive integer.');
     const w = await worldFor(a.world);
+    let rows = await listed(w, type, a);
+    if (a.include_room !== true) rows = rows.filter((b) => !aside(b));
+    let leftOut = 0;
+    if (a.include_proposed !== true) {
+      leftOut = rows.filter(handsOnAsProposed).length;
+      rows = rows.filter((b) => !handsOnAsProposed(b));
+    }
+    // One past the page, to say has_more, as the door reads it; `total` is the whole list's length (keel 630).
+    const cut = newestFirst(rows).slice(offset, offset + limit + 1);
+    return { data: cut.slice(0, limit), limit, offset, has_more: cut.length > limit, total: rows.length, proposed_left_out: leftOut };
+  };
 
+  /**
+   * Every element of one type that list_elements' filters keep (`name_contains`, `supertype`, `subtype`, `ids`,
+   * `created_by`, `link`), before `include_room` and `include_proposed` cut: keel's `_listed`, shared by
+   * list_elements and count_elements as there.
+   */
+  const listed = async (w: Held, type: string, a: Record<string, unknown>): Promise<Body[]> => {
     // keel's _list_filters: the door's own checks first, then the route's (their refusals the route's envelope).
     const link = a.link as Record<string, unknown> | null;
     const singles = DOOR.element_schemas[type].single_link;
@@ -470,16 +489,33 @@ export function folderMcpTools(worlds: readonly OwMcpWorld[], opts: OwMcpToolsOp
       }
     }
 
-    let rows = await through(() => readType(w.client, type, { filter, ids: idKeys, createdBy }));
-    if (a.include_room !== true) rows = rows.filter((b) => !aside(b));
-    let leftOut = 0;
-    if (a.include_proposed !== true) {
-      leftOut = rows.filter(handsOnAsProposed).length;
-      rows = rows.filter((b) => !handsOnAsProposed(b));
+    return through(() => readType(w.client, type, { filter, ids: idKeys, createdBy }));
+  };
+
+  /**
+   * count_elements (keel 630): how many elements list_elements serves, by type, with its own filters; with no
+   * `type`, all 22, 0 included. `room_left_out` is what `include_room` adds and `proposed_left_out` what
+   * `include_proposed` adds, each with the other flag as given, as keel's `_tally` counts them.
+   */
+  const countElements = async (a: Record<string, unknown>) => {
+    const type = (a.type as string | null) ?? null;
+    if (type !== null && !TYPE_SLUGS.includes(type as ElementType)) throw new Refusal(unknownType(type));
+    if (a.link !== null && a.link !== undefined && type === null) throw new Refusal(LINK_NEEDS_TYPE);
+    const w = await worldFor(a.world);
+    const served = (rows: Body[]) => (a.include_proposed === true ? rows : rows.filter((b) => !handsOnAsProposed(b)));
+    const counts: Record<string, number> = {};
+    let proposedLeftOut = 0;
+    let roomLeftOut = 0;
+    for (const slug of type === null ? TYPE_SLUGS : [type as ElementType]) {
+      const all = await listed(w, slug, a);
+      const lore = a.include_room === true ? all : all.filter((b) => !aside(b));
+      const kept = served(lore);
+      counts[slug] = kept.length;
+      if (a.include_proposed !== true) proposedLeftOut += lore.length - kept.length;
+      if (a.include_room !== true) roomLeftOut += served(all).length - kept.length;
     }
-    // One past the page, to say has_more, as the door reads it.
-    const cut = newestFirst(rows).slice(offset, offset + limit + 1);
-    return { data: cut.slice(0, limit), limit, offset, has_more: cut.length > limit, proposed_left_out: leftOut };
+    const total = Object.values(counts).reduce((s, n) => s + n, 0);
+    return { counts, total, proposed_left_out: proposedLeftOut, room_left_out: roomLeftOut };
   };
 
   const getElement = async (a: Record<string, unknown>) => {
@@ -600,6 +636,7 @@ export function folderMcpTools(worlds: readonly OwMcpWorld[], opts: OwMcpToolsOp
     list_worlds: () => listWorlds(),
     get_me: getMe,
     list_elements: listElements,
+    count_elements: countElements,
     get_element: getElement,
     search_elements: searchElements,
   };
