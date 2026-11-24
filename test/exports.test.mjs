@@ -22,6 +22,10 @@ const NOT_EXPORTED = {
     DaySlot: "the calendar kernel's internal day slot, reached only through StepPosition",
     StepPosition: "weekdayForStep's internal cache parameter; no exported function makes one",
   },
+  'calendar.d.ts': {
+    DaySlot: "the calendar kernel's internal day slot, reached only through StepPosition",
+    StepPosition: "weekdayForStep's internal cache parameter; no exported function makes one",
+  },
   'convert.d.ts': {},
   'folder.d.ts': {},
   'mcp.d.ts': {},

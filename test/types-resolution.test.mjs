@@ -1,6 +1,6 @@
 /**
  * What a TypeScript project is handed, read the way its compiler reads it: a consumer file that imports
- * the package's root and its `/waymark`, `/convert`, `/folder` and `/mcp` subpaths is type-checked against the built declarations under each
+ * the package's root and its `/waymark`, `/convert`, `/folder`, `/mcp` and `/calendar` subpaths is type-checked against the built declarations under each
  * module resolution a project can be set to. `node` (the older one, and the only settled one before
  * TypeScript 4.7) does not read `exports`, so a subpath's types reach it through `typesVersions`: without
  * that map the root's types are found and `@onlyworlds/sdk/waymark` is not.
@@ -44,6 +44,8 @@ import { folderFetch, NOT_IN_A_FOLDER } from '@onlyworlds/sdk/folder';
 import type { OwFolderReadReport } from '@onlyworlds/sdk/folder';
 import { folderMcpTools } from '@onlyworlds/sdk/mcp';
 import type { OwMcpCallToolResult } from '@onlyworlds/sdk/mcp';
+import { formatStep, readCalendarValue } from '@onlyworlds/sdk/calendar';
+import type { CalendarConfig } from '@onlyworlds/sdk/calendar';
 
 const config: OwClientConfig = {};
 const client = new OwV2Client(config);
@@ -56,6 +58,9 @@ export async function names(): Promise<string[]> {
   const converted: OwKankaConversion = convertKanka(new Uint8Array());
   const listed: OwMcpCallToolResult = await mcp.callTool('list_worlds');
   void one; void page; void layoutByLinks3d; void mountWaymark; void converted; void local; void NOT_IN_A_FOLDER; void listed;
+  const tally: CalendarConfig | null = readCalendarValue({});
+  const said: string = tally ? formatStep(tally, 0) : '';
+  void said;
   return [kind];
 }
 `;
@@ -80,7 +85,7 @@ function check(resolution, module) {
 }
 
 test('the package gives types for a subpath, and this test reads which from its exports', () => {
-  assert.deepEqual(typed, [['waymark', 'dist/waymark.d.ts'], ['convert', 'dist/convert.d.ts'], ['folder', 'dist/folder.d.ts'], ['mcp', 'dist/mcp.d.ts']], 'a new typed subpath: give the consumer file below an import of it');
+  assert.deepEqual(typed, [['waymark', 'dist/waymark.d.ts'], ['convert', 'dist/convert.d.ts'], ['folder', 'dist/folder.d.ts'], ['mcp', 'dist/mcp.d.ts'], ['calendar', 'dist/calendar.d.ts']], 'a new typed subpath: give the consumer file below an import of it');
 });
 
 test('every subpath with types is in typesVersions, naming the same file as exports', () => {

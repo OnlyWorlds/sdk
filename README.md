@@ -376,6 +376,8 @@ if (cal) {
 
 No calendar, or a broken one, gives null: show the bare number. `breakdownStep` gives the parts (year, era, month, day, weekday, an intercalary day). The rules are Atlas's calendar design, §5 and §5b.
 
+A page with no build step takes the same names from `@onlyworlds/sdk/calendar` (since 4.199.0): `dist/calendar.js` is one file of about 26 KB that imports nothing, so a `<script type="module">` can load it as it ships. A tool that bundles takes them from the main entry, as above.
+
 ## Errors
 
 Every non-2xx response throws `OwApiError` with the API's envelope: `.status`, `.type`, `.code`, `.param` (the field that failed) and `.docUrl`, which is worth showing to your users. A transport failure throws `OwNetworkError`. `err.isValidationError` covers the common case. A write sent with `ifMatch` that found the element moved throws `OwPreconditionFailedError` (412, `err.isPreconditionFailed`), an `OwApiError` that also carries `current`. Proposals add `OwStaleProposalError` (409) and `OwProposedError` (202), and the predicates `isFieldNotVisible`, `isTooManyOpen`, `isStaleProposal`, `isProposedOnly` and `isOwnProposal`.

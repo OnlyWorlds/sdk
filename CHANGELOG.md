@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.199.0] - 2026-11-24
+
+### Added
+
+- **`@onlyworlds/sdk/calendar`**: the calendar names (`worldCalendars`, `resolveCalendar`, `formatStep`, `parseDate`, `breakdownStep` and the rest of what the main entry exports from its calendar code) as one file that imports nothing, for a page with no build step. The main entry cannot be loaded that way: it is split into chunks, and one of them imports `fflate` by its bare name. `dist/calendar.js` is about 26 KB and a `<script type="module">` loads it as it ships; read in Chromium, Firefox and WebKit from a page that requests that one file. It holds its own copy of the code, so a tool that bundles takes the names from the main entry and not from both. A test holds that the file has no import and that the two entries answer the same.
+
 ## [4.198.0] - 2026-11-24
 
 ### Added
