@@ -5,6 +5,20 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.201.0] - 2026-11-24
+
+### Fixed
+
+- **`preparePhoto` keeps transparency where the browser cannot encode webp.** The fallback type was chosen from the source's type alone, so a WebP, AVIF or GIF with transparent pixels came back as an opaque JPEG. The fallback is now PNG when the source is PNG or when the picture as drawn has any pixel that is not fully opaque (one read of the resized canvas; pixels that cannot be read count as transparent), and JPEG otherwise. A JPEG source holds no alpha, is never read and stays JPEG. A transparent picture that used to come back as a small opaque JPEG now comes back as a larger PNG: that is the cost of keeping what the picture held.
+- **The error for a result over `maxBytes` gives both numbers.** It said "still 1 MB after shrinking" for a 565,986-byte result against a 1,000-byte limit. It now gives the result's size and the limit in bytes, and says whether the picture was shrunk, re-encoded, or is the file as given.
+
+### Changed
+
+- **`preparePhoto` refuses a `quality` that is not a number from 0 to 1, and a `maxBytes` that is not a positive number**, each with a `TypeError` naming the option. A `quality` such as 5 used to be accepted, and each browser then used its own default; a `maxBytes` of `NaN` switched the limit off. Both checks, and the one on `maxSide`, now run before the file is decoded, beside the unknown-option check.
+- The function's doc comment lists every error it throws, and says why a small original is kept in one browser and re-encoded in another (it is kept only when re-encoding does not make it smaller, and encoders differ).
+
+Found by walking the published 4.200.0 in Chromium, Firefox and WebKit; the same walk passes on this build in all three.
+
 ## [4.200.0] - 2026-11-24
 
 ### Added

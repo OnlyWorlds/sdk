@@ -99,7 +99,7 @@ const image = await writer.uploadImage(file); // a Blob, File, ArrayBuffer or Ui
 await writer.patch('character', id, { image_url: image.url });
 ```
 
-In a browser, shrink a phone photo first: `const photo = await preparePhoto(file)` gives a webp (or JPEG where the browser can't encode webp) of at most 2048 px on its longest side; upload `photo.blob`.
+In a browser, shrink a phone photo first: `const photo = await preparePhoto(file)` gives a webp of at most 2048 px on its longest side (where the browser can't encode webp, a JPEG, or a PNG when the picture has transparency); upload `photo.blob`.
 
 The SDK asks the API for a single-use ticket, then sends the bytes straight to the upload host, which never sees your key. webp, png, jpeg or avif (no SVG or gif), up to 15 MB. Each upload counts toward the world's daily limit and the account's storage. To upload yourself (for a progress bar), call `createMediaTicket()` and POST the bytes to its `upload_url` with `Authorization: Bearer <ticket>`.
 

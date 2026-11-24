@@ -110,7 +110,7 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
   package's `draught_text`). Its title says "dated up to" the horizon, never what the Character
   knew; its last line counts only what the budget left out.
 - Photos (browser only, since 4.11.0): `preparePhoto(blob)` shrinks to 2048 px and converts to
-  webp (JPEG where webp can't be encoded) before `uploadImage`.
+  webp (where webp can't be encoded: JPEG, or PNG for a picture with transparency) before `uploadImage`.
 - World files (no account needed; since 4.10.0): `readWorldFile(bytes)` opens a `.zip` holding one
   world folder and returns `{ worldId, name, world, files: [{ path, data }] }`;
   `writeWorldFile(files, topDir)` makes one. Refusals throw `OwWorldFileError` with a `reason`.
