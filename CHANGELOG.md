@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.200.0] - 2026-11-24
+
+### Added
+
+- **`pinsKnownTo(pins, served)`**: which of a map's Pins one reader knows, for a map drawn as one Character sees it. A Pin is known when the element it places is among `served`, the elements as that reader was served them (a list read with the reader's own key, or the owner's read with `viewAs`); the function reads nothing else, so it cannot show a reader more than the world told them. The answer is `{ known, unknown, out }`: `known` lists each known Pin as `{ pin, map, element_type, element_id, how }` by Pin id in code point order, where `how` is `'whole'` or, when the element reached the reader as a stub it only knows of (`known_of: true`), `'known_of'`, so a drawing can tell a place heard of from a place known; `unknown` counts the Pins that place an element the reader was not served, as a number and never as ids; `out.no_link` counts the Pins that place nothing. The type and the id are compared as written, the last of two served rows with one type and id decides, and the answer carries no name or body of any element. It does not ask whether a Pin has a point or its Map exists: `mapSpace` reads that, and a drawing keeps the Pins both name. `pins` may be a whole world's list: only its rows of type `pin` are read. The Pins are the caller's to bring, from whichever read holds the map (an open world's, the owner's): a reader's own list need not hold them. A rule of this package and the Python package (`pins_known_to` in `onlyworlds` 0.148.0), not of the standard: the two run the same 31 cases and 8 refusals (`test/fixtures/pins-known-to.cases.json`). Types `OwPinsKnownTo`, `OwPinKnown`, `OwPinKnownHow`.
+
 ## [4.199.0] - 2026-11-24
 
 ### Added

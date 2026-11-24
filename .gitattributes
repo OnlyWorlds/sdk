@@ -30,3 +30,5 @@ src/convert/kanka.json -text
 test/fixtures/kanka/*.zip binary
 # The folder readers' shared declared-type cases, the same bytes as the Python package's copy (both tests hold its sha256).
 test/fixtures/declared-type.cases.json -text
+# The known Pins reader's shared cases, the same bytes as the Python package's copy (both tests hold its sha256).
+test/fixtures/pins-known-to.cases.json -text

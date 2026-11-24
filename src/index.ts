@@ -89,6 +89,9 @@ export { layoutOf } from './layout-of';
 export type { OwLayoutOf } from './layout-of';
 export { carryOf } from './carry-of';
 export type { OwCarryOf, OwCarryPoint, OwCarryStop, OwCarryLint } from './carry-of';
+// Which of a map's Pins one reader knows, from the elements that reader was served (a rule of this package and the Python package).
+export { pinsKnownTo } from './pins-known-to';
+export type { OwPinKnown, OwPinKnownHow, OwPinsKnownTo } from './pins-known-to';
 
 // A layout method: a world laid out along a route on a ground map, as a Map frame and its Pins (read back by mapSpace).
 export { trailByPlace, TRAIL_TIERS, roundHalfEven } from './layout-trail';
