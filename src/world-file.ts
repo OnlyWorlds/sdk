@@ -53,6 +53,7 @@ import { refuseUnknownOptions } from './options';
 import { nfc } from './nfc';
 import { simpleCaseFold } from './case-fold';
 import { readFolder } from './folder/read';
+import { parseOutsideJson } from './outside-json';
 
 const WORLD_FILE = 'world.json';
 const MARKER_NAME = 'mimetype';
@@ -591,7 +592,7 @@ export interface OwWriteWorldFileOptions {
 export interface OwWriteWorldFileReport {
   /** Element files left out for the hidden mark (`includeHidden: false`); 0 otherwise. */
   hiddenLeftOut: number;
-  /** Element files written without their author fields (the default); 0 with `includeAuthorFields: true`. */
+  /** Files under `elements/` or `spatial/` written without their author fields (the default); 0 with `includeAuthorFields: true`. */
   authorFieldsLeftOut: number;
   /**
    * Files under `elements/` or `spatial/` left out of a share (`includeHidden: false`) because the package's
@@ -688,9 +689,30 @@ function hasHiddenMark(doc: Record<string, unknown>): boolean {
 }
 
 /**
- * An element file without its author fields, in the folder's own form
+ * A carried file under `elements/` or `spatial/` that the folder reader did
+ * not serve as an element (a name or a depth it passes over, no id, an id two
+ * files hold), read as the reader reads JSON (`parseOutsideJson`: UTF-8, at
+ * most 200 deep, every number a double holds), when it holds one JSON object.
+ * Undefined otherwise: an array, text that is not JSON, or JSON the reader
+ * refuses, which this write cannot rewrite without changing it, so it
+ * travels byte for byte.
+ */
+function unreadObject(data: Uint8Array): Record<string, unknown> | undefined {
+  let text: string;
+  try {
+    text = utf8.decode(data);
+  } catch {
+    return undefined;
+  }
+  const r = parseOutsideJson(text);
+  if (!r.ok || r.value === null || typeof r.value !== 'object' || Array.isArray(r.value)) return undefined;
+  return r.value as Record<string, unknown>;
+}
+
+/**
+ * An element-folder file without its author fields, in the folder's own form
  * (`JSON.stringify(doc, null, 2)` and a newline, the other keys in their
- * order), or null when it holds none of them or was not read as an element
+ * order), or null when it holds none of them or holds no JSON object
  * (`doc` undefined): then it travels byte for byte. Only top-level keys go;
  * an `x_*` value that holds one of the names is the extension's, and stays.
  */
@@ -783,14 +805,16 @@ function privateProducers(files: OwWorldFileEntry[]): string[] {
  * The author fields, `created_by`, `changed_by`, `changed_via`,
  * `changed_client` and `doors`, record which member and which tool wrote
  * each element (a membership id, a door), which means nothing to someone the
- * world is handed to. So by default every element file (one the folder
- * reader serves, as above) leaves them out; `created_at` and
- * `updated_at` stay. A file holding any of them is
+ * world is handed to. So by default every carried file under `elements/` or
+ * `spatial/` that holds one JSON object leaves them out, whether or not the
+ * folder reader serves it as an element (a file it passes over can still hold
+ * them); `created_at` and `updated_at` stay. A file holding any of them is
  * rewritten without them in the folder's own form (two-space indent, a
- * trailing newline, the other keys in their order); one holding none, or
- * that was not read as an element, travels byte for byte, and nothing
- * outside the element files is touched. `r.authorFieldsLeftOut` counts the files
- * rewritten. Pass `{ includeAuthorFields: true }` for a byte copy of your own
+ * trailing newline, the other keys in their order); one holding none, one
+ * that holds an array or is not JSON, and one whose JSON the folder reader
+ * refuses (nested more than 200 deep, or a number a double cannot hold, which
+ * a rewrite would change) travel byte for byte, and nothing outside those two
+ * folders is touched. `r.authorFieldsLeftOut` counts the files rewritten. Pass `{ includeAuthorFields: true }` for a byte copy of your own
  * folder, as an archive of your own world.
  *
  * Throws a `TypeError`, having written nothing, for an unknown option, an
@@ -850,7 +874,8 @@ export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: 
     if (f.path === WORLD_FILE) {
       data = withoutLink(data, parseWorld(data)).data;
     } else if (!includeAuthorFields) {
-      const bare = withoutAuthorFields(elements.get(f.path));
+      const doc = elements.get(f.path) ?? (underElementFolders(f.path) ? unreadObject(f.data) : undefined);
+      const bare = withoutAuthorFields(doc);
       if (bare) { data = bare; authorFieldsLeftOut++; }
     }
     input[`${topDir}/${f.path}`] = [data, { level: /\.json$/i.test(f.path) ? 6 : 0, mtime: STAMP }];

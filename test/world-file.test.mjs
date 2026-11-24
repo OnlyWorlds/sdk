@@ -928,13 +928,24 @@ test('§4.8: what counts as a hidden element file, and what is kept', () => {
   const served = el('elements/character/a.json', { id: 'a', changed_by: 'm-1' });
   const copy = readWorldFile(writeWorldFile([wj, served, ...unread], 'w', { includeAuthorFields: true })).files;
   for (const f of unread) assert.deepEqual(copy.find(c => c.path === f.path).data, f.data, f.path);
-  // And so does a copy that leaves author fields out: a file not read as an element is never rewritten.
+  // A copy that leaves author fields out carries them all too, and removes the five from every one that is one
+  // JSON object by the reader's own JSON rules, read as an element or not (since 4.203.1: the folder spec's
+  // guidance, 4.197.0 to 4.203.0 kept them); a file that is no such object travels byte for byte.
+  const notObjects = new Set(['elements/character/broken.json', 'elements/character/latin.json', 'elements/character/list.json',
+    'spatial/pin/cut.JSON', 'elements/character/two.json', 'elements/character/tail.json']);
+  assert.equal(unread.filter(f => notObjects.has(f.path)).length, notObjects.size);
   const reports = [];
   const bare = readWorldFile(writeWorldFile([wj, served, ...unread], 'w', { report: r => reports.push(r) })).files;
   assert.deepEqual(bare.map(c => c.path).sort(), ['world.json', served.path, ...unread.map(f => f.path)].sort());
   assert.equal(text(bare.find(c => c.path === served.path).data), j({ id: 'a' }), 'the element it read loses its author field');
-  for (const f of unread) assert.deepEqual(bare.find(c => c.path === f.path).data, f.data, f.path);
-  assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: 1, unreadLeftOut: 0, unreadPaths: [] }]);
+  for (const f of unread) {
+    const out = bare.find(c => c.path === f.path).data;
+    if (notObjects.has(f.path)) { assert.deepEqual(out, f.data, f.path); continue; }
+    const { changed_by, ...rest } = JSON.parse(text(f.data));
+    assert.equal(changed_by, 'm-1', f.path);
+    assert.equal(text(out), j(rest), `${f.path}: the file the reader passed over loses its author field`);
+  }
+  assert.deepEqual(reports, [{ hiddenLeftOut: 0, authorFieldsLeftOut: 1 + unread.length - notObjects.size, unreadLeftOut: 0, unreadPaths: [] }]);
   // Kept: a null mark, a nested mark, whitespace after the value, a byte order mark, hidden: true
   // outside the element folders, and one UUID in two spellings, which is two ids, each judged by its own mark.
   const keep = [
@@ -961,8 +972,8 @@ test('§4.8: the report is not called on a refusal', () => {
 
 // The same bytes as the Python package's tests/fixtures/author-fields.fixture.json (both suites hold its sha256).
 const AUTHOR_FIXTURE = fileURLToPath(new URL('./fixtures/author-fields.fixture.json', import.meta.url));
-const AUTHOR_FIXTURE_SHA256 = '481db037f008ceff9989bbe44b2c27a41ba4205d7e7fd258792cbadc2365787d';
-const AUTHOR_CASES = 5;
+const AUTHOR_FIXTURE_SHA256 = '6943ce5a8c2cd7bf69f82facb6f1d545d87d68f5ea0104cc4d711d94e035898a';
+const AUTHOR_CASES = 7;
 // writeWorldFile before includeAuthorFields (4.108.1) on each case's files, the archives one after another.
 const BEFORE_SHA256 = '57b381b3e03faf4f2d030a6cd6ad63cad8360fe9b44cc7f9666c6d848d8abf97';
 const AUTHOR_FIELDS = ['created_by', 'changed_by', 'changed_via', 'changed_client', 'doors'];
@@ -997,7 +1008,8 @@ test('author fields: every case of the shared fixture, left out by default and c
 
 test('author fields: includeAuthorFields: true writes the archive the writer wrote before the option, byte for byte', () => {
   const h = createHash('sha256');
-  for (const c of authorDoc().cases) h.update(writeWorldFile(filesOf(c.files), 'w', { includeAuthorFields: true }));
+  // The five cases 4.108.1 was measured on; the sixth came later.
+  for (const c of authorDoc().cases.slice(0, 5)) h.update(writeWorldFile(filesOf(c.files), 'w', { includeAuthorFields: true }));
   assert.equal(h.digest('hex'), BEFORE_SHA256);
 });
 

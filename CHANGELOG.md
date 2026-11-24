@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.203.1] - 2026-11-24
+
+### Fixed
+
+- **A world file that leaves the author fields out leaves them out of every element-folder file again.** Since 4.197.0, `writeWorldFile` removed `created_by`, `changed_by`, `changed_via`, `changed_client` and `doors` only from the files the folder reader serves as an element, so a copy (`includeHidden: true`, the default) kept them in every other file it carried under `elements/` or `spatial/`: both files of an id two files hold, a file with no id, a `.JSON` name, a file deeper than a type folder or in a folder that is no type. Now the five are removed from every carried file there that is one JSON object by the folder reader's own JSON rules (UTF-8, at most 200 deep, every number a double holds), as the folder format says of a world handed on. A file that holds none of the five is carried byte for byte, and so is one that is no such object (an array, text that is not JSON, or JSON the reader refuses, such as a number a double cannot hold): it travels with whatever its text holds, and a share (`includeHidden: false`) leaves it out. `includeAuthorFields: true` still carries every file byte for byte. The shared fixture `test/fixtures/author-fields.fixture.json` changes two cases and gains two, the same bytes as the Python package's.
+
 ## [4.203.0] - 2026-11-24
 
 ### Added
