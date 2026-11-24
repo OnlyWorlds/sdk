@@ -33,16 +33,58 @@ export interface OwNameFound<T> {
   element: T;
 }
 
+/** A name two or more elements hold: `find` answers nothing for it, and this says that it is there. */
+export interface OwNameShared<T> {
+  /** The name as the finder compares it: trimmed of white space, and folded when `case` is `'folded'`. */
+  name: string;
+  /** The elements that hold it, two at least, in the order they were given: the same objects `nameFinder` was given. */
+  elements: readonly T[];
+}
+
+/** What `nameFinder` answers: a function over a text, with the names it holds as shared beside it. */
+export interface OwNameFinder<T> {
+  (text: string): OwNameFound<T>[];
+  /**
+   * Every name two or more elements hold, in the order each name was first met. `find` never answers one of
+   * these, so a tool reads this list to say why a name stays plain. The list and its entries are frozen.
+   */
+  readonly shared: readonly OwNameShared<T>[];
+}
+
 /** A name shorter than this many characters (code points, after its white space is trimmed) is never looked for. */
 const NAME_MIN = 3;
 const OPTION_KEYS = ['case', 'names'] as const;
 /** Beside one of these a name is inside a word: a letter of any script, a combining mark, a decimal digit or an underscore. */
 const IN_A_WORD = /^[\p{L}\p{M}\p{Nd}_]/u;
+/**
+ * The mark the matcher reads between two characters wherever a name may end: before a character that is not a
+ * word character, and at the end of the text. No code point is negative.
+ */
+const END = -1;
 
-interface TrieNode<T> {
-  next: Map<number, TrieNode<T>>;
-  /** The element whose name ends here, and whether a second element's name ends here too. */
-  hit: { id: string; element: T; shared: boolean } | null;
+/** One name, as compared, and every element that holds it. */
+interface Hit<T> {
+  /** The name's length in code points. */
+  length: number;
+  elements: T[];
+  /** The ids of `elements`, kept once a second element holds the name. */
+  ids: Set<string> | null;
+  name: string;
+}
+
+/**
+ * A state of the matcher. The names are held backwards, each from its last character to its first, with `END`
+ * before every character that is not a word character and once at the name's end: so a text read from its end
+ * towards its start, with the same mark laid wherever a name may end, passes each character once (Aho and
+ * Corasick's failure links), and the state after a character says which whole names start there.
+ */
+interface State<T> {
+  next: Map<number, State<T>>;
+  fail: State<T> | null;
+  /** The name that is this state, read backwards. */
+  hit: Hit<T> | null;
+  /** The longest name that ends, read backwards, at this state: `hit`, or the failure state's. */
+  longest: Hit<T> | null;
 }
 
 function isWord(codePoint: number): boolean {
@@ -124,8 +166,13 @@ function passedOver(text: string): Array<[number, number]> {
  *   is read across the edge of one.
  * - Text is compared as written: no Unicode normalisation, and a space in a name matches that one space.
  *
- * `element` in an answer is the object that was passed in. Nothing given is changed. The work for one text is at
- * most its length times the longest name's length, whatever the number of names, with no pattern that backtracks.
+ * `find.shared` lists every name two or more elements hold, each as `{ name, elements }`: the name as it is
+ * compared (trimmed, and folded when `case` is `'folded'`) and the elements that hold it, in the order given. A
+ * name too short to be looked for is not on it.
+ *
+ * `element` in an answer is the object that was passed in. Nothing given is changed. The work for one text grows
+ * with its length alone, whatever the names and however many: the text is read once, from its end to its start,
+ * and no character is read again for another name. Reading the names grows with their total length.
  * `start` and `end` count JavaScript string indexes, as `findOwLinks` does. An unknown option, a `case` that is
  * neither word, an element without a string `id`, or a `text` that is not a string is a TypeError.
  *
@@ -133,12 +180,13 @@ function passedOver(text: string): Array<[number, number]> {
  * const find = nameFinder([{ id: 'a1', name: 'Iron Gate' }, { id: 'b2', name: 'Kira' }], { case: 'exact' });
  * find("Kira's watch ends at the Iron Gate.");
  * // [{ start: 0, end: 4, element: { id: 'b2', … } }, { start: 25, end: 34, element: { id: 'a1', … } }]
+ * find.shared; // [] here: no two elements hold one name
  * ```
  */
 export function nameFinder<T extends { id: string; name?: unknown }>(
   elements: Iterable<T>,
   options: OwNameFinderOptions<T>,
-): (text: string) => OwNameFound<T>[] {
+): OwNameFinder<T> {
   if (options === null || typeof options !== 'object' || Array.isArray(options)) {
     throw new TypeError(`nameFinder: options is an object, such as { case: 'exact' }; got ${JSON.stringify(options) ?? typeof options}.`);
   }
@@ -154,7 +202,8 @@ export function nameFinder<T extends { id: string; name?: unknown }>(
   }
   const folded = options.case === 'folded';
   const namesOf = options.names;
-  const root: TrieNode<T> = { next: new Map(), hit: null };
+  const root: State<T> = { next: new Map(), fail: null, hit: null, longest: null };
+  const hits: Hit<T>[] = [];
   for (const element of elements) {
     if (element === null || typeof element !== 'object' || typeof element.id !== 'string' || element.id === '') {
       throw new TypeError('nameFinder: every element is an object with a string id.');
@@ -162,64 +211,141 @@ export function nameFinder<T extends { id: string; name?: unknown }>(
     const names: Iterable<unknown> = namesOf ? namesOf(element) : [element.name];
     for (const raw of names) {
       if (typeof raw !== 'string') continue;
-      const name = trimWhiteSpace(raw);
       const points: number[] = [];
-      for (const c of name) points.push(folded ? foldCodePoint(c.codePointAt(0)!) : c.codePointAt(0)!);
+      for (const c of trimWhiteSpace(raw)) points.push(folded ? foldCodePoint(c.codePointAt(0)!) : c.codePointAt(0)!);
       if (points.length < NAME_MIN) continue;
-      let node = root;
-      for (const p of points) {
-        let child = node.next.get(p);
-        if (child === undefined) {
-          child = { next: new Map(), hit: null };
-          node.next.set(p, child);
-        }
-        node = child;
+      // The name backwards: END, then each character from the last to the first, and END again after (so, in the
+      // text, before) every character but the first that is not a word character.
+      const tokens: number[] = [END];
+      for (let k = points.length - 1; k >= 0; k--) {
+        tokens.push(points[k]);
+        if (k > 0 && !isWord(points[k])) tokens.push(END);
       }
-      if (node.hit === null) node.hit = { id: element.id, element, shared: false };
-      else if (node.hit.id !== element.id) node.hit.shared = true;
+      let state = root;
+      for (const token of tokens) {
+        let child = state.next.get(token);
+        if (child === undefined) {
+          child = { next: new Map(), fail: null, hit: null, longest: null };
+          state.next.set(token, child);
+        }
+        state = child;
+      }
+      const hit = state.hit;
+      if (hit === null) {
+        let name = '';
+        for (const p of points) name += String.fromCodePoint(p);
+        state.hit = { length: points.length, elements: [element], ids: null, name };
+        hits.push(state.hit);
+      } else if (hit.ids === null) {
+        if (hit.elements[0].id !== element.id) {
+          hit.ids = new Set([hit.elements[0].id, element.id]);
+          hit.elements.push(element);
+        }
+      } else if (!hit.ids.has(element.id)) {
+        hit.ids.add(element.id);
+        hit.elements.push(element);
+      }
     }
   }
 
-  return function find(text: string): OwNameFound<T>[] {
+  // The failure links, level by level: where the matcher goes on when the text leaves the name it was reading.
+  let level: State<T>[] = [];
+  for (const child of root.next.values()) {
+    child.fail = root;
+    child.longest = child.hit;
+    level.push(child);
+  }
+  while (level.length > 0) {
+    const deeper: State<T>[] = [];
+    for (const state of level) {
+      for (const [token, child] of state.next) {
+        let back = state.fail;
+        while (back !== null && !back.next.has(token)) back = back.fail;
+        child.fail = back === null ? root : back.next.get(token)!;
+        child.longest = child.hit ?? child.fail.longest;
+        deeper.push(child);
+      }
+    }
+    level = deeper;
+  }
+
+  const shared: OwNameShared<T>[] = [];
+  for (const hit of hits) {
+    if (hit.elements.length > 1) shared.push(Object.freeze({ name: hit.name, elements: Object.freeze(hit.elements.slice()) }));
+  }
+  Object.freeze(shared);
+
+  const step = (from: State<T>, token: number): State<T> => {
+    let state: State<T> | null = from;
+    while (state !== null) {
+      const to = state.next.get(token);
+      if (to !== undefined) return to;
+      state = state.fail;
+    }
+    return root;
+  };
+
+  function find(text: string): OwNameFound<T>[] {
     if (typeof text !== 'string') throw new TypeError('nameFinder: text must be a string');
     const found: OwNameFound<T>[] = [];
-    if (root.next.size === 0) return found;
+    if (hits.length === 0) return found;
     const spans = passedOver(text);
     const length = text.length;
-    let span = 0;
-    let i = 0;
-    while (i < length) {
-      if (span < spans.length && i >= spans[span][0]) {
-        i = spans[span][1];
-        span++;
-        continue;
-      }
-      const first = text.codePointAt(i)!;
-      const width = first > 0xffff ? 2 : 1;
-      if (!wordBefore(text, i)) {
-        const limit = span < spans.length ? spans[span][0] : length;
-        let node: TrieNode<T> | undefined = root;
-        let j = i;
-        let best: TrieNode<T>['hit'] = null;
-        let bestEnd = -1;
-        while (j < limit) {
-          const c = text.codePointAt(j)!;
-          node = node.next.get(folded ? foldCodePoint(c) : c);
-          if (node === undefined) break;
-          j += c > 0xffff ? 2 : 1;
-          if (node.hit !== null && (j >= length || !isWord(text.codePointAt(j)!))) {
-            best = node.hit;
-            bestEnd = j;
+    // Where a whole name starts and the longest one that does, as the backward pass meets them: last place first.
+    const starts: number[] = [];
+    const longest: Hit<T>[] = [];
+    /** Whether every character from that start to the stretch's end is one string index wide. */
+    const narrow: boolean[] = [];
+    let from = 0;
+    for (let span = 0; span <= spans.length; span++) {
+      const to = span < spans.length ? spans[span][0] : length;
+      if (to > from) {
+        starts.length = 0;
+        longest.length = 0;
+        narrow.length = 0;
+        let pairs = false;
+        let state = root;
+        let k = to;
+        // Whether a name may end at k: the text ends there, or the character at k is not a word character.
+        let mayEnd = k >= length || !isWord(text.codePointAt(k)!);
+        while (k > from) {
+          if (mayEnd) state = step(state, END);
+          let c = text.charCodeAt(k - 1);
+          k--;
+          if (c >= 0xdc00 && c <= 0xdfff && k > from) {
+            const high = text.charCodeAt(k - 1);
+            if (high >= 0xd800 && high <= 0xdbff) {
+              k--;
+              c = (high - 0xd800) * 0x400 + (c - 0xdc00) + 0x10000;
+              pairs = true;
+            }
+          }
+          mayEnd = !isWord(c);
+          if (state !== root) state = step(state, folded ? foldCodePoint(c) : c);
+          if (state.longest !== null && !wordBefore(text, k)) {
+            starts.push(k);
+            longest.push(state.longest);
+            narrow.push(!pairs);
           }
         }
-        if (best !== null) {
-          if (!best.shared) found.push({ start: i, end: bestEnd, element: best.element });
-          i = bestEnd;
-          continue;
+        // Forwards over what was met: the first place a name starts takes its longest name, and the next name
+        // starts at or after that one's end.
+        let free = from;
+        for (let r = starts.length - 1; r >= 0; r--) {
+          const start = starts[r];
+          if (start < free) continue;
+          const hit = longest[r];
+          let end = start;
+          if (narrow[r]) end += hit.length;
+          else for (let n = hit.length; n > 0; n--) end += text.codePointAt(end)! > 0xffff ? 2 : 1;
+          if (hit.elements.length === 1) found.push({ start, end, element: hit.elements[0] });
+          free = end;
         }
       }
-      i += width;
+      if (span < spans.length) from = spans[span][1];
     }
     return found;
-  };
+  }
+
+  return Object.defineProperty(find, 'shared', { value: shared, enumerable: true }) as OwNameFinder<T>;
 }

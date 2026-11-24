@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.198.0] - 2026-11-24
+
+### Added
+
+- **`find.shared` on `nameFinder`'s answer**: every name two or more elements hold, each as `{ name, elements }`, in the order each name was first met. `name` is the name as it is compared (trimmed, and folded when `case` is `'folded'`); `elements` are the objects that were passed in, in the order given. `find` never answers such a name, and until now nothing said it was there: a tool reads the list to tell a writer why a name stays plain, or to test that no two elements of a world share one. A name too short to be looked for is not on it. The list and its entries are frozen. New types: `OwNameFinder` (what `nameFinder` answers) and `OwNameShared`.
+
+### Changed
+
+- **`nameFinder` reads a text once, whatever the names.** The work for one text was at most its length times the longest name's length, and a long name whose opening words the text repeats reached that: one 5,000-character name against 80,000 characters of its first word took about 1.5 seconds. The names are now held as one matcher with failure links and the text is read once from its end to its start, so the work grows with the text's length alone: that case takes about a millisecond. No answer moves: the 47 cases of 4.194.0 stand, with 15 more (names that end other names, names of marks alone, names nested in one another, overlaps, and what `find.shared` lists). Ordinary prose costs more than before: for 15,000 names over a 20,000-word document, about a quarter more when it is read paragraph by paragraph (7.4 ms where it was 5.9, on one machine) and about twice as much when it is read as one text (4 ms where it was 2); reading the names takes two to three and a half times as long (about 30 ms for those 15,000).
+
 ## [4.197.0] - 2026-11-23
 
 ### Changed

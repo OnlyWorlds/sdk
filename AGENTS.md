@@ -236,7 +236,8 @@ against live data). The v1 surface (`OnlyWorldsClient`, the `ElementType` enum) 
 - To find a world's element names in a text (to mark them for a reader, never to rewrite the text),
   make `const find = nameFinder(elements, { case: 'exact' })` once per world, then `find(text)`
   answers each `{ start, end, element }` in order. `case` must be given (`'folded'` ignores case).
-  A name two elements share is never answered. Do not write a pattern of your own for this.
+  A name two elements share is never answered; `find.shared` lists those names with their elements.
+  Do not write a pattern of your own for this.
 - To offer a world or an element in other tools, `openersFor(TOOLS, kind, address, surface)` gives
   the "Open with" rows in order, each `{ id, name, href, state }` with its word ("Sign in to Atlas
   first") or null. Draw them as given; never word a row yourself. For an element, pass it as served

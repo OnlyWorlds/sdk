@@ -109,7 +109,7 @@ export { elementAddress, parseOwLink, readOwLinkAt, findOwLinks, OwAddressError 
 export type { OwAddress, OwAddressAt, OwAddressFound, OwAddressReading, OwAddressForm, OwAddressReason } from './address';
 // Element names found in prose: read a world's names once, then find them in any text (it finds, it never writes).
 export { nameFinder } from './name-finder';
-export type { OwNameFound, OwNameFinderOptions, OwNameCase } from './name-finder';
+export type { OwNameFound, OwNameFinder, OwNameShared, OwNameFinderOptions, OwNameCase } from './name-finder';
 // The Open with menu: the rows that open a world or an element in a tool, each with its word, from the
 // OnlyWorlds tools list (baked at this release as TOOLS).
 export { openersFor } from './openers';
