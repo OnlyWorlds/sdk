@@ -493,6 +493,110 @@ function yearSlots(cfg: CalendarConfig, y: number): DaySlot[] {
   return slots;
 }
 
+interface YearRun {
+  start: number;
+  length: number;
+  month: number;            // 0 for an intercalary day
+  slot: DaySlot | null;     // the intercalary day's slot; null for a month's run of days
+}
+
+/**
+ * yearSlots as runs: each intercalary day one run, each month one run of its days, so finding a slot is
+ * arithmetic and a long month costs nothing. Null where a month's length is not an integer (or names and
+ * lengths are not arrays, or fewer lengths than names): the list is built for those, so an odd input
+ * answers as it did.
+ */
+function yearRuns(cfg: CalendarConfig, y: number): YearRun[] | null {
+  const months = cfg.bundles?.months;
+  if (!months) return [];
+  const { names, lengths } = months;
+  if (!Array.isArray(names) || !Array.isArray(lengths) || lengths.length < names.length) return null;
+  for (let m = 0; m < names.length; m++) if (!Number.isInteger(lengths[m])) return null;
+  const inter = cfg.intercalary ?? [];
+  const runs: YearRun[] = [];
+  let at = 0;
+  const push = (afterMonth: number): void => {
+    for (const ic of inter) {
+      if (ic.after_month === afterMonth && intercalaryInYear(cfg, ic, y)) {
+        runs.push({ start: at, length: 1, month: 0, slot: { kind: 'intercalary', intercalary: ic } });
+        at += 1;
+      }
+    }
+  };
+  push(0);
+  for (let m = 1; m <= names.length; m++) {
+    const days = lengths[m - 1];
+    if (days > 0) {
+      runs.push({ start: at, length: days, month: m, slot: null });
+      at += days;
+    }
+    push(m);
+  }
+  return runs;
+}
+
+/** One year's slots, in yearSlots' order, asked the four questions its callers ask. */
+class YearLayout {
+  private readonly runs: YearRun[] | null;
+  private readonly list: DaySlot[] | null;
+  readonly total: number;
+
+  constructor(cfg: CalendarConfig, y: number) {
+    this.runs = yearRuns(cfg, y);
+    this.list = this.runs === null ? yearSlots(cfg, y) : null;
+    const last = this.runs?.[this.runs.length - 1];
+    this.total = this.list !== null ? this.list.length : last ? last.start + last.length : 0;
+  }
+
+  /** slots[i]: undefined unless i is a whole index inside the year. */
+  at(i: number): DaySlot | undefined {
+    if (this.list !== null) return this.list[i];
+    if (!(Number.isInteger(i) && i >= 0 && i < this.total)) return undefined;
+    const runs = this.runs as YearRun[];
+    let lo = 0;
+    let hi = runs.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (runs[mid].start <= i) lo = mid; else hi = mid - 1;
+    }
+    const r = runs[lo];
+    return r.slot ?? { kind: 'month', month: r.month, day: i - r.start + 1 };
+  }
+
+  /** The intercalary days out of the week at the indexes 0, 1, ... below offset; reading past the year's last
+   * slot throws, as the loop it replaces did. */
+  skippedBefore(offset: number): number {
+    let n = 0;
+    if (this.list !== null) {
+      for (let i = 0; i < offset; i++) {
+        const s = this.list[i];
+        if (s.kind === 'intercalary' && s.intercalary?.in_week === false) n += 1;
+      }
+      return n;
+    }
+    if (!(offset > 0)) return n; // the loop never runs: zero, a negative or NaN
+    if (offset > this.total) throw new TypeError("Cannot read properties of undefined (reading 'kind')");
+    for (const r of this.runs as YearRun[]) {
+      if (r.start >= offset) break;
+      if (r.slot !== null && r.slot.intercalary?.in_week === false) n += 1;
+    }
+    return n;
+  }
+
+  indexOfIntercalary(intercalary: CalendarIntercalary): number {
+    if (this.list !== null) return this.list.findIndex((s) => s.kind === 'intercalary' && s.intercalary === intercalary);
+    const r = (this.runs as YearRun[]).find((x) => x.slot !== null && x.slot.intercalary === intercalary);
+    return r ? r.start : -1;
+  }
+
+  indexOfDay(month: number, day: number): number {
+    if (this.list !== null) return this.list.findIndex((s) => s.kind === 'month' && s.month === month && s.day === day);
+    const r = (this.runs as YearRun[]).find((x) => x.slot === null && x.month === month);
+    if (!r || !Number.isInteger(day) || day < 1 || day > r.length) return -1;
+    return r.start + day - 1;
+  }
+}
+
 // ---- Weekday ----
 
 function skippedWeekDaysPerYear(cfg: CalendarConfig): { base: number; rules: LeapRule[] } {
@@ -518,13 +622,7 @@ export function weekdayForStep(cfg: CalendarConfig, step: number, pre?: StepPosi
   const y = pos.absYear;
   let skippedBeforeYear = y * skipped.base;
   for (const r of skipped.rules) skippedBeforeYear += leapYearsBefore(y, r);
-  let skippedInYear = 0;
-  if (pos.slots) {
-    for (let i = 0; i < pos.offset; i++) {
-      const s = pos.slots[i];
-      if (s.kind === 'intercalary' && s.intercalary?.in_week === false) skippedInYear += 1;
-    }
-  }
+  const skippedInYear = pos.slots ? pos.slots.skippedBefore(pos.offset) : 0;
   const counted = step - skippedBeforeYear - skippedInYear;
   return week.names[floorMod(counted, week.length)];
 }
@@ -535,15 +633,15 @@ interface StepPosition {
   absYear: number;
   offset: number;           // steps into the year
   slot: DaySlot | null;     // null when no months
-  slots: DaySlot[] | null;
+  slots: YearLayout | null;
 }
 
 function positionOf(cfg: CalendarConfig, step: number): StepPosition {
   const y = absoluteYear(cfg, step);
   const offset = step - yearStartStep(cfg, y);
   if (!cfg.bundles?.months) return { absYear: y, offset, slot: null, slots: null };
-  const slots = yearSlots(cfg, y);
-  return { absYear: y, offset, slot: slots[offset] ?? null, slots };
+  const slots = new YearLayout(cfg, y);
+  return { absYear: y, offset, slot: slots.at(offset) ?? null, slots };
 }
 
 export function breakdownStep(cfg: CalendarConfig, step: number): StepBreakdown {
@@ -595,12 +693,52 @@ function renderTemplate(template: string, values: Record<string, string | null>)
     return v == null || v === '' ? EMPTY_KNOWN : v;
   });
   // Collapse around empty-known markers: absorb adjacent separators/spaces.
-  out = out
-    .replace(/\s*[,;·]?\s*\uE000\s*[,;·]?\s*/g, ' ')
-    .replace(/\s{2,}/g, ' ')
-    .trim()
-    .replace(/^[\s,;·]+|[\s,;·]+$/g, '');
-  return out;
+  out = collapseEmpty(out).replace(/\s{2,}/g, ' ').trim();
+  return trimEdges(out);
+}
+
+const isSpace = (ch: string): boolean => /\s/.test(ch);
+const isMark = (ch: string): boolean => ch === ',' || ch === ';' || ch === '·';
+
+/**
+ * What `/\s*[,;·]?\s*MARKER\s*[,;·]?\s*` with the g flag replaced by one space (MARKER: EMPTY_KNOWN), in one
+ * pass: each marker takes the white space, at most one mark and white space before it (back to where the
+ * last replacement ended) and the same after it. As a regular expression it took quadratic time on a long
+ * run of marks or white space that held no marker.
+ */
+function collapseEmpty(text: string): string {
+  let i = text.indexOf(EMPTY_KNOWN);
+  if (i === -1) return text;
+  const n = text.length;
+  let done = 0;
+  let out = '';
+  while (i !== -1) {
+    let j = i;
+    while (j > done && isSpace(text[j - 1])) j--;
+    if (j > done && isMark(text[j - 1])) {
+      j--;
+      while (j > done && isSpace(text[j - 1])) j--;
+    }
+    let k = i + 1;
+    while (k < n && isSpace(text[k])) k++;
+    if (k < n && isMark(text[k])) {
+      k++;
+      while (k < n && isSpace(text[k])) k++;
+    }
+    out += text.slice(done, j) + ' ';
+    done = k;
+    i = text.indexOf(EMPTY_KNOWN, done);
+  }
+  return out + text.slice(done);
+}
+
+/** What `/^[\s,;·]+|[\s,;·]+$/g` removed; its second half took quadratic time on a long run of marks. */
+function trimEdges(text: string): string {
+  let a = 0;
+  let b = text.length;
+  while (a < b && (isSpace(text[a]) || isMark(text[a]))) a++;
+  while (b > a && (isSpace(text[b - 1]) || isMark(text[b - 1]))) b--;
+  return text.slice(a, b);
 }
 
 /** Format a step. Total: every integer formats to a string under every readable config. */
@@ -845,13 +983,13 @@ export function parseDate(cfg: CalendarConfig, input: string, opts: ParseOptions
   const resolveInYear = (abs: number): ParseResult | ParseError => {
     const start = yearStartStep(cfg, abs);
     if (monthIndex == null && intercalary == null) return { step: start };
-    const slots = yearSlots(cfg, abs);
+    const slots = new YearLayout(cfg, abs);
     if (intercalary != null) {
-      const idx = slots.findIndex((s) => s.kind === 'intercalary' && s.intercalary === intercalary);
+      const idx = slots.indexOfIntercalary(intercalary);
       if (idx === -1) return { error: `${intercalary.name} does not occur in that year` };
       return { step: start + idx };
     }
-    const idx = slots.findIndex((s) => s.kind === 'month' && s.month === monthIndex && s.day === (day ?? 1));
+    const idx = slots.indexOfDay(monthIndex as number, day ?? 1);
     if (idx === -1) return { error: 'that day does not exist in that month' };
     return { step: start + idx };
   };

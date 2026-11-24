@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.201.2] - 2026-11-24
+
+### Fixed
+
+- **A stored calendar no longer sets what one date label costs.** `formatStep` collapsed the separators around an empty token and trimmed a label's edges with regular expressions whose time grew faster than the length of a long run of commas, or of white space in a name (a month name with 3,000 spaces: about five seconds for one label); both are one pass now. A year was built as a list of every day on each call, so a month of 5,000,000 days cost up to a second a label in `formatStep`, `weekdayForStep`, `breakdownStep` and `parseDate`; a month is one run now, and each answer is arithmetic. Every answer is the same as before: the profile's fixture, the old and new builds compared on 7,071 steps of the fixture's calendars and of made ones (formats, weekdays, breakdowns and parses), and eight timed cases in `test/fixtures/calendar-cost.cases.json`, the same bytes as the Python package's, each inside 50 ms. Not changed: a calendar with 1,500 eras still costs about a millisecond a label, and one with 800 leap rules a few milliseconds.
+
 ## [4.201.1] - 2026-11-24
 
 ### Fixed
