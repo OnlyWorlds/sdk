@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.208.1] - 2026-11-26
+
 ### Fixed
 
 - **A calendar's era walk is linear in its eras.** Each era's domain looked for the next up era by copying the rest of the sorted list, so the walk was quadratic and ran again for every label: one `formatStep` label took 42.4 ms under 15,000 eras and 38.7 s under 150,000; now 4.1 ms and 27.1 ms. The same labels in every case measured.
