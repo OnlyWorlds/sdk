@@ -93,6 +93,38 @@ export function resolveCalendar(
   return worldCalendars(elements).find((c) => c.id === activeId) ?? null;
 }
 
+/** The World's key that names its calendar: the id of the element that carries it. */
+export const WORLD_CALENDAR_KEY = 'x_calendar';
+
+/**
+ * The calendar the world's dates speak in, by the World's own choice (the calendar profile,
+ * "Which calendar speaks"). `world` is the World's keys (the body `GET /world` returns,
+ * `world.json` in a folder); `elements` are the world's elements.
+ *
+ * - The World names, in `x_calendar`, the id of an element among `elements` that carries a
+ *   calendar: that calendar speaks. The id is matched as written, letter case included.
+ * - The World names anything else (an id no element has, an element with no calendar or one whose
+ *   value is not a calendar, an empty string, a value that is no string): none speaks, and the
+ *   dates stay bare numbers. Another calendar never speaks in its place.
+ * - The World names none (the key absent or `null`): the only calendar among `elements` speaks;
+ *   with several, none.
+ *
+ * Pass the whole world's elements: a reader that holds part of a world can miss the named
+ * element or a second calendar. A tool with a person in front of it may keep that person's own
+ * pick over the World's ({@link resolveCalendar}). A `world` that is not an object is a TypeError.
+ */
+export function speakingCalendar(
+  world: Readonly<Record<string, unknown>>,
+  elements: Iterable<OwCalendarElement>,
+): WorldCalendar | null {
+  if (world === null || typeof world !== 'object' || Array.isArray(world)) {
+    throw new TypeError('speakingCalendar: world must be the World\'s keys, an object');
+  }
+  const named = Object.prototype.hasOwnProperty.call(world, WORLD_CALENDAR_KEY) ? world[WORLD_CALENDAR_KEY] : undefined;
+  if (named === undefined || named === null) return resolveCalendar(elements, undefined, { fallbackToOnly: true });
+  return typeof named === 'string' ? resolveCalendar(elements, named) : null;
+}
+
 /**
  * The old name of {@link resolveCalendar}, with the same answers: "lens" now names a cut of a
  * world, not a chosen calendar.

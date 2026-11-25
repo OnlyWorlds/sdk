@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.207.0] - 2026-11-25
+
+### Added
+
+- **`speakingCalendar(world, elements)`: the calendar the world's dates speak in, by the World's own choice** (the calendar profile's "Which calendar speaks", schema-dist serial 147). The World names it in `x_calendar` (`WORLD_CALENDAR_KEY`), the id of the element that carries it, matched as written. A named element among the elements that carries a calendar speaks; anything else named speaks none, never another calendar in its place; with none named (the key absent or `null`) the only calendar speaks, and several leave none. Pass the whole world's elements. A `world` that is not an object is a `TypeError`. Held by the fixture's 12 cases that carry `speaks`.
+
+### Changed
+
+- The schema pin moves to `v0.34.1-dist.147` (canonical 00.34.01 unchanged, no schema file moved). The tests replay what the serial adds: the calendar's twelve cases for which calendar speaks (91 cases, 256 steps), eleven address cases (230), and the `.owworld` set at 111 archives, with two more where `world.json` or `spatial/` is named only through the case fold (`World.jſon`).
+
 ## [4.206.0] - 2026-11-25
 
 ### Changed

@@ -135,15 +135,20 @@ test('an up era with no end runs to the next up era, past a down era listed afte
 
 test('the vendored calendar fixture: every case reads as written', () => {
   assert.equal(FIXTURE.profile, 'atlas_calendar');
-  assert.equal(FIXTURE.cases.length, 79, 'serial 146 carries 79 cases');
-  assert.equal(FIXTURE.cases.reduce((n, c) => n + (c.steps?.length ?? 0), 0), 232, 'serial 146 carries 232 steps');
+  assert.equal(FIXTURE.cases.length, 91, 'serial 147 carries 91 cases');
+  assert.equal(FIXTURE.cases.reduce((n, c) => n + (c.steps?.length ?? 0), 0), 256, 'serial 147 carries 256 steps');
   assert.equal(FIXTURE.cases.filter((c) => !c.valid).length, 43, 'serial 109 carries 43 values a reader must refuse');
   // Serial 109: an era's year_base is 0 or 1, so a whole number like 5 is refused.
   assert.ok(FIXTURE.cases.some((c) => c.name === 'refuse-year-base-five' && c.valid === false), 'serial 109 carries refuse-year-base-five');
   // Serial 69 added the days around Leap Day in 1900, 2000 and 2100 (12 steps) to the Gregorian case.
   assert.equal(FIXTURE.cases.find((c) => c.name === 'v2-except-chain-gregorian')?.steps.length, 29, 'the Gregorian case holds 29 steps');
-  // Serial 89: one case carries a world's elements and the ids a reader finds a calendar on.
-  assert.deepEqual(FIXTURE.cases.filter((c) => c.elements).map((c) => c.name), ['found-by-the-field-never-by-type']);
+  // Serial 89: one case carries a world's elements and the ids a reader finds a calendar on; serial 147 adds the
+  // twelve world-names cases (test/calendar-speaks.test.mjs), each with its found list too.
+  const withElements = FIXTURE.cases.filter((c) => c.elements).map((c) => c.name);
+  assert.equal(withElements[0], 'found-by-the-field-never-by-type');
+  assert.deepEqual(withElements.slice(1).filter((n) => !n.startsWith('world-names-')), []);
+  assert.equal(withElements.length, 13, 'serial 147: one found case and twelve world-names cases');
+  assert.ok(FIXTURE.cases.every((c) => !c.elements || Array.isArray(c.found)), 'every case with elements says what is found');
   const failed = [];
   for (const c of FIXTURE.cases) {
     const cfg = readCalendarValue(c.value);
