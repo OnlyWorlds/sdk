@@ -2213,6 +2213,7 @@ const UNION_ROWS = {
 };
 const UNION_OWN = {
   'type OwFolderSkipReason': 'the folder source\'s own words for a file it does not serve (src/folder/read.ts): one that does not parse, one with no id, a second file for an id (the folder format spec, section 4: one id, one file)',
+  'type OwFolderWorldFault': 'the folder source\'s own words for a world.json it could not read for its text (src/folder/read.ts), three of OwFolderSkipReason',
   'OwTalk.type': 'the room profile\'s talk on an element (schema-dist, serial 135; room.fixture.json\'s talk_cases)',
   'OwDesignPart.type': 'the charter profile\'s design parts (schema-dist, serial 135; charter.fixture.json\'s design_cases)',
   'OwDesignPart.state': 'the charter profile\'s two design states (schema-dist, serial 135)',

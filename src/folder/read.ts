@@ -34,6 +34,9 @@ const SPATIAL: ReadonlySet<string> = new Set(['map', 'pin', 'zone', 'marker']);
  */
 export type OwFolderSkipReason = 'not_json' | 'too_deep' | 'number_out_of_range' | 'no_id' | 'duplicate' | 'extension';
 
+/** Why a `world.json` that is there was not read for what its text holds: the three of `OwFolderSkipReason` that a text earns. */
+export type OwFolderWorldFault = 'not_json' | 'too_deep' | 'number_out_of_range';
+
 export interface OwFolderSkip {
   path: string;
   reason: OwFolderSkipReason;
@@ -74,7 +77,7 @@ export interface OwFolderReadReport {
    * Only when a `world.json` is there and was not read for what its text holds: why (`too_deep` past 200 levels,
    * counted in its text; `not_json`; `number_out_of_range`). Every route's 500 then says so.
    */
-  worldFault?: OutsideJsonFault;
+  worldFault?: OwFolderWorldFault;
 }
 
 const FIXED_NAMES = [['world.json', false], ['elements', true], ['spatial', true]] as const;
