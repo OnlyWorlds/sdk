@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.205.1] - 2026-11-25
+
+### Changed
+
+- **The schema pin moves to `v0.34.1-dist.146`** (canonical 00.34.01 unchanged, no schema file moved; the generated files change only their provenance lines). The tests replay what the serial adds: one more address prose case (a moment far past its range is not taken), the calendar's 79th case (which fields hold a date), and the world-file set at 109 archives, among them the four on a fixed name held only in another case that 4.204.0 already answers. No reader changed.
+
 ## [4.205.0] - 2026-11-25
 
 ### Added
