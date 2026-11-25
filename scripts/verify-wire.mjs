@@ -1997,6 +1997,7 @@ const CONSTANTS = {
   PROPOSED_MARK: 'checked (9c)', // 4.83.0: the review profile's first key name, read from profiles/review.md
   STRAND_FIELD: 'checked (9h)', // 4.119.0: the strand profile's mark, read from profiles/strand.fixture.json's mark.field
   RECORD_FIELD: 'checked (9i)', // 4.124.0: the record profile's mark, read from profiles/record.fixture.json's mark.field
+  WORLD_CALENDAR_KEY: 'checked (9j)', // 4.207.0, serial 147: the World's key, read from profiles/calendar.md's "Which calendar speaks"
   DATE_FIELD: 'checked (9d)', // 4.96.0: the lens profile's date table, read from profiles/lens.fixture.json
   BY_LINKS_3D_REST: 'the method', // 4.171.0: by-links-3d's rest length, the unit of its answer; held by the SDK's layout test to the fixture's `rest` (the fixture pinned by sha256)
   BY_LINKS_3D_VERSION: 'the method', // 4.174.0: the version of by-links-3d's answers, raised exactly when a fixture case's answer moves; held by the SDK's layout test to test/fixtures/layout/by-links-3d.answers.json (every case's want pinned by sha256 under it; scripts/pin-layout-answers.mjs refuses a moved answer under the same version)
@@ -2386,6 +2387,19 @@ if (sdk.RECORD_FIELD !== undefined) {
   else if (typeof field !== 'string') gap('profiles/record.fixture.json names no mark.field, so RECORD_FIELD went unchecked');
   else if (sdk.RECORD_FIELD === field) ok();
   else bad(`RECORD_FIELD is "${sdk.RECORD_FIELD}"; the record fixture names its mark "${field}"`);
+}
+
+// 9j: the World's calendar key (4.207.0, serial 147). Its truth is the calendar page's paragraph "Which calendar
+// speaks" ("in the key `x_calendar`"), read where 9c reads; a page without that paragraph or key is a GAP, never a pass.
+if (sdk.WORLD_CALENDAR_KEY !== undefined) {
+  const calendarMd = resolve(SCHEMA_DIST, 'profiles', 'calendar.md');
+  const text = existsSync(calendarMd) ? readFileSync(calendarMd, 'utf8') : null;
+  const para = text?.split(/\r?\n/).find((line) => line.startsWith('**Which calendar speaks.**'));
+  const key = para?.match(/in the key `([^`]+)`/)?.[1];
+  if (text === null) gap(`${calendarMd} not readable: WORLD_CALENDAR_KEY went unchecked`);
+  else if (typeof key !== 'string') gap('profiles/calendar.md has no "Which calendar speaks" paragraph naming its key, so WORLD_CALENDAR_KEY went unchecked');
+  else if (sdk.WORLD_CALENDAR_KEY === key) ok();
+  else bad(`WORLD_CALENDAR_KEY is "${sdk.WORLD_CALENDAR_KEY}"; the calendar page names the World's key "${key}"`);
 }
 
 // 9d: the lens profile's date table (4.96.0). Its truth is the fixture's `date_table`, which the profile's
