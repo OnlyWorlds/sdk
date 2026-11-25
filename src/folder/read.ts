@@ -70,6 +70,11 @@ export interface OwFolderReadReport {
    * every route answers 500 with this cause (folder spec 4.8: never read as a world with no elements).
    */
   misnamed: { found: string; wanted: string } | null;
+  /**
+   * Only when a `world.json` is there and was not read for what its text holds: why (`too_deep` past 200 levels,
+   * counted in its text; `not_json`; `number_out_of_range`). Every route's 500 then says so.
+   */
+  worldFault?: OutsideJsonFault;
 }
 
 const FIXED_NAMES = [['world.json', false], ['elements', true], ['spatial', true]] as const;
@@ -212,12 +217,14 @@ export function countsPath(path: string): boolean {
 /** Read the entries once: the world, the elements in the order they were kept, and what was skipped. */
 export function readFolder(entries: readonly OwWorldFileEntry[]): FolderSnapshot {
   let world: Record<string, unknown> | null = null;
+  let worldFault: OutsideJsonFault | undefined;
   const found: { path: string; rank: 0 | 1; dir: ElementType; data: Uint8Array; misspelt?: true }[] = [];
   for (const entry of entries) {
     const segments = entry.path.split('/');
     if (passedOver(entry.path, segments)) continue;
     if (entry.path === 'world.json') {
       const parsed = parseJson(entry.data);
+      if (!parsed.ok) worldFault = parsed.fault;
       if (parsed.ok && isObject(parsed.value) && typeof parsed.value.id === 'string' && parsed.value.id !== '') {
         const { api: _api, ...rest } = parsed.value;
         world = rest;
@@ -269,5 +276,8 @@ export function readFolder(entries: readonly OwWorldFileEntry[]): FolderSnapshot
   }));
   const misnamed = misnamedFixedName(entries.map(e => e.path));
   if (misnamed) return { world: null, elements: [], report: { world: false, elements: 0, legacy: 0, served: [], skipped: [], misnamed } };
-  return { world, elements, report: { world: world !== null, elements: elements.length, legacy, served, skipped, misnamed } };
+  return {
+    world, elements,
+    report: { world: world !== null, elements: elements.length, legacy, served, skipped, misnamed, ...(worldFault ? { worldFault } : {}) },
+  };
 }

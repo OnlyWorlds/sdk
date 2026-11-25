@@ -13,6 +13,7 @@
 import { FIELD_SCHEMA, GENERIC_LINKS, STANDARD_TYPE_ORDER, type ElementType } from '../v2/types.generated';
 import { fold } from '../room';
 import { byCodePoint, uuidKey, type FolderElement, type FolderSnapshot } from './read';
+import { OUTSIDE_JSON_MAX_DEPTH, type OutsideJsonFault } from '../outside-json';
 
 // --- the envelope (core/errors.py) -------------------------------------------------------------
 
@@ -58,10 +59,19 @@ export function refusal(): Answer {
   return envelopeOf(new KeelError(NOT_IN_A_FOLDER_STATUS, 'api_error', NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_MESSAGE));
 }
 
-export function unreadable(misnamed: { found: string; wanted: string } | null = null): Answer {
+/** Why a world.json that is there was not read, in the words a 500 gives it. */
+const WORLD_FAULT_WORDS: Record<OutsideJsonFault, string> = {
+  too_deep: `it is nested more than ${OUTSIDE_JSON_MAX_DEPTH} deep (too_deep)`,
+  not_json: 'it is not JSON (not_json)',
+  number_out_of_range: 'it holds a number too large to read (number_out_of_range)',
+};
+
+export function unreadable(misnamed: { found: string; wanted: string } | null = null, worldFault: OutsideJsonFault | null = null): Answer {
   return envelopeOf(new KeelError(500, 'api_error', 'api_error', misnamed
     ? `This world folder holds ${misnamed.found} where the folder format names ${misnamed.wanted}, so it is not read: rename it ${misnamed.wanted}.`
-    : 'This world folder has no world.json that parses with an id, so nothing in it can be read.'));
+    : worldFault
+      ? `This world folder's world.json cannot be read: ${WORLD_FAULT_WORDS[worldFault]}, so nothing in it can be read.`
+      : 'This world folder has no world.json that parses with an id, so nothing in it can be read.'));
 }
 
 // --- Python's string rules, where keel's checks lean on them ---------------------------------

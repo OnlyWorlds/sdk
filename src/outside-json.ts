@@ -32,10 +32,39 @@ export type OutsideJsonFault = 'not_json' | 'too_deep' | 'number_out_of_range';
 export type OutsideJson = { ok: true; value: unknown } | { ok: false; fault: OutsideJsonFault };
 
 /**
+ * Whether the text opens an object or array deeper than `OUTSIDE_JSON_MAX_DEPTH`, counted in the
+ * text itself as each one opens, before any parse (the folder format's rule since serial 148): so
+ * each value of a repeated key counts, and a text past the line is too deep whatever else is wrong
+ * with it. Brackets inside a string are not counted; a backslash in a string escapes the next
+ * character.
+ */
+export function textTooDeep(text: string): boolean {
+  let depth = 0;
+  let inString = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (inString) {
+      if (c === 0x5c) i++; // a backslash: the next character is escaped
+      else if (c === 0x22) inString = false;
+    } else if (c === 0x22) {
+      inString = true;
+    } else if (c === 0x7b || c === 0x5b) {
+      if (++depth > OUTSIDE_JSON_MAX_DEPTH) return true;
+    } else if (c === 0x7d || c === 0x5d) {
+      depth--;
+    }
+  }
+  return false;
+}
+
+/**
  * The text parsed, with the two cases above answered as a fault. A text with both is
- * `too_deep`. The check after the parse is a loop with its own stack, never recursion.
+ * `too_deep`, and so is a text past the depth that is broken too: the depth is counted first, in
+ * the text (`textTooDeep`). The number check after the parse is a loop with its own stack, never
+ * recursion.
  */
 export function parseOutsideJson(text: string): OutsideJson {
+  if (textTooDeep(text)) return { ok: false, fault: 'too_deep' };
   let value: unknown;
   try {
     value = JSON.parse(text);
@@ -46,16 +75,15 @@ export function parseOutsideJson(text: string): OutsideJson {
   if (typeof value === 'number') return Number.isFinite(value) ? { ok: true, value } : { ok: false, fault: 'number_out_of_range' };
   if (value === null || typeof value !== 'object') return { ok: true, value };
   let badNumber = false;
-  const stack: [object, number][] = [[value, 1]];
+  const stack: object[] = [value];
   while (stack.length > 0) {
-    const [item, depth] = stack.pop() as [object, number];
-    if (depth > OUTSIDE_JSON_MAX_DEPTH) return { ok: false, fault: 'too_deep' };
+    const item = stack.pop() as object;
     const children: unknown[] = Array.isArray(item) ? item : Object.values(item);
     for (const child of children) {
       if (typeof child === 'number') {
         if (!Number.isFinite(child)) badNumber = true;
       } else if (child !== null && typeof child === 'object') {
-        stack.push([child, depth + 1]);
+        stack.push(child);
       }
     }
   }

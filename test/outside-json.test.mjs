@@ -40,6 +40,14 @@ const CASES = {
   'an integer of 4,301 digits': ['9'.repeat(4301), 'number_out_of_range'],
   'such a number inside a list inside an object': ['{"a":[1,{"b":1e999}]}', 'number_out_of_range'],
   'both at once': [`[1e400,${nest(200)}]`, 'too_deep'],
+  // Counted in the text as each object or array opens (serial 148): what the parse keeps does not decide it.
+  'a repeated key, its deep value first and a plain one after': [`${nest(200)},"x_planted":1`, 'too_deep'],
+  'broken JSON before a part past the line': [` ,${nest(200)}`, 'too_deep'],
+  'an empty object at 201': ['['.repeat(199) + '{}' + ']'.repeat(199), 'too_deep'],
+  'brackets inside a string, not counted': [JSON.stringify('['.repeat(300)), null],
+  'an escaped quote, then brackets still inside the string': ['"a\\"' + '{'.repeat(300) + '"', null],
+  'an escaped backslash, then a real bracket at 201': [`["\\\\",${nest(199)}]`, 'too_deep'],
+  'a string left open runs to the end, its brackets not counted': ['"open ' + '['.repeat(300), 'not_json'],
 };
 
 const folder = (planted, world = `{"id":"${W}","name":"Hold"}`) => [
@@ -60,7 +68,7 @@ for (const [name, [planted, reason]] of Object.entries(CASES)) {
       assert.deepEqual(abilities, ['Planted', 'Beside it']);
       assert.deepEqual(report.skipped, []);
       const got = await client.get('ability', A);
-      assert.equal(JSON.stringify(got.x_planted), planted.startsWith('[') ? planted : JSON.stringify(Number(planted)), 'the value the file holds');
+      assert.equal(JSON.stringify(got.x_planted), /^["[]/.test(planted) ? planted : JSON.stringify(Number(planted)), 'the value the file holds');
       return;
     }
     assert.deepEqual(abilities, ['Beside it'], 'the list of its type answers, without it');
@@ -72,13 +80,20 @@ for (const [name, [planted, reason]] of Object.entries(CASES)) {
 }
 
 test('the folder source: a world.json it cannot hold is no world, as one that does not parse', async () => {
-  for (const extra of [nest(200), '1e400']) {
+  for (const [extra, fault] of [[nest(200), 'too_deep'], ['1e400', 'number_out_of_range'], ['[,]', 'not_json']]) {
     let report;
     const f = folderFetch(folder('"plain"', `{"id":"${W}","name":"Hold","x":${extra}}`), { onRead: (r) => { report = r; } });
     const res = await f('https://www.onlyworlds.com/api/v2/world/');
     assert.equal(res.status, 500);
     assert.equal(report.world, false);
+    assert.equal(report.worldFault, fault);
+    assert.match((await res.json()).error.message, new RegExp(`world\\.json cannot be read: .*\\(${fault}\\)`), 'the 500 says why');
   }
+  // A world.json with no id is read and is still no world: no fault, the older sentence.
+  let report;
+  const res = await folderFetch(folder('"plain"', '{"name":"Hold"}'), { onRead: (r) => { report = r; } })('https://www.onlyworlds.com/api/v2/world/');
+  assert.equal('worldFault' in report, false);
+  assert.match((await res.json()).error.message, /no world\.json that parses with an id/);
 });
 
 test('the folder source: a file that is only such a number is skipped for the number, not for its missing id', async () => {

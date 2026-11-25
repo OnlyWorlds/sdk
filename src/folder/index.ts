@@ -32,6 +32,7 @@
 import { refuseUnknownOptions } from '../options';
 import { LOCAL_FETCH } from '../v2/local-fetch';
 import type { OwWorldFileEntry } from '../world-file';
+import type { OutsideJsonFault } from '../outside-json';
 import { byCodePoint, countsPath, isTransientPath, readFolder, type FolderSnapshot, type OwFolderReadReport } from './read';
 import {
   NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_MESSAGE, NOT_IN_A_FOLDER_STATUS, Query, Served, asksThePlatform, getAnswer, isType,
@@ -68,14 +69,16 @@ function respond(answer: Answer): Response {
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'Content-Type': 'application/json' } });
 }
 
-function answerFor(served: Served | null, url: URL, misnamed: { found: string; wanted: string } | null = null): Answer {
+function answerFor(
+  served: Served | null, url: URL, misnamed: { found: string; wanted: string } | null = null, worldFault: OutsideJsonFault | null = null,
+): Answer {
   const route = routeOf(url);
   const q = new Query(url.searchParams);
-  if (route.length === 1 && route[0] === 'health') return served ? { status: 200, body: { status: 'ok' } } : unreadable(misnamed);
+  if (route.length === 1 && route[0] === 'health') return served ? { status: 200, body: { status: 'ok' } } : unreadable(misnamed, worldFault);
   const known = (route.length === 1 && (route[0] === 'world' || route[0] === 'search' || isType(route[0])))
     || (route.length === 2 && isType(route[0]));
   if (!known) return refusal();
-  if (!served) return unreadable(misnamed);
+  if (!served) return unreadable(misnamed, worldFault);
   if (asksThePlatform(q)) return refusal();
   if (route[0] === 'world') return worldAnswer(served);
   if (route[0] === 'search') return searchAnswer(served, q);
@@ -106,10 +109,12 @@ export function folderFetch(entries: readonly OwWorldFileEntry[], opts: OwFolder
   const files = checkEntries(entries);
   let served: Served | null | undefined;
   let misnamed: { found: string; wanted: string } | null = null;
+  let worldFault: OutsideJsonFault | null = null;
   const read = (): Served | null => {
     if (served === undefined) {
       const snapshot: FolderSnapshot = readFolder(files);
       misnamed = snapshot.report.misnamed;
+      worldFault = snapshot.report.worldFault ?? null;
       served = snapshot.world ? new Served(snapshot) : null;
       opts.onRead?.(snapshot.report);
     }
@@ -122,7 +127,7 @@ export function folderFetch(entries: readonly OwWorldFileEntry[], opts: OwFolder
     if (method !== 'GET') return respond(refusal());
     const href = typeof input === 'string' ? input : input instanceof URL ? input.href : (request as Request).url;
     const s = read();
-    return respond(answerFor(s, new URL(href, 'http://folder.invalid/'), misnamed));
+    return respond(answerFor(s, new URL(href, 'http://folder.invalid/'), misnamed, worldFault));
   };
   Object.defineProperty(fetchFolder, LOCAL_FETCH, { value: true });
   return fetchFolder as typeof globalThis.fetch;
