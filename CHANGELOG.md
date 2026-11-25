@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.207.1] - 2026-11-25
+
+### Fixed
+
+- **`speakingCalendar` takes any World a caller holds.** Its `world` was typed `Readonly<Record<string, unknown>>`, which TypeScript does not assign an interface to, so a lens or strand world (`OwStrandWorld`), or a World interface of the caller's own, did not compile. It is typed `object` now; what it answers is unchanged. The package's type test calls it with the client's `getWorld()` result and with an `OwStrandWorld`.
+
 ## [4.207.0] - 2026-11-25
 
 ### Added

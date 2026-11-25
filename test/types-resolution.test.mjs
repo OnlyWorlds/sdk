@@ -36,7 +36,7 @@ const typed = Object.entries(pkg.exports)
 
 const CONSUMER = `
 import { OwV2Client, ELEMENT_TYPES, layoutByLinks3d } from '@onlyworlds/sdk';
-import type { ElementType, OwElement, OwClientConfig } from '@onlyworlds/sdk';
+import type { ElementType, OwElement, OwClientConfig, OwStrandWorld } from '@onlyworlds/sdk';
 import { mountWaymark } from '@onlyworlds/sdk/waymark';
 import { convertKanka } from '@onlyworlds/sdk/convert';
 import type { OwKankaConversion } from '@onlyworlds/sdk/convert';
@@ -44,7 +44,7 @@ import { folderFetch, NOT_IN_A_FOLDER } from '@onlyworlds/sdk/folder';
 import type { OwFolderReadReport } from '@onlyworlds/sdk/folder';
 import { folderMcpTools } from '@onlyworlds/sdk/mcp';
 import type { OwMcpCallToolResult } from '@onlyworlds/sdk/mcp';
-import { formatStep, readCalendarValue } from '@onlyworlds/sdk/calendar';
+import { formatStep, readCalendarValue, speakingCalendar } from '@onlyworlds/sdk/calendar';
 import type { CalendarConfig } from '@onlyworlds/sdk/calendar';
 
 const config: OwClientConfig = {};
@@ -60,7 +60,11 @@ export async function names(): Promise<string[]> {
   void one; void page; void layoutByLinks3d; void mountWaymark; void converted; void local; void NOT_IN_A_FOLDER; void listed;
   const tally: CalendarConfig | null = readCalendarValue({});
   const said: string = tally ? formatStep(tally, 0) : '';
-  void said;
+  // The World as the client reads it, and as an interface with no index signature: speakingCalendar takes both.
+  const spoken = speakingCalendar(await client.getWorld(), [one]);
+  const strandWorld: OwStrandWorld = { elements: [] };
+  const spokenToo = speakingCalendar(strandWorld, [one]);
+  void said; void spoken; void spokenToo;
   return [kind];
 }
 `;

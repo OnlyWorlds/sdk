@@ -112,15 +112,20 @@ export const WORLD_CALENDAR_KEY = 'x_calendar';
  * Pass the whole world's elements: a reader that holds part of a world can miss the named
  * element or a second calendar. A tool with a person in front of it may keep that person's own
  * pick over the World's ({@link resolveCalendar}). A `world` that is not an object is a TypeError.
+ *
+ * `world` is typed `object` so that any World a caller holds is taken: `OwWorldMeta`, a lens or
+ * strand world, or an interface of the caller's own, which TypeScript does not assign to a record type.
  */
 export function speakingCalendar(
-  world: Readonly<Record<string, unknown>>,
+  world: object,
   elements: Iterable<OwCalendarElement>,
 ): WorldCalendar | null {
   if (world === null || typeof world !== 'object' || Array.isArray(world)) {
     throw new TypeError('speakingCalendar: world must be the World\'s keys, an object');
   }
-  const named = Object.prototype.hasOwnProperty.call(world, WORLD_CALENDAR_KEY) ? world[WORLD_CALENDAR_KEY] : undefined;
+  const named = Object.prototype.hasOwnProperty.call(world, WORLD_CALENDAR_KEY)
+    ? (world as Readonly<Record<string, unknown>>)[WORLD_CALENDAR_KEY]
+    : undefined;
   if (named === undefined || named === null) return resolveCalendar(elements, undefined, { fallbackToOnly: true });
   return typeof named === 'string' ? resolveCalendar(elements, named) : null;
 }
