@@ -44,6 +44,7 @@ import {
   NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_DOC, keelAnswerOf, pyStrip, searchAsk, searchHits, searchRow, type SearchAsk,
 } from '../folder/serve';
 import { checkArgs } from './args';
+import { addDateLabels, namedCalendarId } from './date-labels';
 import { pyDumps, pyRepr, pyStrRepr } from './py';
 import doorJson from './door.json';
 
@@ -447,7 +448,30 @@ export function folderMcpTools(worlds: readonly OwMcpWorld[], opts: OwMcpToolsOp
     }
     // One past the page, to say has_more, as the door reads it; `total` is the whole list's length (keel 630).
     const cut = newestFirst(rows).slice(offset, offset + limit + 1);
-    return { data: cut.slice(0, limit), limit, offset, has_more: cut.length > limit, total: rows.length, proposed_left_out: leftOut };
+    const data = cut.slice(0, limit);
+    await labelled(w, data.map((b) => [type, b] as const));
+    return { data, limit, offset, has_more: cut.length > limit, total: rows.length, proposed_left_out: leftOut };
+  };
+
+  /**
+   * The door's `date_labels` on served bodies (keel's mcp_server/date_labels.py; `./date-labels`): the
+   * World's `x_calendar` read through the client, then the element it names, in any of the 22 types.
+   */
+  const labelled = async (w: Held, items: ReadonlyArray<readonly [string, Body]>): Promise<void> => {
+    await addDateLabels(items.map(([type, b]) => [DOOR.element_schemas[type].integer, b] as const), async () => {
+      const named = namedCalendarId((await through(() => w.client.getWorld())) as unknown as Body);
+      if (named === null) return null;
+      for (const type of ['construct', ...TYPE_SLUGS.filter((t) => t !== 'construct')]) {
+        try {
+          return (await w.client.get(type, named)) as unknown as Body;
+        } catch (e) {
+          if (isApiError(e) && e.status === 404) continue;
+          if (isApiError(e)) throw new Refusal(refusalText(e.detail, e.retryAfter));
+          throw e;
+        }
+      }
+      return null;
+    });
   };
 
   /**
@@ -544,13 +568,16 @@ export function folderMcpTools(worlds: readonly OwMcpWorld[], opts: OwMcpToolsOp
     const id = a.id as string;
     const key = uuidKey(id);
     if (key === null) throw new Refusal(`id must be a UUID; got ${pyStrRepr(id)}.`, true);
+    let body: Body;
     try {
-      return (await w.client.get(type, key)) as unknown as Body;
+      body = (await w.client.get(type, key)) as unknown as Body;
     } catch (e) {
       if (isApiError(e) && e.status === 404) throw new Refusal(`${type} '${id}' not found.`, true);
       if (isApiError(e)) throw new Refusal(refusalText(e.detail, e.retryAfter));
       throw e;
     }
+    await labelled(w, [[type, body]]);
+    return body;
   };
 
   /**
