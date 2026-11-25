@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.206.0] - 2026-11-25
+
+### Changed
+
+- **The MCP tools on a folder (`@onlyworlds/sdk/mcp`) follow the hosted door's `list_worlds` and its several-worlds refusal.** `list_worlds` lists the worlds by name, case aside, then by id, whatever order the folders were given in. A read that names no `world` while several are served is refused in the bad-request envelope (`invalid_request`, `param` `world`), with the same rows beside it as `worlds`; the message no longer lists the ids in its text. A row carries no `change_seq`, which the door's rows now do: a folder holds no write counter, and the tool's description says so. The vendored door texts are read again (2026-11-25).
+
 ## [4.205.1] - 2026-11-25
 
 ### Changed

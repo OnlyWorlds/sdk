@@ -129,8 +129,18 @@ test('list_worlds names each world served, as its owner; world names one by the 
 
   const mcp = folderMcpTools([{ entries: harbour() }, { entries: two }]);
   assert.deepEqual((await ok(mcp, 'list_worlds', {})).data.map((r) => [r.id, r.slug]), [[W, null], [W2, 'second']]);
-  assert.equal(await refused(mcp, 'list_elements', { type: 'location' }), `More than one world is served here: name one as world (${W}, ${W2}); list_worlds shows them.`);
-  assert.equal(await refused(mcp, 'get_element', { type: 'location', id: LOC }), `More than one world is served here: name one as world (${W}, ${W2}); list_worlds shows them.`);
+  // The door's several-worlds refusal (2026-11-25): the bad-request envelope on world, the list_worlds rows beside it.
+  const several = envelope('More than one world is served here: name one as world; list_worlds shows them.', 'world').slice(0, -1)
+    + `, "worlds": [{"id": "${W}", "slug": null, "name": "Harbour", "role": "owner"}, {"id": "${W2}", "slug": "second", "name": "Second", "role": "owner"}]}`;
+  assert.equal(await refused(mcp, 'list_elements', { type: 'location' }), several);
+  assert.equal(await refused(mcp, 'get_element', { type: 'location', id: LOC }), several);
+  // The door's order: by name, case aside, then id, whatever order the worlds were given in.
+  const reversed = folderMcpTools([{ entries: two }, { entries: harbour() }]);
+  assert.deepEqual((await ok(reversed, 'list_worlds', {})).data.map((r) => r.name), ['Harbour', 'Second']);
+  assert.equal(await refused(reversed, 'list_elements', { type: 'location' }), several);
+  const lower = [...harbour().filter((f) => f.path !== 'world.json'), file('world.json', { id: W2, name: 'archive' })];
+  const cased = folderMcpTools([{ entries: harbour() }, { entries: lower }]);
+  assert.deepEqual((await ok(cased, 'list_worlds', {})).data.map((r) => r.name), ['archive', 'Harbour']);
   assert.equal((await ok(mcp, 'get_element', { type: 'location', id: LOC, world: ` ${W2} ` })).name, 'The Copper Mine');
   // A slug is no world's id here: refused, never taken to mean the folder.
   assert.equal(await refused(mcp, 'get_element', { type: 'location', id: LOC, world: 'second' }),

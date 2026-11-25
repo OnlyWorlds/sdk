@@ -301,6 +301,18 @@ function newestFirst(rows: Body[]): Body[] {
  */
 const collator = new Intl.Collator('en', { ignorePunctuation: true });
 
+/**
+ * list_worlds' rows, in the door's order: by name, case aside, then by id (every world here is the caller's own,
+ * so the door's "own worlds first" is the whole list). The door orders by its database's collation; this uses the
+ * collator the world index orders names by. No `change_seq`: a folder holds no write counter, so the key is left
+ * out rather than made up. The several-worlds refusal carries the same rows, as the door's does.
+ */
+function worldRows(all: readonly Held[]): { id: string; slug: string | null; name: string; role: 'owner' }[] {
+  return [...all]
+    .sort((x, y) => collator.compare(x.name.toLowerCase(), y.name.toLowerCase()) || byCodePoint(x.name.toLowerCase(), y.name.toLowerCase()) || byCodePoint(x.id, y.id))
+    .map((h) => ({ id: h.id, slug: h.slug, name: h.name, role: 'owner' }));
+}
+
 /** One world id and another: equal as UUIDs when both are one (keel's `_parse_world(raw) == world.id`), else equal in either case. */
 function sameId(a: string, b: string): boolean {
   const x = uuidKey(a);
@@ -380,7 +392,14 @@ export function folderMcpTools(worlds: readonly OwMcpWorld[], opts: OwMcpToolsOp
     if (world === null || world === undefined) {
       if (all.length === 1) return all[0];
       if (all.length === 0) throw new Refusal(NO_WORLD);
-      throw new Refusal(`More than one world is served here: name one as world (${all.map((h) => h.id).join(', ')}); list_worlds shows them.`);
+      // The door's several-worlds refusal: the bad-request envelope on `world`, the list_worlds rows beside it.
+      throw new Refusal(refusalText({
+        error: {
+          message: 'More than one world is served here: name one as world; list_worlds shows them.',
+          type: 'invalid_request', code: 'invalid_request', param: 'world', doc_url: 'https://onlyworlds.github.io/api/errors/#invalid_request',
+        },
+        worlds: worldRows(all),
+      }));
     }
     const value = pyStrip(String(world));
     const found = all.find((h) => sameId(h.id, value));
@@ -408,7 +427,7 @@ export function folderMcpTools(worlds: readonly OwMcpWorld[], opts: OwMcpToolsOp
     return hits;
   };
 
-  const listWorlds = async () => ({ data: (await ready()).map((h) => ({ id: h.id, slug: h.slug, name: h.name, role: 'owner' })) });
+  const listWorlds = async () => ({ data: worldRows(await ready()) });
 
   const listElements = async (a: Record<string, unknown>) => {
     const type = a.type as string;

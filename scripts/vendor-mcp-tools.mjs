@@ -29,6 +29,7 @@ const PIN = new URL('../codegen/schema-pin.json', import.meta.url);
 const READ_TOOLS = ['list_element_types', 'get_element_schema', 'search_schema', 'list_worlds', 'get_me', 'list_elements', 'count_elements', 'get_element', 'search_elements'];
 const SCHEMA_TOOLS = new Set(['list_element_types', 'get_element_schema', 'search_schema']);
 const HERE_WORLD = "Here it answers from a world folder on this computer, not from onlyworlds.com; `world` is the id in the folder's world.json.";
+const HERE_LIST = "Here it answers from world folders on this computer, not from onlyworlds.com: each folder's world is its owner's, by name, case aside, then id; a folder holds no write counter, so a row carries no `change_seq`.";
 const HERE_SCHEMA = 'Here it answers on this computer, from the schema as onlyworlds.com served it when this package was built.';
 /** get_me's own: a folder holds no account, so it answers for the folder's owner with nothing in it. */
 const HERE_ME = "Here it answers from a world folder on this computer, not from onlyworlds.com: as the folder's owner with no account behind it (no membership, Character, sponsor, seats or lenses), with scope read, since these tools never write the folder; `world` is the id in the folder's world.json.";
@@ -110,7 +111,7 @@ const templates = await listAll('resources/templates/list', 'resourceTemplates')
 const kept = READ_TOOLS.map((name) => {
   const t = tools.find((x) => x.name === name);
   if (!t) blind(`tools/list names no ${name}`);
-  return { ...pick(t, ['name', 'description', 'inputSchema', 'outputSchema', 'annotations']), here: SCHEMA_TOOLS.has(name) ? HERE_SCHEMA : name === 'get_me' ? HERE_ME : HERE_WORLD };
+  return { ...pick(t, ['name', 'description', 'inputSchema', 'outputSchema', 'annotations']), here: SCHEMA_TOOLS.has(name) ? HERE_SCHEMA : name === 'get_me' ? HERE_ME : name === 'list_worlds' ? HERE_LIST : HERE_WORLD };
 });
 // Served in the door's order, so a tools/list here reads as the door's does, less the tools a folder cannot answer.
 kept.sort((a, b) => tools.findIndex((t) => t.name === a.name) - tools.findIndex((t) => t.name === b.name));

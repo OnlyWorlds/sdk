@@ -1,7 +1,7 @@
 {
   "_about": "The hosted MCP door's read tools as it serves them, for @onlyworlds/sdk/mcp. Written by scripts/vendor-mcp-tools.mjs from the live door; never edit by hand.",
   "source": "https://www.onlyworlds.com/mcp: tools/list, resources/list, resources/templates/list, list_element_types and get_element_schema for each type, asked with the public demo key 0000000001",
-  "read_at": "2026-11-24",
+  "read_at": "2026-11-25",
   "schema_version": "00.34.01",
   "tools": [
     {
@@ -77,7 +77,7 @@
     },
     {
       "name": "list_worlds",
-      "description": "The worlds you can read here. With an API-Key: the key's one world. Signed\nin through a hosted client (a bearer), where this server offers one: every\nworld your account owns or is a member of, as your account's world list shows\nthem; pass one's `id` as `world` to the other read tools; a\nbearer reads only, and writes need an API-Key and API-Pin. Returns `{data: [{id, slug, name, role}, ...]}`,\n`role` being `owner` or your membership's role (co_builder, contributor, guest),\nand `slug` the world's public page address, or null.",
+      "description": "The worlds you can read here. With an API-Key: the key's one world. Signed\nin through a hosted client (a bearer), where this server offers one: every\nworld your account owns or is a member of, the whole list, your own worlds\nfirst, then your memberships, each by name, as your account's world list\nshows them; pass one's `id` as `world` to the other read tools; a\nbearer reads only, and writes need an API-Key and API-Pin. Returns\n`{data: [{id, slug, name, role, change_seq}, ...]}`,\n`role` being `owner` or your membership's role (co_builder, contributor, guest),\n`slug` the world's public page address, or null, and `change_seq` the world's\nwrite counter, the number get_changes counts from (its `head`).",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {},
@@ -92,7 +92,7 @@
         "destructiveHint": false,
         "idempotentHint": true
       },
-      "here": "Here it answers from a world folder on this computer, not from onlyworlds.com; `world` is the id in the folder's world.json."
+      "here": "Here it answers from world folders on this computer, not from onlyworlds.com: each folder's world is its owner's, by name, case aside, then id; a folder holds no write counter, so a row carries no `change_seq`."
     },
     {
       "name": "get_me",
