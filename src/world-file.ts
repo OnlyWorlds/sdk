@@ -56,7 +56,7 @@ import { refuseUnknownOptions } from './options';
 import { nfc } from './nfc';
 import { simpleCaseFold } from './case-fold';
 import { readFolder, misnamedFixedName } from './folder/read';
-import { parseOutsideJson } from './outside-json';
+import { OUTSIDE_JSON_MAX_DEPTH, parseOutsideJson, textTooDeep } from './outside-json';
 
 const WORLD_FILE = 'world.json';
 const MARKER_NAME = 'mimetype';
@@ -384,8 +384,14 @@ export function inflateEntry(bytes: Uint8Array, e: CdEntry): Uint8Array {
 
 function parseWorld(data: Uint8Array): Record<string, unknown> {
   let meta: unknown;
+  const text = new TextDecoder().decode(data);
+  // Counted in the text before the parse, as an element file is (serial 148): a world.json past the line is one
+  // this reader cannot read, so the archive is no world, and the message says why.
+  if (textTooDeep(text)) {
+    throw new OwWorldFileError('not_a_world', `${MESSAGES.not_a_world} Its world.json is nested more than ${OUTSIDE_JSON_MAX_DEPTH} deep (too_deep).`);
+  }
   try {
-    meta = JSON.parse(new TextDecoder().decode(data));
+    meta = JSON.parse(text);
   } catch {
     throw new OwWorldFileError('not_a_world');
   }
