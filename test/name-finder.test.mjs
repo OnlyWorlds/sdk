@@ -12,19 +12,20 @@ import { readFileSync } from 'node:fs';
 import * as sdk from '../dist/index.js';
 
 const { nameFinder, simpleCaseFold } = sdk;
-const CASES_SHA256 = '8e91e79981830511055976011f9fc6d4f4b62fb0183c29bad61c2d05fd4b13e4';
+const CASES_SHA256 = '9c6fcf52eaa7a435b88f7524fdd1020a696b97ecc31d2a1efcf9431a49384b57';
 const bytes = readFileSync(new URL('./fixtures/name-finder.cases.json', import.meta.url));
 const fixture = JSON.parse(bytes.toString('utf8'));
 
 const namesOf = (e) => (Array.isArray(e.names) ? e.names : [e.name]);
 /** A JavaScript string index as a count of code points. */
 const points = (text, index) => Array.from(text.slice(0, index)).length;
-const answer = (c) => nameFinder(c.elements, { case: c.case, names: namesOf })(c.text)
+const answer = (c) => nameFinder(c.elements, { case: c.case, names: namesOf })(c.text, c.markdown ? { markdown: true } : undefined)
   .map((f) => ({ at: points(c.text, f.start), length: Array.from(c.text.slice(f.start, f.end)).length, id: f.element.id }));
 
 test('the cases file is the pinned bytes, the ones the Python package runs', () => {
   assert.equal(createHash('sha256').update(bytes).digest('hex'), CASES_SHA256);
-  assert.equal(fixture.version, 2);
+  assert.equal(fixture.version, 3);
+  assert.equal(fixture.cases.filter((c) => c.markdown === true).length, 16, 'version 3 carries 16 cases with the markdown option');
   assert.ok(fixture.cases.length >= 62, `${fixture.cases.length} cases`);
 });
 
@@ -77,7 +78,7 @@ test('linear in the text on the timed recipes, whatever the names: each answers 
     const { elements, text } = build(recipe);
     const find = nameFinder(elements, { case: 'exact' });
     const t0 = performance.now();
-    const found = find(text);
+    const found = find(text, recipe.markdown ? { markdown: true } : undefined);
     const ms = performance.now() - t0;
     assert.equal(found.length, recipe.count, recipe.name);
     assert.ok(ms < fixture.underMs, `${recipe.name}: ${Math.round(ms)} ms`);

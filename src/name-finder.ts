@@ -41,9 +41,19 @@ export interface OwNameShared<T> {
   elements: readonly T[];
 }
 
+/** One call's options: how the text given to it is read. */
+export interface OwNameFindOptions {
+  /**
+   * The text is Markdown (since 4.208.0): nothing is read inside an inline code span, a fenced code block, an
+   * HTML tag or comment, or a reference definition's line. Off by default, so a rich-text node's literal backticks
+   * stay prose.
+   */
+  markdown?: boolean;
+}
+
 /** What `nameFinder` answers: a function over a text, with the names it holds as shared beside it. */
 export interface OwNameFinder<T> {
-  (text: string): OwNameFound<T>[];
+  (text: string, options?: OwNameFindOptions): OwNameFound<T>[];
   /**
    * Every name two or more elements hold, in the order each name was first met. `find` never answers one of
    * these, so a tool reads this list to say why a name stays plain. The list and its entries are frozen.
@@ -54,6 +64,7 @@ export interface OwNameFinder<T> {
 /** A name shorter than this many characters (code points, after its white space is trimmed) is never looked for. */
 const NAME_MIN = 3;
 const OPTION_KEYS = ['case', 'names'] as const;
+const FIND_OPTION_KEYS = ['markdown'] as const;
 /** Beside one of these a name is inside a word: a letter of any script, a combining mark, a decimal digit or an underscore. */
 const IN_A_WORD = /^[\p{L}\p{M}\p{Nd}_]/u;
 /**
@@ -130,10 +141,177 @@ function markdownLinks(text: string): Array<[number, number]> {
   return spans;
 }
 
-/** The stretches no name is read in: every address and every Markdown link, in order, none overlapping. */
-function passedOver(text: string): Array<[number, number]> {
+/** Unicode's White_Space code points, all in the BMP: the end of a bare web address and of an autolink. */
+function isWhiteSpace(c: number): boolean {
+  return (c >= 0x09 && c <= 0x0d) || c === 0x20 || c === 0x85 || c === 0xa0 || c === 0x1680
+    || (c >= 0x2000 && c <= 0x200a) || c === 0x2028 || c === 0x2029 || c === 0x202f || c === 0x205f || c === 0x3000;
+}
+
+const isAsciiLetter = (c: number): boolean => (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a);
+
+/**
+ * Every bare web address and every autolink, in any text. A bare address starts at `http://` or `https://` (the
+ * scheme in any ASCII case) and runs to just before the first white space or `<`. An autolink is `<`, a scheme (an
+ * ASCII letter, then 1 to 31 of letters, digits, `+`, `.` or `-`), `:`, then anything but white space, a control
+ * character, `<` or `>`, up to the closing `>`.
+ */
+function webAddresses(text: string): Array<[number, number]> {
+  const spans: Array<[number, number]> = [];
+  // No `u` flag: under it `i` would let U+017F match `s`; without it a case match never maps a non-ASCII letter to an
+  // ASCII one, so the scheme matches in ASCII case alone, as Python's (?ai) does.
+  const scheme = /https?:\/\//gi;
+  let m: RegExpExecArray | null;
+  while ((m = scheme.exec(text)) !== null) {
+    const at = m.index;
+    let end = at + m[0].length;
+    while (end < text.length && !isWhiteSpace(text.charCodeAt(end)) && text.charCodeAt(end) !== 0x3c) end++;
+    spans.push([at, end]);
+    scheme.lastIndex = end;
+  }
+  let open = text.indexOf('<');
+  while (open !== -1) {
+    let i = open + 1;
+    if (isAsciiLetter(text.charCodeAt(i))) {
+      let n = 1;
+      i++;
+      while (i < text.length && n < 32 && /[A-Za-z0-9+.-]/.test(text[i])) { i++; n++; }
+      if (n >= 2 && text.charCodeAt(i) === 0x3a) {
+        i++;
+        let c = text.charCodeAt(i);
+        while (i < text.length && c !== 0x3e && c !== 0x3c && c >= 0x20 && c !== 0x7f && !isWhiteSpace(c)) c = text.charCodeAt(++i);
+        if (i < text.length && c === 0x3e) { spans.push([open, i + 1]); open = text.indexOf('<', i + 1); continue; }
+      }
+    }
+    open = text.indexOf('<', open + 1);
+  }
+  return spans;
+}
+
+/** Where each line starts and ends (before its `\n`), in order. */
+function lineBounds(text: string): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  let start = 0;
+  for (;;) {
+    const nl = text.indexOf('\n', start);
+    if (nl === -1) { out.push([start, text.length]); return out; }
+    out.push([start, nl]);
+    start = nl + 1;
+  }
+}
+
+/** A line's fence, after at most three spaces: a run of three or more `` ` `` or `~`, or null. */
+function fenceOf(text: string, start: number, end: number): { char: number; length: number; after: number } | null {
+  let i = start;
+  while (i < end && i - start < 3 && text.charCodeAt(i) === 0x20) i++;
+  const char = text.charCodeAt(i);
+  if (char !== 0x60 && char !== 0x7e) return null;
+  let j = i;
+  while (j < end && text.charCodeAt(j) === char) j++;
+  return j - i >= 3 ? { char, length: j - i, after: j } : null;
+}
+
+/**
+ * The Markdown stretches no name is read in (`markdown: true`). Fenced code blocks first: a line whose fence opens
+ * one (a backtick fence holds no backtick in the rest of its line) runs to a later line holding only a fence of the
+ * same character, at least as long, and spaces or tabs after it, or to the end of the text. Outside them: an inline
+ * code span (a run of backticks to the next run of exactly as many; a run with none is prose), an HTML comment
+ * (`<!--` to the first `-->`), an HTML tag (`<`, an optional `/`, an ASCII letter, to the first `>`), and a
+ * reference definition's line (after at most three spaces, `[`, a label, and the line's first `]` followed by `:`).
+ */
+function markdownStretches(text: string): Array<[number, number]> {
+  const spans: Array<[number, number]> = [];
+  const lines = lineBounds(text);
+  const outside: Array<[number, number]> = [];
+  let segStart = 0;
+  let bracket = -2; // the next `]` at or after the place last asked about, searched for once per place passed
+  for (let k = 0; k < lines.length; k++) {
+    const [ls, le] = lines[k];
+    const open = fenceOf(text, ls, le);
+    if (open === null || (open.char === 0x60 && text.indexOf('`', open.after) !== -1 && text.indexOf('`', open.after) < le)) {
+      // A reference definition's line, outside a fence.
+      let i = ls;
+      while (i < le && i - ls < 3 && text.charCodeAt(i) === 0x20) i++;
+      if (text.charCodeAt(i) === 0x5b) {
+        if (bracket !== -1 && bracket < i + 1) bracket = text.indexOf(']', i + 1);
+        const close = bracket;
+        if (close !== -1 && close < le && close > i + 1 && text.charCodeAt(close + 1) === 0x3a) spans.push([ls, le]);
+      }
+      continue;
+    }
+    let m = k + 1;
+    for (; m < lines.length; m++) {
+      const [cs, ce] = lines[m];
+      const close = fenceOf(text, cs, ce);
+      if (close === null || close.char !== open.char || close.length < open.length) continue;
+      let j = close.after;
+      while (j < ce && (text.charCodeAt(j) === 0x20 || text.charCodeAt(j) === 0x09 || text.charCodeAt(j) === 0x0d)) j++;
+      if (j === ce) break;
+    }
+    const blockEnd = m < lines.length ? lines[m][1] : text.length;
+    if (ls > segStart) outside.push([segStart, ls]);
+    spans.push([ls, blockEnd]);
+    segStart = blockEnd;
+    k = m;
+  }
+  if (segStart < text.length) outside.push([segStart, text.length]);
+  for (const [s, e] of outside) {
+    // Inline code spans: every maximal backtick run, then each opening run to the next run of its length.
+    const runs: Array<[number, number]> = [];
+    let i = text.indexOf('`', s);
+    while (i !== -1 && i < e) {
+      let j = i;
+      while (j < e && text.charCodeAt(j) === 0x60) j++;
+      runs.push([i, j - i]);
+      i = text.indexOf('`', j);
+    }
+    const byLength = new Map<number, number[]>();
+    runs.forEach(([, n], idx) => { const l = byLength.get(n); if (l) l.push(idx); else byLength.set(n, [idx]); });
+    const cursor = new Map<number, number>();
+    let r = 0;
+    while (r < runs.length) {
+      const [at, n] = runs[r];
+      const list = byLength.get(n)!;
+      let c = cursor.get(n) ?? 0;
+      while (c < list.length && list[c] <= r) c++;
+      cursor.set(n, c);
+      if (c < list.length) {
+        const close = runs[list[c]];
+        spans.push([at, close[0] + n]);
+        r = list[c] + 1;
+      } else {
+        r++;
+      }
+    }
+    // HTML comments and tags.
+    let gt = -2;
+    let commentEnd = -2;
+    let open = text.indexOf('<', s);
+    while (open !== -1 && open < e) {
+      if (text.startsWith('<!--', open)) {
+        if (commentEnd !== -1 && commentEnd < open + 4) commentEnd = text.indexOf('-->', open + 4);
+        if (commentEnd !== -1 && commentEnd + 3 <= e) { spans.push([open, commentEnd + 3]); open = text.indexOf('<', commentEnd + 3); continue; }
+      } else {
+        const name = text.charCodeAt(open + 1) === 0x2f ? open + 2 : open + 1;
+        if (isAsciiLetter(text.charCodeAt(name))) {
+          if (gt !== -1 && gt < name) gt = text.indexOf('>', name);
+          if (gt !== -1 && gt < e) { spans.push([open, gt + 1]); open = text.indexOf('<', gt + 1); continue; }
+        }
+      }
+      open = text.indexOf('<', open + 1);
+    }
+  }
+  return spans;
+}
+
+/**
+ * The stretches no name is read in, in order, none overlapping: every address, every Markdown link, every bare web
+ * address and autolink, and with `markdown` the Markdown stretches too.
+ */
+function passedOver(text: string, markdown: boolean): Array<[number, number]> {
   const spans = markdownLinks(text);
   for (const a of findOwLinks(text)) spans.push([a.start, a.end]);
+  for (const w of webAddresses(text)) spans.push(w);
+  if (markdown) for (const m of markdownStretches(text)) spans.push(m);
   spans.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const out: Array<[number, number]> = [];
   for (const s of spans) {
@@ -162,8 +340,12 @@ function passedOver(text: string): Array<[number, number]> {
  * - Where several names start at one place, the longest whole one is taken ("Iron Gate" over "Iron").
  * - A name two elements share is never answered, and nothing inside it is: the text stays plain there. One element
  *   listed twice, or found by two of its own names, is one element.
- * - Nothing is read inside an address (what `findOwLinks` finds) or a Markdown link `[label](target)`, and no name
- *   is read across the edge of one.
+ * - Nothing is read inside an address (what `findOwLinks` finds), a Markdown link `[label](target)`, a bare web
+ *   address (`https://…` to the next white space or `<`) or an autolink (`<scheme:…>`), and no name is read across
+ *   the edge of one. With `find(text, { markdown: true })` (since 4.208.0), for a text known to be Markdown, nothing
+ *   is read inside an inline code span, a fenced code block, an HTML tag or comment, or a reference definition's line
+ *   either. An indented code block, a fence inside a quote or a list, and a definition's title on the next line are
+ *   read as prose.
  * - Text is compared as written: no Unicode normalisation, and a space in a name matches that one space.
  *
  * `find.shared` lists every name two or more elements hold, each as `{ name, elements }`: the name as it is
@@ -285,11 +467,22 @@ export function nameFinder<T extends { id: string; name?: unknown }>(
     return root;
   };
 
-  function find(text: string): OwNameFound<T>[] {
+  function find(text: string, callOptions?: OwNameFindOptions): OwNameFound<T>[] {
     if (typeof text !== 'string') throw new TypeError('nameFinder: text must be a string');
+    let markdown = false;
+    if (callOptions !== undefined) {
+      if (callOptions === null || typeof callOptions !== 'object' || Array.isArray(callOptions)) {
+        throw new TypeError(`nameFinder: a call's options is an object, such as { markdown: true }; got ${JSON.stringify(callOptions) ?? typeof callOptions}.`);
+      }
+      refuseUnknownOptions('nameFinder(text, options)', callOptions, FIND_OPTION_KEYS);
+      if (callOptions.markdown !== undefined && typeof callOptions.markdown !== 'boolean') {
+        throw new TypeError(`nameFinder: options.markdown is true or false; got ${JSON.stringify(callOptions.markdown) ?? typeof callOptions.markdown}.`);
+      }
+      markdown = callOptions.markdown === true;
+    }
     const found: OwNameFound<T>[] = [];
     if (hits.length === 0) return found;
-    const spans = passedOver(text);
+    const spans = passedOver(text, markdown);
     const length = text.length;
     // Where a whole name starts and the longest one that does, as the backward pass meets them: last place first.
     const starts: number[] = [];

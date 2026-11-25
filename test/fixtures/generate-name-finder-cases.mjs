@@ -104,6 +104,29 @@ const CASES = [
   ['names nested in one another: the longest that is whole is taken', 'exact', [el('a', 'a-b'), el('b', 'a-b-c'), el('c', 'a-b-c-d')], '{{c|a-b-c-d}} {{b|a-b-c}}-dx a-bx {{a|a-b}}-cx'],
   ['names that overlap: the leftmost is taken, and the next starts after it', 'exact', [el('x', 'aaa bbb'), el('y', 'bbb ccc'), el('z', 'ccc ddd')], '{{x|aaa bbb}} {{z|ccc ddd}} and {{y|bbb ccc}} ddd'],
   ['a name beside a character above the BMP, at both ends of a text', 'exact', [el('k', 'Kira'), el('d', DRAGON + ' den')], `{{k|Kira}}${DRAGON} {{d|${DRAGON} den}} ${DRAGON}{{k|Kira}}`],
+  // Version 3 (4.208.0): web addresses in any text, and the Markdown stretches with { markdown: true }.
+  ['a bare web address is passed over, its scheme in any ASCII case', 'exact', [el('k', 'Kira')], 'See https://kira.example/kira and HtTp://Kira.example/Kira, then {{k|Kira}}.'],
+  ['a bare web address ends at white space or <', 'exact', [el('k', 'Kira')], `https://x.example/Kira<b>{{k|Kira}}</b> and https://x.example/Kira${NBSP}{{k|Kira}}`],
+  ['a scheme that is not http or https, or not in ASCII, is prose', 'exact', [el('k', 'Kira')], `ftp://{{k|Kira}}.example and httpx://{{k|Kira}} and http${LONG_S}://{{k|Kira}}`],
+  ['an autolink is passed over, whatever its scheme', 'exact', [el('k', 'Kira')], '<https://example.com/Kira> and <mailto:kira@example.com> beside {{k|Kira}}'],
+  ['what is not an autolink is prose', 'exact', [el('k', 'Kira')], '<{{k|Kira}}> and <x:{{k|Kira}}> and <ab:{{k|Kira}} x> and <ab:{{k|Kira}}'],
+  ['without the markdown option, code, HTML and definitions are prose', 'exact', [el('k', 'Kira')], '`{{k|Kira}}` <b title="{{k|Kira}}"> <!-- {{k|Kira}} -->\n[r]: x "{{k|Kira}}"'],
+  ['markdown: an inline code span is passed over, its backticks matched by length', 'exact', [el('k', 'Kira')], 'Say `Kira` or ``a `Kira` b`` to {{k|Kira}}.', [], { markdown: true }],
+  ['markdown: backticks with no closing run of their length are prose', 'exact', [el('k', 'Kira')], 'a ``{{k|Kira}}` and `{{k|Kira}}', [], { markdown: true }],
+  ['markdown: a fenced code block is passed over, closed or open to the end', 'exact', [el('k', 'Kira')], 'Before {{k|Kira}}\n```js\nKira\n```\n{{k|Kira}} after\n~~~\nKira and Kira', [], { markdown: true }],
+  ['markdown: a fence closes only with its own character, at least as long', 'exact', [el('k', 'Kira')], '````\nKira\n```\nKira\n~~~~\nKira\n````\n{{k|Kira}}', [], { markdown: true }],
+  ['markdown: a closing fence holds nothing but spaces after it, a carriage return included', 'exact', [el('k', 'Kira')], '```\r\nKira\r\n``` x\r\nKira\r\n```  \r\n{{k|Kira}}', [], { markdown: true }],
+  ['markdown: a backtick line that also holds a backtick is no fence', 'exact', [el('k', 'Kira')], '```a`b {{k|Kira}}\n{{k|Kira}}', [], { markdown: true }],
+  ['markdown: a fence indented four spaces is no fence', 'exact', [el('k', 'Kira')], '    ```\n{{k|Kira}}', [], { markdown: true }],
+  ['markdown: a run that is no fence opens a code span to the next run of its length, across lines', 'exact', [el('k', 'Kira')], '```a`b Kira\n    ```\n{{k|Kira}}', [], { markdown: true }],
+  ['markdown: a fence up to three spaces in is a fence', 'exact', [el('k', 'Kira')], '   ~~~\nKira\n   ~~~\n{{k|Kira}}', [], { markdown: true }],
+  ['markdown: backticks inside a fence open no span outside it', 'exact', [el('k', 'Kira')], '```\n`\n```\n{{k|Kira}} `x', [], { markdown: true }],
+  ['markdown: an HTML tag and comment are passed over, the text between tags is read', 'exact', [el('k', 'Kira')], '<span title="Kira">{{k|Kira}}</span> <!-- Kira --> <br/> {{k|Kira}}', [], { markdown: true }],
+  ['markdown: what is not a tag or a comment is prose', 'exact', [el('k', 'Kira')], '< {{k|Kira}}> and <1 {{k|Kira}}> and <!-- {{k|Kira}} and <a {{k|Kira}}', [], { markdown: true }],
+  ["markdown: a reference definition's line is passed over", 'exact', [el('k', 'Kira')], '[ref]: https://example.com "Kira"\n   [kira]: x Kira\n    [k]: {{k|Kira}}\n[{{k|Kira}}] is {{k|Kira}}\n[]: x {{k|Kira}}', [], { markdown: true }],
+  ['markdown: what is always passed over still is', 'exact', [el('k', 'Kira')], `[Kira](x) https://k.example/Kira ow://character/${ID} {{k|Kira}}`, [], { markdown: true }],
+  ['markdown: folded names are passed over the same way', 'folded', [el('k', 'KIRA')], '`kira` <i>{{k|Kira}}</i> <i title="kira">', [], { markdown: true }],
+  ["markdown: Temper's probe, seven places that are no mention", 'exact', [el('k', 'Kira')], 'Inline `Kira`.\n\n```\nKira\n```\n\nhttps://kira.example/kira and <https://example.com/Kira>, <abbr title="Kira">K</abbr>, ![Kira](pic.png)\n\n[k]: https://example.com "Kira"\n\nAnd {{k|Kira}} herself.', [], { markdown: true }],
 ];
 
 /** Recipes both tests build the same way; each must answer `count` names, in under `underMs`. */
@@ -118,6 +141,10 @@ const TIMED = [
   { name: 'a name of five thousand characters that almost matches at every word', elements: { count: 1, long: { repeat: 'a ', times: 2500, then: 'b' } }, text: { repeat: 'a ', times: 200000 }, count: 0 },
   { name: 'a name of five thousand marks and a letter, in a text of marks', elements: { count: 1, long: { repeat: '-', times: 5000, then: 'x' } }, text: { repeat: '-', times: 400000 }, count: 0 },
   { name: 'a name of five thousand marks, found eighty times', elements: { count: 1, long: { repeat: '-', times: 5000, then: '' } }, text: { repeat: '-', times: 400000 }, count: 80 },
+  { name: 'markdown: backtick runs of two lengths, one never closed', elements: { count: 1000, pattern: 'Name{i} Thing' }, text: { repeat: '``` ` ', times: 100000 }, count: 0, markdown: true },
+  { name: 'markdown: tags that never close', elements: { count: 1000, pattern: 'Name{i} Thing' }, text: { repeat: '<a ', times: 200000 }, count: 0, markdown: true },
+  { name: 'markdown: comments that never close, and definition lines with no bracket', elements: { count: 1000, pattern: 'Name{i} Thing' }, text: { repeat: '<!-- [x\n', times: 100000 }, count: 0, markdown: true },
+  { name: 'web address schemes with nothing after them', elements: { count: 1000, pattern: 'Name{i} Thing' }, text: { repeat: 'https://<ab:', times: 60000 }, count: 0 },
 ];
 
 function unmark(marked) {
@@ -142,15 +169,15 @@ function unmark(marked) {
 }
 
 const names = new Set();
-const cases = CASES.map(([name, fold, elements, marked, shared = []]) => {
+const cases = CASES.map(([name, fold, elements, marked, shared = [], opts = {}]) => {
   if (names.has(name)) throw new Error(`two cases named: ${name}`);
   names.add(name);
-  return { name, case: fold, elements, ...unmark(marked), shared };
+  return { name, case: fold, elements, ...unmark(marked), shared, ...(opts.markdown ? { markdown: true } : {}) };
 });
 
 const out = {
-  about: 'Cases for nameFinder (@onlyworlds/sdk) and name_finder (the onlyworlds Python package): the same bytes in both repositories. In a case, an element with a names list is found by those names (the names option), one without by its name; want lists what find(text) answers, in order, each the place of its first character and its length, both in code points, and the id of its element; shared lists what find.shared holds, in order, each a name as it is compared and the ids of the elements that hold it. A timed case is built from its recipe ({i} is the count from 0; a long name is its repeat, times over, and then its then) and must answer count names in under underMs milliseconds. Made by test/fixtures/generate-name-finder-cases.mjs in the SDK repository; every want is written by hand there.',
-  version: 2,
+  about: 'Cases for nameFinder (@onlyworlds/sdk) and name_finder (the onlyworlds Python package): the same bytes in both repositories. In a case, an element with a names list is found by those names (the names option), one without by its name; want lists what find(text) answers, in order, each the place of its first character and its length, both in code points, and the id of its element; shared lists what find.shared holds, in order, each a name as it is compared and the ids of the elements that hold it. A case or a timed recipe with markdown: true is found with that option on the call (since version 3). A timed case is built from its recipe ({i} is the count from 0; a long name is its repeat, times over, and then its then) and must answer count names in under underMs milliseconds. Made by test/fixtures/generate-name-finder-cases.mjs in the SDK repository; every want is written by hand there.',
+  version: 3,
   underMs: 2000,
   cases,
   timed: TIMED,

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.208.0] - 2026-11-25
+
+### Added
+
+- **`nameFinder` passes over what is no mention.** In any text, a bare web address (`http://` or `https://`, in any ASCII case, to the next white space or `<`) and an autolink (`<scheme:…>`) are now passed over, beside the addresses and Markdown links they were before. A call can say its text is Markdown, `find(text, { markdown: true })` (`OwNameFindOptions`): then nothing is read inside an inline code span (backtick runs matched by length), a fenced code block (closed by its own character, at least as long, or open to the end), an HTML tag or comment, or a reference definition's line either. The option is off by default, so a rich-text node's literal backticks stay prose and the answers without it change only inside web addresses. An indented code block, a fence inside a quote or a list, and a definition's title on the next line are read as prose. Held by version 3 of the cases shared with Python (84 cases, 16 with the option; 14 timed recipes, four new), with eight planted faults each red; the two packages gave the same answers on 4,000 made texts, read with the option and without.
+
 ## [4.207.1] - 2026-11-25
 
 ### Fixed
