@@ -58,9 +58,10 @@ export function refusal(): Answer {
   return envelopeOf(new KeelError(NOT_IN_A_FOLDER_STATUS, 'api_error', NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_MESSAGE));
 }
 
-export function unreadable(): Answer {
-  return envelopeOf(new KeelError(500, 'api_error', 'api_error',
-    'This world folder has no world.json that parses with an id, so nothing in it can be read.'));
+export function unreadable(misnamed: { found: string; wanted: string } | null = null): Answer {
+  return envelopeOf(new KeelError(500, 'api_error', 'api_error', misnamed
+    ? `This world folder holds ${misnamed.found} where the folder format names ${misnamed.wanted}, so it is not read: rename it ${misnamed.wanted}.`
+    : 'This world folder has no world.json that parses with an id, so nothing in it can be read.'));
 }
 
 // --- Python's string rules, where keel's checks lean on them ---------------------------------

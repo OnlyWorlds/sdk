@@ -68,14 +68,14 @@ function respond(answer: Answer): Response {
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'Content-Type': 'application/json' } });
 }
 
-function answerFor(served: Served | null, url: URL): Answer {
+function answerFor(served: Served | null, url: URL, misnamed: { found: string; wanted: string } | null = null): Answer {
   const route = routeOf(url);
   const q = new Query(url.searchParams);
-  if (route.length === 1 && route[0] === 'health') return served ? { status: 200, body: { status: 'ok' } } : unreadable();
+  if (route.length === 1 && route[0] === 'health') return served ? { status: 200, body: { status: 'ok' } } : unreadable(misnamed);
   const known = (route.length === 1 && (route[0] === 'world' || route[0] === 'search' || isType(route[0])))
     || (route.length === 2 && isType(route[0]));
   if (!known) return refusal();
-  if (!served) return unreadable();
+  if (!served) return unreadable(misnamed);
   if (asksThePlatform(q)) return refusal();
   if (route[0] === 'world') return worldAnswer(served);
   if (route[0] === 'search') return searchAnswer(served, q);
@@ -105,9 +105,11 @@ export function folderFetch(entries: readonly OwWorldFileEntry[], opts: OwFolder
   if (opts.onRead !== undefined && typeof opts.onRead !== 'function') throw new TypeError('folderFetch: onRead is a function');
   const files = checkEntries(entries);
   let served: Served | null | undefined;
+  let misnamed: { found: string; wanted: string } | null = null;
   const read = (): Served | null => {
     if (served === undefined) {
       const snapshot: FolderSnapshot = readFolder(files);
+      misnamed = snapshot.report.misnamed;
       served = snapshot.world ? new Served(snapshot) : null;
       opts.onRead?.(snapshot.report);
     }
@@ -119,7 +121,8 @@ export function folderFetch(entries: readonly OwWorldFileEntry[], opts: OwFolder
     // Reads only: every other method is refused before anything is read.
     if (method !== 'GET') return respond(refusal());
     const href = typeof input === 'string' ? input : input instanceof URL ? input.href : (request as Request).url;
-    return respond(answerFor(read(), new URL(href, 'http://folder.invalid/')));
+    const s = read();
+    return respond(answerFor(s, new URL(href, 'http://folder.invalid/'), misnamed));
   };
   Object.defineProperty(fetchFolder, LOCAL_FETCH, { value: true });
   return fetchFolder as typeof globalThis.fetch;

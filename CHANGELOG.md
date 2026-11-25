@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.204.0] - 2026-11-25
+
+### Changed
+
+- **A fixed name held only in another case is refused, with the cause.** A world file holding `Elements/`, `Spatial/` or `World.JSON` (any case, folded as a collision is) where `elements/`, `spatial/` or `world.json` is absent is refused with the new reason `name_case`, its message naming the entry as written and the name the format wants; `World.JSON` alone was `not_a_world`. On a folder, `folderFetch` answers every route 500 with the same cause, and the read report's new `misnamed` names it (`{ found, wanted }`, or null): such a folder is never served as a world with no elements. Two names side by side stay `collision`. The `.owworld` fixture set's four new cases agree with this reader in their working copy; the package's tests replay them once the next schema serial vendors them.
+
 ## [4.203.2] - 2026-11-25
 
 ### Fixed

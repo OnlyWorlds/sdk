@@ -1057,3 +1057,63 @@ test('author fields: a share counts only the files it keeps; a tool\'s dot-folde
   const latin = { path: 'elements/character/latin.json', data: new Uint8Array([0x7b, 0x22, 0xe9, 0x22, 0x3a, 0x31, 0x7d]) };
   assert.deepEqual(bytesOf(writeWorldFile([wj, latin], 'w'))[latin.path], latin.data);
 });
+
+// --- a fixed name only in another case is refused, never read as a world with none (folder spec 4.8) ----
+
+const EL = (p) => strToU8(j({ id: '0192a000-aaaa-7bbb-8ccc-0000000000c1', name: 'Ada' }));
+const longS = String.fromCodePoint(0x17f) + 'patial';
+
+test('name_case: elements/, spatial/ or world.json held only in another case refuses a world file, the cause said', () => {
+  refuses(zipSync({ ...world, 'w/Elements/character/ada--c1.json': EL() }), 'name_case');
+  refuses(zipSync({ 'world.json': strToU8(j({ id: WID, name: 'W' })), 'ELEMENTS/character/ada--c1.json': EL() }), 'name_case');
+  refuses(zipSync({ ...world, 'w/Spatial/pin/p--p1.json': EL() }), 'name_case');
+  refuses(zipSync({ ...world, [`w/${longS}/pin/p--p1.json`]: EL() }), 'name_case');
+  refuses(zipSync({ 'World.JSON': strToU8(j({ id: WID, name: 'W' })) }), 'name_case');
+  refuses(zipSync({ 'w/World.json': strToU8(j({ id: WID, name: 'W' })) }), 'name_case');
+  try { readWorldFile(zipSync({ ...world, 'w/Elements/character/ada--c1.json': EL() })); } catch (e) {
+    assert.match(e.detail ?? e.message, /w\/Elements\/ where the folder format names w\/elements\//);
+  }
+  // The controls: the names as written read, and a world with no element folder at all is a world with none.
+  assert.equal(readWorldFile(zipSync({ ...world, 'w/elements/character/ada--c1.json': EL() })).files.length, 2);
+  assert.equal(readWorldFile(zipSync({ ...world })).files.length, 1);
+  assert.equal(readWorldFile(zipSync({ ...world, 'w/notes/Elements.txt': strToU8('x') })).files.length, 2);
+  // A dot-folder is never a world: a World.json inside one is no cause.
+  refuses(zipSync({ '.atlas/World.json': strToU8('{}') }), 'not_a_world');
+});
+
+test('name_case: on a folder, every route answers 500 with the cause, and the report names it', async () => {
+  const ws = [{ path: 'world.json', data: strToU8(j({ id: WID, name: 'W' })) }];
+  const reports = [];
+  const odd = folderFetch([...ws, { path: 'Elements/character/ada--c1.json', data: EL() }], { onRead: (r) => reports.push(r) });
+  for (const route of ['health', 'world', 'character', 'character/0192a000-aaaa-7bbb-8ccc-0000000000c1']) {
+    const r = await odd(`http://x/api/v2/${route}/`);
+    assert.equal(r.status, 500, route);
+    assert.match(JSON.stringify(await r.json()), /holds Elements\/ where the folder format names elements\//, route);
+  }
+  assert.deepEqual(reports[0].misnamed, { found: 'Elements/', wanted: 'elements/' });
+  assert.equal(reports[0].world, false);
+  // World.JSON alone, and the long s.
+  const r2 = await folderFetch([{ path: 'World.JSON', data: ws[0].data }])('http://x/api/v2/health/');
+  assert.match(JSON.stringify(await r2.json()), /holds World\.JSON where the folder format names world\.json/);
+  const r3 = await folderFetch([...ws, { path: `${longS}/pin/p--p1.json`, data: EL() }])('http://x/api/v2/health/');
+  assert.equal(r3.status, 500);
+  // The control: as written, it reads; misnamed is null.
+  const ok = [];
+  const good = folderFetch([...ws, { path: 'elements/character/ada--c1.json', data: EL() }], { onRead: (r) => ok.push(r) });
+  assert.equal((await good('http://x/api/v2/character/0192a000-aaaa-7bbb-8ccc-0000000000c1/')).status, 200);
+  assert.equal(ok[0].misnamed, null);
+});
+
+test('Q2: under spatial/ only map, pin, zone and marker are read, as written', async () => {
+  const ws = [{ path: 'world.json', data: strToU8(j({ id: WID, name: 'W' })) }];
+  const reports = [];
+  const f = folderFetch([...ws,
+    { path: 'spatial/character/a--c1.json', data: EL() },
+    { path: 'spatial/Pin/p--p1.json', data: strToU8(j({ id: '0192a000-aaaa-7bbb-8ccc-0000000000a1', name: 'P' })) },
+    { path: 'spatial/pin/q--p2.json', data: strToU8(j({ id: '0192a000-aaaa-7bbb-8ccc-0000000000a2', name: 'Q' })) },
+  ], { onRead: (r) => reports.push(r) });
+  assert.equal((await f('http://x/api/v2/pin/0192a000-aaaa-7bbb-8ccc-0000000000a2/')).status, 200);
+  assert.equal((await f('http://x/api/v2/pin/0192a000-aaaa-7bbb-8ccc-0000000000a1/')).status, 404);
+  assert.equal((await f('http://x/api/v2/character/0192a000-aaaa-7bbb-8ccc-0000000000c1/')).status, 404);
+  assert.deepEqual(reports[0].served.map((s) => s.path), ['spatial/pin/q--p2.json']);
+});

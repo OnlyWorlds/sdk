@@ -19,6 +19,8 @@
 import { ELEMENT_TYPES, type ElementType } from '../v2/types.generated';
 import { parseOutsideJson, type OutsideJsonFault } from '../outside-json';
 import type { OwWorldFileEntry } from '../world-file';
+import { nfc } from '../nfc';
+import { simpleCaseFold } from '../case-fold';
 
 const TYPES: ReadonlySet<string> = new Set(ELEMENT_TYPES);
 const SPATIAL: ReadonlySet<string> = new Set(['map', 'pin', 'zone', 'marker']);
@@ -62,6 +64,39 @@ export interface OwFolderReadReport {
   served: OwFolderServed[];
   /** The files under a type folder that are not served, each with why, in the order they were read. */
   skipped: OwFolderSkip[];
+  /**
+   * A fixed name the folder holds only in another case (`Elements/` and no `elements/`, `World.JSON` and no
+   * `world.json`), as written beside the name the format wants, or null. When set, no world is served and
+   * every route answers 500 with this cause (folder spec 4.8: never read as a world with no elements).
+   */
+  misnamed: { found: string; wanted: string } | null;
+}
+
+const FIXED_NAMES = [['world.json', false], ['elements', true], ['spatial', true]] as const;
+
+/**
+ * The first of the three fixed names (`world.json`, `elements/`, `spatial/`) that the paths hold only in
+ * another case: the name as written and the name the format wants, or null. A name held as written is
+ * never misnamed, whatever else sits beside it (two that fold to one are OW-18's, in a world file).
+ * Names fold as OW-18 folds them, NFC and then simple case folding at Unicode 15.1, so `spatial/` written with a long s
+ * (U+017F) first is `spatial/` in another case, as a world file's collision check reads it.
+ */
+export function misnamedFixedName(paths: readonly string[]): { found: string; wanted: string } | null {
+  const firsts = new Map<string, boolean>();
+  for (const p of paths) {
+    const slash = p.indexOf('/');
+    const first = slash < 0 ? p : p.slice(0, slash);
+    firsts.set(first, (firsts.get(first) ?? false) || slash >= 0);
+  }
+  for (const [name, isFolder] of FIXED_NAMES) {
+    if (firsts.get(name) === isFolder) continue;
+    for (const [first, folder] of firsts) {
+      if (folder === isFolder && first !== name && simpleCaseFold(nfc(first)) === name) {
+        return { found: isFolder ? `${first}/` : first, wanted: isFolder ? `${name}/` : name };
+      }
+    }
+  }
+  return null;
 }
 
 export interface FolderElement {
@@ -232,5 +267,7 @@ export function readFolder(entries: readonly OwWorldFileEntry[]): FolderSnapshot
   const served: OwFolderServed[] = elements.map((e) => ({
     path: e.path, type: e.type, id: e.id, name: typeof e.body.name === 'string' ? e.body.name : null,
   }));
-  return { world, elements, report: { world: world !== null, elements: elements.length, legacy, served, skipped } };
+  const misnamed = misnamedFixedName(entries.map(e => e.path));
+  if (misnamed) return { world: null, elements: [], report: { world: false, elements: 0, legacy: 0, served: [], skipped: [], misnamed } };
+  return { world, elements, report: { world: world !== null, elements: elements.length, legacy, served, skipped, misnamed } };
 }

@@ -23,6 +23,9 @@
  *   both Unicode 15.1's from its own files, never the runtime's).
  * - `too_many`, `too_big` (OW-14, OW-15): past the budget by count or declared
  *   size, or an entry that inflates past the size it declares.
+ * - `name_case` (folder spec 4.8): `world.json`, `elements/` or `spatial/` held
+ *   only in another case, and not the name itself (one alone; two side by side are
+ *   `collision`). The cause is said, never read as a world with none.
  * - `marker` (OW-6): a root `mimetype` entry with other bytes than the media
  *   type. A marker is never required.
  * - `not_a_world`, `more_than_one` (OW-2, OW-3, OW-5): no world, two worlds, a
@@ -52,7 +55,7 @@ import { Inflate, inflateSync, zipSync, type Zippable } from 'fflate';
 import { refuseUnknownOptions } from './options';
 import { nfc } from './nfc';
 import { simpleCaseFold } from './case-fold';
-import { readFolder } from './folder/read';
+import { readFolder, misnamedFixedName } from './folder/read';
 import { parseOutsideJson } from './outside-json';
 
 const WORLD_FILE = 'world.json';
@@ -77,7 +80,8 @@ export type OwWorldFileReason =
   | 'link'
   | 'method'
   | 'name'
-  | 'marker';
+  | 'marker'
+  | 'name_case';
 
 const MESSAGES: Record<OwWorldFileReason, string> = {
   unsafe_path: 'The world file holds a path that cannot be written safely.',
@@ -90,6 +94,7 @@ const MESSAGES: Record<OwWorldFileReason, string> = {
   collision: 'The world file holds two names that differ only in case or in how an accent is written.',
   link: 'The world file holds a link or a special file.',
   method: 'The world file holds an encrypted entry, or one compressed other than stored or deflate.',
+  name_case: 'The world file holds world.json, elements/ or spatial/ in another case, and not the name itself.',
   name: 'The world file holds a name that some disk cannot hold.',
   marker: 'The world file\'s mimetype entry is not the OnlyWorlds media type.',
 };
@@ -495,7 +500,12 @@ export function readWorldFile(bytes: Uint8Array, opts: OwReadWorldFileOptions = 
     const roots = new Set(candidates
       .filter(n => n.split('/').length === 2 && n.endsWith(`/${WORLD_FILE}`) && !n.startsWith('.'))
       .map(n => n.slice(0, -WORLD_FILE.length)));
-    if (roots.size === 0) refuse('not_a_world', 'There is no world.json at the root or in one top-level folder.');
+    if (roots.size === 0) {
+      // A world.json in another case, at the root or in one top-level folder, is said as such (folder spec 4.8).
+      const odd = candidates.find(n => { const s = n.split('/'); return s.length <= 2 && !s[0].startsWith('.') && s[s.length - 1] !== WORLD_FILE && simpleCaseFold(nfc(s[s.length - 1])) === WORLD_FILE; });
+      if (odd) refuse('name_case', `It holds ${odd} where the folder format names ${odd.slice(0, odd.length - WORLD_FILE.length)}${WORLD_FILE}.`);
+      refuse('not_a_world', 'There is no world.json at the root or in one top-level folder.');
+    }
     if (roots.size > 1) refuse('more_than_one', `The file holds worlds in ${[...roots].join(', ')}.`);
     prefix = [...roots][0];
   }
@@ -510,6 +520,10 @@ export function readWorldFile(bytes: Uint8Array, opts: OwReadWorldFileOptions = 
       refuse('more_than_one', `A second world.json sits inside the world: ${n}.`);
     }
   }
+
+  // elements/ or spatial/ only in another case is refused, never read as a world with none (folder spec 4.8).
+  const misnamed = misnamedFixedName([...inside].map(n => n.slice(prefix.length)));
+  if (misnamed) refuse('name_case', `It holds ${prefix}${misnamed.found} where the folder format names ${prefix}${misnamed.wanted}.`);
 
   // Every entry inflated within what it declares (OW-14), kept only when it is the world's.
   const content = new Map<string, Uint8Array>();
