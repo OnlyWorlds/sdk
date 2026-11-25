@@ -972,8 +972,8 @@ test('§4.8: the report is not called on a refusal', () => {
 
 // The same bytes as the Python package's tests/fixtures/author-fields.fixture.json (both suites hold its sha256).
 const AUTHOR_FIXTURE = fileURLToPath(new URL('./fixtures/author-fields.fixture.json', import.meta.url));
-const AUTHOR_FIXTURE_SHA256 = '6943ce5a8c2cd7bf69f82facb6f1d545d87d68f5ea0104cc4d711d94e035898a';
-const AUTHOR_CASES = 7;
+const AUTHOR_FIXTURE_SHA256 = '33835ede8b407868da8fef2857699c53e763879ad4bef7909376c75b31c48645';
+const AUTHOR_CASES = 8;
 // writeWorldFile before includeAuthorFields (4.108.1) on each case's files, the archives one after another.
 const BEFORE_SHA256 = '57b381b3e03faf4f2d030a6cd6ad63cad8360fe9b44cc7f9666c6d848d8abf97';
 const AUTHOR_FIELDS = ['created_by', 'changed_by', 'changed_via', 'changed_client', 'doors'];

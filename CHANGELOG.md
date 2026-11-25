@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.203.2] - 2026-11-25
+
+### Fixed
+
+- **A world file no longer rewrites a number nobody edited.** `writeWorldFile` rebuilt an element-folder file from its parse to leave the author fields out, and JavaScript reads an integer a double cannot hold (`9007199254740993`) as another number (`...992`), so the copy held a value the folder did not. A file whose text writes such an integer now travels byte for byte, its author fields with it, as a file the reader cannot hold already did. An integer past 2^53 that a double holds exactly (`9007199254740994`) is rewritten as before. The shared author-fields fixture's case 8 pins it; the Python package answers the same.
+
 ## [4.203.1] - 2026-11-24
 
 ### Fixed

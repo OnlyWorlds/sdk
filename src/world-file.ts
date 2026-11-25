@@ -710,6 +710,44 @@ function unreadObject(data: Uint8Array): Record<string, unknown> | undefined {
 }
 
 /**
+ * Whether a file's text writes an integer no double holds (`9007199254740993`,
+ * which every JSON reader in JavaScript reads as `...992`): rewriting such a
+ * file from its parse would change a number nobody edited, so it travels byte
+ * for byte, its author fields with it (OW Council #2149, the fixture's case 8).
+ * An integer past 2^53 that a double holds exactly (`9007199254740994`) is
+ * read as written and does not count. Only integer literals: a decimal is read
+ * as the nearest double by every reader alike. Strings are skipped, escapes
+ * included; text that is not UTF-8 is no object to rewrite anyway.
+ */
+function writesUnheldInteger(data: Uint8Array): boolean {
+  let text: string;
+  try {
+    text = utf8.decode(data);
+  } catch {
+    return false;
+  }
+  const n = text.length;
+  for (let i = 0; i < n; i++) {
+    const c = text.charCodeAt(i);
+    if (c === 34) { // a string: to its closing quote, over escapes
+      for (i++; i < n && text.charCodeAt(i) !== 34; i++) if (text.charCodeAt(i) === 92) i++;
+      continue;
+    }
+    if (c === 45 || (c >= 48 && c <= 57)) {
+      let j = i + 1;
+      while (j < n && /[0-9.eE+-]/.test(text[j])) j++;
+      const token = text.slice(i, j);
+      i = j - 1;
+      if (/^-?(0|[1-9][0-9]*)$/.test(token) && token.replace('-', '').length > 15) {
+        const read = Number(token);
+        if (!Number.isFinite(read) || BigInt(read) !== BigInt(token)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
  * An element-folder file without its author fields, in the folder's own form
  * (`JSON.stringify(doc, null, 2)` and a newline, the other keys in their
  * order), or null when it holds none of them or holds no JSON object
@@ -873,7 +911,7 @@ export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: 
     let data = f.data;
     if (f.path === WORLD_FILE) {
       data = withoutLink(data, parseWorld(data)).data;
-    } else if (!includeAuthorFields) {
+    } else if (!includeAuthorFields && !writesUnheldInteger(f.data)) {
       const doc = elements.get(f.path) ?? (underElementFolders(f.path) ? unreadObject(f.data) : undefined);
       const bare = withoutAuthorFields(doc);
       if (bare) { data = bare; authorFieldsLeftOut++; }
