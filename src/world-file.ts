@@ -713,7 +713,7 @@ function unreadObject(data: Uint8Array): Record<string, unknown> | undefined {
  * Whether a file's text writes an integer no double holds (`9007199254740993`,
  * which every JSON reader in JavaScript reads as `...992`): rewriting such a
  * file from its parse would change a number nobody edited, so it travels byte
- * for byte, its author fields with it (OW Council #2149, the fixture's case 8).
+ * for byte, its author fields with it (the author-fields fixture's case 8).
  * An integer past 2^53 that a double holds exactly (`9007199254740994`) is
  * read as written and does not count. Only integer literals: a decimal is read
  * as the nearest double by every reader alike. Strings are skipped, escapes
