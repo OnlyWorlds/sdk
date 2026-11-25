@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { zipSync, deflateSync, strToU8 } from 'fflate';
 import {
   readWorldFile, writeWorldFile, OwWorldFileError, WORLD_FILE_MAX_BYTES, WORLD_FILE_MAX_ENTRIES, WORLD_FILE_MEDIA_TYPE,
-  simpleCaseFold, nfc,
+  simpleCaseFold, nfc, misnamedFixedName,
 } from '../dist/index.js';
 import { folderFetch, entriesFromDirectory } from '../dist/folder.js';
 
@@ -1102,6 +1102,18 @@ test('name_case: on a folder, every route answers 500 with the cause, and the re
   const good = folderFetch([...ws, { path: 'elements/character/ada--c1.json', data: EL() }], { onRead: (r) => ok.push(r) });
   assert.equal((await good('http://x/api/v2/character/0192a000-aaaa-7bbb-8ccc-0000000000c1/')).status, 200);
   assert.equal(ok[0].misnamed, null);
+});
+
+test('misnamedFixedName from the root: the rule a reader that lists a folder itself shares', () => {
+  assert.deepEqual(misnamedFixedName(['world.json', 'Elements/character/a.json']), { found: 'Elements/', wanted: 'elements/' });
+  assert.deepEqual(misnamedFixedName(['World.JSON']), { found: 'World.JSON', wanted: 'world.json' });
+  assert.deepEqual(misnamedFixedName(['world.json', `${longS}/pin/p.json`]), { found: `${longS}/`, wanted: 'spatial/' });
+  // Held as written: never misnamed, whatever sits beside it.
+  assert.equal(misnamedFixedName(['world.json', 'elements/character/a.json', 'Elements/character/b.json']), null);
+  // A file named like a folder, or a folder named like the file, is not the fixed name in another case.
+  assert.equal(misnamedFixedName(['world.json', 'Elements']), null);
+  assert.equal(misnamedFixedName(['World.JSON/x.json']), null);
+  assert.equal(misnamedFixedName([]), null);
 });
 
 test('Q2: under spatial/ only map, pin, zone and marker are read, as written', async () => {

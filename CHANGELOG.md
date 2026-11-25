@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.205.0] - 2026-11-25
+
+### Added
+
+- **`misnamedFixedName(paths)` from the package root.** The rule the folder source and the world-file reader apply since 4.204.0: the first of `world.json`, `elements/` and `spatial/` that a list of paths holds only in another case, as `{ found, wanted }`, or null. A tool that lists a world folder itself refuses the same folders with it instead of a copy of the rule.
+
 ## [4.204.0] - 2026-11-25
 
 ### Changed
