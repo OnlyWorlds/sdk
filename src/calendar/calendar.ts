@@ -415,6 +415,14 @@ export interface EraDomain {
 
 export function resolveEraDomains(eras: CalendarEra[]): EraDomain[] {
   const sorted = [...eras].sort((a, b) => a.start - b.start);
+  // The next UP era after each, found in one pass from the end (a search of the rest of the list for each era
+  // made this quadratic in the era count: 150,000 eras took 38.7 s a label).
+  const nextUps: (CalendarEra | undefined)[] = new Array(sorted.length);
+  let after: CalendarEra | undefined;
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    nextUps[i] = after;
+    if ((sorted[i].direction ?? 'up') === 'up') after = sorted[i];
+  }
   const out: EraDomain[] = [];
   for (let i = 0; i < sorted.length; i++) {
     const era = sorted[i];
@@ -425,7 +433,7 @@ export function resolveEraDomains(eras: CalendarEra[]): EraDomain[] {
       // An open end runs to the next UP era's start: a down era holds no step at or above its
       // pivot, so it never ends an up era (before 4.76.0 an up era at 0 listed before a down
       // era with pivot 0 ended where it began, decided by list order).
-      const nextUp = sorted.slice(i + 1).find((e) => (e.direction ?? 'up') === 'up');
+      const nextUp = nextUps[i];
       out.push({ era, lo: era.start, hi: era.end ?? nextUp?.start ?? Infinity });
     }
   }
