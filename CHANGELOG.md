@@ -5,11 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.210.0] - 2026-11-26
+
 ### Changed
 
+- **The schema pin is v0.34.1-dist.148** (canonical 00.34.01 unchanged, no generated type moved). The folder format is 0.3.25: `FOLDER_FORMAT_VERSION` and a new folder's `format_version` say `0.3.25`. The vendored `.owworld` set holds 120 archives, nine new for the depth rule below.
 - **Depth is counted in a file's text, before the parse** (folder format, serial 148). A world folder's file, a `world.json` and a world file's `world.json` are past 200 levels when their text opens an object or array deeper than 200, so each value of a repeated key counts and a file past the line is `too_deep` whatever else is wrong with it. Brackets inside a string are not counted. Before, the depth was read from the parsed value: a repeated key's plain value hid a deep one, and a file broken and deep was `not_json`.
 - **A world file whose `world.json` is past 200 levels is `not_a_world`**, its message saying `too_deep`; before, `readWorldFile` read it.
-- **A folder whose `world.json` cannot be read says why.** The folder source's 500 names the fault (`too_deep`, `not_json` or `number_out_of_range`), and the read report carries it as `worldFault`. A `world.json` that reads but has no id keeps the older sentence.
+- **A folder whose `world.json` cannot be read says why.** The folder source's 500 names the fault (`too_deep`, `not_json` or `number_out_of_range`), and the read report carries it as `worldFault` (its type `OwFolderWorldFault`, from `@onlyworlds/sdk/folder`). A `world.json` that reads but has no id keeps the older sentence.
 
 ## [4.209.0] - 2026-11-26
 

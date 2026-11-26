@@ -1,5 +1,5 @@
 /**
- * A world folder written in memory (OnlyWorlds Folder Format v0.3.24): `world.json` and one file
+ * A world folder written in memory (OnlyWorlds Folder Format v0.3.25): `world.json` and one file
  * per element under `elements/<type>/`, named `<slug>--<tail8>.json` (§3.2, the collision rule
  * included), each the canonical bytes of §5 (`JSON.stringify(value, null, 2)` and a newline, UTF-8,
  * keys in the order given). The same bytes as the Python package's `write_folder`: the filenames
@@ -13,7 +13,7 @@ import { byCodePoint } from '../message';
 import { intStr, PyFloat, type PyDict, type PyValue } from './py';
 
 /** The folder format version a folder is born with (§4.2 `format_version`). */
-export const FOLDER_FORMAT_VERSION = '0.3.24';
+export const FOLDER_FORMAT_VERSION = '0.3.25';
 
 /** One file of a folder: its path inside the folder, `/`-separated, and its bytes. */
 export interface OwFolderFile {

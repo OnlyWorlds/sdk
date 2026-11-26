@@ -2,7 +2,7 @@
   "about": "The Python package's Kanka door (onlyworlds.kanka) on each export here, run as <name>.zip into folder: the sha256 of every file it wrote and of its report text. Recorded from its output; convert-kanka.test.mjs holds convertKanka to it.",
   "producer": {
     "tool": "onlyworlds",
-    "version": "0.139.3"
+    "version": "0.155.0"
   },
   "exports": {
     "quay-export-world_20261023_074706.zip": {
@@ -21,7 +21,7 @@
         "elements/narrative/your-character-name-hidden-details--c143387d.json": "b4085bf2de5dc390b9c586ec6f6fa93a43d9fefd474966128e7d04e742b857b7",
         "elements/relation/friend--0aae5f8d.json": "ae5e44412a992b9a8489e584104715e512d59c6e8de1fed4ff2f0be6ae11b17d",
         "elements/relation/friend-mentor-rival--c8522c7c.json": "ae3b7708595fd0fe5aa16055450fbf6628fd265653141d08a2a194b21fbe430c",
-        "world.json": "b430fecfc8508577170288a3ca606f5afc76ad949da9d67a38e47b864ae0c696"
+        "world.json": "6fbdb8fb27100235aeb880bb11fc499c758b20e4b46502086640c700d54df02b"
       },
       "report": "ee2f2026a44296d4510a5f379b0899857a6a47c1b058060ec7d2a05daa94ec51"
     },
@@ -43,7 +43,7 @@
         "elements/narrative/your-character-name-hidden-details--c143387d.json": "b4085bf2de5dc390b9c586ec6f6fa93a43d9fefd474966128e7d04e742b857b7",
         "elements/relation/friend--0aae5f8d.json": "ae5e44412a992b9a8489e584104715e512d59c6e8de1fed4ff2f0be6ae11b17d",
         "elements/relation/friend-mentor-rival--c8522c7c.json": "ae3b7708595fd0fe5aa16055450fbf6628fd265653141d08a2a194b21fbe430c",
-        "world.json": "b430fecfc8508577170288a3ca606f5afc76ad949da9d67a38e47b864ae0c696"
+        "world.json": "6fbdb8fb27100235aeb880bb11fc499c758b20e4b46502086640c700d54df02b"
       },
       "report": "0ecde4ea2ee317bc183e7301b8b482f5af97e3cf138ab75e03a9228c29df4fc0"
     },
@@ -69,7 +69,7 @@
         "elements/narrative/your-character-name-hidden-details--c143387d.json": "b4085bf2de5dc390b9c586ec6f6fa93a43d9fefd474966128e7d04e742b857b7",
         "elements/relation/friend--0aae5f8d.json": "ae5e44412a992b9a8489e584104715e512d59c6e8de1fed4ff2f0be6ae11b17d",
         "elements/relation/friend-mentor-rival--c8522c7c.json": "ae3b7708595fd0fe5aa16055450fbf6628fd265653141d08a2a194b21fbe430c",
-        "world.json": "b430fecfc8508577170288a3ca606f5afc76ad949da9d67a38e47b864ae0c696"
+        "world.json": "6fbdb8fb27100235aeb880bb11fc499c758b20e4b46502086640c700d54df02b"
       },
       "report": "4e966b7fc90aeb8b699bfb650d7d8fa92406dba3fc25b9b4571550798b2ca461"
     }
