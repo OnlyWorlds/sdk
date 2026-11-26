@@ -1,5 +1,5 @@
 /**
- * The folder tools' `date_labels`: the hosted door's rule (keel's mcp_server/date_labels.py, Keel #2243) on a
+ * The folder tools' `date_labels`: the hosted door's rule (keel's mcp_server/date_labels.py) on a
  * world folder. A date leaves get_element and list_elements with the words of the calendar the World names in
  * `x_calendar`, and only there.
  */
@@ -88,6 +88,15 @@ test('no labels from a calendar that is proposed and undecided, or carries no ca
   }
   const asText = await call(world({ calExtra: { atlas_calendar: JSON.stringify(CONFIG) } }), 'get_element', { type: 'event', id: id(1) });
   assert.deepEqual(asText.date_labels, { start_date: ZERO, end_date: ONE }, 'a calendar stored as a JSON string speaks');
+});
+
+test('a Read mark never speaks as the calendar; another Relation does', async () => {
+  for (const supertype of ['Read', ' read ', 'READ']) {
+    const ev = await call(world({ calType: 'relation', calExtra: { supertype } }), 'get_element', { type: 'event', id: id(1) });
+    assert.equal('date_labels' in ev, false, JSON.stringify(supertype));
+  }
+  const other = await call(world({ calType: 'relation', calExtra: { supertype: 'Reading' } }), 'get_element', { type: 'event', id: id(1) });
+  assert.deepEqual(other.date_labels, { start_date: ZERO, end_date: ONE });
 });
 
 test('an answer of more than 200 distinct dates gets none; 200 get every one', async () => {

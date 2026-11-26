@@ -1,6 +1,6 @@
 /**
  * A date with the world's calendar's words, as the hosted door gives it on `get_element` and
- * `list_elements` (keel's `mcp_server/date_labels.py`, Keel #2243): `date_labels`, an object of
+ * `list_elements` (keel's `mcp_server/date_labels.py`, live since 2026-11-26): `date_labels`, an object of
  * field name to words, the last key of a body that has one, only where the World names its calendar
  * in `x_calendar`.
  *
@@ -8,8 +8,8 @@
  *   door's own order of its integer fields. A body with no label has no key.
  * - The calendar: the element whose id the World's `x_calendar` holds as an id is written
  *   (lowercase, hyphenated, whole), in any of the 22 types; none when it is not found, carries no
- *   calendar, or is proposed and undecided. The World naming none is no labels, even when the world
- *   holds one calendar.
+ *   calendar, is proposed and undecided, or is a Read mark (a reader's own fact, never the world's
+ *   content). The World naming none is no labels, even when the world holds one calendar.
  * - The words: `formatStep`'s whole output; a label that is empty, or only the number itself, is
  *   left out. An answer of more than DATES_MAX distinct dates gets none.
  * - Not mirrored: keel's own calendar gate (the bounds on a template's length, separator runs, eras,
@@ -19,6 +19,8 @@
 import { CALENDAR_FIELD, readCalendarValue } from '../calendar/index';
 import { formatStep } from '../calendar/calendar';
 import { handsOnAsProposed } from '../review';
+import { fold } from '../room';
+import { MESSAGE_READ_MARK } from '../v2/types.generated';
 
 type Body = Record<string, unknown>;
 
@@ -30,6 +32,11 @@ export const DATES_MAX = 200;
 const WRITTEN_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const whole = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v);
+
+/** A Read mark: a Relation whose supertype is `Read`, each trimmed and folded as the room profile reads a pair. */
+const isReadMark = (el: Body): boolean =>
+  typeof el.type === 'string' && typeof el.supertype === 'string' &&
+  fold(el.type) === fold(MESSAGE_READ_MARK.type) && fold(el.supertype) === fold(MESSAGE_READ_MARK.supertype);
 
 /** A type's date fields, in the order its integer fields are given. */
 export function dateFields(integerFields: readonly string[]): string[] {
@@ -56,7 +63,7 @@ export async function addDateLabels(
   for (const [fs, body] of fields) for (const f of fs) if (whole(body[f])) dates.add(body[f] as number);
   if (dates.size === 0 || dates.size > DATES_MAX) return;
   const element = await calendarOf();
-  if (!element || handsOnAsProposed(element)) return;
+  if (!element || handsOnAsProposed(element) || isReadMark(element)) return;
   const words = new Map<number, string>();
   try {
     const cfg = readCalendarValue(element[CALENDAR_FIELD]);

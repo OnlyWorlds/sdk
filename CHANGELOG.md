@@ -5,6 +5,16 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.209.0] - 2026-11-26
+
+### Added
+
+- **`@onlyworlds/sdk/mcp`: a date comes with the world's calendar's words, as the MCP server on onlyworlds.com gives it since today.** `get_element`, `list_elements` and the element resource, on a folder or a client, carry `date_labels` as the last key of a body that has one: `{"start_date": "Year 30 YSL"}` beside `"start_date": 280`. The fields are the whole-number ones named `date` or ending in `_date`. The words come only from the calendar the World names in `x_calendar`, an id written lowercase and hyphenated, and only when that element is in the world, carries a calendar that reads, is not proposed and undecided, and is not a Read mark. A world that names none gets none, even when it holds only one calendar, and an answer with more than 200 different dates carries none. Read beside onlyworlds.com on its demo world: 122 bodies, 62 of them with labels there, every one the same here, and the element resource the same text. One difference stands: the server holds back a calendar past its own bounds (a template's length, the number of eras and months), and these tools word it.
+
+### Changed
+
+- The MCP tool and resource descriptions are the server's as of 2026-11-26: three of them now describe `date_labels`.
+
 ## [4.208.1] - 2026-11-26
 
 ### Fixed
