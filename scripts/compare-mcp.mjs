@@ -380,6 +380,11 @@ async function main() {
   if (withSub) await tool(`list_elements ${type} subtype`, 'list_elements', { type, subtype: withSub.subtype });
   await tool(`list_elements ${type} ids`, 'list_elements', { type, ids: [els[0].id, els[els.length - 1].id.toUpperCase(), OTHER_WORLD] });
   await tool(`list_elements ${type} created_by=owner`, 'list_elements', { type, created_by: 'owner' });
+  await tool(`list_elements ${type} fields`, 'list_elements', { type, fields: ['name', ' description ', 'x_lens'] });
+  await tool(`list_elements ${type} fields=[type]`, 'list_elements', { type, fields: ['type'] });
+  await tool(`list_elements ${type} fields=[]`, 'list_elements', { type, fields: [] });
+  await tool(`list_elements ${type} fields unknown`, 'list_elements', { type, fields: ['name', 'no_such_field', 'birthplace'] }, { expectError: true });
+  await tool(`list_elements ${type} fields comma`, 'list_elements', { type, fields: ['name,description'] }, { expectError: true });
   const singles = (await local.callTool('get_element_schema', { type })).structuredContent.single_link;
   const linkField = singles.find((f) => els.some((e) => typeof e[f] === 'string' && UUID.test(e[f])));
   if (linkField) {
@@ -462,6 +467,8 @@ const NAMED = [
     'a key reads only its own world on the door (invalid_request); here a world not served is the folder source\'s own refusal, not_in_a_folder'],
   [/^get_me/, /^\.body\.scope$/,
     'the practice key can write, so the door says write; these tools never write the folder, so here it is read (ruled)'],
+  [/^list_worlds/, /^\.body\.data\[\d+\]\.change_seq$/,
+    'the door gives the world\'s write counter, where get_changes counts from; a folder keeps no such counter and these tools have no get_changes, so the row has none'],
 ];
 
 const show = (v) => (v === undefined ? '<absent>' : JSON.stringify(v));

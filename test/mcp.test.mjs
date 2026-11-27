@@ -192,6 +192,38 @@ test('list_elements: include_room and include_proposed bring back what they name
   assert.deepEqual(names(await ok(mcp, 'list_elements', { type: 'narrative', include_room: 'yes' })), ['A line about copper']);
 });
 
+test('list_elements: fields cuts each row to the names asked, the head and the marks kept (keel 657)', async () => {
+  const mcp = folderMcpTools([{ entries: harbour() }]);
+  const full = await ok(mcp, 'list_elements', { type: 'character', include_proposed: true });
+  const cut = await ok(mcp, 'list_elements', { type: 'character', include_proposed: true, fields: [' name ', 'x_custom'] });
+  assert.deepEqual([cut.total, cut.proposed_left_out, names(cut)], [full.total, full.proposed_left_out, names(full)]);
+  const keep = new Set(['name', 'x_custom', 'id', 'type', 'supertype', 'subtype', 'x_review_proposed', 'x_record', 'x_room_of', 'x_charter_of', 'known_of', 'hidden']);
+  full.data.forEach((row, i) => {
+    assert.deepEqual(cut.data[i], Object.fromEntries(Object.entries(row).filter(([k]) => keep.has(k))), row.name);
+  });
+  assert.deepEqual(cut.data.find((e) => e.name === 'Pell Copper').x_review_proposed, { by: 'an AI seat' });
+  // `type` alone, or an empty list: the head and marks only, or every field.
+  assert.deepEqual(Object.keys((await ok(mcp, 'list_elements', { type: 'character', fields: ['type'] })).data[0]).sort(), ['id', 'subtype', 'supertype', 'type']);
+  assert.deepEqual(await ok(mcp, 'list_elements', { type: 'character', fields: [] }), await ok(mcp, 'list_elements', { type: 'character' }));
+});
+
+test('list_elements: fields refusals are the door\'s, and a name the type lacks is the route\'s own', async () => {
+  const mcp = folderMcpTools([{ entries: harbour() }]);
+  assert.equal(await refused(mcp, 'list_elements', { type: 'character', fields: ['name,description'] }),
+    "fields must be a list of field names, one name per item; 'name,description' is not one.");
+  assert.equal(await refused(mcp, 'list_elements', { type: 'character', fields: ['name', '  '] }),
+    "fields must be a list of field names, one name per item; '  ' is not one.");
+  const text = await refused(mcp, 'list_elements', { type: 'character', fields: ['name', 'no_such', 'map'] });
+  const body = JSON.parse(text);
+  assert.equal(body.error.message, 'Unknown fields in ?fields: no_such, map');
+  assert.equal(body.error.param, 'fields');
+  assert.deepEqual(body.error.unknown_fields, ['no_such', 'map']);
+  assert.deepEqual(body.error.types_with_field, { map: ['marker', 'pin'] });
+  assert.ok(body.error.allowed_fields.includes('birthplace'));
+  // Checked before the world is read, as the door does: a world it cannot name is not reached.
+  assert.equal(JSON.parse(await refused(mcp, 'list_elements', { type: 'character', fields: ['no_such'], world: 'nowhere' })).error.message, 'Unknown field in ?fields: no_such');
+});
+
 test('list_elements: limit and offset page it; their refusals are the door\'s', async () => {
   const mcp = folderMcpTools([{ entries: harbour() }]);
   const p1 = await ok(mcp, 'list_elements', { type: 'character', limit: 2 });

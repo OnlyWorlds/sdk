@@ -250,7 +250,7 @@ function validateExpand(type: ElementType, raw: string | null): string[] {
   return names;
 }
 
-function validateFields(type: ElementType, raw: string | null): string[] | null {
+export function validateFields(type: ElementType, raw: string | null): string[] | null {
   if (!raw) return null;
   const names = raw.split(',').map((n) => pyStrip(n)).filter(Boolean);
   const valid = new Set(OUTPUT_FIELDS[type]);

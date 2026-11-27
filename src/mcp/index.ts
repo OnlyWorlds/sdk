@@ -41,7 +41,7 @@ import { PROPOSED_MARK, handsOnAsProposed } from '../review';
 import { folderFetch } from '../folder/index';
 import { byCodePoint, uuidKey } from '../folder/read';
 import {
-  NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_DOC, keelAnswerOf, pyStrip, searchAsk, searchHits, searchRow, type SearchAsk,
+  NOT_IN_A_FOLDER, NOT_IN_A_FOLDER_DOC, keelAnswerOf, pyStrip, searchAsk, searchHits, searchRow, type SearchAsk, validateFields,
 } from '../folder/serve';
 import { checkArgs } from './args';
 import { addDateLabels, namedCalendarId } from './date-labels';
@@ -204,6 +204,29 @@ class Refusal extends Error {
 }
 
 const unknownType = (type: string) => `Unknown element type: ${pyStrRepr(type)}. Call list_element_types for the 22 valid slugs.`;
+
+/** What a list_elements row keeps whatever its `fields` asks (keel's ROW_HEAD and ROW_MARKS). */
+const ROW_HEAD = ['id', 'type', 'supertype', 'subtype'];
+const ROW_MARKS = [PROPOSED_MARK, 'x_record', 'x_room_of', 'x_charter_of'];
+
+/**
+ * A served body cut to `kept`, as keel's serializer cuts one under ?fields=: the reader's own marks stay by
+ * themselves (`known_of` and `hidden` when true, `x_served_trimmed` naming only the fields still there).
+ */
+function onlyFields(body: Record<string, unknown>, kept: readonly string[]): Record<string, unknown> {
+  const keep = new Set(kept);
+  const out: Record<string, unknown> = {};
+  for (const [key, v] of Object.entries(body)) if (keep.has(key)) out[key] = v;
+  if (body.known_of === true) out.known_of = true;
+  const trimmed = body.x_served_trimmed;
+  if (Array.isArray(trimmed)) {
+    const has = (f: string) => Object.prototype.hasOwnProperty.call(out, f);
+    const named = trimmed.filter((f) => typeof f === 'string' && (has(f) || (f === 'notes' && has('x_lens'))));
+    if (named.length) out.x_served_trimmed = named;
+  }
+  if (body.hidden === true) out.hidden = true;
+  return out;
+}
 
 /** keel's `refusal_text`: the envelope as one JSON object, the message first, what rides beside it kept. */
 function refusalText(envelope: unknown, retryAfter: number | null = null): string {
@@ -438,6 +461,7 @@ export function folderMcpTools(worlds: readonly OwMcpWorld[], opts: OwMcpToolsOp
     if (limit < 1) throw new Refusal('limit must be a positive integer.');
     limit = Math.min(limit, LIST_MAX);
     if (offset < 0) throw new Refusal('offset must be zero or a positive integer.');
+    const kept = keptFields(type as ElementType, a.fields);
     const w = await worldFor(a.world);
     let rows = await listed(w, type, a);
     if (a.include_room !== true) rows = rows.filter((b) => !aside(b));
@@ -448,9 +472,35 @@ export function folderMcpTools(worlds: readonly OwMcpWorld[], opts: OwMcpToolsOp
     }
     // One past the page, to say has_more, as the door reads it; `total` is the whole list's length (keel 630).
     const cut = newestFirst(rows).slice(offset, offset + limit + 1);
-    const data = cut.slice(0, limit);
+    const data = cut.slice(0, limit).map((b) => (kept ? onlyFields(b, kept) : b));
     await labelled(w, data.map((b) => [type, b] as const));
     return { data, limit, offset, has_more: cut.length > limit, total: rows.length, proposed_left_out: leftOut };
+  };
+
+  /**
+   * list_elements' `fields` (keel 657, its `_kept_fields`): null or [] serves every field; else each item is
+   * one field name, checked here first, then the names by the route's own ?fields= rule (its refusal the
+   * route's envelope; an extension name passes), and a row keeps the head and the marks whatever was asked.
+   */
+  const keptFields = (type: ElementType, fields: unknown): string[] | null => {
+    if (fields === null || fields === undefined || (Array.isArray(fields) && !fields.length)) return null;
+    if (!Array.isArray(fields)) throw new Refusal('fields must be a list of field names.');
+    for (const one of fields) {
+      if (typeof one !== 'string' || one.includes(',') || !pyStrip(one)) {
+        throw new Refusal(`fields must be a list of field names, one name per item; ${pyRepr(one)} is not one.`);
+      }
+    }
+    const asked = (fields as string[]).map((one) => pyStrip(one)).filter((one) => one !== 'type');
+    if (asked.length) {
+      try {
+        validateFields(type, asked.join(','));
+      } catch (e) {
+        const answer = keelAnswerOf(e);
+        if (!answer) throw e;
+        throw new Refusal(refusalText(answer.body));
+      }
+    }
+    return [...new Set([...asked, ...ROW_HEAD, ...ROW_MARKS])];
   };
 
   /**
