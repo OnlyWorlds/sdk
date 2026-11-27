@@ -1,6 +1,6 @@
 {
  "about": "Every public name of @onlyworlds/sdk, by exports-map entry, and its deprecation: written by scripts/verify-promise.mjs --write, read by it in CI. A name leaves this file only in a major.",
- "version": "4.215.0",
+ "version": "4.217.0",
  "major": 4,
  "entries": {
   ".": {
@@ -51,6 +51,9 @@
    "CalendarMonths": {},
    "CalendarMonths.lengths": {},
    "CalendarMonths.names": {},
+   "CalendarShape": {},
+   "CalendarShape.config": {},
+   "CalendarShape.limit": {},
    "CalendarWeek": {},
    "CalendarWeek.length": {},
    "CalendarWeek.mode": {},
@@ -1785,6 +1788,7 @@
    "preparePhoto": {},
    "proposedMarkOf": {},
    "readCalendarConfig": {},
+   "readCalendarShape": {},
    "readCalendarValue": {},
    "readMarkOf": {},
    "readOwLinkAt": {},
@@ -1863,6 +1867,9 @@
    "CalendarMonths": {},
    "CalendarMonths.lengths": {},
    "CalendarMonths.names": {},
+   "CalendarShape": {},
+   "CalendarShape.config": {},
+   "CalendarShape.limit": {},
    "CalendarWeek": {},
    "CalendarWeek.length": {},
    "CalendarWeek.mode": {},
@@ -1913,6 +1920,7 @@
    "monthStartSteps": {},
    "parseDate": {},
    "readCalendarConfig": {},
+   "readCalendarShape": {},
    "readCalendarValue": {},
    "resolveCalendar": {},
    "resolveCalendarLens": {

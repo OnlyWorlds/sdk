@@ -216,6 +216,37 @@ export function validateCalendarConfig(cfg: CalendarConfig): string[] {
  * back to bare numbers, never a broken axis.
  */
 export function readCalendarConfig(value: unknown): CalendarConfig | null {
+  const cfg = readCalendarStructure(value);
+  // How large a calendar a reader words (the profile, serial 149): past a size bound, or with a year
+  // longer than the safe integers, the value is not a calendar.
+  return cfg !== null && boundsProblem(cfg) == null ? cfg : null;
+}
+
+/** What `readCalendarShape` gives: the calendar read but for the size bounds, and the first bound it passes. */
+export interface CalendarShape {
+  /** The calendar as `readCalendarConfig` reads it, the profile's size bounds left out. */
+  config: CalendarConfig;
+  /** The first size bound the calendar passes, in `validateCalendarConfig`'s own words, or null when it passes none. */
+  limit: string | null;
+}
+
+/**
+ * A calendar read for editing: every check of `readCalendarConfig` but the profile's size bounds (serial 149),
+ * and which bound it passes. Null when the shape itself is broken, exactly where `readCalendarConfig` is null
+ * for a reason other than size. A calendar past a bound is no calendar to any reader, so its owner could not
+ * open it to cut it down: this gives a builder the calendar to load, with the sentence that says what to cut.
+ *
+ * A `config` whose `limit` is set is for editing only: never hand it to a formatter or a date reader, since
+ * the bounds hold a longest year past 2^53 - 1 as well as the counts. Save it once `validateCalendarConfig`
+ * is empty. Since 4.217.0.
+ */
+export function readCalendarShape(value: unknown): CalendarShape | null {
+  const cfg = readCalendarStructure(value);
+  return cfg === null ? null : { config: cfg, limit: boundsProblem(cfg) };
+}
+
+/** Every structural check of the reader, the size bounds aside: the one body both readers share. */
+function readCalendarStructure(value: unknown): CalendarConfig | null {
   if (typeof value !== 'object' || value === null) return null;
   const cfg = value as CalendarConfig;
   // The profile: grain is required, a string with something left after the room profile's
@@ -254,9 +285,6 @@ export function readCalendarConfig(value: unknown): CalendarConfig | null {
   if (!months && cfg.intercalary != null && cfg.intercalary.length > 0) return null;
   const monthCount = months ? months.names.length : 0;
   if (cfg.intercalary?.some((i) => i.after_month < 0 || i.after_month > monthCount)) return null;
-  // How large a calendar a reader words (the profile, serial 149): past a size bound, or with a year
-  // longer than the safe integers, the value is not a calendar.
-  if (boundsProblem(cfg) != null) return null;
   return cfg;
 }
 

@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.217.0] - 2026-11-27
+
+### Added
+
+- **`readCalendarShape(value)`** reads a calendar for editing: every check of `readCalendarConfig` but the profile's size bounds, giving `{ config, limit }`, where `limit` is the first bound the calendar passes in `validateCalendarConfig`'s own words, or null. It is null exactly where `readCalendarConfig` is null for a reason other than size. Since the bounds of 4.212.0 a calendar past one is no calendar to any reader, so its owner could not open it to cut it down; a builder can now load it and name what to cut. A `config` whose `limit` is set is for editing only: never hand it to a formatter or a date reader. `readCalendarConfig` answers as before. Also from `@onlyworlds/sdk/calendar`, with its type `CalendarShape`.
+
 ## [4.216.0] - 2026-11-27
 
 ### Changed
