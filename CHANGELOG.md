@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.218.0] - 2026-11-27
+
 ### Added
 
 - **`list_elements` in `@onlyworlds/sdk/mcp` takes `fields`**, as the hosted MCP door does since today: a list of field names, each row then holding only those, with `id`, `type`, `supertype`, `subtype` and the marks `x_review_proposed`, `x_record`, `x_room_of` and `x_charter_of` kept where a row has them (and `known_of`, `hidden` and `x_served_trimmed` as the list route keeps them under `?fields=`). An empty list is every field. An item that is not one field name is the door's refusal; a name the type does not have is the route's own, with `unknown_fields`, `types_with_field` and `allowed_fields`; an extension name passes. Checked before the world is read, as the door checks it. The vendored tool texts (`src/mcp/door.json`) read again from the door: `list_elements`' new property and lines, and the newer words of `list_worlds` and `get_me`
