@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.219.0] - 2026-11-27
+
+### Added
+
+- **`err.limit` names the size limit a write passed, and three predicates read it**: `isElementTooLarge` (`element_bytes`), `isElementTooManyLinks` (`element_link_ids`) and `isExtensionsTooLarge` (`extensions_bytes`) on `OwApiError`, and `limit` on `OwErrorBody` for a `/bulk` item's slot. keel will add `limit` to these three 422 `invalid_request` refusals, a key of the API document's `info.x-ow-limits`, where the number and its unit are; the code, `param` and the sentence stay as they are. `limit` is an open string, so a value this release does not know is read and no predicate claims it. Until keel sends the key, `limit` is undefined and the predicates are false: read the sentence as before.
+- The wire gate allows `limit` on the document's error envelope once it is declared, and then requires the package to read it and each predicate's name to be a key of `info.x-ow-limits`.
+
 ## [4.218.0] - 2026-11-27
 
 ### Added

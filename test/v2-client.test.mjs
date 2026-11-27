@@ -418,6 +418,38 @@ test('resyncReason reads the 409 envelope\'s reason, and is undefined without on
   assert.equal(other.resyncReason, undefined);
 });
 
+test('limit names the size limit a 422 passed, and the three predicates read it', async () => {
+  const cases = [
+    ['element_bytes', 'isElementTooLarge'],
+    ['element_link_ids', 'isElementTooManyLinks'],
+    ['extensions_bytes', 'isExtensionsTooLarge'],
+  ];
+  for (const [limit, flag] of cases) {
+    const body = envelope('invalid_request', 'invalid_request');
+    body.error.limit = limit;
+    const err = await thrown({ status: 422, body }, (c) => c.create('character', { name: 'K' }));
+    assert.equal(err.code, 'invalid_request');
+    assert.equal(err.limit, limit);
+    for (const [, other] of cases) assert.equal(err[other], other === flag, `${limit}: ${other}`);
+  }
+  // an open string: a value the package does not know is read, and no predicate claims it
+  const later = envelope('invalid_request', 'invalid_request');
+  later.error.limit = 'element_fields';
+  const unknown = await thrown({ status: 422, body: later }, (c) => c.create('character', { name: 'K' }));
+  assert.equal(unknown.limit, 'element_fields');
+  assert.equal(unknown.isElementTooLarge || unknown.isElementTooManyLinks || unknown.isExtensionsTooLarge, false);
+  const plain = await thrown({ status: 422, body: envelope('invalid_request', 'invalid_request') },
+    (c) => c.create('character', { name: 'K' }));
+  assert.equal(plain.limit, undefined);
+  assert.equal(plain.isElementTooLarge, false);
+  // never off a 422: a 409 resync_required carries `reason`, and a `limit` there is not read
+  const other = envelope('invalid_request', 'resync_required');
+  other.error.limit = 'element_bytes';
+  const resync = await thrown({ status: 409, body: other }, (c) => c.changes({ since: '12:abc' }));
+  assert.equal(resync.limit, undefined);
+  assert.equal(resync.isElementTooLarge, false);
+});
+
 // A read whose `fields` list names fields its type does not have: one 422, every unknown name beside it.
 // The body is the server's answer to fields=name,story,hidden,narrator,nonsuch on a Character list,
 // its allowed list cut to four names.

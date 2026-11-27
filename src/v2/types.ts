@@ -371,6 +371,12 @@ export interface OwErrorBody {
   types_with_field?: Record<string, string[]>;
   /** Beside `unknown_fields`: the names this type's `fields` takes (an extension field name passes too). */
   allowed_fields?: string[];
+  /**
+   * On a 422 `invalid_request` for a size limit only: which limit was passed, as a key of the API document's
+   * `info.x-ow-limits` (`element_bytes`, `element_link_ids`, `extensions_bytes`). An open string: more values
+   * may come, each a key of that block.
+   */
+  limit?: string;
 }
 
 /**

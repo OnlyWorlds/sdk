@@ -1208,7 +1208,7 @@ const SCHEMA_PAIRS = [
   { sdk: 'OwProposal', doc: 'BulkResult', items: 'items', prop: 'proposal', route: 'POST /bulk (an item\'s proposal)', clientOnly: [] },
   // OwErrorBody is the thrown envelope's type, shared with a bulk slot's error: `reason` is the envelope's
   // (Error.error, on resync_required), never a slot's (ruled 2026-10-26, when 5n first held this pair)
-  { sdk: 'OwErrorBody', doc: 'BulkResult', items: 'items', prop: 'error', route: 'POST /bulk (an item\'s error)', clientOnly: ['reason'] },
+  { sdk: 'OwErrorBody', doc: 'BulkResult', items: 'items', prop: 'error', route: 'POST /bulk (an item\'s error)', clientOnly: ['reason', 'limit'] },
   // an answer_not_parsed's refused answers, declared on every error envelope since 2026-11-10 (a slot's too)
   { sdk: 'OwAiRefusal', doc: 'BulkResult', path: ['items', '[]', 'error', 'refusals', '[]'], route: 'POST /bulk (an item\'s error, its refusals)', clientOnly: [] },
   { sdk: 'OwProposal', doc: 'ProposalList', items: 'data', kindOf: 'proposal', route: 'GET /world/proposals (a proposal row)', clientOnly: [], needs: 'worldProposals' },
@@ -1716,7 +1716,10 @@ for (const [at, held] of Object.entries(optionalAt)) {
   // 2026-11-17: a 422 on a read's `fields` list carries `unknown_fields`, `types_with_field`
   // and `allowed_fields`; allowed only when declared, and then the SDK must read all three: err.fieldsRefusal.
   const FIELDS_KEYS = ['unknown_fields', 'types_with_field', 'allowed_fields'];
-  const extra = ['reason', 'refusals', ...FIELDS_KEYS].filter((k) => have.includes(k));
+  // 2026-11-27: a 422 for a size limit carries `limit`, a key of info.x-ow-limits; allowed only when
+  // declared, and then the SDK must read it (err.limit) and its three predicates must name keys the
+  // limits block has.
+  const extra = ['reason', 'refusals', ...FIELDS_KEYS, 'limit'].filter((k) => have.includes(k));
   if (want.some((k) => !have.includes(k)) || have.some((k) => !want.includes(k) && !extra.includes(k))) {
     bad(`the document's error envelope has [${have}], the SDK reads [${want}]`);
   } else {
@@ -1752,6 +1755,15 @@ for (const [at, held] of Object.entries(optionalAt)) {
       const r = parseErrorEnvelope(422, { error: { type: 'invalid_request', code: 'invalid_request', message: 'probe', param: 'fields', doc_url: 'https://example.invalid/e', ...probe } });
       for (const k of declaredFieldsKeys) {
         if (k in probe && JSON.stringify(r.fieldsRefusal?.[k]) !== JSON.stringify(probe[k])) miss.push(`${k} (err.fieldsRefusal.${k})`);
+      }
+    }
+    if (extra.includes('limit')) {
+      const limits = Object.keys(doc.info?.['x-ow-limits'] ?? {});
+      const named = [['element_bytes', 'isElementTooLarge'], ['element_link_ids', 'isElementTooManyLinks'], ['extensions_bytes', 'isExtensionsTooLarge']];
+      for (const [name, flag] of named) {
+        const r = parseErrorEnvelope(422, { error: { type: 'invalid_request', code: 'invalid_request', message: 'probe', param: null, doc_url: 'https://example.invalid/e', limit: name } });
+        if (r.limit !== name || r[flag] !== true) miss.push(`limit ${name} (err.limit, err.${flag})`);
+        if (!limits.includes(name)) miss.push(`limit ${name} (not a key of info.x-ow-limits)`);
       }
     }
     if (miss.length) bad(`OwApiError loses ${miss.join(', ')} from the document's error envelope`);

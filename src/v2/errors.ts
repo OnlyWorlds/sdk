@@ -256,6 +256,35 @@ export class OwApiError extends Error {
     return this.status === 422 && this.code === 'world_full';
   }
 
+  /**
+   * Which size limit a write passed, from the envelope's `limit`: a key of the API document's
+   * `info.x-ow-limits`, where its number and unit are. Set on a 422 `invalid_request` only, and only for
+   * the limits keel names this way (an element's size, its links, its extension fields); a full world,
+   * a file too large or a request body too large keep their own codes. An open string: more values may
+   * come. Undefined for any other error, or when the server sends none.
+   */
+  get limit(): string | undefined {
+    if (this.status !== 422) return undefined;
+    const env = this.detail && typeof this.detail === 'object' ? (this.detail as { error?: unknown }) : undefined;
+    const nested = env?.error && typeof env.error === 'object' ? (env.error as { limit?: unknown }) : undefined;
+    return typeof nested?.limit === 'string' ? nested.limit : undefined;
+  }
+
+  /** A write would make the element larger than an element may be (422, `limit` `element_bytes`). Nothing is saved. */
+  get isElementTooLarge(): boolean {
+    return this.limit === 'element_bytes';
+  }
+
+  /** A write would give the element more link ids, across all its link fields, than it may hold (422, `limit` `element_link_ids`). Nothing is saved. */
+  get isElementTooManyLinks(): boolean {
+    return this.limit === 'element_link_ids';
+  }
+
+  /** A write would put an element's or the World's extension fields past their cap (422, `limit` `extensions_bytes`). Nothing is saved. */
+  get isExtensionsTooLarge(): boolean {
+    return this.limit === 'extensions_bytes';
+  }
+
   /** acceptJoin: the account is already a member of that world (409 `already_member`). The code is not spent. */
   get isAlreadyMember(): boolean {
     return this.status === 409 && this.code === 'already_member';

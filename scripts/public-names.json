@@ -1,6 +1,6 @@
 {
  "about": "Every public name of @onlyworlds/sdk, by exports-map entry, and its deprecation: written by scripts/verify-promise.mjs --write, read by it in CI. A name leaves this file only in a major.",
- "version": "4.217.0",
+ "version": "4.219.0",
  "major": 4,
  "entries": {
   ".": {
@@ -261,6 +261,9 @@
    "OwApiError.isCharacterInvalid": {},
    "OwApiError.isCharacterPlayed": {},
    "OwApiError.isCharacterTaken": {},
+   "OwApiError.isElementTooLarge": {},
+   "OwApiError.isElementTooManyLinks": {},
+   "OwApiError.isExtensionsTooLarge": {},
    "OwApiError.isFieldNotVisible": {},
    "OwApiError.isFileTooLarge": {},
    "OwApiError.isFilesFull": {},
@@ -293,6 +296,7 @@
    "OwApiError.isViewAsOwnerOnly": {},
    "OwApiError.isWorldFull": {},
    "OwApiError.isWrongAudience": {},
+   "OwApiError.limit": {},
    "OwApiError.param": {},
    "OwApiError.refusals": {},
    "OwApiError.resyncReason": {},
@@ -503,6 +507,7 @@
    "OwErrorBody.allowed_fields": {},
    "OwErrorBody.code": {},
    "OwErrorBody.doc_url": {},
+   "OwErrorBody.limit": {},
    "OwErrorBody.message": {},
    "OwErrorBody.param": {},
    "OwErrorBody.reason": {},
