@@ -15,7 +15,9 @@
  *
  * Both are a fault with its own name, so a caller that skips a file it cannot read can say why.
  * Not covered: an integer past 2^53 that still fits a double is read rounded, as JavaScript reads
- * every number.
+ * every number. And an object's keys that are array indices (a whole number below 2^32 - 1 with no
+ * leading zero, such as `"2"` or `"10"`) come back first and in ascending order, where the Python
+ * package keeps every key as written: the values are the same and only their order differs.
  *
  * Module-internal: not in the package's exports.
  */
