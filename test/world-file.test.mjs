@@ -1094,6 +1094,35 @@ test('name_case: elements/, spatial/ or world.json held only in another case ref
   refuses(zipSync({ '.atlas/World.json': strToU8('{}') }), 'not_a_world');
 });
 
+test('name_case: the writer refuses a folder the readers refuse, in a full copy and in a share, writing nothing', () => {
+  const wj = { path: 'world.json', data: strToU8(j({ id: WID, name: 'W' })) };
+  const el = { path: 'elements/character/ada--c1.json', data: EL() };
+  const pin = (top) => ({ path: `${top}/pin/p--p1.json`, data: strToU8(j({ id: '0192a000-aaaa-7bbb-8ccc-0000000000p1', name: 'P' })) });
+  for (const includeHidden of [true, false]) {
+    for (const top of ['Spatial', longS]) {
+      assert.throws(() => writeWorldFile([wj, el, pin(top)], 'w', { includeHidden }),
+        (e) => e instanceof OwWorldFileError && e.reason === 'name_case' && e.message.includes(`${top}/ where the folder format names spatial/`));
+    }
+    assert.throws(() => writeWorldFile([wj, { path: 'Elements/character/ada--c1.json', data: EL() }], 'w', { includeHidden }),
+      (e) => e instanceof OwWorldFileError && e.reason === 'name_case');
+    // The control: the names as written, a share carrying the element and the legacy pin both.
+    const back = readWorldFile(writeWorldFile([wj, el, pin('spatial')], 'w', { includeHidden })).files.map((f) => f.path);
+    assert.deepEqual(back, ['elements/character/ada--c1.json', 'spatial/pin/p--p1.json', 'world.json']);
+  }
+});
+
+test('too_deep: the message says it in words, the code is the field', () => {
+  const deep = '['.repeat(201) + ']'.repeat(201);
+  try {
+    readWorldFile(writeWorldFile([{ path: 'world.json', data: strToU8(`{"id": "${WID}", "x": ${deep}}`) }], 'w'));
+    assert.fail('no refusal');
+  } catch (e) {
+    assert.equal(e.worldFault, 'too_deep');
+    assert.ok(!e.message.includes('(too_deep)'), e.message);
+    assert.match(e.message, /nested more than 200 deep\.$/);
+  }
+});
+
 test('name_case: on a folder, every route answers 500 with the cause, and the report names it', async () => {
   const ws = [{ path: 'world.json', data: strToU8(j({ id: WID, name: 'W' })) }];
   const reports = [];

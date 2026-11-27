@@ -394,7 +394,7 @@ function parseWorld(data: Uint8Array): Record<string, unknown> {
   // Counted in the text before the parse, as an element file is (serial 148): a world.json past the line is one
   // this reader cannot read, so the archive is no world, and the message says why.
   if (textTooDeep(text)) {
-    throw new OwWorldFileError('not_a_world', `${MESSAGES.not_a_world} Its world.json is nested more than ${OUTSIDE_JSON_MAX_DEPTH} deep (too_deep).`, 'too_deep');
+    throw new OwWorldFileError('not_a_world', `${MESSAGES.not_a_world} Its world.json is nested more than ${OUTSIDE_JSON_MAX_DEPTH} deep.`, 'too_deep');
   }
   try {
     meta = JSON.parse(text);
@@ -887,8 +887,10 @@ function privateProducers(files: OwWorldFileEntry[]): string[] {
  * records are asked for) a `RECORDS.json` that is not a JSON array of objects or that
  * marks an entry private without a producer name. Refuses (`OwWorldFileError`)
  * an unsafe path or `topDir`, a duplicate path, a name some disk cannot hold,
- * two names that fold to one, and a world.json that is missing, will not parse
- * (it may hold a key, so it is never zipped raw) or has no `id`.
+ * two names that fold to one, `world.json`, `elements/` or `spatial/` held only
+ * in another case (`name_case`, as the readers refuse it; since 4.212.3), and a
+ * world.json that is missing, will not parse (it may hold a key, so it is never
+ * zipped raw) or has no `id`.
  */
 export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: OwWriteWorldFileOptions = {}): Uint8Array {
   const { includePrivate, includeHidden, includeAuthorFields, report } = writeOptions(opts);
@@ -898,6 +900,13 @@ export function writeWorldFile(files: OwWorldFileEntry[], topDir: string, opts: 
     if (pathFault(f.path)) throw new OwWorldFileError('unsafe_path');
     if (seen.has(f.path)) throw new OwWorldFileError('unsafe_path', `The path ${f.path} is listed twice.`);
     seen.add(f.path);
+  }
+  // A folder holding world.json, elements/ or spatial/ only in another case is one the readers refuse (folder spec
+  // 4.8): writing it would drop that folder from a full copy and every element from a share, so it is refused here
+  // too, as the Python package's writer refuses it.
+  const misnamed = misnamedFixedName(files.map((f) => f.path));
+  if (misnamed) {
+    throw new OwWorldFileError('name_case', `The folder holds ${misnamed.found} where the folder format names ${misnamed.wanted}. Nothing was written.`);
   }
   // Matched by OW-18's fold, not exactly: on a disk that ignores case, a manifest's `Fold`
   // names the directory `fold`, and an exact match would let its private records travel.

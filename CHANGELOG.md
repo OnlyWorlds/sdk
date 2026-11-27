@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.212.3] - 2026-11-27
+
+### Fixed
+
+- **`writeWorldFile` refuses a folder that holds `world.json`, `elements/` or `spatial/` only in another case** (`OwWorldFileError` with reason `name_case`, nothing written), as `readWorldFile`, the folder source and the Python package's writer already refuse it. Before, a `Spatial/` folder beside `elements/` was left out of a full copy without a word, and a share (`includeHidden: false`) left out every element, since the folder reader it asks reads no element in such a folder.
+- **A world file refused for a `world.json` nested past 200 levels says so in words only**: its message no longer ends in `(too_deep)`; the code is `worldFault`, which a tool reads.
+
 ## [4.212.2] - 2026-11-27
 
 ### Fixed
