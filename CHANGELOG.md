@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.214.0] - 2026-11-27
+
+### Added
+
+- **Every refusal from `completeSignIn` carries the tool's `resume`** on the error's `resume` property, not only a press of Cancel: `state_mismatch`, `invalid_grant`, `rate_limited`, `offline` and `failed` too. A return with another sign-in's state (Back to an older sign-in page, then Continue or Cancel) is still refused and still leaves the pending sign-in in place, and now hands back that pending sign-in's resume, so a tool can keep a held invitation code or link without a copy of its own. With no sign-in pending, `resume` is null.
+
 ## [4.213.0] - 2026-11-27
 
 ### Added

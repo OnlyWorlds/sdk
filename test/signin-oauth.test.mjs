@@ -163,13 +163,56 @@ test('completeSignIn reads keel\'s Cancel as cancelled with the resume, sends no
     assert.equal(calls.length, 0, query);
     assert.equal(storage.get('ow_signin:atlas'), null, query);
   }
-  // A refusal that is not a return without signing in carries no resume.
-  const storage = memory();
-  await begun(storage);
+});
+
+test('every completeSignIn refusal carries the resume from the pending record; none pending is null', async () => {
+  // Another state (Back to an older sign-in page, then Continue or Cancel): refused, the record kept, its resume handed back.
+  for (const query of ['code=c1&state=other', 'error=access_denied&state=other', 'code=c1']) {
+    const storage = memory();
+    await begun(storage);
+    const err = await new OwV2Client({ fetch: fetchStub(200, {}, []) })
+      .completeSignIn({ clientId: 'atlas', storage, url: `https://atlas.onlyworlds.com/signin/callback?${query}` }).catch((e) => e);
+    assert.equal(err.reason, 'state_mismatch', query);
+    assert.deepEqual(err.resume, { open: 'w1' }, query);
+    assert.notEqual(storage.get('ow_signin:atlas'), null, query);
+  }
+  // The state matches but the page is another, or no code came back: the sign-in ends, the resume comes back.
+  for (const [url, reason] of [
+    ['https://evil.example/signin/callback?code=c1&state=STATE', 'state_mismatch'],
+    ['https://atlas.onlyworlds.com/signin/callback?state=STATE', 'state_mismatch'],
+  ]) {
+    const storage = memory();
+    const state = await begun(storage);
+    const err = await new OwV2Client({ fetch: fetchStub(200, {}, []) }).completeSignIn({ clientId: 'atlas', storage, url: url.replace('STATE', state) }).catch((e) => e);
+    assert.equal(err.reason, reason, url);
+    assert.deepEqual(err.resume, { open: 'w1' }, url);
+    assert.equal(storage.get('ow_signin:atlas'), null, url);
+  }
+  // keel's refusals of the exchange and no connection at all: the resume comes back with each.
+  for (const [fetchImpl, reason] of [
+    [fetchStub(400, { error: { code: 'invalid_grant' } }, []), 'invalid_grant'],
+    [fetchStub(429, { error: { code: 'rate_limited' } }, []), 'rate_limited'],
+    [fetchStub(500, { error: { code: 'api_error' } }, []), 'failed'],
+    [async () => { throw new TypeError('network'); }, 'offline'],
+  ]) {
+    const storage = memory();
+    const state = await begun(storage);
+    const err = await new OwV2Client({ fetch: fetchImpl }).completeSignIn({ clientId: 'atlas', storage, url: `https://atlas.onlyworlds.com/signin/callback?code=c1&state=${state}` }).catch((e) => e);
+    assert.equal(err.reason, reason);
+    assert.deepEqual(err.resume, { open: 'w1' }, reason);
+  }
+  // No sign-in pending: null, never absent.
   const err = await new OwV2Client({ fetch: fetchStub(200, {}, []) })
-    .completeSignIn({ clientId: 'atlas', storage, url: 'https://atlas.onlyworlds.com/signin/callback?error=access_denied&state=other' }).catch((e) => e);
+    .completeSignIn({ clientId: 'atlas', storage: memory(), url: 'https://atlas.onlyworlds.com/signin/callback?code=c1&state=s' }).catch((e) => e);
   assert.equal(err.reason, 'state_mismatch');
-  assert.equal('resume' in err, false);
+  assert.ok('resume' in err);
+  assert.equal(err.resume, null);
+  // A sign-in begun with no resume hands back null.
+  const storage = memory();
+  const client = new OwV2Client({ fetch: async () => { throw new Error('no fetch expected'); } });
+  await client.signInWithOnlyWorlds({ clientId: 'atlas', redirectUri: 'https://atlas.onlyworlds.com/signin/callback', storage, navigate: false });
+  const bare = await client.completeSignIn({ clientId: 'atlas', storage, url: 'https://atlas.onlyworlds.com/signin/callback?code=c1&state=other' }).catch((e) => e);
+  assert.equal(bare.resume, null);
 });
 
 test('completeSignIn takes a Cancel\'s error out of the address bar with its state, and keeps the rest of the query', async () => {

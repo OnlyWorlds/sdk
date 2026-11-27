@@ -638,9 +638,10 @@ export class OwSignInError extends Error {
   readonly param?: string;
   /** Seconds to wait before trying again, from `Retry-After` (on a 429). */
   readonly retryAfter?: number;
-  /** On a `completeSignIn` return that came back without signing in (`cancelled`, or `failed` with the
-   *  return's `error` as `code`): the `resume` given to `signInWithOnlyWorlds`, or null, so the tool can put
-   *  the person back where they were. Since 4.213.0. */
+  /** On every refusal from `completeSignIn`: the `resume` given to `signInWithOnlyWorlds` (read from the pending
+   *  record, which a refused return with another state leaves in place), or null when none is pending or none
+   *  was given, so the tool can put the person back where they were. Since 4.213.0 for `cancelled` and a
+   *  return's own `error`; since 4.214.0 for every refusal. Absent on `signInWithPassword`'s. */
   readonly resume?: unknown;
 
   constructor(

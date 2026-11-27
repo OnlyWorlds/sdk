@@ -358,13 +358,15 @@ export async function completeSignIn(
   try { record = raw ? JSON.parse(raw) : null; } catch { record = null; }
   if (!record || typeof record.state !== 'string' || typeof record.verifier !== 'string' || typeof record.redirectUri !== 'string') {
     storage.remove(key);
-    throw new OwSignInError('state_mismatch', 'No sign-in is pending for this tool here: start again from the sign-in button.');
+    throw new OwSignInError('state_mismatch', 'No sign-in is pending for this tool here: start again from the sign-in button.', { resume: null });
   }
   // A return that does not carry this sign-in's state leaves it pending: anyone can open a custom
   // scheme's address, and a forged one must not cancel a sign-in in flight. Once the state matches,
   // the sign-in that was started here has come back, and the record goes whatever happens next.
+  // Every refusal from here on hands back the tool's own resume, from its own storage (null when it parked none).
+  const resume = record.resume ?? null;
   if (state !== record.state) {
-    throw new OwSignInError('state_mismatch', 'This page was not reached from the sign-in that was started here: start again.');
+    throw new OwSignInError('state_mismatch', 'This page was not reached from the sign-in that was started here: start again.', { resume });
   }
   // A read-only sign-in gets no AI door token, and the server would spend the code refusing it: refused
   // here, before the record goes, so the same return can be completed without aiUses.
@@ -373,7 +375,7 @@ export async function completeSignIn(
   }
   storage.remove(key);
   if (!samePage(here, record.redirectUri)) {
-    throw new OwSignInError('state_mismatch', 'This page is not the return address the sign-in was started with.');
+    throw new OwSignInError('state_mismatch', 'This page is not the return address the sign-in was started with.', { resume });
   }
   // keel's Cancel comes back with error=access_denied, this sign-in's state and no code: the person
   // said no, so the sign-in ends and the tool gets its resume back to put them where they were.
@@ -381,12 +383,12 @@ export async function completeSignIn(
   const returned = page.searchParams.get('error');
   if (!code && returned !== null) {
     if (returned === 'access_denied') {
-      throw new OwSignInError('cancelled', 'The sign-in was cancelled on onlyworlds.com: nothing changed.', { resume: record.resume ?? null });
+      throw new OwSignInError('cancelled', 'The sign-in was cancelled on onlyworlds.com: nothing changed.', { resume });
     }
-    throw new OwSignInError('failed', 'The sign-in came back without signing in.', { code: returned, resume: record.resume ?? null });
+    throw new OwSignInError('failed', 'The sign-in came back without signing in.', { code: returned, resume });
   }
   if (!code) {
-    throw new OwSignInError('state_mismatch', 'This page was not reached from the sign-in that was started here: start again.');
+    throw new OwSignInError('state_mismatch', 'This page was not reached from the sign-in that was started here: start again.', { resume });
   }
 
   let res: Response;
@@ -404,7 +406,7 @@ export async function completeSignIn(
       }),
     });
   } catch {
-    throw new OwSignInError('offline', 'OnlyWorlds could not be reached: signing in needs a connection.');
+    throw new OwSignInError('offline', 'OnlyWorlds could not be reached: signing in needs a connection.', { resume });
   }
   const retryAfter = parseRetryAfter(res.headers?.get?.('Retry-After') ?? null) ?? undefined;
   let body: unknown = null;
@@ -414,14 +416,14 @@ export async function completeSignIn(
   const errParam = typeof err?.param === 'string' && err.param !== '' ? err.param : undefined;
   const errMessage = typeof err?.message === 'string' ? err.message : undefined;
   if (res.status === 429) {
-    throw new OwSignInError('rate_limited', errMessage ?? 'Too many sign-in attempts. Wait a while, then try again.', { status: 429, code: errCode, param: errParam, retryAfter });
+    throw new OwSignInError('rate_limited', errMessage ?? 'Too many sign-in attempts. Wait a while, then try again.', { status: 429, code: errCode, param: errParam, retryAfter, resume });
   }
   if (res.status === 400 && errCode === 'invalid_grant') {
-    throw new OwSignInError('invalid_grant', errMessage ?? 'The sign-in code could not be exchanged: it was used, expired, or made for another tool. Start again.', { status: 400, code: errCode, param: errParam });
+    throw new OwSignInError('invalid_grant', errMessage ?? 'The sign-in code could not be exchanged: it was used, expired, or made for another tool. Start again.', { status: 400, code: errCode, param: errParam, resume });
   }
   const ok = body as { token?: unknown; token_id?: unknown; expires_at?: unknown; token_type?: unknown; scope?: unknown; account?: { id?: unknown; username?: unknown }; ai_token?: unknown } | null;
   if (!res.ok || typeof ok?.token !== 'string' || ok.token === '' || typeof ok.account?.id !== 'string') {
-    throw new OwSignInError('failed', errMessage ?? `Signing in did not work (${res.status}).`, { status: res.status, code: errCode, param: errParam });
+    throw new OwSignInError('failed', errMessage ?? `Signing in did not work (${res.status}).`, { status: res.status, code: errCode, param: errParam, resume });
   }
   return {
     token: ok.token,
@@ -430,7 +432,7 @@ export async function completeSignIn(
     tokenType: 'bearer',
     account: { id: ok.account.id, username: typeof ok.account.username === 'string' ? ok.account.username : '' },
     scope: ok.scope === 'world:read' ? 'world:read' : null,
-    resume: record.resume ?? null,
+    resume,
     aiToken: 'ai_uses' in ai ? readAiToken(ok.ai_token) : null,
   };
 }
