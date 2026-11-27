@@ -1093,6 +1093,8 @@ export interface OwJoinPreview {
   expires_at: string;
   /** The note the inviter wrote on a person link, or null (an AI or player link keeps none). */
   note: string | null;
+  /** A person's link only: the name of the Character the person would play once they join, when the link names one and joining now would set it. Null when the link names none, or when that Character has since been deleted, hidden or taken by someone else: joining then goes on as if the link named none. Read it again at every preview; show it as text, never as HTML. Absent on an AI's or a player's link. */
+  character_name?: string | null;
   /** A glimpse of the world for a link whose role reads it (contributor or co-builder). Null for a guest's link, and so for every player's, and when no two things a visitor could see are linked. */
   glimpse: OwJoinGlimpse | null;
   /** A table only (a player link that works 2 to 50 times): how many times it works. Absent on a link for one. */
@@ -1133,7 +1135,7 @@ export interface OwWorldLink {
   minted_by: string | null;
   /** Whether the link shows the world's name and picture when it is pasted into a chat: then the link is `/join/<world_id>#<code>`, else `/join#<code>`. Never on an AI link. */
   preview?: boolean;
-  /** A player link only: the Character the player reads as; null while a link for a fresh Character is unused, and always null on a table. `name` is null if that Character was deleted (the redeem then makes a fresh one). */
+  /** A player link: the Character the player reads as; null while a link for a fresh Character is unused, and always null on a table. A person link has this key only while it names a Character: the one it names for its person, which the join sets if it is still free then; once used, the one its join set; a link whose join could not set it has no such key. `name` is null if that Character was deleted (a player's redeem then makes a fresh one). */
   character?: { id: string; name: string | null } | null;
   /** A table only (a player link that works 2 to 50 times): how many times it works. Absent on a link for one. */
   max_uses?: number;

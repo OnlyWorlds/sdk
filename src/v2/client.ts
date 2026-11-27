@@ -1065,8 +1065,11 @@ export class OwV2Client {
    * `agent`, redeemed at POST /join; `player`, a friend with no account, redeemed with
    * redeemJoin for a read key); `role`, when left out, is the server's default: guest for a
    * person link, contributor for an AI link (a player link is guest, and refuses any other), `days` (1, 7 or 30) to 7; `withCharacter` (AI links
-   * only) to true; `character` (player links only) a Character's id or `new` (the default):
-   * whoever opens the link first reads as it, until removed. `preview` (person and player links)
+   * only) to true; `character` on a player link a Character's id or `new` (the default):
+   * whoever opens the link first reads as it, until removed; on a person link for one
+   * contributor or co-builder, the id of the Character they will play once they join (not
+   * hidden, not the owner's, played by no one), left out for none, and previewJoin answers
+   * its name as `character_name`. `preview` (person and player links)
    * to false: true puts the world's id in the link's path, so a chat that unfurls it
    * shows the world's name and picture (the code stays after `#`); true on an AI link is
    * 422, param `preview`. `maxUses` (person and player links; an AI link takes none) to 1, a

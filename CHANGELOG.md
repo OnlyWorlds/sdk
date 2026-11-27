@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **A person's invite link can name the Character its person will play.** `OwJoinPreview` gains `character_name` (a string, or null when the link names none or that Character has since been deleted, hidden or taken; absent on an AI's or a player's link). `createWorldLink`'s `character` is documented for a person link for one contributor or co-builder too, and `OwWorldLink.character` for a person link that names one. The client already sent `character` on any link; nothing it sends changes.
+
 ## [4.210.0] - 2026-11-26
 
 ### Changed
