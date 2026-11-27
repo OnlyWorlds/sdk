@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.216.0] - 2026-11-27
+
+### Changed
+
+- **`convertKanka` reads Kanka 4.0's exports**, byte for byte with the Python package's door (onlyworlds 0.157.0). A Character whose `entity.status_id` is 3, the `dead` row of the character statuses every Kanka campaign shares, gets `[Deceased] ` before `physicality`, as `is_dead` does; neither the 3.15 nor the 4.0 export writes `is_dead`. A campaign's own statuses are not in the export, so only the shared one reads as dead, and a `status_id` that is set is still kept as `x_kanka_status_id`. A family's `pivotMembers`, where 4.0 lists its people, is kept as `x_kanka_pivot_members` with its reason in the report, on any module. Races and families now read as proven on a real export, and the report names an export version other than 3.15 or 4.0. Exports of 3.15 come out as before.
+
 ## [4.215.0] - 2026-11-27
 
 ### Added

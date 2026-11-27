@@ -1,7 +1,7 @@
 /**
  * `@onlyworlds/sdk/convert`'s Kanka door against the Python package's (`python -m onlyworlds.kanka`): the same
- * folder byte for byte and the same report, on three real Kanka exports (fixtures/kanka/, the files the Python
- * package's tests hold, the same bytes). fixtures/kanka/python-door.json is the Python door's output on each,
+ * folder byte for byte and the same report, on three real Kanka exports and one made from the first with Kanka
+ * 4.0's two changes (fixtures/kanka/, the files the Python package's tests hold, the same bytes). fixtures/kanka/python-door.json is the Python door's output on each,
  * recorded: the sha256 of every file it wrote and of its report text. The door's tables and wording are
  * src/convert/kanka.json, the same bytes as the Python package's src/onlyworlds/convert/kanka.json: both
  * packages' tests hold the one sha256 below. Runs against the built package (dist), as the other tests do.
@@ -20,11 +20,12 @@ const FIX = new URL('./fixtures/kanka/', import.meta.url);
 const recorded = JSON.parse(readFileSync(new URL('python-door.json', FIX), 'utf8'));
 
 /** The data file's sha256: the same bytes as the Python package's copy, whose test holds the same hash. */
-const DATA_SHA256 = '53394eee55d8afe0b2b5b5bdc99795a42543600ca085ec282ef1acd66a37106a';
+const DATA_SHA256 = 'ac453c68f54e0d96217e08763169fee7bf53ced6b43f7b24f7054d67f3a8880e';
 const EXPORTS = {
   'quay-export-world_20261023_074706.zip': 'b900ea8161fd2a32b971a53f71f208734d33d39a6a8f75f7cf9eac8adf10e5e4',
   'quay-export-world_20261024_180340.zip': '597a3b053d33d7c7db692527fa9a9b989b8240397ae0d899bed248e1a0798ae4',
   'quay-export-world_20261025_011029.zip': 'f80f00559fefe1abcd400510c2fc7623f585e1b5eef00103e1898df42d6e7574',
+  'kanka-4-made.zip': '6ede34b66f2b3114292cc3678c24f3186fcc66c82ebc339d9fd6649aaac2fb65',
 };
 
 const read = (name) => new Uint8Array(readFileSync(new URL(name, FIX)));

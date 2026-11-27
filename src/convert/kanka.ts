@@ -49,6 +49,12 @@ const R = D.report;
 const PREFIX = D.ext_prefix;
 const MODULE_TYPES = new Map<string, string>(Object.entries(D.module_types));
 const PROVEN = new Set<string>(D.proven_modules);
+/** The export versions this door was proven on; another is named in the report. */
+const PROVEN_VERSIONS: readonly string[] = D.proven_export_versions;
+/** Kanka's own character statuses that read as dead: `entity.status_id` names a row of the `category_statuses`
+ *  every campaign shares (id 3, key `dead`, on characters). Neither the 3.15 nor the 4.0 export writes `is_dead`.
+ *  A campaign's own statuses are not in the export. */
+const DEAD_STATUS_IDS = new Set<number>(D.dead_status_ids);
 const STORY = new Set<string>(D.story_modules);
 const PARENT_FIELD = new Map<string, string>(Object.entries(D.parent_fields));
 const ROOT_FILES = new Set<string>(D.root_files);
@@ -342,7 +348,7 @@ class Reader {
     if (isDict(info)) {
       const version = get(info, 'export_version');
       this.core.note(format(NOTE.version, { kanka_version: get(info, 'kanka_version'), version })
-        + (str(version) === D.proven_export_version ? '' : format(NOTE.version_unproven, { proven: D.proven_export_version })));
+        + (PROVEN_VERSIONS.includes(str(version)) ? '' : format(NOTE.version_unproven, { proven: PROVEN_VERSIONS.join(' and ') })));
     }
     const born = when(get(campaign, 'created_at'));
     const plans = new Map<string, number>();
@@ -488,6 +494,7 @@ class Reader {
     if (item.folder !== D.organisations && !empty(get(row, 'members'))) {
       this.core.keep(item, 'members', get(row, 'members'), WHY.members_elsewhere);
     }
+    if (!empty(get(row, 'pivotMembers'))) this.core.keep(item, 'pivotMembers', get(row, 'pivotMembers'), WHY.pivot_members);
     this.generic(item);
   }
 
@@ -625,7 +632,9 @@ class Reader {
         other.push(new Map<string, PyValue>([['name', get(t, 'name')], ['entry', get(t, 'entry')], ['section_id', get(t, 'section_id')]]));
       }
     }
-    const dead = on(get(row, 'is_dead'));
+    const ent = get(row, 'entity');
+    const status = isDict(ent) ? intId(get(ent, 'status_id')) : null;
+    const dead = on(get(row, 'is_dead')) || (status !== null && DEAD_STATUS_IDS.has(status));
     for (const [section, to] of TRAIT_SECTIONS) {
       let text = (sections.get(section) ?? []).join('\n');
       if (dead && to.field === D.deceased_field) text = rstrip(`${W.deceased}${text}`);
