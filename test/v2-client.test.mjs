@@ -330,6 +330,20 @@ async function thrown(script, call) {
   assert.fail('expected a throw');
 }
 
+test('a body JSON cannot hold throws its own TypeError, not OwNetworkError, and nothing is sent', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: {} });
+  const cyclic = { name: 'K' };
+  cyclic.self = cyclic;
+  for (const call of [
+    (c) => c.patchWorld({ x_tool: 1n }),
+    (c) => c.patch('character', '11111111-2222-4333-8444-555555555555', { x_tool: cyclic }),
+  ]) {
+    const err = await call(client).then(() => assert.fail('expected a throw'), (e) => e);
+    assert.equal(err.name, 'TypeError', String(err));
+  }
+  assert.equal(fetchImpl.calls.length, 0);
+});
+
 test('409 id_conflict is an id conflict, NOT an idempotency conflict', async () => {
   const err = await thrown({ status: 409, body: envelope('invalid_request', 'id_conflict') },
     (c) => c.create('character', { id: '11111111-2222-4333-8444-555555555555', name: 'K' }));

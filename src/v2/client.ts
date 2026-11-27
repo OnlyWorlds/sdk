@@ -1948,13 +1948,12 @@ export class OwV2Client {
     // read, nor on the other writes (hide, the file ticket, setMyCharacter, a key), where keel ignores it.
     if (opts.elementWrite) headers['X-OW-Client'] = this.clientName;
 
+    // Encoded before the try: a body JSON cannot hold (a BigInt, a cycle) throws its own TypeError,
+    // never an OwNetworkError, since nothing was sent.
+    const sentBody = opts.body !== undefined ? JSON.stringify(opts.body) : undefined;
     let res: Response;
     try {
-      const init: RequestInit = {
-        method,
-        headers,
-        body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-      };
+      const init: RequestInit = { method, headers, body: sentBody };
       if (opts.signal !== undefined) init.signal = opts.signal;
       if (opts.keepalive !== undefined) init.keepalive = opts.keepalive;
       res = await this.fetchImpl(url, init);

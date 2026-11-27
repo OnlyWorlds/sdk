@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.219.1] - 2026-11-27
+
+### Fixed
+
+- **A body JSON cannot hold throws its own `TypeError`, not `OwNetworkError`.** A value `JSON.stringify` refuses (a BigInt, a cycle) in a write's body was encoded inside the request's network guard, so the client threw `OwNetworkError: OnlyWorlds request failed` for a request it never sent. The body is now encoded before the request, and only a failure of the request itself is an `OwNetworkError`. The Python package's 0.158.1 fixes the same fault, which there was also retried.
+
 ## [4.219.0] - 2026-11-27
 
 ### Added
