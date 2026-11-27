@@ -124,7 +124,8 @@ test('completeSignIn refuses a wrong state, a wrong page and a missing record be
     ['https://atlas.onlyworlds.com/signin/callback?code=c1&state=other', 'state', true],
     ['https://atlas.onlyworlds.com/signin/callback?code=c1', 'no state', true],
     ['https://evil.example/signin/callback?code=c1&state=STATE', 'page', false],
-    ['https://atlas.onlyworlds.com/signin/callback?error=access_denied&state=STATE', 'cancelled', false],
+    ['https://evil.example/signin/callback?error=access_denied&state=STATE', 'a cancel at another page', false],
+    ['https://atlas.onlyworlds.com/signin/callback?error=access_denied&state=other', 'a cancel with another state', true],
   ]) {
     const storage = memory();
     const state = await begun(storage);
@@ -139,6 +140,61 @@ test('completeSignIn refuses a wrong state, a wrong page and a missing record be
   const client = new OwV2Client({ fetch: fetchStub(200, {}, []) });
   const err = await client.completeSignIn({ clientId: 'atlas', storage: memory(), url: 'https://atlas.onlyworlds.com/signin/callback?code=c1&state=s' }).catch((e) => e);
   assert.equal(err.reason, 'state_mismatch');
+});
+
+// keel's Cancel (portal/signin.py: decision=cancel redirects to the verified address with
+// error=access_denied and the state, no code).
+test('completeSignIn reads keel\'s Cancel as cancelled with the resume, sends nothing and ends the sign-in; another error is failed with its code', async () => {
+  for (const [query, reason, code] of [
+    ['error=access_denied&state=STATE', 'cancelled', undefined],
+    ['state=STATE&error=access_denied', 'cancelled', undefined],
+    ['error=server_error&state=STATE', 'failed', 'server_error'],
+  ]) {
+    const storage = memory();
+    const state = await begun(storage);
+    const calls = [];
+    const client = new OwV2Client({ fetch: fetchStub(200, {}, calls) });
+    const url = `https://atlas.onlyworlds.com/signin/callback?${query.replace('STATE', state)}`;
+    const err = await client.completeSignIn({ clientId: 'atlas', storage, url }).catch((e) => e);
+    assert.ok(err instanceof OwSignInError, query);
+    assert.equal(err.reason, reason, query);
+    assert.equal(err.code, code, query);
+    assert.deepEqual(err.resume, { open: 'w1' }, query);
+    assert.equal(calls.length, 0, query);
+    assert.equal(storage.get('ow_signin:atlas'), null, query);
+  }
+  // A refusal that is not a return without signing in carries no resume.
+  const storage = memory();
+  await begun(storage);
+  const err = await new OwV2Client({ fetch: fetchStub(200, {}, []) })
+    .completeSignIn({ clientId: 'atlas', storage, url: 'https://atlas.onlyworlds.com/signin/callback?error=access_denied&state=other' }).catch((e) => e);
+  assert.equal(err.reason, 'state_mismatch');
+  assert.equal('resume' in err, false);
+});
+
+test('completeSignIn takes a Cancel\'s error out of the address bar with its state, and keeps the rest of the query', async () => {
+  const saved = { history: Object.getOwnPropertyDescriptor(globalThis, 'history'), location: Object.getOwnPropertyDescriptor(globalThis, 'location') };
+  const replaced = [];
+  Object.defineProperty(globalThis, 'history', { configurable: true, value: { state: null, replaceState: (s, t, u) => replaced.push(u) } });
+  try {
+    const storage = memory();
+    const state = await begun(storage);
+    Object.defineProperty(globalThis, 'location', { configurable: true, value: { href: `https://atlas.onlyworlds.com/signin/callback?error=access_denied&state=${state}&keep=1` } });
+    const err = await new OwV2Client({ fetch: fetchStub(200, {}, []) }).completeSignIn({ clientId: 'atlas', storage }).catch((e) => e);
+    assert.equal(err.reason, 'cancelled');
+    assert.deepEqual(replaced, ['https://atlas.onlyworlds.com/signin/callback?keep=1']);
+  } finally {
+    for (const [name, d] of Object.entries(saved)) {
+      if (d) Object.defineProperty(globalThis, name, d); else delete globalThis[name];
+    }
+  }
+});
+
+test('OwSignInError takes resume and refuses an unknown option', () => {
+  assert.deepEqual(new OwSignInError('cancelled', 'x', { resume: { a: 1 } }).resume, { a: 1 });
+  assert.equal(new OwSignInError('cancelled', 'x', { resume: null }).resume, null);
+  assert.equal('resume' in new OwSignInError('failed', 'x'), false);
+  assert.throws(() => new OwSignInError('failed', 'x', { resumes: 1 }), TypeError);
 });
 
 // A native app's return addresses (RFC 8252), as keel takes them at authorize (accounts/signin.py:

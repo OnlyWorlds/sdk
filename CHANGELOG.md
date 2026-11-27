@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.213.0] - 2026-11-27
+
+### Added
+
+- **`completeSignIn` reads a press of Cancel on onlyworlds.com as `cancelled`**, a new `OwSignInError` reason, and hands back the sign-in's `resume` on the error's new `resume` property, so a tool can put the person back where they were. Nothing is sent and the pending sign-in ends. Before, the return (`error=access_denied` with the sign-in's state and no code) was refused as `state_mismatch` with words saying the page was not reached from this sign-in, and the resume was lost, so each tool had to read `error` from the address itself. Any other `error` a return carries is `failed`, with that error as `code` and the resume. A cancel with another sign-in's state, or at another page, is `state_mismatch` as before; on a page whose address came from `location`, `error` leaves the address bar with `code` and `state`.
+- `OwSignInReason` gains `'cancelled'`: a `switch` over it that TypeScript checks for exhaustiveness needs the new case.
+
 ## [4.212.3] - 2026-11-27
 
 ### Fixed

@@ -606,11 +606,16 @@ export class OwNetworkError extends Error {
  * - `offline`: the request never reached keel.
  * - `mint_failed`: the password was right, but keel made no token; the session was still ended.
  * - `failed`: any other refusal; the message is keel's when it gave one.
+ *
+ * And why `completeSignIn` refused: `state_mismatch` (the return is not the sign-in started here),
+ * `cancelled` (the person pressed Cancel on onlyworlds.com; since 4.213.0, with `resume` set),
+ * `invalid_grant`, `rate_limited`, `offline`, `failed`.
  */
 export type OwSignInReason =
   | 'invalid_credentials'
   | 'invalid_grant'
   | 'state_mismatch'
+  | 'cancelled'
   | 'email_unverified'
   | 'rate_limited'
   | 'offline'
@@ -633,13 +638,17 @@ export class OwSignInError extends Error {
   readonly param?: string;
   /** Seconds to wait before trying again, from `Retry-After` (on a 429). */
   readonly retryAfter?: number;
+  /** On a `completeSignIn` return that came back without signing in (`cancelled`, or `failed` with the
+   *  return's `error` as `code`): the `resume` given to `signInWithOnlyWorlds`, or null, so the tool can put
+   *  the person back where they were. Since 4.213.0. */
+  readonly resume?: unknown;
 
   constructor(
     reason: OwSignInReason,
     message: string,
-    opts: { status?: number; code?: string; param?: string; retryAfter?: number } = {},
+    opts: { status?: number; code?: string; param?: string; retryAfter?: number; resume?: unknown } = {},
   ) {
-    refuseUnknownOptions('OwSignInError', opts, ['status', 'code', 'param', 'retryAfter']);
+    refuseUnknownOptions('OwSignInError', opts, ['status', 'code', 'param', 'retryAfter', 'resume']);
     super(message);
     this.name = 'OwSignInError';
     this.reason = reason;
@@ -647,6 +656,7 @@ export class OwSignInError extends Error {
     if (opts.code !== undefined) this.code = opts.code;
     if (opts.param !== undefined) this.param = opts.param;
     if (opts.retryAfter !== undefined) this.retryAfter = opts.retryAfter;
+    if ('resume' in opts) this.resume = opts.resume;
   }
 }
 

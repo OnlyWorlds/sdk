@@ -348,6 +348,7 @@ export async function completeSignIn(
     const clean = new URL(here);
     clean.searchParams.delete('code');
     clean.searchParams.delete('state');
+    if (page.searchParams.has('state')) clean.searchParams.delete('error');
     try { hist.replaceState(hist.state, '', clean.toString()); } catch { /* a page that refuses stays as it is */ }
   }
 
@@ -371,11 +372,21 @@ export async function completeSignIn(
     throw new TypeError('completeSignIn: this sign-in asked for a read-only token (scope world:read), which gets no AI door token: leave aiUses out. Nothing was sent.');
   }
   storage.remove(key);
-  if (!code) {
-    throw new OwSignInError('state_mismatch', 'This page was not reached from the sign-in that was started here: start again.');
-  }
   if (!samePage(here, record.redirectUri)) {
     throw new OwSignInError('state_mismatch', 'This page is not the return address the sign-in was started with.');
+  }
+  // keel's Cancel comes back with error=access_denied, this sign-in's state and no code: the person
+  // said no, so the sign-in ends and the tool gets its resume back to put them where they were.
+  // Any other error a return carries ends it as failed, its code kept.
+  const returned = page.searchParams.get('error');
+  if (!code && returned !== null) {
+    if (returned === 'access_denied') {
+      throw new OwSignInError('cancelled', 'The sign-in was cancelled on onlyworlds.com: nothing changed.', { resume: record.resume ?? null });
+    }
+    throw new OwSignInError('failed', 'The sign-in came back without signing in.', { code: returned, resume: record.resume ?? null });
+  }
+  if (!code) {
+    throw new OwSignInError('state_mismatch', 'This page was not reached from the sign-in that was started here: start again.');
   }
 
   let res: Response;
