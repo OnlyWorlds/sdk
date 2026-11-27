@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { OwV2Client, OwSignInError } from '../dist/index.js';
-import { pkceChallenge, base64url } from '../dist/index.js';
+import { pkceChallenge, base64url, pendingSignInResume } from '../dist/index.js';
 
 const BASE = 'https://www.onlyworlds.com/api/v2';
 
@@ -474,4 +474,31 @@ test('completeSignIn refuses aiUses beside a read-only sign-in before anything i
   const got = await client.completeSignIn({ clientId: 'maps', storage, url });
   assert.equal(got.scope, 'world:read');
   assert.equal(calls.length, 1);
+});
+
+test('pendingSignInResume reads the pending resume synchronously, sends nothing and changes nothing; none pending is null', async () => {
+  const storage = memory();
+  assert.equal(pendingSignInResume({ clientId: 'atlas', storage }), null);
+  await begun(storage);
+  const before = storage.get('ow_signin:atlas');
+  const got = pendingSignInResume({ clientId: 'atlas', storage });
+  assert.ok(!(got instanceof Promise));
+  assert.deepEqual(got, { open: 'w1' });
+  assert.equal(storage.get('ow_signin:atlas'), before);
+  assert.equal(pendingSignInResume({ clientId: 'other', storage }), null);
+  // An unreadable or foreign record is no resume.
+  const bad = memory();
+  bad.set('ow_signin:atlas', '{not json');
+  assert.equal(pendingSignInResume({ clientId: 'atlas', storage: bad }), null);
+  bad.set('ow_signin:atlas', JSON.stringify({ resume: { open: 'x' } }));
+  assert.equal(pendingSignInResume({ clientId: 'atlas', storage: bad }), null);
+  // The package's rule: an unknown key and a missing clientId refuse before anything is read.
+  assert.throws(() => pendingSignInResume({ clientId: 'atlas', storage, url: 'x' }), /unknown option 'url'/);
+  assert.throws(() => pendingSignInResume({ storage }), /needs clientId/);
+  // The same record then completes as usual, the resume read twice the same.
+  const state = JSON.parse(before).state;
+  const client = new OwV2Client({ fetch: fetchStub(200, { token: 'ow_a_new', token_id: 't1', token_type: 'bearer', account: { id: 'u1', username: 'ann' } }, []) });
+  const done = await client.completeSignIn({ clientId: 'atlas', storage, url: `https://atlas.onlyworlds.com/signin/callback?code=c1&state=${state}` });
+  assert.deepEqual(done.resume, got);
+  assert.equal(pendingSignInResume({ clientId: 'atlas', storage }), null);
 });

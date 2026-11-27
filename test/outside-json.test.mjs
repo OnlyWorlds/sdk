@@ -238,7 +238,7 @@ const NAMED = {
   'mcp/index.ts': [1, 'a copy of a value already in memory'],
   'v2/client.ts': [3, 'the platform\'s own answers'],
   'v2/errors.ts': [1, 'the platform\'s own error body'],
-  'v2/oauth.ts': [1, 'the sign-in record this package stored'],
+  'v2/oauth.ts': [2, 'the sign-in record this package stored (completeSignIn and pendingSignInResume)'],
 };
 
 test('every JSON.parse in src is the outside reader\'s or is named here with what it reads', () => {

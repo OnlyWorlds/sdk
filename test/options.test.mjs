@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import {
   OwV2Client, OwSignInError, TokenResource, readWorldFile, writeWorldFile, typeWord, planPhoto,
   preparePhoto, parseDate, resolveCalendar, resolveCalendarLens, buildWorldIndex, lookupWorld, renderElement, buildAskContext,
-  isToEveryone, hasUnseenRecipients, readMarkOf,
+  isToEveryone, hasUnseenRecipients, readMarkOf, pendingSignInResume,
   elementAddress, resolveLens, worldGraph, openersFor, landingOf, mostLinkedOf, trailByPlace, layoutAround, unplacedAround, layoutByLinks3d, readReportLine, readReportLines, nameFinder,
 } from '../dist/index.js';
 import { objectParameters } from './options-surface.mjs';
@@ -115,6 +115,7 @@ const FENCED = {
   'nameFinder#1': () => nameFinder([{ id: 'k', name: 'Kira' }], { case: 'exact', ...U }),
   // 4.135.0: a layout method's input, its settings and its places, fenced at every level.
   'trailByPlace#0': () => trailByPlace({ ...trailInput, ...U }),
+  'pendingSignInResume#0': () => pendingSignInResume({ clientId: 'c', storage, ...U }),
   'layoutAround#2': () => layoutAround({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, 'a', U),
   'unplacedAround#3': () => unplacedAround({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, 'a', [], U),
   'layoutByLinks3d#2': () => layoutByLinks3d({ nodes: [{ id: 'a', type: 'character' }], edges: [] }, null, U),

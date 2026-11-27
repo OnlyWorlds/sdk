@@ -9,7 +9,7 @@
 
 // Client + wire machinery
 export { OwV2Client, parseErrorEnvelope, FILE_EXTENSIONS, fileKindOf } from './v2';
-export { pkceChallenge, base64url } from './v2';
+export { pkceChallenge, base64url, pendingSignInResume } from './v2';
 export type { OwSignInStorage, OwSignInBegin, OwSignInBegun, OwSignInComplete, OwSignInResult, OwAiToken } from './v2';
 export { OwApiError, OwPreconditionFailedError, OwProposedError, OwStaleProposalError, OwNetworkError, OwSignInError, errorFromResponse } from './v2';
 export { detectKeyKind, isDemoKey, kindCanWrite, pinExpectation } from './v2';

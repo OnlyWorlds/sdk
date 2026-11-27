@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.215.0] - 2026-11-27
+
+### Added
+
+- **`pendingSignInResume({ clientId, storage })`** gives the `resume` of the sign-in pending for that tool, or null, synchronously and with no side effects: it sends nothing, changes no storage and leaves the address bar alone. A callback page can route to where the person was at once, before `completeSignIn` answers, and then let `completeSignIn` end the sign-in as usual. It does not check the return's `state`; a page that must act only on a matching return waits for `completeSignIn`.
+
 ## [4.214.1] - 2026-11-27
 
 ### Changed

@@ -13,6 +13,7 @@
  */
 
 import { OwSignInError, parseRetryAfter } from './errors';
+import { refuseUnknownOptions } from '../options';
 
 /** Where the pending sign-in's record lives between the two pages: string in, string out. */
 export interface OwSignInStorage {
@@ -176,6 +177,25 @@ function defaultStorage(name: string): OwSignInStorage {
     throw new TypeError(`${name}: no sessionStorage here; pass storage ({get, set, remove}) to hold the pending sign-in`);
   }
   return { get: (k) => ss.getItem(k), set: (k, v) => ss.setItem(k, v), remove: (k) => ss.removeItem(k) };
+}
+
+/**
+ * Since 4.215.0. The `resume` of the sign-in pending for `clientId` in `storage` (the browser's
+ * `sessionStorage` by default), or null when none is pending, the record cannot be read or it holds no
+ * resume. Synchronous and with no side effects: it sends nothing, changes no storage and leaves the address
+ * bar alone, so a callback page can route to where the person was before `completeSignIn` answers, then let
+ * `completeSignIn` end the sign-in as usual. It does not check the return's `state`: a page that must act
+ * only on a matching return waits for `completeSignIn`.
+ */
+export function pendingSignInResume(opts: { clientId: string; storage?: OwSignInStorage }): unknown {
+  refuseUnknownOptions('pendingSignInResume', opts, ['clientId', 'storage']);
+  const { clientId } = opts ?? ({} as { clientId: string });
+  if (typeof clientId !== 'string' || clientId === '') throw new TypeError('pendingSignInResume needs clientId');
+  const storage = opts.storage ?? defaultStorage('pendingSignInResume');
+  let record: { state?: unknown; resume?: unknown } | null = null;
+  try { record = JSON.parse(storage.get(RECORD_PREFIX + clientId) ?? 'null'); } catch { return null; }
+  if (!record || typeof record !== 'object' || typeof record.state !== 'string') return null;
+  return record.resume ?? null;
 }
 
 function webCrypto(): Crypto {
