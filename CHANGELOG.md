@@ -5,6 +5,8 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.214.1] - 2026-11-27
+
 ### Changed
 
 - **Every `@deprecated` mark says since which release**, so each name's six months can be counted: `FieldType.integer_max` and `FieldInfo.max` since 4.1.0, the four `TokenResource` methods since 4.23.0, the five token types and the `version` key of `layoutByKind`'s and `layoutAround`'s answers since 4.177.0. The docs' list of deprecated names now shows a date for all of them.
