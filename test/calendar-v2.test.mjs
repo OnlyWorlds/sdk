@@ -135,9 +135,9 @@ test('an up era with no end runs to the next up era, past a down era listed afte
 
 test('the vendored calendar fixture: every case reads as written', () => {
   assert.equal(FIXTURE.profile, 'atlas_calendar');
-  assert.equal(FIXTURE.cases.length, 91, 'serial 147 carries 91 cases');
-  assert.equal(FIXTURE.cases.reduce((n, c) => n + (c.steps?.length ?? 0), 0), 256, 'serial 147 carries 256 steps');
-  assert.equal(FIXTURE.cases.filter((c) => !c.valid).length, 43, 'serial 109 carries 43 values a reader must refuse');
+  assert.equal(FIXTURE.cases.length, 191, 'serial 149 carries 191 cases');
+  assert.equal(FIXTURE.cases.reduce((n, c) => n + (c.steps?.length ?? 0), 0), 402, 'serial 149 carries 402 steps');
+  assert.equal(FIXTURE.cases.filter((c) => !c.valid).length, 96, 'serial 149 carries 96 values a reader must refuse');
   // Serial 109: an era's year_base is 0 or 1, so a whole number like 5 is refused.
   assert.ok(FIXTURE.cases.some((c) => c.name === 'refuse-year-base-five' && c.valid === false), 'serial 109 carries refuse-year-base-five');
   // Serial 69 added the days around Leap Day in 1900, 2000 and 2100 (12 steps) to the Gregorian case.
