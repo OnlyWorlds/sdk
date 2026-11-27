@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.212.1] - 2026-11-27
+
+### Fixed
+
+- **`formatDuration` no longer throws on a `step_name` that is not a string**: such a value reads as absent and the duration is worded in the grain, the calendar profile's rule for an optional key of the wrong kind (a `step_name` of `5` threw a `TypeError`).
+- **`formatDuration` words a whole count exactly up to the safe integers**: the count was rounded to two decimals through `n * 100`, which is not exact past 2^53 / 100, so `9007199254740990` steps were worded as `9007199254740989 days`. A whole count is now shown as it is; a fractional one is rounded as before. The Python package's `format_duration` gives the same answers.
+
 ## [4.212.0] - 2026-11-27
 
 ### Added

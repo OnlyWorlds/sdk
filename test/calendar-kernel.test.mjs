@@ -432,6 +432,14 @@ describe('surface helpers (2B sweep)', () => {
         const sol = { version: 1, grain: 'day', step_name: 'sol' };
         expect(formatDuration(sol, 14)).toBe('14 sols');
     });
+    it('formatDuration: a step_name that is not a string reads as absent, and a whole count is exact', () => {
+        expect(formatDuration({ version: 2, grain: 'day', step_name: 5 }, 3)).toBe('3 days');
+        expect(formatDuration({ version: 2, grain: 'day', step_name: null }, 1)).toBe('1 day');
+        expect(formatDuration({ version: 2, grain: 'day', step_name: ['sol'] }, 2)).toBe('2 days');
+        expect(formatDuration({ version: 2, grain: 'day' }, 9007199254740990)).toBe('9007199254740990 days');
+        expect(formatDuration({ version: 2, grain: 'day' }, 9007199254740991)).toBe('9007199254740991 days');
+        expect(formatDuration({ version: 2, grain: 'day' }, 0.333)).toBe('0.33 days');
+    });
 });
 describe('defensive read (wild configs fall back, never a broken axis)', () => {
     it('returns null on garbage', () => {

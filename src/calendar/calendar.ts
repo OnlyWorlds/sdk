@@ -899,7 +899,9 @@ export function approxYearLength(cfg: CalendarConfig): number | null {
  */
 export function formatDuration(cfg: CalendarConfig, steps: number): string {
   const n = Math.abs(steps);
-  const unit = (cfg.step_name ?? cfg.grain ?? 'step').trim() || 'step';
+  // A step_name that is not a string reads as absent (the profile's rule for an optional key of the wrong kind).
+  const stepName: unknown = cfg.step_name;
+  const unit = ((typeof stepName === 'string' ? stepName : null) ?? cfg.grain ?? 'step').trim() || 'step';
   const plural = (word: string, v: number): string => (v === 1 ? word : `${word}s`);
   const yearLen = cfg.bundles?.months
     ? cfg.bundles.months.lengths.reduce((a, b) => a + b, 0)
@@ -910,7 +912,8 @@ export function formatDuration(cfg: CalendarConfig, steps: number): string {
     const rounded = years >= 10 ? Math.round(years) : Math.round(years * 10) / 10;
     return `${rounded} ${plural('year', rounded)}`;
   }
-  const shown = Math.round(n * 100) / 100;
+  // A whole count is shown as it is: n * 100 is not exact past 2^53 / 100, and 9007199254740990 came back a day short.
+  const shown = Number.isInteger(n) ? n : Math.round(n * 100) / 100;
   return `${shown} ${plural(unit, shown)}`;
 }
 
