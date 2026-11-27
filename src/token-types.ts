@@ -24,7 +24,7 @@ export interface TokenStatus {
 /**
  * Response from token consumption endpoint
  *
- * @deprecated Serves only a `TokenResource` method keel answers with 404 (production,
+ * @deprecated Since 4.177.0. Serves only a `TokenResource` method keel answers with 404 (production,
  * since 2026-10). Leaves in 5.0 with that method.
  */
 export interface TokenConsumeResponse {
@@ -43,7 +43,7 @@ export interface TokenConsumeResponse {
 /**
  * Parameters for consuming tokens
  *
- * @deprecated Serves only a `TokenResource` method keel answers with 404 (production,
+ * @deprecated Since 4.177.0. Serves only a `TokenResource` method keel answers with 404 (production,
  * since 2026-10). Leaves in 5.0 with that method.
  */
 export interface TokenConsumeParams {
@@ -60,7 +60,7 @@ export interface TokenConsumeParams {
 /**
  * Response from getting encrypted access key (advanced use case)
  *
- * @deprecated Serves only a `TokenResource` method keel answers with 404 (production,
+ * @deprecated Since 4.177.0. Serves only a `TokenResource` method keel answers with 404 (production,
  * since 2026-10). Leaves in 5.0 with that method.
  */
 export interface AccessKeyResponse {
@@ -99,7 +99,7 @@ export interface EncryptionInfo {
 /**
  * Response from session revocation
  *
- * @deprecated Serves only a `TokenResource` method keel answers with 404 (production,
+ * @deprecated Since 4.177.0. Serves only a `TokenResource` method keel answers with 404 (production,
  * since 2026-10). Leaves in 5.0 with that method.
  */
 export interface RevokeSessionResponse {
@@ -112,7 +112,7 @@ export interface RevokeSessionResponse {
 /**
  * Response from revoking all sessions
  *
- * @deprecated Serves only a `TokenResource` method keel answers with 404 (production,
+ * @deprecated Since 4.177.0. Serves only a `TokenResource` method keel answers with 404 (production,
  * since 2026-10). Leaves in 5.0 with that method.
  */
 export interface RevokeAllSessionsResponse {

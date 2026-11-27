@@ -44,7 +44,7 @@ export interface OwLayoutByKind {
   method: 'by-kind';
   /**
    * Always 1. A method's word is its version: a method that changes takes a new word, so read `method`, never this number.
-   * @deprecated The layout profile's mark carries no version key. Leaves in 5.0.
+   * @deprecated Since 4.177.0. The layout profile's mark carries no version key. Leaves in 5.0.
    */
   version: 1;
   points: OwLayoutPoint[];
@@ -64,7 +64,7 @@ export interface OwLayoutAround {
   method: 'around';
   /**
    * Always 1. A method's word is its version: a method that changes takes a new word, so read `method`, never this number.
-   * @deprecated The layout profile's mark carries no version key. Leaves in 5.0.
+   * @deprecated Since 4.177.0. The layout profile's mark carries no version key. Leaves in 5.0.
    */
   version: 1;
   points: OwLayoutAroundPoint[];

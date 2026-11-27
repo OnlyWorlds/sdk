@@ -738,7 +738,7 @@ export type FieldType =
   | 'text'           // Text fields
   | 'integer'        // Positive integers
   /**
-   * @deprecated Emitted by nothing, and scheduled for removal in 5.0.0.
+   * @deprecated Since 4.1.0. Emitted by nothing, and scheduled for removal in 5.0.0.
    *
    * No `FIELD_SCHEMA` entry has ever carried this type, in the entire history of
    * this repository. It was meant to surface the schema's `maximum:` constraint,
@@ -756,7 +756,7 @@ export type FieldType =
 export interface FieldInfo {
   type: FieldType;
   target?: string;    // For link fields: target element type
-  /** @deprecated Never populated; removed in 5.0.0. See `FieldType.integer_max`. */
+  /** @deprecated Since 4.1.0. Never populated; removed in 5.0.0. See `FieldType.integer_max`. */
   max?: number;
   required?: boolean; // True only for `name`, the one field the wire requires (rulings.yaml: nullable-by-default)
 }

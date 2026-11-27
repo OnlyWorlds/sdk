@@ -30,6 +30,11 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm run build
+      # The written promise (the docs' Stability page): no public name gone within a major, every
+      # deprecation saying since when and the major it leaves in. A release that adds names runs
+      # `node scripts/verify-promise.mjs --write`. The second step watches the first one fail.
+      - run: node scripts/verify-promise.mjs
+      - run: node scripts/mutants-promise.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: dist

@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+
+- **Every `@deprecated` mark says since which release**, so each name's six months can be counted: `FieldType.integer_max` and `FieldInfo.max` since 4.1.0, the four `TokenResource` methods since 4.23.0, the five token types and the `version` key of `layoutByKind`'s and `layoutAround`'s answers since 4.177.0. The docs' list of deprecated names now shows a date for all of them.
+
+### Added (for contributors)
+
+- **A check holds the package to its written promise** on every pull request: `scripts/verify-promise.mjs` reads every public name (each export of each entry, and each member of an exported class or interface) from the built declarations and fails when one listed in `scripts/public-names.json` is gone within a major, when a new one is not listed yet (`--write` adds it), when a `@deprecated` mark does not say since which release and the major it leaves in, and, at a major, when a name leaves less than six months after its mark. `scripts/mutants-promise.mjs` watches it fail, once for each rule.
+
 ## [4.214.0] - 2026-11-27
 
 ### Added

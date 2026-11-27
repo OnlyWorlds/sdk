@@ -99,7 +99,7 @@ export class TokenResource {
   /**
    * Consume tokens for service usage
    *
-   * @deprecated keel serves no consume route (404 on production since 2026-10;
+   * @deprecated Since 4.23.0. keel serves no consume route (404 on production since 2026-10;
    * no client decides what its act costs, ruled 2026-10-14): spending
    * happens server-side in the route that does the work. Removed in 5.0.
    *
@@ -143,7 +143,7 @@ export class TokenResource {
   /**
    * Get encrypted OpenAI API key (advanced use case)
    *
-   * @deprecated keel serves no access-key route (404 on production since
+   * @deprecated Since 4.23.0. keel serves no access-key route (404 on production since
    * 2026-10). AI answers come from keel's own proxy: `OwV2Client.ai('ask', ...)`
    * and `ai('sort', ...)`. Removed in 5.0.
    *
@@ -177,7 +177,7 @@ export class TokenResource {
   /**
    * Revoke a specific token session
    *
-   * @deprecated keel serves no revoke-session route (404 on production since
+   * @deprecated Since 4.23.0. keel serves no revoke-session route (404 on production since
    * 2026-10); sessions came from getAccessKey(), which is gone too. Removed in 5.0.
    *
    * Invalidates the session ID obtained from getAccessKey().
@@ -200,7 +200,7 @@ export class TokenResource {
   /**
    * Revoke all active sessions (emergency use)
    *
-   * @deprecated keel serves no revoke-all-sessions route (404 on production
+   * @deprecated Since 4.23.0. keel serves no revoke-all-sessions route (404 on production
    * since 2026-10). Removed in 5.0.
    *
    * Invalidates all token sessions for the authenticated user.
