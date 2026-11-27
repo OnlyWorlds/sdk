@@ -13,8 +13,9 @@
  * - The words: `formatStep`'s whole output; a label that is empty, or only the number itself, is
  *   left out. An answer of more than DATES_MAX distinct dates gets none.
  * - Not mirrored: keel's own calendar gate (the bounds on a template's length, separator runs, eras,
- *   months and the year's days that keel sets for what it renders), so a calendar past those
- *   bounds speaks here and not at the door.
+ *   months and the year's days that keel sets for what it renders, tighter than the calendar
+ *   profile's), so a calendar inside the profile's bounds but past keel's speaks here and not at the
+ *   door. One past the profile's bounds does not read here either (`readCalendarValue`, since 4.212.0).
  */
 import { CALENDAR_FIELD, readCalendarValue } from '../calendar/index';
 import { formatStep } from '../calendar/calendar';
