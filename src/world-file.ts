@@ -55,7 +55,7 @@ import { Inflate, inflateSync, zipSync, type Zippable } from 'fflate';
 import { refuseUnknownOptions } from './options';
 import { nfc } from './nfc';
 import { simpleCaseFold } from './case-fold';
-import { readFolder, misnamedFixedName } from './folder/read';
+import { readFolder, misnamedFixedName, type OwFolderWorldFault } from './folder/read';
 import { OUTSIDE_JSON_MAX_DEPTH, parseOutsideJson, textTooDeep } from './outside-json';
 
 const WORLD_FILE = 'world.json';
@@ -99,13 +99,19 @@ const MESSAGES: Record<OwWorldFileReason, string> = {
   marker: 'The world file\'s mimetype entry is not the OnlyWorlds media type.',
 };
 
-/** A world file was refused; nothing was returned. `reason` says why, for a tool to word its own message. */
+/**
+ * A world file was refused; nothing was returned. `reason` says why, for a tool to word its own message.
+ * `worldFault` says, for a `not_a_world` whose `world.json` is there but cannot be read, what is wrong with it
+ * (`too_deep`, nested past the line; `not_json`), in the folder read report's words; it is absent otherwise.
+ */
 export class OwWorldFileError extends Error {
   readonly reason: OwWorldFileReason;
-  constructor(reason: OwWorldFileReason, message: string = MESSAGES[reason]) {
+  readonly worldFault?: OwFolderWorldFault;
+  constructor(reason: OwWorldFileReason, message: string = MESSAGES[reason], worldFault?: OwFolderWorldFault) {
     super(message);
     this.name = 'OwWorldFileError';
     this.reason = reason;
+    if (worldFault !== undefined) this.worldFault = worldFault;
   }
 }
 
@@ -388,12 +394,12 @@ function parseWorld(data: Uint8Array): Record<string, unknown> {
   // Counted in the text before the parse, as an element file is (serial 148): a world.json past the line is one
   // this reader cannot read, so the archive is no world, and the message says why.
   if (textTooDeep(text)) {
-    throw new OwWorldFileError('not_a_world', `${MESSAGES.not_a_world} Its world.json is nested more than ${OUTSIDE_JSON_MAX_DEPTH} deep (too_deep).`);
+    throw new OwWorldFileError('not_a_world', `${MESSAGES.not_a_world} Its world.json is nested more than ${OUTSIDE_JSON_MAX_DEPTH} deep (too_deep).`, 'too_deep');
   }
   try {
     meta = JSON.parse(text);
   } catch {
-    throw new OwWorldFileError('not_a_world');
+    throw new OwWorldFileError('not_a_world', MESSAGES.not_a_world, 'not_json');
   }
   if (!meta || typeof meta !== 'object' || Array.isArray(meta)) throw new OwWorldFileError('not_a_world');
   const id = (meta as { id?: unknown }).id;

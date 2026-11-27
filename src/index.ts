@@ -154,6 +154,8 @@ export { nfc } from './nfc';
 export { simpleCaseFold } from './case-fold';
 // A fixed name (world.json, elements/, spatial/) held only in another case, for a reader that lists a folder itself
 export { misnamedFixedName } from './folder/read';
+// A world file's worldFault speaks the folder read report's words for an unreadable world.json.
+export type { OwFolderWorldFault } from './folder/read';
 // Names compared as the profiles compare them: trimmed and without regard to case, ordered by code point
 export { trimAndFold } from './room';
 export { byCodePoint } from './message';

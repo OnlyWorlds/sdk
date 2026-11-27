@@ -267,6 +267,19 @@ test('refuses no world.json, an unreadable one, one without a string id, one tha
   refuses(zipSync({ 'w/world.json': strToU8(j([WID])) }), 'not_a_world');
 });
 
+test('a world.json that is there and cannot be read says why in worldFault; any other not_a_world has none', () => {
+  const fault = (files) => {
+    try { readWorldFile(zipSync(files)); } catch (e) { assert.ok(e instanceof OwWorldFileError); assert.equal(e.reason, 'not_a_world'); return e.worldFault; }
+    assert.fail('read as a world');
+  };
+  const deep = `{"id":"${WID}","name":"Deep","x":${'['.repeat(200)}${']'.repeat(200)}}`;
+  assert.equal(fault({ 'w/world.json': strToU8(deep) }), 'too_deep');
+  assert.equal(fault({ 'w/world.json': strToU8('{nope') }), 'not_json');
+  assert.equal(fault({ 'w/elements/a.json': strToU8('{}') }), undefined);
+  assert.equal(fault({ 'w/world.json': strToU8(j({ name: 'no id' })) }), undefined);
+  assert.equal(fault({ 'w/world.json': strToU8(j([WID])) }), undefined);
+});
+
 test('refuses two worlds in one file (OW-2)', () => {
   refuses(zipSync({ ...world, 'v/world.json': strToU8(j({ id: 'other', name: 'V' })) }), 'more_than_one');
 });

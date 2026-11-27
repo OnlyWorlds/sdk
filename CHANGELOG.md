@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **A world file refused for a `world.json` it cannot read says what is wrong with it**: `OwWorldFileError.worldFault` is `too_deep` (nested past 200 levels) or `not_json`, the folder read report's words (`OwFolderWorldFault`, now exported from the root as well as from `@onlyworlds/sdk/folder`), beside the reason `not_a_world` the folder format gives it. A tool reads the field, never the message. It is absent on every other refusal, a missing `world.json` or one with no id included.
+
 ### Changed
 
 - **The schema pin is v0.34.1-dist.149** (canonical 00.34.01 unchanged, no generated type moved; the calendar profile and its fixture, 191 cases, every one passing). The calendar reader now holds the profile's size bounds and its date range:
