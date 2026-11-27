@@ -5,6 +5,13 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.219.2] - 2026-11-28
+
+### Fixed
+
+- **A non-finite number in a request body is refused before sending, by name and with its place.** `JSON.stringify` writes `NaN`, `Infinity` and `-Infinity` as `null`, so `patch('character', id, { x_score: NaN })` cleared the field without a word, and the server could not tell it from a `null` that was meant. Any write now throws `TypeError: a request body holds NaN at x_score, which JSON cannot carry: send a finite number, or null to clear the field. Nothing was sent.` The place is read as the body is sent, a list index in brackets (`items[1].element.x_weight` in a `bulk`).
+- **A body nested more than 200 deep is refused before sending**, counted as the folder readers count it (an object or array at the top is depth 1): `TypeError: a request body is nested more than 200 deep (an object or list at the top is depth 1), past what onlyworlds.com reads. Nothing was sent.` A body too deep for `JSON.stringify` to walk throws the same, never a bare `RangeError`. A body with both faults is refused for its depth. The Python package refuses both in the same words (0.158.2).
+
 ## [4.219.1] - 2026-11-27
 
 ### Fixed

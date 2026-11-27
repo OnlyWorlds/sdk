@@ -26,6 +26,7 @@ import { unknownKey } from '../options';
 import { OwApiError, OwNetworkError, OwProposedError, OwSignInError, errorFromResponse, parseErrorEnvelope, parseRetryAfter } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
 import { isLocalFetch } from './local-fetch';
+import { OUTSIDE_JSON_MAX_DEPTH, textTooDeep } from '../outside-json';
 import { beginSignIn, completeSignIn as completeOAuthSignIn, aiTokenParams, type OwSignInBegin, type OwSignInBegun, type OwSignInComplete, type OwSignInResult } from './oauth';
 
 const DEFAULT_BASE_URL = 'https://www.onlyworlds.com/api/v2';
@@ -1949,8 +1950,8 @@ export class OwV2Client {
     if (opts.elementWrite) headers['X-OW-Client'] = this.clientName;
 
     // Encoded before the try: a body JSON cannot hold (a BigInt, a cycle) throws its own TypeError,
-    // never an OwNetworkError, since nothing was sent.
-    const sentBody = opts.body !== undefined ? JSON.stringify(opts.body) : undefined;
+    // never an OwNetworkError, since nothing was sent; so does a body `encodeBody` refuses.
+    const sentBody = opts.body !== undefined ? encodeBody(opts.body) : undefined;
     let res: Response;
     try {
       const init: RequestInit = { method, headers, body: sentBody };
@@ -2079,6 +2080,63 @@ async function proposedFromResponse(res: Response, method: string, path: string)
  * `known_of` is an unknown field to keel's write path (a 422) and
  * is stripped too; a body where it is `true` never gets here (refuseKnownOf).
  */
+/**
+ * A request body as the JSON text sent, or a TypeError before anything is sent, in the Python
+ * package's words, for the two bodies keel cannot read as written:
+ *
+ * - nested more than `OUTSIDE_JSON_MAX_DEPTH` (200) deep, counted as the folder readers count it (an
+ *   object or array at the top is depth 1), in the text itself; a body too deep for
+ *   `JSON.stringify` to walk is the same refusal. keel reads 256, so a body this sends is under its line.
+ * - a non-finite number (NaN, either infinity) anywhere in it, named with its place. `JSON.stringify`
+ *   writes one as `null`, and a `null` clears the field without a word.
+ *
+ * A body with both is refused for its depth. Read after each value's `toJSON`, as it is sent.
+ */
+function encodeBody(body: unknown): string {
+  const tooDeep = (): TypeError =>
+    new TypeError(`a request body is nested more than ${OUTSIDE_JSON_MAX_DEPTH} deep (an object or list at the top is depth 1), past what onlyworlds.com reads. Nothing was sent.`);
+  const places = new WeakMap<object, string>();
+  let nonFinite: string | undefined;
+  function replacer(this: unknown, key: string, value: unknown): unknown {
+    const holder = this as object;
+    const at = places.get(holder);
+    const place = at === undefined ? '' : Array.isArray(holder) ? `${at}[${key}]` : at === '' ? key : `${at}.${key}`;
+    if (typeof value === 'number' && !Number.isFinite(value)) {
+      nonFinite ??= `${String(value)} at ${place === '' ? 'the top' : place}`;
+    } else if (value !== null && typeof value === 'object') {
+      places.set(value, place);
+    }
+    return value;
+  }
+  let text: string;
+  try {
+    text = JSON.stringify(body, replacer);
+  } catch (err) {
+    // A RangeError is JSON.stringify's own stack running out on a deep value, or a text too long
+    // for a string: the depth, counted with a stack of our own, says which.
+    if (err instanceof RangeError && valueTooDeep(body)) throw tooDeep();
+    throw err;
+  }
+  if (textTooDeep(text)) throw tooDeep();
+  if (nonFinite !== undefined) {
+    throw new TypeError(`a request body holds ${nonFinite}, which JSON cannot carry: send a finite number, or null to clear the field. Nothing was sent.`);
+  }
+  return text;
+}
+
+/** Whether a value holds objects or arrays more than `OUTSIDE_JSON_MAX_DEPTH` deep, walked with its own stack; it stops past the line, so a cycle ends too. */
+function valueTooDeep(value: unknown): boolean {
+  const stack: Array<[unknown, number]> = [[value, 0]];
+  while (stack.length > 0) {
+    const [v, parent] = stack.pop()!;
+    if (v === null || typeof v !== 'object') continue;
+    const depth = parent + 1;
+    if (depth > OUTSIDE_JSON_MAX_DEPTH) return true;
+    for (const child of Object.values(v)) stack.push([child, depth]);
+  }
+  return false;
+}
+
 function sanitizePayload<T extends Record<string, unknown>>(payload: T): Record<string, unknown> {
   if (!payload || typeof payload !== 'object') return payload;
   const rest: Record<string, unknown> = { ...(payload as Record<string, unknown>) };
