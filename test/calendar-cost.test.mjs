@@ -2,7 +2,8 @@
  * A stored calendar does not set what one label costs. The shared cases (test/fixtures/calendar-cost.cases.json,
  * the same bytes the Python package's tests run, its sha256 pinned here): a long run of white space in a template
  * or a name, a long run of marks at a label's edge, and a month of millions of days, each answered with its words
- * inside the bound. Before 4.201.2 the marks, the name and the long month ran past it. Runs against the compiled
+ * inside the bound. Before 4.201.2 the marks, the name and the long month ran past it. The five past the profile's
+ * size bounds (serial 149) are refused by the reader and timed in the kernel as given. Runs against the compiled
  * public bundle.
  */
 import { test } from 'node:test';
@@ -29,10 +30,32 @@ test('the cases file is the pinned bytes, the ones the Python package runs', () 
   assert.ok(fixture.cases.length >= 8, `${fixture.cases.length} cases`);
 });
 
+// Since serial 149 a template or a name longer than 256 code points is not a calendar, and five of the cases hold
+// one. The reader refuses them; the kernel is still timed on them as given, since a config built in code never
+// passes the reader, and the cost bound is what holds a label's cost there.
+const pastTheBound = (cfg) => {
+  const long = (s) => typeof s === 'string' && [...s].length > 256;
+  if (long(cfg.format)) return 'its format is longer than 256 characters';
+  if (cfg.bundles?.months?.names?.some(long)) return 'a month name is longer than 256 characters';
+  return null;
+};
+
+test('five of the cases are past a size bound, three inside them', () => {
+  assert.equal(fixture.cases.filter((c) => pastTheBound(expand(c.cfg))).length, 5);
+});
+
 for (const c of fixture.cases) {
   test(`inside ${fixture.underMs} ms with its words: ${c.name}`, () => {
-    const cfg = sdk.readCalendarConfig(expand(c.cfg));
-    assert.ok(cfg !== null, 'the case is a calendar the reader accepts');
+    const value = expand(c.cfg);
+    const bound = pastTheBound(value);
+    let cfg;
+    if (bound) {
+      assert.equal(sdk.readCalendarConfig(value), null, `the reader refuses it: ${bound}`);
+      cfg = value;
+    } else {
+      cfg = sdk.readCalendarConfig(value);
+      assert.ok(cfg !== null, 'the case is a calendar the reader accepts');
+    }
     const start = performance.now();
     let got;
     if (c.call === 'format') got = sdk.formatStep(cfg, c.step);

@@ -92,13 +92,17 @@ export interface CalendarConfig {
   format_intercalary?: string;
 }
 
-/** A step, taken apart. Fields are null when the structure doesn't exist. */
+/**
+ * A step, taken apart. Fields are null when the structure doesn't exist. A date past the exact range (its
+ * step, absYear plus a leap rule's offset, or its year outside ±(2^53 - 1)) is a plain number: every field
+ * but `step` is null, `absYear` and `year` included.
+ */
 export interface StepBreakdown {
   step: number;
-  /** Absolute year index (zero-based from step 0). */
-  absYear: number;
-  /** The era-local display year (restart arithmetic applied), or absYear when no era / restart:false. */
-  year: number;
+  /** Absolute year index (zero-based from step 0); null for a date past the exact range. */
+  absYear: number | null;
+  /** The era-local display year (restart arithmetic applied), or absYear when no era / restart:false; null for a date past the exact range. */
+  year: number | null;
   era: CalendarEra | null;
   /** 1-based month index, or null (intercalary day / no months). */
   month: number | null;
@@ -191,6 +195,8 @@ export function validateCalendarConfig(cfg: CalendarConfig): string[] {
       errors.push(`Era "${era.name}": a counting-down era must end below its start`);
     }
   }
+  const bound = boundsProblem(cfg);
+  if (bound) errors.push(bound);
   // Overlap check over resolved domains.
   const domains = resolveEraDomains(eras);
   for (let i = 0; i < domains.length; i++) {
@@ -248,7 +254,67 @@ export function readCalendarConfig(value: unknown): CalendarConfig | null {
   if (!months && cfg.intercalary != null && cfg.intercalary.length > 0) return null;
   const monthCount = months ? months.names.length : 0;
   if (cfg.intercalary?.some((i) => i.after_month < 0 || i.after_month > monthCount)) return null;
+  // How large a calendar a reader words (the profile, serial 149): past a size bound, or with a year
+  // longer than the safe integers, the value is not a calendar.
+  if (boundsProblem(cfg) != null) return null;
   return cfg;
+}
+
+/** The safe integers' line, 2^53 - 1: a whole number a calendar holds, its longest year and a worded date's numbers stay inside ±SAFE. */
+const SAFE = Number.MAX_SAFE_INTEGER;
+
+/** The profile's size bounds (serial 149): eras, months, a week's steps and names, intercalary days, an `except`, one name or template. */
+const MAX_ERAS = 256;
+const MAX_MONTHS = 64;
+const MAX_WEEK = 64;
+const MAX_INTERCALARY = 16;
+const MAX_EXCEPT = 8;
+const MAX_TEXT = 256;
+
+/** A string longer than MAX_TEXT Unicode code points, as decoded, untrimmed and not normalised; anything else is not this bound's business. */
+function tooLong(s: unknown): boolean {
+  if (typeof s !== 'string' || s.length <= MAX_TEXT) return false;
+  if (s.length > 2 * MAX_TEXT) return true;
+  let n = 0;
+  for (const _ of s) if (++n > MAX_TEXT) return true;
+  return false;
+}
+
+/**
+ * Which of the profile's size bounds the value exceeds, or null: more than 256 eras, 64 months, a week of
+ * more than 64 steps or 64 names, 16 intercalary entries, a version-2 `except` longer than 8 (in version 1
+ * it is an unknown key), a name or template longer than 256 characters, or a longest year (the months'
+ * lengths plus every intercalary entry) past 2^53 - 1. Shapes it does not hold are left to the other checks.
+ */
+function boundsProblem(cfg: CalendarConfig): string | null {
+  const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+  const months = cfg.bundles?.months;
+  const week = cfg.bundles?.week;
+  const eras = list(cfg.eras) as (CalendarEra | null)[];
+  const inter = list(cfg.intercalary) as (CalendarIntercalary | null)[];
+  const monthNames = list(months?.names);
+  const dayNames = list(week?.names);
+  if (eras.length > MAX_ERAS) return `A calendar holds at most ${MAX_ERAS} eras`;
+  if (monthNames.length > MAX_MONTHS) return `A calendar holds at most ${MAX_MONTHS} months`;
+  if ((typeof week?.length === 'number' && week.length > MAX_WEEK) || dayNames.length > MAX_WEEK) {
+    return `A week holds at most ${MAX_WEEK} steps and ${MAX_WEEK} names`;
+  }
+  if (inter.length > MAX_INTERCALARY) return `A calendar holds at most ${MAX_INTERCALARY} festival days`;
+  if (cfg.version === 2 && inter.some((i) => Array.isArray(i?.except) && i.except.length > MAX_EXCEPT)) {
+    return `An except list holds at most ${MAX_EXCEPT} numbers`;
+  }
+  if (tooLong(cfg.grain) || tooLong(cfg.step_name) || tooLong(cfg.format) || tooLong(cfg.format_intercalary)
+    || eras.some((e) => tooLong(e?.name) || tooLong(e?.abbrev))
+    || monthNames.some(tooLong) || dayNames.some(tooLong) || inter.some((i) => tooLong(i?.name))) {
+    return `A name or template holds at most ${MAX_TEXT} characters`;
+  }
+  if (months && Array.isArray(months.lengths)) {
+    // Each length is a safe integer by now: the sum is exact until it passes the line, and stays past it after.
+    let longest = inter.length;
+    for (const l of months.lengths) if (typeof l === 'number') longest += l;
+    if (longest > SAFE) return 'A year holds at most 2^53 - 1 steps';
+  }
+  return null;
 }
 
 /**
@@ -652,15 +718,37 @@ function positionOf(cfg: CalendarConfig, step: number): StepPosition {
   return { absYear: y, offset, slot: slots.at(offset) ?? null, slots };
 }
 
+/** Past the safe integers' line on either side (NaN is not: it answers as it always did). */
+function pastExact(n: number): boolean {
+  return Math.abs(n) > SAFE;
+}
+
+/** The leap rules' non-zero offsets, as leapRule reads them (version 2 only: version 1 reads no offset). */
+function leapOffsets(cfg: CalendarConfig): number[] {
+  if (cfg.version !== 2 || !Array.isArray(cfg.intercalary)) return [];
+  return cfg.intercalary.filter((ic) => ic.every_years != null && ic.offset).map((ic) => ic.offset as number);
+}
+
+/** A date past the exact range, as a plain number: every field null but the step (the profile, serial 149). */
+function plainBreakdown(step: number): StepBreakdown {
+  return { step, absYear: null, year: null, era: null, month: null, monthName: null, day: null, intercalary: null, weekday: null };
+}
+
 export function breakdownStep(cfg: CalendarConfig, step: number): StepBreakdown {
+  // A date whose step, year index plus a leap rule's offset, or year in its era is past the exact range is
+  // a plain number (the profile, serial 149): never a rounded label, never a throw.
+  if (pastExact(step)) return plainBreakdown(step);
   const pos = positionOf(cfg, step);
+  if (leapOffsets(cfg).some((o) => pastExact(pos.absYear + o))) return plainBreakdown(step);
   const era = eraForStep(cfg, step);
+  const year = displayYear(cfg, step, era);
+  if (pastExact(year)) return plainBreakdown(step);
   const months = cfg.bundles?.months;
   const slot = pos.slot;
   return {
     step,
     absYear: pos.absYear,
-    year: displayYear(cfg, step, era),
+    year,
     era,
     month: slot?.kind === 'month' ? (slot.month as number) : null,
     monthName: slot?.kind === 'month' && months ? months.names[(slot.month as number) - 1] : null,
@@ -752,6 +840,7 @@ function trimEdges(text: string): string {
 /** Format a step. Total: every integer formats to a string under every readable config. */
 export function formatStep(cfg: CalendarConfig, step: number): string {
   const b = breakdownStep(cfg, step);
+  if (b.absYear === null || b.year === null) return String(step); // past the exact range: the plain number
   const values: Record<string, string | null> = {
     day: b.day != null ? String(b.day) : null,
     month: b.monthName,
@@ -775,8 +864,16 @@ export function formatStep(cfg: CalendarConfig, step: number): string {
  * Outside every era: the absolute year index alone.
  */
 export function formatYearLabel(cfg: CalendarConfig, step: number): string {
+  // Past the exact range, the plain number, as formatStep prints it.
+  if (pastExact(step)) return String(step);
+  const offsets = leapOffsets(cfg);
+  if (offsets.length > 0) {
+    const y = absoluteYear(cfg, step);
+    if (offsets.some((o) => pastExact(y + o))) return String(step);
+  }
   const era = eraForStep(cfg, step);
   const year = displayYear(cfg, step, era);
+  if (pastExact(year)) return String(step);
   const eraLabel = era ? (era.abbrev ?? era.name) : '';
   return eraLabel ? `${year} ${eraLabel}` : String(year);
 }

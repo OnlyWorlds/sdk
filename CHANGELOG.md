@@ -7,6 +7,10 @@ earlier history lives in git log only.
 
 ### Changed
 
+- **The schema pin is v0.34.1-dist.149** (canonical 00.34.01 unchanged, no generated type moved; the calendar profile and its fixture, 191 cases, every one passing). The calendar reader now holds the profile's size bounds and its date range:
+  - **A calendar past a size bound is not a calendar** (`readCalendarConfig` and `readCalendarValue` answer null; `validateCalendarConfig` names the bound): more than 256 eras, 64 months, a week longer than 64 steps or with more than 64 names, 16 entries in `intercalary`, a version-2 `except` longer than 8, or a template (`format`, `format_intercalary`) or a name (an era's `name` or `abbrev`, a month's, a weekday's, an intercalary day's, `step_name`, `grain`) longer than 256 characters, counted in Unicode code points, untrimmed. So is a calendar whose longest year (the months' lengths plus every intercalary entry) is longer than 2^53 - 1 steps. Before, each of these read.
+  - **A date past the exact range is its plain number.** When a date's step, its year index plus a leap rule's `offset`, or the year it shows in its era is outside -(2^53 - 1) to 2^53 - 1, `formatStep` and `formatYearLabel` print the step as a number and `breakdownStep` returns every field null but `step`; the calendar's other dates are worded as before. Before, such a date was worded from arithmetic past the safe integers, where its year or its day could be wrong. `StepBreakdown`'s `absYear` and `year` are typed `number | null` for it.
+  - What already read this way, now the profile's words: `bundles` that is not an object is no bundles; `bundles.months` given as `false`, `0` or `""` is no months; on a version-1 value `except` and `offset` are unknown keys, read and checked by nothing.
 - **A keyless client's refusal names every call that works without a key**: `signInWithOnlyWorlds` and `completeSignIn` join health, `previewJoin`, `redeemJoin` and `signInWithPassword` in its message, as they do in the `'none'` key kind's comment. Both already worked without a key; only the words change.
 
 ## [4.211.0] - 2026-11-27
