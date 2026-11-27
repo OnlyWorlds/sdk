@@ -284,7 +284,8 @@ function tooLong(s: unknown): boolean {
  * Which of the profile's size bounds the value exceeds, or null: more than 256 eras, 64 months, a week of
  * more than 64 steps or 64 names, 16 intercalary entries, a version-2 `except` longer than 8 (in version 1
  * it is an unknown key), a name or template longer than 256 characters, or a longest year (the months'
- * lengths plus every intercalary entry) past 2^53 - 1. Shapes it does not hold are left to the other checks.
+ * lengths plus every intercalary entry, or with no months `year.steps`) past 2^53 - 1. Shapes it does not
+ * hold are left to the other checks.
  */
 function boundsProblem(cfg: CalendarConfig): string | null {
   const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
@@ -313,6 +314,9 @@ function boundsProblem(cfg: CalendarConfig): string | null {
     let longest = inter.length;
     for (const l of months.lengths) if (typeof l === 'number') longest += l;
     if (longest > SAFE) return 'A year holds at most 2^53 - 1 steps';
+  } else if (cfg.bundles?.year && typeof cfg.bundles.year.steps === 'number' && cfg.bundles.year.steps > SAFE) {
+    // A calendar with no months: its year is year.steps, held to the same line.
+    return 'A year holds at most 2^53 - 1 steps';
   }
   return null;
 }

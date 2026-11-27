@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.212.2] - 2026-11-27
+
+### Fixed
+
+- **`validateCalendarConfig` names a year of `year.steps` past 2^53 - 1 in a calendar with no months**: it said nothing there, while `readCalendarConfig` refuses the value. It now gives `A year holds at most 2^53 - 1 steps`, the words a year of months past the line already got. The Python package's validator now gives the same words for every size bound.
+
 ## [4.212.1] - 2026-11-27
 
 ### Fixed

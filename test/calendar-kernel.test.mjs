@@ -432,6 +432,24 @@ describe('surface helpers (2B sweep)', () => {
         const sol = { version: 1, grain: 'day', step_name: 'sol' };
         expect(formatDuration(sol, 14)).toBe('14 sols');
     });
+    it('validateCalendarConfig names each size bound, a year of year.steps with no months included', () => {
+        const day = { version: 2, grain: 'day' };
+        const words = (cfg) => validateCalendarConfig(cfg).filter((w) => w.includes('at most'));
+        const names = (n, p) => Array.from({ length: n }, (_, i) => `${p}${i}`);
+        expect(words({ ...day, eras: names(257, 'E').map((name, i) => ({ name, start: i * 10, end: i * 10 + 10 })) })).toEqual(['A calendar holds at most 256 eras']);
+        expect(words({ ...day, bundles: { months: { names: names(65, 'M'), lengths: Array(65).fill(30) } } })).toEqual(['A calendar holds at most 64 months']);
+        expect(words({ ...day, bundles: { week: { length: 65, names: names(65, 'D') } } })).toEqual(['A week holds at most 64 steps and 64 names']);
+        const two = { months: { names: ['A', 'B'], lengths: [30, 30] } };
+        const festivals = names(17, 'F').map((name) => ({ name, after_month: 1 }));
+        expect(words({ ...day, bundles: two, intercalary: festivals })).toEqual(['A calendar holds at most 16 festival days']);
+        const except = [8, 16, 32, 64, 128, 256, 512, 1024, 2048];
+        expect(words({ ...day, bundles: two, intercalary: [{ name: 'F', after_month: 1, every_years: 4, except }] })).toEqual(['An except list holds at most 8 numbers']);
+        expect(words({ ...day, grain: 'g'.repeat(257) })).toEqual(['A name or template holds at most 256 characters']);
+        expect(words({ ...day, bundles: { months: { names: ['A', 'B'], lengths: [9007199254740990, 2] } } })).toEqual(['A year holds at most 2^53 - 1 steps']);
+        expect(words({ ...day, bundles: { year: { steps: 9007199254740992 } } })).toEqual(['A year holds at most 2^53 - 1 steps']);
+        expect(words({ ...day, bundles: { year: { steps: 9007199254740991 } } })).toEqual([]);
+        expect(readCalendarConfig({ ...day, bundles: { year: { steps: 9007199254740992 } } })).toBe(null);
+    });
     it('formatDuration: a step_name that is not a string reads as absent, and a whole count is exact', () => {
         expect(formatDuration({ version: 2, grain: 'day', step_name: 5 }, 3)).toBe('3 days');
         expect(formatDuration({ version: 2, grain: 'day', step_name: null }, 1)).toBe('1 day');
