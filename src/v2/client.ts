@@ -1678,10 +1678,12 @@ export class OwV2Client {
    * `ow_a_` token with the account and `resume`. The record is cleared once a return carries its
    * state, on success and on refusal; a return with another state leaves the sign-in pending;
    * the SDK keeps no token: the tool does. Refusals are `OwSignInError`: `state_mismatch` (no
-   * pending sign-in, a different state, or the wrong page; nothing sent), `invalid_grant` (keel's
-   * 400: used, expired, or another client's code), `rate_limited`, `offline`, `failed`. Each carries the server's
-   * `status`, `code` and, when its answer named a field, `param`: a 422 that refused the AI door token asked
-   * here names `ai_uses` or `ai_lifetime_minutes` (the code is spent either way).
+   * pending sign-in, a different state, or the wrong page; nothing sent), `cancelled` (the person
+   * pressed Cancel on onlyworlds.com; nothing sent), `invalid_grant` (keel's 400: used, expired, or
+   * another client's code), `rate_limited`, `offline`, `failed`. Each carries `resume` (the one given to
+   * `signInWithOnlyWorlds`, or null) and, when the server answered, its `status`, `code` and, when its
+   * answer named a field, `param`: a 422 that refused the AI door token asked here names `ai_uses` or
+   * `ai_lifetime_minutes` (the code is spent either way).
    */
   async completeSignIn(opts: OwSignInComplete): Promise<OwSignInResult> {
     only('completeSignIn', opts, ['clientId', 'storage', 'url', 'aiUses', 'aiLifetimeMinutes']);

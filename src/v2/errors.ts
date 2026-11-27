@@ -623,7 +623,7 @@ export type OwSignInReason =
   | 'failed';
 
 /**
- * A refused `signInWithPassword`. `reason` is what to tell the user; `status` and `code` are
+ * A refused `signInWithPassword` or `completeSignIn`. `reason` is what to tell the user; `status` and `code` are
  * keel's answer when there was one (`code`: keel's error code, e.g. `email_password_mismatch`).
  * The password is never in the message or in any property.
  */
