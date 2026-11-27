@@ -5,6 +5,10 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Changed
+
+- **A keyless client's refusal names every call that works without a key**: `signInWithOnlyWorlds` and `completeSignIn` join health, `previewJoin`, `redeemJoin` and `signInWithPassword` in its message, as they do in the `'none'` key kind's comment. Both already worked without a key; only the words change.
+
 ## [4.211.0] - 2026-11-27
 
 ### Added

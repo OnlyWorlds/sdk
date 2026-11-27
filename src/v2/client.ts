@@ -1899,7 +1899,7 @@ export class OwV2Client {
     const accountToken = opts.auth !== false && this.keyKind === 'account' ? opts.accountToken : undefined;
     // A local fetch (a world folder) sends nothing, so a keyless client may call any route: the folder answers it or refuses it.
     if (opts.auth !== false && this.keyKind === 'none' && !this.local && !(worldRead && this.world !== undefined)) {
-      throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin, redeemJoin and signInWithPassword work, and list, listAll, get, search, getWorld and draught with \`world\` set`);
+      throw new TypeError(`${method} ${path} needs a key, and this client holds none: without one, only health, previewJoin, redeemJoin, signInWithPassword, signInWithOnlyWorlds and completeSignIn work, and list, listAll, get, search, getWorld and draught with \`world\` set`);
     }
     if (opts.auth !== false && this.keyKind === 'account' && !ACCOUNT_ROUTE.test(path)) {
       if (!worldRead && accountToken === undefined) {
