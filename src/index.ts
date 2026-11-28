@@ -8,7 +8,8 @@
  */
 
 // Client + wire machinery
-export { OwV2Client, parseErrorEnvelope, FILE_EXTENSIONS, fileKindOf } from './v2';
+export { OwV2Client, parseErrorEnvelope, FILE_EXTENSIONS, fileKindOf, kindFaults } from './v2';
+export type { OwKindFault } from './v2';
 export { pkceChallenge, base64url, pendingSignInResume } from './v2';
 export type { OwSignInStorage, OwSignInBegin, OwSignInBegun, OwSignInComplete, OwSignInResult, OwAiToken } from './v2';
 export { OwApiError, OwPreconditionFailedError, OwProposedError, OwStaleProposalError, OwNetworkError, OwSignInError, errorFromResponse } from './v2';

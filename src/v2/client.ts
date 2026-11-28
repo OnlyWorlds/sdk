@@ -12,7 +12,7 @@
  */
 
 import type { ElementType } from './types.generated';
-import { FIELD_SCHEMA } from './types.generated';
+import { kindFaults } from './kinds';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwSearchResults,
@@ -2188,18 +2188,13 @@ function sanitizePayload<T extends Record<string, unknown>>(payload: T): Record<
  * A field outside the schema (an extension, an unknown type) is not checked; a link field neither.
  */
 function checkKinds(type: string, payload: unknown, where: string): void {
-  const fields = (FIELD_SCHEMA as Record<string, Record<string, { type: string }> | undefined>)[type];
-  if (!fields || !payload || typeof payload !== 'object') return;
-  for (const [key, value] of Object.entries(payload as Record<string, unknown>)) {
-    const kind = fields[key]?.type;
-    if (value === null || value === undefined || kind === undefined) continue;
-    if (kind === 'integer' && !(typeof value === 'number' && Number.isInteger(value))) {
-      throw new TypeError(`${where}: ${type}.${key} is an integer field; ${shownValue(value)} would be stored as another value. Nothing was sent.`);
-    }
-    if (kind === 'text' && typeof value !== 'string') {
-      throw new TypeError(`${where}: ${type}.${key} is a text field; ${shownValue(value)} is not a string. Nothing was sent.`);
-    }
+  // The rule is kindFaults' (exported since 4.222.0, so a tool asks the same predicate); this throws its first.
+  const [fault] = kindFaults(type, payload);
+  if (!fault) return;
+  if (fault.kind === 'integer') {
+    throw new TypeError(`${where}: ${type}.${fault.field} is an integer field; ${shownValue(fault.value)} would be stored as another value. Nothing was sent.`);
   }
+  throw new TypeError(`${where}: ${type}.${fault.field} is a text field; ${shownValue(fault.value)} is not a string. Nothing was sent.`);
 }
 
 /** A value as a refusal names it: as JSON writes it, but a number that is not finite by its own name (`NaN`, `Infinity`), never the `null` JSON would write in its place. */

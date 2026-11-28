@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.222.0] - 2026-11-28
+
+### Added
+
+- **`kindFaults(type, element)`: every value of the wrong kind in a standard field, named.** The predicate the writes refuse by since 4.220.0, exported so a tool asks it instead of copying it: it answers `[{ field, kind: 'integer' | 'text', value }]` (type `OwKindFault`) in the element's own key order, `[]` when there is none, and never throws for a value. An integer field takes a whole number (`2.0` is one; never a boolean or a string such as `"7"`), a text field a string, each or null; a NaN or an infinity is a fault of either; an extension, a link field and a type outside the standard are not read. A tool can show which element and field hold such a value before a write, where the write's TypeError stops at the first. The writes now refuse `kindFaults`' first fault, in the same words as before.
+
 ## [4.221.0] - 2026-11-28
 
 ### Added

@@ -2224,6 +2224,7 @@ const UNION_ROWS = {
   'OwV2Client.mintWorldKey.scope': { at: ['POST /account/worlds/{world_id}/keys body: scope'], rule: 'within' },
 };
 const UNION_OWN = {
+  'OwKindFault.kind': 'two of the field kinds the SDK generates from the schema (FIELD_SCHEMA in src/v2/types.generated.ts), the two kindFaults reads (src/v2/kinds.ts)',
   'type OwFolderSkipReason': 'the folder source\'s own words for a file it does not serve (src/folder/read.ts): one that does not parse, one with no id, a second file for an id (the folder format spec, section 4: one id, one file)',
   'type OwFolderWorldFault': 'the folder source\'s own words for a world.json it could not read for its text (src/folder/read.ts), three of OwFolderSkipReason',
   'OwTalk.type': 'the room profile\'s talk on an element (schema-dist, serial 135; room.fixture.json\'s talk_cases)',

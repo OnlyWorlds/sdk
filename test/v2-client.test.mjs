@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
-  OwV2Client, OwApiError, OwPreconditionFailedError, detectKeyKind, ELEMENT_TYPES,
+  OwV2Client, OwApiError, OwPreconditionFailedError, detectKeyKind, ELEMENT_TYPES, kindFaults,
 } from '../dist/index.js';
 
 // -- fake fetch harness -----------------------------------------------------
@@ -386,6 +386,28 @@ test('a body nested past 256 levels, past what keel reads, is refused by name an
   await client.bulk([{ type: 'character', element: { id, name: 'K', x_tool: nest(200) } }]);
   assert.equal(fetchImpl.calls.length, 2);
   assert.equal(JSON.parse(fetchImpl.calls[1].init.body).items[0].element.x_tool.length, 1);
+});
+
+test('kindFaults names every wrong kind in key order, the predicate the writes refuse by, and never throws for a value', async () => {
+  const el = { name: 'K', height: 2.5, supertype: ['a'], weight: 3, description: 12, x_tool: 1.5, species: [], birth_date: '7', subtype: 'ok', title: null };
+  assert.deepEqual(kindFaults('character', el), [
+    { field: 'height', kind: 'integer', value: 2.5 },
+    { field: 'supertype', kind: 'text', value: ['a'] },
+    { field: 'description', kind: 'text', value: 12 },
+    { field: 'birth_date', kind: 'integer', value: '7' },
+  ]);
+  for (const v of [true, '7', NaN, Infinity, -Infinity, 1.5]) assert.equal(kindFaults('character', { height: v }).length, 1, String(v));
+  for (const v of [2, 2.0, -3, null, undefined]) assert.deepEqual(kindFaults('character', { height: v }), [], String(v));
+  assert.deepEqual(kindFaults('character', { name: '' }), []);
+  // Not read: a type outside the standard, an element that is not an object, an inherited key
+  assert.deepEqual(kindFaults('notatype', { height: 2.5 }), []);
+  for (const x of [null, undefined, 'K', 5, [2.5]]) assert.deepEqual(kindFaults('character', x), [], String(x));
+  assert.deepEqual(kindFaults('character', Object.create({ height: 2.5 })), []);
+  // The writes refuse exactly the first fault kindFaults names, in its words
+  const { client, fetchImpl } = makeClient({ status: 200, body: {} });
+  const err = await client.create('character', el).then(() => assert.fail('expected a throw'), (e) => e);
+  assert.equal(err.message, 'create: character.height is an integer field; 2.5 would be stored as another value. Nothing was sent.');
+  assert.equal(fetchImpl.calls.length, 0);
 });
 
 test('a value keel would store as another is refused before sending, as Python check_kinds refuses it', async () => {
