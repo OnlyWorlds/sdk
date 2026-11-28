@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.220.2] - 2026-11-28
+
+### Fixed
+
+- **A wrong-kind refusal names a number that is not finite by its own name.** 4.220.0's refusal wrote the value as `JSON.stringify` writes it, so a NaN or an infinity in an integer or a text field read as `null` (`character.height is an integer field; null would be stored as another value`), as if the caller had sent null. It now says `NaN`, `Infinity` or `-Infinity`; every other value is named as before.
+
 ## [4.220.1] - 2026-11-28
 
 ### Fixed

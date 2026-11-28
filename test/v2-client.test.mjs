@@ -399,6 +399,10 @@ test('a value keel would store as another is refused before sending, as Python c
     [(c) => c.patch('character', id, { supertype: ['a', 'b'] }), 'patch: character.supertype is a text field; ["a","b"] is not a string'],
     [(c) => c.bulk([{ type: 'character', element: { name: 'K' } }, { type: 'character', element: { name: 'L', supertype: 12 } }]), 'bulk: items[1]: character.supertype is a text field; 12 is not a string'],
     [(c) => c.propose('character', id, { fields: { height: 1.5 }, evidence: 'a source' }), 'propose: character.height is an integer field; 1.5 would be stored'],
+    // A number that is not finite is named by its own name, never the null JSON writes in its place.
+    [(c) => c.create('character', { name: 'K', height: NaN }), 'create: character.height is an integer field; NaN would be stored'],
+    [(c) => c.patch('character', id, { height: -Infinity }), 'patch: character.height is an integer field; -Infinity would be stored'],
+    [(c) => c.patch('character', id, { supertype: Infinity }), 'patch: character.supertype is a text field; Infinity is not a string'],
   ]) {
     const err = await call(client).then(() => assert.fail('expected a throw'), (e) => e);
     assert.equal(err.name, 'TypeError', String(err));

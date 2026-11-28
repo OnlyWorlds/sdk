@@ -2179,12 +2179,18 @@ function checkKinds(type: string, payload: unknown, where: string): void {
     const kind = fields[key]?.type;
     if (value === null || value === undefined || kind === undefined) continue;
     if (kind === 'integer' && !(typeof value === 'number' && Number.isInteger(value))) {
-      throw new TypeError(`${where}: ${type}.${key} is an integer field; ${JSON.stringify(value) ?? String(value)} would be stored as another value. Nothing was sent.`);
+      throw new TypeError(`${where}: ${type}.${key} is an integer field; ${shownValue(value)} would be stored as another value. Nothing was sent.`);
     }
     if (kind === 'text' && typeof value !== 'string') {
-      throw new TypeError(`${where}: ${type}.${key} is a text field; ${JSON.stringify(value) ?? String(value)} is not a string. Nothing was sent.`);
+      throw new TypeError(`${where}: ${type}.${key} is a text field; ${shownValue(value)} is not a string. Nothing was sent.`);
     }
   }
+}
+
+/** A value as a refusal names it: as JSON writes it, but a number that is not finite by its own name (`NaN`, `Infinity`), never the `null` JSON would write in its place. */
+function shownValue(value: unknown): string {
+  if (typeof value === 'number' && !Number.isFinite(value)) return String(value);
+  return JSON.stringify(value) ?? String(value);
 }
 
 function refuseKnownOf(payload: unknown, where: string): void {
