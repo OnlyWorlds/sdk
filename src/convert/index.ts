@@ -1,9 +1,11 @@
 /**
  * `@onlyworlds/sdk/convert`: another tool's export as an OnlyWorlds world folder, in memory. Bytes
  * in, the folder's files and a report out: no file system, no network, the same in a browser and in
- * Node. Each tool has its own reader on one shared core; Kanka's is the first.
+ * Node. Each tool has its own reader on one shared core; Kanka's is the first. `worldFolderFiles`
+ * writes a world held as plain objects through the same writer.
  */
 
+export { worldFolderFiles } from './world-folder';
 export { convertKanka, kankaReportText, KANKA_MADE_NAMES, OwConvertError } from './kanka';
 export type {
   OwConvertErrorReason, OwConvertKankaOptions, OwKankaConversion, OwKankaHidden, OwKankaModule, OwKankaPicture,

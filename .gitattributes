@@ -36,3 +36,5 @@ test/fixtures/declared-type.cases.json -text
 test/fixtures/pins-known-to.cases.json -text
 # The most linked reader's shared cases, the same bytes as the Python package's copy (both tests hold its sha256).
 test/fixtures/most-linked.fixture.json -text
+# The world folder writer's shared case: the files the Python package's write_folder wrote, held byte for byte (generate-world-folder-files.py checks them).
+test/fixtures/world-folder-files.json -text

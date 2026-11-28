@@ -2040,7 +2040,8 @@
    "OwKankaUntagged.tag": {},
    "OwKankaUntagged.why": {},
    "convertKanka": {},
-   "kankaReportText": {}
+   "kankaReportText": {},
+   "worldFolderFiles": {}
   },
   "./folder": {
    "ElementType": {},

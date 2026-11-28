@@ -1,0 +1,135 @@
+{
+  "about": "One world and its elements, and the files the Python package's write_folder wrote for them, read back as UTF-8 text. Made by generate-world-folder-files.py; world-folder-files.test.mjs holds worldFolderFiles to the same paths and bytes.",
+  "producer": {
+    "tool": "onlyworlds",
+    "version": "0.158.4"
+  },
+  "world": {
+    "id": "0192a000-aaaa-7bbb-8ccc-000000000001",
+    "name": "Harbour",
+    "description": "A port on a cold sea.\nIts quay is older than its name: Hafen, Ἁλιεύς.",
+    "time_basic_unit": "Year",
+    "time_range_current": 1200,
+    "x_names": {
+      "character": "Soul",
+      "location": "Place"
+    },
+    "snapshot_counts": {
+      "character": 99
+    }
+  },
+  "elements": {
+    "location": [
+      {
+        "id": "00000000-0000-4000-8000-000000000020",
+        "type": "location",
+        "name": "Copper Mine",
+        "description": "Below the quay.",
+        "change_seq": 1
+      }
+    ],
+    "character": [
+      {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "type": "character",
+        "name": "Ada Okafor",
+        "description": "Café owner.\n\tSecond line, a quote \" and a backslash \\, a star 🌟.",
+        "birthplace": "00000000-0000-4000-8000-000000000020",
+        "species": [
+          "00000000-0000-4000-8000-000000000060",
+          "00000000-0000-4000-8000-000000000061"
+        ],
+        "height": 172,
+        "x_note": {
+          "kept": [
+            1,
+            2,
+            {
+              "deep": true
+            }
+          ],
+          "empty": {},
+          "none": [],
+          "nothing": null
+        }
+      },
+      {
+        "id": "bbbbbbbb-0000-4000-8000-000000000007",
+        "type": "character",
+        "name": "Twin"
+      },
+      {
+        "id": "aaaaaaaa-0000-4000-8000-000000000007",
+        "type": "character",
+        "name": "TWIN!"
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000008",
+        "type": "character",
+        "name": "日本"
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000009",
+        "type": "character",
+        "name": "Early",
+        "supertype": "first"
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000009",
+        "type": "character",
+        "name": "Late",
+        "supertype": "second"
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000010",
+        "type": "character",
+        "name": "Stranger",
+        "description": "",
+        "supertype": "",
+        "species": [],
+        "birthplace": null,
+        "height": 0,
+        "known_of": true,
+        "x_seen": false
+      }
+    ],
+    "object": [
+      {
+        "id": "00000000-0000-4000-8000-000000000030",
+        "type": "object",
+        "name": "Numbers",
+        "x_a": 2.0,
+        "x_b": 2.5,
+        "x_c": 1e+21,
+        "x_d": -0.0,
+        "x_e": 1e-07,
+        "x_f": -17
+      }
+    ],
+    "species": [
+      {
+        "id": "00000000-0000-4000-8000-000000000060",
+        "type": "species",
+        "name": "Human"
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000061",
+        "type": "species",
+        "name": "Selkie"
+      }
+    ]
+  },
+  "files": {
+    "elements/character/00000000-0000-4000-8000-000000000008.json": "{\n  \"id\": \"00000000-0000-4000-8000-000000000008\",\n  \"type\": \"character\",\n  \"name\": \"日本\"\n}\n",
+    "elements/character/ada-okafor--00000001.json": "{\n  \"id\": \"00000000-0000-4000-8000-000000000001\",\n  \"type\": \"character\",\n  \"name\": \"Ada Okafor\",\n  \"description\": \"Café owner.\\n\\tSecond line, a quote \\\" and a backslash \\\\, a star 🌟.\",\n  \"birthplace\": \"00000000-0000-4000-8000-000000000020\",\n  \"species\": [\n    \"00000000-0000-4000-8000-000000000060\",\n    \"00000000-0000-4000-8000-000000000061\"\n  ],\n  \"height\": 172,\n  \"x_note\": {\n    \"kept\": [\n      1,\n      2,\n      {\n        \"deep\": true\n      }\n    ],\n    \"empty\": {},\n    \"none\": [],\n    \"nothing\": null\n  }\n}\n",
+    "elements/character/late--00000009.json": "{\n  \"id\": \"00000000-0000-4000-8000-000000000009\",\n  \"type\": \"character\",\n  \"name\": \"Late\",\n  \"supertype\": \"second\"\n}\n",
+    "elements/character/stranger--00000010.json": "{\n  \"id\": \"00000000-0000-4000-8000-000000000010\",\n  \"type\": \"character\",\n  \"name\": \"Stranger\",\n  \"description\": \"\",\n  \"supertype\": \"\",\n  \"height\": 0,\n  \"x_seen\": false,\n  \"known_of\": true\n}\n",
+    "elements/character/twin--00000007.json": "{\n  \"id\": \"aaaaaaaa-0000-4000-8000-000000000007\",\n  \"type\": \"character\",\n  \"name\": \"TWIN!\"\n}\n",
+    "elements/character/twin--bbbbbbbb-0000-4000-8000-000000000007.json": "{\n  \"id\": \"bbbbbbbb-0000-4000-8000-000000000007\",\n  \"type\": \"character\",\n  \"name\": \"Twin\"\n}\n",
+    "elements/location/copper-mine--00000020.json": "{\n  \"id\": \"00000000-0000-4000-8000-000000000020\",\n  \"type\": \"location\",\n  \"name\": \"Copper Mine\",\n  \"description\": \"Below the quay.\",\n  \"change_seq\": 1\n}\n",
+    "elements/object/numbers--00000030.json": "{\n  \"id\": \"00000000-0000-4000-8000-000000000030\",\n  \"type\": \"object\",\n  \"name\": \"Numbers\",\n  \"x_a\": 2,\n  \"x_b\": 2.5,\n  \"x_c\": 1e+21,\n  \"x_d\": 0,\n  \"x_e\": 1e-7,\n  \"x_f\": -17\n}\n",
+    "elements/species/human--00000060.json": "{\n  \"id\": \"00000000-0000-4000-8000-000000000060\",\n  \"type\": \"species\",\n  \"name\": \"Human\"\n}\n",
+    "elements/species/selkie--00000061.json": "{\n  \"id\": \"00000000-0000-4000-8000-000000000061\",\n  \"type\": \"species\",\n  \"name\": \"Selkie\"\n}\n",
+    "world.json": "{\n  \"id\": \"0192a000-aaaa-7bbb-8ccc-000000000001\",\n  \"name\": \"Harbour\",\n  \"description\": \"A port on a cold sea.\\nIts quay is older than its name: Hafen, Ἁλιεύς.\",\n  \"time_basic_unit\": \"Year\",\n  \"time_current\": 1200,\n  \"x_names\": {\n    \"character\": \"Soul\",\n    \"location\": \"Place\"\n  },\n  \"format_version\": \"0.3.25\"\n}\n"
+  }
+}

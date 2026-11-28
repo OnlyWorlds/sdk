@@ -152,10 +152,30 @@ function worldForDisk(world: PyDict, counts: Map<string, number>): PyDict {
   return out;
 }
 
+/** §4.4: the keys every stub (`known_of: true`) keeps, written even when empty. */
+const KNOWN_OF_KEEPS = new Set(['id', 'type', 'name', 'description', 'supertype', 'subtype', 'image_url', 'created_at',
+  'updated_at', 'change_seq']);
+
+/** A value is anything but `""`, `null` and `[]`: `0` and `false` are values. */
+const isSet = (v: PyValue): boolean => !(v === null || v === '' || (Array.isArray(v) && !v.length));
+
+/**
+ * A body as it is written: a stub (`known_of: true`, §4.4) keeps its kept keys and every other key
+ * with a value, in received order, then `known_of: true`; any other body is written whole. The
+ * Python package's `known_of_for_disk`.
+ */
+function bodyForDisk(body: PyDict): PyDict {
+  if (body.get('known_of') !== true) return body;
+  const out: PyDict = new Map();
+  for (const [k, v] of body) if (k !== 'known_of' && (KNOWN_OF_KEEPS.has(k) || isSet(v))) out.set(k, v);
+  out.set('known_of', true);
+  return out;
+}
+
 /**
  * One world folder's files: `world.json` and every element, by type (type -> bodies). Within a
- * type a repeated id keeps its last body; the same id under two types is an error. Files come in
- * code point order of their paths.
+ * type a repeated id keeps its last body; the same id under two types is an error. A stub is
+ * written as §4.4 writes it (`bodyForDisk`). Files come in code point order of their paths.
  */
 export function folderFiles(world: PyDict, elements: Map<string, PyDict[]>): OwFolderFile[] {
   const byType = new Map<string, Map<string, PyDict>>();
@@ -183,7 +203,7 @@ export function folderFiles(world: PyDict, elements: Map<string, PyDict[]>): OwF
     const bodies = byType.get(type);
     if (!bodies || !bodies.size) continue;
     const names = resolveFilenames([...bodies].map(([id, b]) => [id, nameOf(b)]));
-    for (const [id, body] of bodies) files.push({ path: `elements/${type}/${names.get(id)}`, data: encode(body) });
+    for (const [id, body] of bodies) files.push({ path: `elements/${type}/${names.get(id)}`, data: encode(bodyForDisk(body)) });
     counts.set(type, bodies.size);
   }
   files.push({ path: 'world.json', data: encode(worldForDisk(world, counts)) });

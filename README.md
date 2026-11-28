@@ -118,6 +118,7 @@ await writer.patch('character', id, { image_url: image.url });
 - **A folder as the source.** `folderFetch(entries)` from `@onlyworlds/sdk/folder` lets the same client read a world folder or a world file, with no account and no key. [A world folder as the source](https://onlyworlds.github.io/docs/development/typescript#a-world-folder-as-the-source)
 - **The MCP tools on a folder.** `folderMcpTools` from `@onlyworlds/sdk/mcp` answers the MCP server's read tools from a world folder, for your own MCP server to carry. [The MCP tools on a world folder](https://onlyworlds.github.io/docs/development/typescript#the-mcp-tools-on-a-world-folder)
 - **A Kanka export.** `convertKanka(bytes)` from `@onlyworlds/sdk/convert` turns a Kanka JSON export into a world folder's files and a report, in memory, the same folder as the Python package's Kanka import. [Kanka](https://onlyworlds.github.io/docs/development/python-import#kanka)
+- **A world as a folder.** `worldFolderFiles(world, elements)` from `@onlyworlds/sdk/convert` writes a world you hold as plain objects (its record, and a list of element bodies per type) as a world folder's files, in memory, the same bytes as the Python package's `write_folder`; `writeWorldFile` packs them into a world file.
 
 ## Reading worlds as a tool
 

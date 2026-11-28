@@ -5,6 +5,14 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+### Added
+
+- **`worldFolderFiles(world, elements)` in `@onlyworlds/sdk/convert`: a world held as plain objects, as a world folder's files.** It takes what the Python package's `write_folder` takes, the world's record (`id` and `name` required) and an object from an element type to a list of element bodies, and answers `OwFolderFile[]` (`{ path, data }`) in memory, in a browser or in Node: `world.json` and one file per element, named and written byte for byte as `write_folder` names and writes them (the collision rule included), through the writer `convertKanka` uses. `writeWorldFile(files, topDir)` packs them into a `.owworld` file and `folderFetch` serves them. Within a type a repeated id keeps its last body; the same id under two types is refused. A stub (`known_of: true`) is written without its unset fields. A world or body that is not a plain object, a missing `id` or `name`, an unknown type, and a value a JSON file cannot hold (`undefined`, a `Date`, a `NaN`, a value that holds itself) are refused with a TypeError that names where. Known limits: a whole number past 2^53 is written as a float, where Python writes every digit, and a JavaScript object lists integer-like keys first.
+
+### Fixed
+
+- **A stub (`known_of: true`) handed to the folder writer is written as the folder format writes one**: its kept keys and the fields that hold a value, then `known_of: true`, as the Python package's writer does. Before, it wrote every key as given. The recorded Kanka folders are unchanged.
+
 ## [4.223.1] - 2026-11-28
 
 ### Fixed
