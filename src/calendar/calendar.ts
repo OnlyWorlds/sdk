@@ -1035,6 +1035,8 @@ function defaultEra(cfg: CalendarConfig, now: number | null | undefined): Calend
  *   "Frostwane 454" / "12 Frostwane 454" (+ era)
  *   "Shieldmeet 1372" (+ era)           -> intercalary day
  *   "Frostwane 12" (no year)            -> resolved against the now's year
+ *   "Moonday, 12 Frostwane 454"         -> a weekday beside a whole date: refused when it
+ *                                          is not that date's own, and naming no date alone
  * Partial dates snap to the period's first step. Missing year with no now =
  * error (never guess). p(f(n)) == n is NOT promised; f(p(f(n))) == f(n) is.
  */
@@ -1082,6 +1084,25 @@ export function parseDate(cfg: CalendarConfig, input: string, opts: ParseOptions
       if (eat(months.names[m - 1])) { monthIndex = m; break; }
     }
   }
+
+  // A weekday name last, longest first, and only from a calendar that prints one (as many names as
+  // the week's length): a word that is a month's and a weekday's reads as the month, and a name that
+  // reads as a number is never tried. It names no date alone; the date must be whole without it, and
+  // a weekday that is not that date's own is refused (`checked` below), never guessed past.
+  let weekday: string | null = null;
+  const week = cfg.bundles?.week;
+  if (week && week.length >= 1 && Array.isArray(week.names) && week.names.length === week.length) {
+    const dayNames = week.names
+      .filter((n) => typeof n === 'string' && normalize(n).trim() !== '' && !/^-?\d+$/.test(normalize(n).trim()))
+      .sort((a, b) => b.length - a.length);
+    for (const n of dayNames) if (eat(n)) { weekday = n; break; }
+  }
+  const checked = (r: ParseResult | ParseError): ParseResult | ParseError => {
+    if (weekday == null || isParseError(r)) return r;
+    const own = weekdayForStep(cfg, r.step);
+    if (own === weekday) return r;
+    return { error: own == null ? `that date has no weekday, not ${weekday}` : `that date falls on ${own}, not ${weekday}` };
+  };
 
   // What remains must be numbers only.
   const numbers: number[] = [];
@@ -1136,11 +1157,11 @@ export function parseDate(cfg: CalendarConfig, input: string, opts: ParseOptions
 
   if (year == null) {
     if (opts.now == null) return { error: 'add a year (the world clock has no now set)' };
-    return resolveInYear(absoluteYear(cfg, opts.now));
+    return checked(resolveInYear(absoluteYear(cfg, opts.now)));
   }
 
   const target = era ?? defaultEra(cfg, opts.now);
-  if (!target) return resolveInYear(year);
+  if (!target) return checked(resolveInYear(year));
 
   // Era arithmetic first; if the resulting step falls OUTSIDE the era's own
   // domain (e.g. "S.R. -10" — format shows absolute years outside era
@@ -1148,7 +1169,7 @@ export function parseDate(cfg: CalendarConfig, input: string, opts: ParseOptions
   // the absolute-year reading so format(parse(format(n))) stays stable.
   const viaEra = resolveInYear(absYearForEraYear(cfg, target, year));
   if (isParseError(viaEra)) return viaEra;
-  if (eraForStep(cfg, viaEra.step) === target) return viaEra;
+  if (eraForStep(cfg, viaEra.step) === target) return checked(viaEra);
   const viaAbs = resolveInYear(year);
   // A typed era names the date's era: an absolute reading that lands in an era
   // is a date the input never named ("10 Thaw, 1 BG" read as "10 Thaw, 2 AG"
@@ -1157,7 +1178,7 @@ export function parseDate(cfg: CalendarConfig, input: string, opts: ParseOptions
   if (era && !isParseError(viaAbs) && eraForStep(cfg, viaAbs.step) !== null) {
     return { error: `not a date in ${era.name}` };
   }
-  return viaAbs;
+  return checked(viaAbs);
 }
 
 export function isParseError(r: ParseResult | ParseError): r is ParseError {

@@ -353,6 +353,51 @@ describe('parser', () => {
         const r = parseDate(DUNE, '108 B.G.');
         expect(!isParseError(r) && r.step === -108).toBe(true);
     });
+    it('a weekday beside a whole date is read, and one that is not the date\'s own is refused naming both', () => {
+        const own = weekdayForStep(KIRROWMOSS, 7603);
+        expect(own).toBe('Tresk');
+        for (const s of [`${own}, 14 Thistlewane, Year 22 FT`, `${own} 14 Thistlewane Year 22 FT`, `14 Thistlewane, ${own.toUpperCase()}. Year 22 FT`]) {
+            expect(parseDate(KIRROWMOSS, s)).toEqual({ step: 7603 });
+        }
+        expect(parseDate(KIRROWMOSS, 'Ondel, 14 Thistlewane, Year 22 FT')).toEqual({ error: 'that date falls on Tresk, not Ondel' });
+        // With no year the date reads in the now's year, and is checked there.
+        expect(parseDate(KIRROWMOSS, `${own}, Thistlewane 14`, { now: 7900 })).toEqual({ step: 7603 });
+        expect(parseDate(KIRROWMOSS, 'Volk, Thistlewane 14', { now: 7900 })).toEqual({ error: 'that date falls on Tresk, not Volk' });
+        // A refusal the date already had comes first.
+        expect(parseDate(KIRROWMOSS, `${own}, Thistlewane 14`)).toEqual({ error: 'add a year (the world clock has no now set)' });
+    });
+    it('a weekday names no date alone, and a day outside the week has none to match', () => {
+        expect(isParseError(parseDate(KIRROWMOSS, 'Tresk'))).toBe(true);
+        expect(isParseError(parseDate(KIRROWMOSS, 'Tresk FT'))).toBe(true);
+        // Harptos' week is nested in the months: Shieldmeet, between them, has no weekday.
+        expect(parseDate(HARPTOS, 'Shieldmeet 1372')).toEqual({ step: parseDate(HARPTOS, 'Shieldmeet 1372').step });
+        expect(parseDate(HARPTOS, '1st, Shieldmeet 1372')).toEqual({ error: 'that date has no weekday, not 1st' });
+        expect(parseDate(HARPTOS, '3rd, 3 Hammer 1372').step).toBe(parseDate(HARPTOS, '3 Hammer 1372').step);
+        expect(parseDate(HARPTOS, '3rd Hammer 1372')).toEqual({ error: 'that date falls on 1st, not 3rd' });
+    });
+    it('weekday names are tried last, never when they read as numbers, and only from a calendar that prints one', () => {
+        const months = { names: ['Frost', 'Thaw'], lengths: [10, 10] };
+        // A word that is a month's and a weekday's reads as the month.
+        const shared = { version: 1, grain: 'day', bundles: { months, week: { length: 2, names: ['Frost', 'Sunday'] } } };
+        expect(parseDate(shared, '3 Frost 4')).toEqual({ step: 4 * 20 + 2 });
+        // A name that reads as a number is never tried: "1 Frost 4" stays day 1.
+        const numeric = { version: 1, grain: 'day', bundles: { months, week: { length: 2, names: ['1', '2'] } } };
+        expect(parseDate(numeric, '1 Frost 4')).toEqual({ step: 4 * 20 });
+        // Fewer or more names than the week's length print no weekday, and read none.
+        for (const names of [['Moonday'], ['Moonday', 'Sunday', 'Starday']]) {
+            const ragged = { version: 1, grain: 'day', bundles: { months, week: { length: 2, names } } };
+            expect(parseDate(ragged, 'Moonday, 1 Frost 4')).toEqual({ error: 'unrecognized: "moonday"' });
+        }
+    });
+    it('a template with the weekday parses back, every step of three years', () => {
+        for (const format of ['{weekday}, {day} {month}, Year {year} {era}', '{weekday} {day} {month} {year} {era}', '{day} {month} {year} {era}, {weekday}']) {
+            const cfg = { ...KIRROWMOSS, format };
+            for (let n = 7200; n < 7200 + 3 * 360; n++) {
+                const p = parseDate(cfg, formatStep(cfg, n));
+                if (isParseError(p) || p.step !== n) expect({ n, format, p }).toEqual({ n, format, p: { step: n } });
+            }
+        }
+    });
     it('the stability property: format(parse(format(n))) === format(n)', () => {
         for (const cfg of [KIRROWMOSS, HARPTOS, SHIRE, DUNE, VESSACH]) {
             for (const n of [-3601, -108, -1, 0, 30, 213, 7603, 500596]) {

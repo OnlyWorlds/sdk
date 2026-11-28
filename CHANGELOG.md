@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.220.1] - 2026-11-28
+
+### Fixed
+
+- **A date written with its weekday parses back.** `parseDate` read era, month and intercalary names and never a weekday's, so a world whose `format` prints `{weekday}` could not read its own dates: `"Moonday, 3 Frost 454"` answered `unrecognized: "moonday"`. A weekday name is now read after every other name, longest first, as a whole word: a word that is both a month's and a weekday's still reads as the month, a name that reads as a number is never tried, and a calendar whose names do not match its week's length (it prints no weekday) reads none. A weekday that is not the date's own is refused, naming both (`that date falls on Sunday, not Moonday`; `that date has no weekday, not Moonday` for a day outside the week), and a weekday alone names no date. The separators stay whitespace, the comma, the period and the word `year`: a template that prints brackets, a slash, a dash or a colon between its tokens still does not parse back. Nothing that parsed before parses differently. The Python package's `parse_date` reads the same.
+
 ## [4.220.0] - 2026-11-28
 
 ### Added
