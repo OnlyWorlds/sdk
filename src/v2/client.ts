@@ -12,6 +12,7 @@
  */
 
 import type { ElementType } from './types.generated';
+import { FIELD_SCHEMA } from './types.generated';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwSearchResults,
@@ -347,6 +348,7 @@ export class OwV2Client {
   async create(type: ElementType | string, element: OwElement | Record<string, unknown>, opts: { idempotencyKey?: string } = {}): Promise<OwElement> {
     only('create', opts, ['idempotencyKey']);
     refuseKnownOf(element, 'create');
+    checkKinds(type, element, 'create');
     const body = sanitizePayload(element);
     if (body.id === undefined || body.id === null || body.id === '') {
       body.id = opts.idempotencyKey ? keyedId(opts.idempotencyKey, 0) : mintUuid();
@@ -368,6 +370,7 @@ export class OwV2Client {
    */
   async upsert(type: ElementType | string, id: string, element: OwElement | Record<string, unknown>): Promise<OwElement> {
     refuseKnownOf(element, 'upsert');
+    checkKinds(type, element, 'upsert');
     return this.request('PUT', `/${seg('type', type)}/${seg('id', id)}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(element) }) as Promise<OwElement>;
   }
 
@@ -394,6 +397,7 @@ export class OwV2Client {
   ): Promise<OwElement> {
     only('patch', opts, ['ifMatch']);
     refuseKnownOf(partial, 'patch');
+    checkKinds(type, partial, 'patch');
     return this.request('PATCH', `/${seg('type', type)}/${seg('id', id)}/`, { write: true, elementWrite: true, proposable: true, body: sanitizePayload(partial), ifMatch: opts.ifMatch }) as Promise<OwElement>;
   }
 
@@ -483,7 +487,10 @@ export class OwV2Client {
     }
     // A stub anywhere refuses the whole call before sending (never a skipped slot:
     // the response's slots line up with `items`).
-    items.forEach((it, index) => refuseKnownOf(it.element, `bulk: items[${index}]`));
+    items.forEach((it, index) => {
+      refuseKnownOf(it.element, `bulk: items[${index}]`);
+      checkKinds(it.type, it.element, `bulk: items[${index}]`);
+    });
     const body = {
       items: items.map((it, index) => {
         const element = sanitizePayload(it.element);
@@ -1314,6 +1321,7 @@ export class OwV2Client {
       throw new TypeError('propose: fields must be an object of the fields to change and their new values, as in a PATCH body. Nothing was sent.');
     }
     refuseKnownOf(fields, 'propose');
+    checkKinds(type, fields, 'propose');
     const body: Record<string, unknown> = { fields: sanitizePayload(fields), evidence: input.evidence };
     if (input.expires !== undefined) body.expires = input.expires;
     // X-OW-Client is a header keel's document lists here (kept as the row's `client`); X-OW-Agent is not.
@@ -2156,6 +2164,29 @@ function sanitizePayload<T extends Record<string, unknown>>(payload: T): Record<
  * element (a PUT replaces it whole; a PATCH clears every field it names) for anyone
  * whose key may write it, such as an owner pushing a copy a player made.
  */
+/**
+ * Refuse, before sending, a value keel would store as something else, as the Python package's
+ * `check_kinds` does. keel is lenient by design: it stores `int(value)` for an integer field
+ * (`2.5` as `2`, `"7"` as `7`, `true` as `1`) and the text of any other value in a text field (a
+ * list as `"['a', 'b']"`, `12` as `"12"`), each with a 200 (measured on production 2026-11-28). So
+ * an integer field takes a whole number (never a boolean), a text field a string, each or `null`.
+ * A field outside the schema (an extension, an unknown type) is not checked; a link field neither.
+ */
+function checkKinds(type: string, payload: unknown, where: string): void {
+  const fields = (FIELD_SCHEMA as Record<string, Record<string, { type: string }> | undefined>)[type];
+  if (!fields || !payload || typeof payload !== 'object') return;
+  for (const [key, value] of Object.entries(payload as Record<string, unknown>)) {
+    const kind = fields[key]?.type;
+    if (value === null || value === undefined || kind === undefined) continue;
+    if (kind === 'integer' && !(typeof value === 'number' && Number.isInteger(value))) {
+      throw new TypeError(`${where}: ${type}.${key} is an integer field; ${JSON.stringify(value) ?? String(value)} would be stored as another value. Nothing was sent.`);
+    }
+    if (kind === 'text' && typeof value !== 'string') {
+      throw new TypeError(`${where}: ${type}.${key} is a text field; ${JSON.stringify(value) ?? String(value)} is not a string. Nothing was sent.`);
+    }
+  }
+}
+
 function refuseKnownOf(payload: unknown, where: string): void {
   if (payload && typeof payload === 'object' && (payload as Record<string, unknown>).known_of === true) {
     throw new TypeError(

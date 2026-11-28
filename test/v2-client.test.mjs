@@ -388,6 +388,31 @@ test('a body nested past 256 levels, past what keel reads, is refused by name an
   assert.equal(JSON.parse(fetchImpl.calls[1].init.body).items[0].element.x_tool.length, 1);
 });
 
+test('a value keel would store as another is refused before sending, as Python check_kinds refuses it', async () => {
+  const { client, fetchImpl } = makeClient({ status: 200, body: {} });
+  const id = '11111111-2222-4333-8444-555555555555';
+  // Each one keel takes with a 200 and stores as something else (measured on production 2026-11-28).
+  for (const [call, want] of [
+    [(c) => c.create('character', { name: 'K', height: 2.5 }), 'create: character.height is an integer field; 2.5 would be stored as another value'],
+    [(c) => c.upsert('character', id, { name: 'K', height: '7' }), 'upsert: character.height is an integer field; "7" would be stored as another value'],
+    [(c) => c.patch('character', id, { height: true }), 'patch: character.height is an integer field; true would be stored'],
+    [(c) => c.patch('character', id, { supertype: ['a', 'b'] }), 'patch: character.supertype is a text field; ["a","b"] is not a string'],
+    [(c) => c.bulk([{ type: 'character', element: { name: 'K' } }, { type: 'character', element: { name: 'L', supertype: 12 } }]), 'bulk: items[1]: character.supertype is a text field; 12 is not a string'],
+    [(c) => c.propose('character', id, { fields: { height: 1.5 }, evidence: 'a source' }), 'propose: character.height is an integer field; 1.5 would be stored'],
+  ]) {
+    const err = await call(client).then(() => assert.fail('expected a throw'), (e) => e);
+    assert.equal(err.name, 'TypeError', String(err));
+    assert.ok(err.message.startsWith(want), err.message);
+    assert.ok(err.message.endsWith('Nothing was sent.'), err.message);
+  }
+  assert.equal(fetchImpl.calls.length, 0);
+  // What it lets through: a whole number (2.0 is one), null, a string in a text field, an
+  // extension of any kind, a link field, and a type outside the schema.
+  await client.patch('character', id, { height: 2.0, weight: null, supertype: 'hero', x_tool: [1.5, true], species: [] });
+  await client.patch('notatype', id, { height: 2.5 });
+  assert.equal(fetchImpl.calls.length, 2);
+});
+
 test('409 id_conflict is an id conflict, NOT an idempotency conflict', async () => {
   const err = await thrown({ status: 409, body: envelope('invalid_request', 'id_conflict') },
     (c) => c.create('character', { id: '11111111-2222-4333-8444-555555555555', name: 'K' }));
