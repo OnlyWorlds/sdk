@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.220.0] - 2026-11-28
+
+### Added
+
+- **The Waymark takes the page's face when the page names one.** The fan-out and the toast read `--ow-waymark-font`, set on `.ow-waymark` or any element around it (`.ow-waymark { --ow-waymark-font: Lato, sans-serif; }`); a page that sets none keeps the system face as before. The size, the weight and the line height stay the Waymark's, and an address keeps its code face.
+
 ### Fixed
 
 - **A value the server would store as another is refused before sending**, as the Python package's `check_kinds` refuses it. The server takes a wrong kind with a 200 and changes it: an integer field stores `2.5` as `2`, `"7"` as `7` and `true` as `1`; a text field stores a list as `"['a', 'b']"` and `12` as `"12"`. `create`, `upsert`, `patch`, `bulk` and `propose` now throw `TypeError: patch: character.height is an integer field; 2.5 would be stored as another value. Nothing was sent.` (and `… is a text field; 12 is not a string`). An integer field takes a whole number (`2.0` is one) or `null`, a text field a string or `null`; extensions, link fields and a type outside the schema are not checked.

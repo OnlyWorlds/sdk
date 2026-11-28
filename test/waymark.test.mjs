@@ -493,6 +493,21 @@ test('Tab off the last row with nothing after it (focus on the body) closes the 
   assert.equal(name.querySelector('.ow-waymark__pop').hidden, false, 'a press on the name line keeps it open');
 });
 
+test('the face: the fan-out and the toast read --ow-waymark-font, the system face its fallback, and the sheet never declares it', () => {
+  const css = readFileSync(fileURLToPath(new URL('../dist/waymark.css', import.meta.url)), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const font = (sel) => {
+    const m = new RegExp(`(?:^|\\})\\s*${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(css);
+    assert.ok(m, `${sel} is a rule`);
+    return /(?:^|;)\s*font\s*:\s*([^;]+)/.exec(m[1])?.[1].trim();
+  };
+  for (const sel of ['.ow-waymark__pop', '.ow-waymark__toast']) {
+    assert.equal(font(sel), "400 13px/1.45 var(--ow-waymark-font, system-ui, 'Segoe UI', sans-serif)", `${sel}: the page's face if it sets one, the size kept`);
+  }
+  assert.ok(!/--ow-waymark-font\s*:/.test(css), 'never declared here, so a page\'s own value on any ancestor reaches it');
+  const faces = [...css.matchAll(/(?:^|[;{])\s*font(?:-family)?\s*:\s*([^;}]+)/g)].map((m) => m[1].trim()).filter((v) => v !== 'inherit');
+  assert.deepEqual(faces.filter((v) => !v.includes('var(--ow-waymark-font') && !/monospace$/.test(v)), [], 'no other rule names a face but the code face of an address');
+});
+
 test('tap targets: rows at least 44 px tall in the sheet, the type size kept; the mark\'s tap box at least 44 by 44 at every width, with no room taken', () => {
   const css = readFileSync(fileURLToPath(new URL('../dist/waymark.css', import.meta.url)), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const sheet = /@media \(max-width: 480px\) \{([\s\S]*)\}\s*$/.exec(css)[1];

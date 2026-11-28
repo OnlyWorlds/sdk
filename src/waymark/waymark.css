@@ -6,6 +6,10 @@
  * declared once below under its ground and its key; the rules read them only through the ground's
  * names. The mark: in its ink on the ground at rest, no tile; the hover tile behind it on hover; an
  * outline of 2px in the ink, offset 2px, on focus; the open tile behind it while the fan-out is open.
+ *
+ * The fan-out and the toast are set in the system's face. A page that wants its own sets
+ * --ow-waymark-font on .ow-waymark or any element around it (`--ow-waymark-font: Lato, sans-serif`);
+ * the size, the weight and the line height stay the Waymark's. This file never declares it.
  */
 
 .ow-waymark {
@@ -125,7 +129,7 @@
   background: var(--ow-waymark-popover);
   box-shadow: 0 8px 24px var(--ow-waymark-shadow);
   color: var(--ow-waymark-text);
-  font: 400 13px/1.45 system-ui, 'Segoe UI', sans-serif;
+  font: 400 13px/1.45 var(--ow-waymark-font, system-ui, 'Segoe UI', sans-serif);
   letter-spacing: normal;
   text-align: left;
   text-transform: none;
@@ -281,7 +285,7 @@
   background: var(--ow-waymark-popover);
   box-shadow: 0 6px 18px var(--ow-waymark-shadow);
   color: var(--ow-waymark-text);
-  font: 400 13px/1.45 system-ui, 'Segoe UI', sans-serif;
+  font: 400 13px/1.45 var(--ow-waymark-font, system-ui, 'Segoe UI', sans-serif);
   white-space: nowrap;
 }
 .ow-waymark__toast-line {
