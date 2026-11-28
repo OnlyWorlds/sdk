@@ -360,26 +360,32 @@ test('a non-finite number anywhere in a body is refused by name, with its place,
   assert.equal(fetchImpl.calls.length, 0);
 });
 
-test('a body nested past 200 levels is refused by name and nothing is sent; 200 levels is sent', async () => {
+test('a body nested past 256 levels, past what keel reads, is refused by name and nothing is sent; 256 is sent', async () => {
   const nest = (levels) => {
     let v = 1;
     for (let i = 1; i < levels; i++) v = [v];
-    return v; // `levels - 1` arrays inside the body's own object: the body is `levels` deep
+    return v; // `levels - 1` arrays inside the object that holds it: that object is `levels` deep
   };
   const { client, fetchImpl } = makeClient({ status: 200, body: {} });
-  const err = await client.patchWorld({ x_tool: nest(201) }).then(() => assert.fail('expected a throw'), (e) => e);
+  const err = await client.patchWorld({ x_tool: nest(257) }).then(() => assert.fail('expected a throw'), (e) => e);
   assert.equal(err.name, 'TypeError', String(err));
-  assert.ok(err.message.includes('a request body is nested more than 200 deep'), err.message);
+  assert.ok(err.message.includes('a request body is nested more than 256 deep'), err.message);
   assert.ok(err.message.endsWith('Nothing was sent.'), err.message);
   // Deeper than JSON.stringify can walk is the same refusal, never a bare RangeError.
   const far = await client.patchWorld({ x_tool: nest(200000) }).then(() => assert.fail('expected a throw'), (e) => e);
-  assert.ok(far.message.includes('nested more than 200 deep'), String(far));
-  // Past the line and holding NaN: the depth is named, as the readers count it first.
-  const both = await client.patchWorld({ x_score: NaN, x_tool: nest(201) }).then(() => assert.fail('expected a throw'), (e) => e);
-  assert.ok(both.message.includes('nested more than 200 deep'), both.message);
+  assert.ok(far.message.includes('nested more than 256 deep'), String(far));
+  // Past the line and holding NaN: the depth is named.
+  const both = await client.patchWorld({ x_score: NaN, x_tool: nest(257) }).then(() => assert.fail('expected a throw'), (e) => e);
+  assert.ok(both.message.includes('nested more than 256 deep'), both.message);
   assert.equal(fetchImpl.calls.length, 0);
-  await client.patchWorld({ x_tool: nest(200) });
+  await client.patchWorld({ x_tool: nest(256) });
   assert.equal(fetchImpl.calls.length, 1);
+  // A bulk item's element 200 deep, counted from the element as keel stores it, is sent: the
+  // element sits at depth 4 of the body ({items: [{element}]}), so the body is 203 deep.
+  const id = '11111111-2222-4333-8444-555555555555';
+  await client.bulk([{ type: 'character', element: { id, name: 'K', x_tool: nest(200) } }]);
+  assert.equal(fetchImpl.calls.length, 2);
+  assert.equal(JSON.parse(fetchImpl.calls[1].init.body).items[0].element.x_tool.length, 1);
 });
 
 test('409 id_conflict is an id conflict, NOT an idempotency conflict', async () => {

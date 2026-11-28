@@ -34,13 +34,13 @@ export type OutsideJsonFault = 'not_json' | 'too_deep' | 'number_out_of_range';
 export type OutsideJson = { ok: true; value: unknown } | { ok: false; fault: OutsideJsonFault };
 
 /**
- * Whether the text opens an object or array deeper than `OUTSIDE_JSON_MAX_DEPTH`, counted in the
+ * Whether the text opens an object or array deeper than `max` (`OUTSIDE_JSON_MAX_DEPTH` unless given), counted in the
  * text itself as each one opens, before any parse (the folder format's rule since serial 148): so
  * each value of a repeated key counts, and a text past the line is too deep whatever else is wrong
  * with it. Brackets inside a string are not counted; a backslash in a string escapes the next
  * character.
  */
-export function textTooDeep(text: string): boolean {
+export function textTooDeep(text: string, max: number = OUTSIDE_JSON_MAX_DEPTH): boolean {
   let depth = 0;
   let inString = false;
   for (let i = 0; i < text.length; i++) {
@@ -51,7 +51,7 @@ export function textTooDeep(text: string): boolean {
     } else if (c === 0x22) {
       inString = true;
     } else if (c === 0x7b || c === 0x5b) {
-      if (++depth > OUTSIDE_JSON_MAX_DEPTH) return true;
+      if (++depth > max) return true;
     } else if (c === 0x7d || c === 0x5d) {
       depth--;
     }

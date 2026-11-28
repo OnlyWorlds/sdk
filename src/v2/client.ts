@@ -26,7 +26,7 @@ import { unknownKey } from '../options';
 import { OwApiError, OwNetworkError, OwProposedError, OwSignInError, errorFromResponse, parseErrorEnvelope, parseRetryAfter } from './errors';
 import { detectKeyKind, OwKeyKind } from './keys';
 import { isLocalFetch } from './local-fetch';
-import { OUTSIDE_JSON_MAX_DEPTH, textTooDeep } from '../outside-json';
+import { textTooDeep } from '../outside-json';
 import { beginSignIn, completeSignIn as completeOAuthSignIn, aiTokenParams, type OwSignInBegin, type OwSignInBegun, type OwSignInComplete, type OwSignInResult } from './oauth';
 
 const DEFAULT_BASE_URL = 'https://www.onlyworlds.com/api/v2';
@@ -2080,13 +2080,18 @@ async function proposedFromResponse(res: Response, method: string, path: string)
  * `known_of` is an unknown field to keel's write path (a 422) and
  * is stripped too; a body where it is `true` never gets here (refuseKnownOf).
  */
+/** The deepest request body keel's reader takes, its top counted as 1 (it answers 422 past it). */
+const BODY_MAX_DEPTH = 256;
+
 /**
  * A request body as the JSON text sent, or a TypeError before anything is sent, in the Python
  * package's words, for the two bodies keel cannot read as written:
  *
- * - nested more than `OUTSIDE_JSON_MAX_DEPTH` (200) deep, counted as the folder readers count it (an
- *   object or array at the top is depth 1), in the text itself; a body too deep for
- *   `JSON.stringify` to walk is the same refusal. keel reads 256, so a body this sends is under its line.
+ * - nested more than `BODY_MAX_DEPTH` (256) deep, counted in the text itself (an object or array at
+ *   the top is depth 1): keel's reader of a body takes no more and answers 422. A body too deep for
+ *   `JSON.stringify` to walk is the same refusal. What keel stores is held to the standard's 200,
+ *   counted from the level a value is stored at (an element, inside a `bulk` item too), and keel
+ *   refuses past that by name: so no value keel would store is refused here.
  * - a non-finite number (NaN, either infinity) anywhere in it, named with its place. `JSON.stringify`
  *   writes one as `null`, and a `null` clears the field without a word.
  *
@@ -2094,7 +2099,7 @@ async function proposedFromResponse(res: Response, method: string, path: string)
  */
 function encodeBody(body: unknown): string {
   const tooDeep = (): TypeError =>
-    new TypeError(`a request body is nested more than ${OUTSIDE_JSON_MAX_DEPTH} deep (an object or list at the top is depth 1), past what onlyworlds.com reads. Nothing was sent.`);
+    new TypeError(`a request body is nested more than ${BODY_MAX_DEPTH} deep (an object or list at the top is depth 1), past what onlyworlds.com reads. Nothing was sent.`);
   const places = new WeakMap<object, string>();
   let nonFinite: string | undefined;
   function replacer(this: unknown, key: string, value: unknown): unknown {
@@ -2117,21 +2122,21 @@ function encodeBody(body: unknown): string {
     if (err instanceof RangeError && valueTooDeep(body)) throw tooDeep();
     throw err;
   }
-  if (textTooDeep(text)) throw tooDeep();
+  if (textTooDeep(text, BODY_MAX_DEPTH)) throw tooDeep();
   if (nonFinite !== undefined) {
     throw new TypeError(`a request body holds ${nonFinite}, which JSON cannot carry: send a finite number, or null to clear the field. Nothing was sent.`);
   }
   return text;
 }
 
-/** Whether a value holds objects or arrays more than `OUTSIDE_JSON_MAX_DEPTH` deep, walked with its own stack; it stops past the line, so a cycle ends too. */
+/** Whether a value holds objects or arrays more than `BODY_MAX_DEPTH` deep, walked with its own stack; it stops past the line, so a cycle ends too. */
 function valueTooDeep(value: unknown): boolean {
   const stack: Array<[unknown, number]> = [[value, 0]];
   while (stack.length > 0) {
     const [v, parent] = stack.pop()!;
     if (v === null || typeof v !== 'object') continue;
     const depth = parent + 1;
-    if (depth > OUTSIDE_JSON_MAX_DEPTH) return true;
+    if (depth > BODY_MAX_DEPTH) return true;
     for (const child of Object.values(v)) stack.push([child, depth]);
   }
   return false;

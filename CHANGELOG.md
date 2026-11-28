@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.219.3] - 2026-11-28
+
+### Fixed
+
+- **A request body is refused for its depth only past 256 levels, where onlyworlds.com stops reading a body**, its top counted as 1: `TypeError: a request body is nested more than 256 deep (an object or list at the top is depth 1), past what onlyworlds.com reads. Nothing was sent.` 4.219.2 drew the line at 200 counted from the body's top, which refused a `bulk` item whose element held a value 199 or 200 levels deep. The server stores that value, since it counts a stored value's 200 from the element it sits in, and the folder readers read it back. A value nested past 200 in an element is still refused, by the server, with a 422 that names its key.
+
 ## [4.219.2] - 2026-11-28
 
 ### Fixed
