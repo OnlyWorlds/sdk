@@ -12,7 +12,7 @@
  */
 
 import type { ElementType } from './types.generated';
-import { kindFaults } from './kinds';
+import { kindFaults, OwKindError } from './kinds';
 import type {
   ListParams, OwBulkItem, OwBulkResponse, OwChange, OwChangesPage,
   OwClientConfig, OwElement, OwLinkEdit, OwMediaTicket, OwPage, OwRemovalTicket, OwRemovedImage, OwSearchResults,
@@ -2192,9 +2192,9 @@ function checkKinds(type: string, payload: unknown, where: string): void {
   const [fault] = kindFaults(type, payload);
   if (!fault) return;
   if (fault.kind === 'integer') {
-    throw new TypeError(`${where}: ${type}.${fault.field} is an integer field; ${shownValue(fault.value)} would be stored as another value. Nothing was sent.`);
+    throw new OwKindError(`${where}: ${type}.${fault.field} is an integer field; ${shownValue(fault.value)} would be stored as another value. Nothing was sent.`, type, fault);
   }
-  throw new TypeError(`${where}: ${type}.${fault.field} is a text field; ${shownValue(fault.value)} is not a string. Nothing was sent.`);
+  throw new OwKindError(`${where}: ${type}.${fault.field} is a text field; ${shownValue(fault.value)} is not a string. Nothing was sent.`, type, fault);
 }
 
 /** A value as a refusal names it: as JSON writes it, but a number that is not finite by its own name (`NaN`, `Infinity`), never the `null` JSON would write in its place. */

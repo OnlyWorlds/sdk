@@ -7,7 +7,7 @@
  */
 
 export { OwV2Client, parseErrorEnvelope, FILE_EXTENSIONS, fileKindOf } from './client';
-export { kindFaults } from './kinds';
+export { kindFaults, OwKindError } from './kinds';
 export type { OwKindFault } from './kinds';
 export { pkceChallenge, base64url, pendingSignInResume } from './oauth';
 export type { OwSignInStorage, OwSignInBegin, OwSignInBegun, OwSignInComplete, OwSignInResult, OwAiToken } from './oauth';

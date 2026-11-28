@@ -131,6 +131,7 @@ const FENCED = {
 const DATA = {
   'new TokenResource#0': 'the transport (a client), not settings',
   'OwV2Client.ai#1': 'the use body, sent to the server as given (the server names an unknown key)',
+  'new OwKindError#2': 'an OwKindFault, as kindFaults names it: the refused value, not settings',
 };
 for (const fn of ['absYearForEraYear', 'absoluteYear', 'approxYearLength', 'breakdownStep', 'displayYear', 'eraForStep',
   'formatDuration', 'formatMidLabel', 'formatStep', 'formatYearLabel', 'intercalaryInYear', 'monthStartSteps', 'parseDate',

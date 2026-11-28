@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
-  OwV2Client, OwApiError, OwPreconditionFailedError, detectKeyKind, ELEMENT_TYPES, kindFaults,
+  OwV2Client, OwApiError, OwPreconditionFailedError, detectKeyKind, ELEMENT_TYPES, kindFaults, OwKindError, OwNetworkError,
 } from '../dist/index.js';
 
 // -- fake fetch harness -----------------------------------------------------
@@ -407,6 +407,11 @@ test('kindFaults names every wrong kind in key order, the predicate the writes r
   const { client, fetchImpl } = makeClient({ status: 200, body: {} });
   const err = await client.create('character', el).then(() => assert.fail('expected a throw'), (e) => e);
   assert.equal(err.message, 'create: character.height is an integer field; 2.5 would be stored as another value. Nothing was sent.');
+  // Since 4.223.0 its own class, a TypeError still, carrying the type and that first fault
+  assert.ok(err instanceof OwKindError && err instanceof TypeError && !(err instanceof OwNetworkError), String(err));
+  assert.equal(err.name, 'OwKindError');
+  assert.equal(err.type, 'character');
+  assert.deepEqual(err.fault, kindFaults('character', el)[0]);
   assert.equal(fetchImpl.calls.length, 0);
 });
 
@@ -427,7 +432,8 @@ test('a value keel would store as another is refused before sending, as Python c
     [(c) => c.patch('character', id, { supertype: Infinity }), 'patch: character.supertype is a text field; Infinity is not a string'],
   ]) {
     const err = await call(client).then(() => assert.fail('expected a throw'), (e) => e);
-    assert.equal(err.name, 'TypeError', String(err));
+    assert.ok(err instanceof OwKindError && err instanceof TypeError, String(err));
+    assert.equal(err.name, 'OwKindError', String(err));
     assert.ok(err.message.startsWith(want), err.message);
     assert.ok(err.message.endsWith('Nothing was sent.'), err.message);
   }

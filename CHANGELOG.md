@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.223.0] - 2026-11-28
+
+### Added
+
+- **A wrong-kind refusal has a class of its own: `OwKindError`.** `create`, `upsert`, `patch`, `bulk` and `propose` throw it for the first value `kindFaults` names, before sending, in the same words as before. It extends `TypeError`, so a `catch` that tests for TypeError still holds it; it carries `type` (the element type the write was for) and `fault` (`{ field, kind, value }`, as `kindFaults` names it). A catch that reads any TypeError as "offline" can now tell this refusal apart with `instanceof OwKindError`. A connection that never reached the server is still thrown as `OwNetworkError`, never as a TypeError.
+
 ## [4.222.0] - 2026-11-28
 
 ### Added

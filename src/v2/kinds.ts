@@ -11,6 +11,25 @@ export interface OwKindFault {
 }
 
 /**
+ * A write refused before sending for a value of the wrong kind (since 4.223.0): what `create`, `upsert`,
+ * `patch`, `bulk` and `propose` throw for the first fault `kindFaults` names. It extends TypeError, so a
+ * catch of TypeError still holds it; `instanceof OwKindError` tells it from any other refusal, and from a
+ * dropped connection, which the client throws as `OwNetworkError`. Nothing was sent.
+ */
+export class OwKindError extends TypeError {
+  /** The element type the write was for, as passed. */
+  readonly type: string;
+  /** The first fault, as `kindFaults` names it. */
+  readonly fault: OwKindFault;
+  constructor(message: string, type: string, fault: OwKindFault) {
+    super(message);
+    this.name = 'OwKindError';
+    this.type = type;
+    this.fault = fault;
+  }
+}
+
+/**
  * Every standard field of `element` that holds a value onlyworlds.com would store as something else
  * (since 4.222.0), in the element's own key order; `[]` when there is none. keel is lenient by design:
  * it stores `int(value)` for an integer field (`2.5` as `2`, `"7"` as `7`, `true` as `1`) and the text
@@ -18,7 +37,7 @@ export interface OwKindFault {
  * integer field takes a whole number (`2.0` is one; never a boolean or a string), a text field a string,
  * each or null; a NaN or an infinity is a fault of either. An extension, a link field and a type outside
  * the standard are not read. The writes (`create`, `upsert`, `patch`, `bulk`, `propose`) refuse the
- * first fault with a TypeError before sending; this names them all and never throws for a value, so a
+ * first fault with an `OwKindError` (a TypeError) before sending; this names them all and never throws for a value, so a
  * tool can show which element and field before a write. `element` that is not an object answers `[]`.
  */
 export function kindFaults(type: string, element: unknown): OwKindFault[] {
