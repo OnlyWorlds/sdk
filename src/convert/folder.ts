@@ -61,6 +61,23 @@ function elementFilenameFullId(id: string, name: string | null): string {
   return slug ? `${slug}${SLUG_ID_SEP}${id}.json` : `${id}.json`;
 }
 
+/**
+ * Why an element id cannot name a file, or null when it can: used as `<id>.json` (a name with no slug, or
+ * the collision rule's full-id form) it must be one plain file name inside its type folder. Checked in
+ * this order: a path separator, a control character (U+0000 to U+001F), `.` or `..`. The Python
+ * package's writer refuses the same ids in the same words (test/fixtures/unsafe-ids.cases.json).
+ */
+export function unsafeIdWhy(id: string): string | null {
+  if (/[/\\]/.test(id)) return 'it holds a path separator, / or \\';
+  if (/[\x00-\x1f]/.test(id)) return 'it holds a control character';
+  if (id === '.' || id === '..') return 'it is . or ..';
+  return null;
+}
+
+/** The refusal's words for an id `unsafeIdWhy` refuses: the type, the id as JSON text, and why. */
+export const unsafeIdText = (type: string, id: string, why: string): string =>
+  `${type} element id ${JSON.stringify(id)} cannot be a file name: ${why}.`;
+
 /** One type directory's filenames: two that land on one path case-blind go id-ascending, the lowest keeping the short form. */
 function resolveFilenames(elements: [string, string | null][]): Map<string, string> {
   const names = new Map<string, string | null>();
@@ -175,7 +192,8 @@ function bodyForDisk(body: PyDict): PyDict {
 /**
  * One world folder's files: `world.json` and every element, by type (type -> bodies). Within a
  * type a repeated id keeps its last body; the same id under two types is an error. A stub is
- * written as §4.4 writes it (`bodyForDisk`). Files come in code point order of their paths.
+ * written as §4.4 writes it (`bodyForDisk`). An id that cannot name a file (`unsafeIdWhy`) is a
+ * TypeError before any file is made, whatever the name. Files come in code point order of their paths.
  */
 export function folderFiles(world: PyDict, elements: Map<string, PyDict[]>): OwFolderFile[] {
   const byType = new Map<string, Map<string, PyDict>>();
@@ -187,6 +205,8 @@ export function folderFiles(world: PyDict, elements: Map<string, PyDict[]>): OwF
     for (const body of bodies) {
       const id = body.get('id');
       if (typeof id !== 'string' || !id) throw new Error(`${type} element without a non-empty string id`);
+      const why = unsafeIdWhy(id);
+      if (why) throw new TypeError(unsafeIdText(type, id, why));
       if ((owner.get(id) ?? type) !== type) throw new Error(`id ${id} appears under both ${owner.get(id)} and ${type}`);
       owner.set(id, type);
       slot.delete(id);

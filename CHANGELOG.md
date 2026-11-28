@@ -11,6 +11,7 @@ earlier history lives in git log only.
 
 ### Fixed
 
+- **The folder writer refuses an element id that holds a path, instead of making a path outside its folder.** An element whose name gives no slug is written as `<id>.json`, so an id such as `../../x` gave a path outside its type folder. `worldFolderFiles` now refuses an element id that holds `/`, `\` or a control character (U+0000 to U+001F), or is `.` or `..`, whatever the name, before any file is made, with a TypeError that names the type and the id: `worldFolderFiles: elements.character[0]: character element id "../../x" cannot be a file name: it holds a path separator, / or \.` The writer `convertKanka` shares refuses the same ids; that door makes every id itself, so no export reaches it. The world's id names no path and is not checked. The cases are in `test/fixtures/unsafe-ids.cases.json`, the same bytes the Python package's `write_folder` is held to.
 - **A stub (`known_of: true`) handed to the folder writer is written as the folder format writes one**: its kept keys and the fields that hold a value, then `known_of: true`, as the Python package's writer does. Before, it wrote every key as given. The recorded Kanka folders are unchanged.
 
 ## [4.223.1] - 2026-11-28
