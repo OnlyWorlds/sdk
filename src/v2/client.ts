@@ -659,7 +659,7 @@ export class OwV2Client {
       throw new OwNetworkError(`OnlyWorlds image upload failed: POST ${ticket.upload_url}`, cause);
     }
     if (!res.ok) throw await errorFromResponse(res);
-    return await res.json() as OwUploadedImage;
+    return await bodyOf(res, 'json', `OnlyWorlds image upload failed: POST ${ticket.upload_url}`) as OwUploadedImage;
   }
 
   /**
@@ -700,7 +700,7 @@ export class OwV2Client {
       throw new OwNetworkError(`OnlyWorlds image removal failed: POST ${ticket.remove_url}`, cause);
     }
     if (!res.ok) throw await errorFromResponse(res);
-    return await res.json() as OwRemovedImage;
+    return await bodyOf(res, 'json', `OnlyWorlds image removal failed: POST ${ticket.remove_url}`) as OwRemovedImage;
   }
 
   // -- Files on elements ---------------------------------------------
@@ -835,7 +835,7 @@ export class OwV2Client {
       }
     }
     if (!res.ok) throw await errorFromResponse(res);
-    const uploaded = await res.json() as OwUploadedFile;
+    const uploaded = await bodyOf(res, 'json', `OnlyWorlds file upload failed: POST ${ticket.upload_url}`) as OwUploadedFile;
     if (onProgress && typeof XHR !== 'function') onProgress(size, size);
     return uploaded;
   }
@@ -1993,10 +1993,10 @@ export class OwV2Client {
     if (!res.ok) throw await errorFromResponse(res);
     if (opts.proposable && res.status === 202) throw await proposedFromResponse(res, method, path);
     if (res.status === 204 || opts.allowEmpty) {
-      const text = await res.text();
+      const text = await bodyOf(res, 'text', `OnlyWorlds request failed: ${method} ${path}`);
       return (text ? JSON.parse(text) : null) as T;
     }
-    const parsed = await res.json();
+    const parsed = await bodyOf(res, 'json', `OnlyWorlds request failed: ${method} ${path}`);
     // Bulk: surface server-side idempotent replay. The header arrives lowercase
     // on the wire (fixture P2b); Headers.get is case-insensitive regardless.
     if (opts.replayAware && parsed && typeof parsed === 'object') {
@@ -2195,6 +2195,20 @@ function checkKinds(type: string, payload: unknown, where: string): void {
     throw new OwKindError(`${where}: ${type}.${fault.field} is an integer field; ${shownValue(fault.value)} would be stored as another value. Nothing was sent.`, type, fault);
   }
   throw new OwKindError(`${where}: ${type}.${fault.field} is a text field; ${shownValue(fault.value)} is not a string. Nothing was sent.`, type, fault);
+}
+
+/**
+ * An answer's body, as JSON or as text (since 4.223.1): a connection lost while the body streams in,
+ * or a signal aborted then, throws `OwNetworkError` with the cause in `cause2`, as a request that never
+ * reached the server does, never fetch's own TypeError. A body that is not JSON still throws its SyntaxError.
+ */
+async function bodyOf(res: Response, how: 'json' | 'text', what: string): Promise<any> {
+  try {
+    return how === 'json' ? await res.json() : await res.text();
+  } catch (cause) {
+    if (cause instanceof SyntaxError) throw cause;
+    throw new OwNetworkError(`${what}; the answer was lost while it was read`, cause);
+  }
 }
 
 /** A value as a refusal names it: as JSON writes it, but a number that is not finite by its own name (`NaN`, `Infinity`), never the `null` JSON would write in its place. */

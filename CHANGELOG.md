@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.223.1] - 2026-11-28
+
+### Fixed
+
+- **An answer lost while its body is read throws `OwNetworkError`.** The client wrapped a request that never reached the server, but not the read of an answer's body, so a connection that dropped while a 200 streamed in, or a signal aborted then, rejected with fetch's own `TypeError` or `AbortError`. Every read of an answer's body (the API's, and the image and file upload hosts') now throws `OwNetworkError` with the cause in `cause2`. A body that is not JSON still throws its `SyntaxError`.
+
 ## [4.223.0] - 2026-11-28
 
 ### Added

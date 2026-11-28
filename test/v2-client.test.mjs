@@ -1922,3 +1922,28 @@ test('every options object refuses an unknown key before sending (4.52.0): a typ
   }
   assert.equal(fetchImpl.calls.length + acct.fetchImpl.calls.length, 0, 'nothing was sent');
 });
+
+test('an answer lost while its body is read throws OwNetworkError, never fetch\'s TypeError; a body that is not JSON keeps its SyntaxError', async () => {
+  // A response whose body read rejects as fetch rejects it: a TypeError for a dropped connection, an AbortError for a signal
+  const lost = (cause, status = 200) => async () => ({
+    ok: true, status, headers: new Headers(),
+    async text() { throw cause; }, async json() { throw cause; },
+  });
+  const dropped = new TypeError('terminated');
+  const aborted = new DOMException('This operation was aborted', 'AbortError');
+  for (const [cause, status, call] of [
+    [dropped, 200, (c) => c.get('character', 'x')],
+    [aborted, 200, (c) => c.get('character', 'x')],
+    [dropped, 204, (c) => c.delete('character', 'x')],
+  ]) {
+    const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: lost(cause, status) });
+    const err = await call(client).then(() => assert.fail('expected a throw'), (e) => e);
+    assert.ok(err instanceof OwNetworkError && !(err instanceof TypeError), `${status} ${cause.name}: ${err}`);
+    assert.equal(err.cause2, cause);
+    assert.match(err.message, /^OnlyWorlds request failed: (GET|DELETE) \/character\/x\/?; the answer was lost while it was read$/);
+  }
+  const notJson = new SyntaxError('Unexpected token < in JSON');
+  const client = new OwV2Client({ apiKey: 'ow_w_test', apiPin: '1234', fetch: lost(notJson) });
+  const err = await client.get('character', 'x').then(() => assert.fail('expected a throw'), (e) => e);
+  assert.equal(err, notJson);
+});
