@@ -13,14 +13,14 @@ import { readFileSync } from 'node:fs';
 import { worldFolderFiles } from '../dist/convert.js';
 
 const bytes = readFileSync(new URL('./fixtures/unsafe-ids.cases.json', import.meta.url));
-const CASES_SHA256 = '76de0404c2700b2d187490ad43a8593ab8af014ee8bb2e5e673dc5e10d905700';
+const CASES_SHA256 = 'cc6c0c016b441c0ebdc2840304f28c69e05a7ddf6eb0a333b343188717eb5581';
 const cases = JSON.parse(bytes.toString('utf8'));
 const W = { id: 'w-1', name: 'W' };
 
 test('the cases file is the bytes the Python package reads', () => {
   assert.equal(createHash('sha256').update(bytes).digest('hex'), CASES_SHA256);
   assert.equal(cases.version, 1);
-  assert.equal(cases.refused.length, 12);
+  assert.equal(cases.refused.length, 19);
   assert.equal(cases.written.length, 5);
 });
 

@@ -13,7 +13,7 @@
 
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, existsSync } from 'node:fs';
 import { EOL } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { convertKanka, kankaReportText, OwConvertError } from '../dist/convert.js';
 
 /** A path as Python's `str(pathlib.Path(p))` gives it on this platform. */
@@ -79,6 +79,13 @@ try {
   throw err;
 }
 if (!plan) {
+  // Every file's path lies inside OUT-DIR, checked before anything is written: the second guard behind the
+  // folder writer's refusal of an id that cannot name a file.
+  const base = resolve(out);
+  for (const f of result.files) {
+    const rel = relative(base, resolve(join(out, ...f.path.split('/'))));
+    if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) fail(`${f.path} does not lie inside ${pyPath(out)}; nothing was written`);
+  }
   for (const f of result.files) {
     const dest = join(out, ...f.path.split('/'));
     mkdirSync(dirname(dest), { recursive: true });

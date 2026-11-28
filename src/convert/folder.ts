@@ -64,11 +64,15 @@ function elementFilenameFullId(id: string, name: string | null): string {
 /**
  * Why an element id cannot name a file, or null when it can: used as `<id>.json` (a name with no slug, or
  * the collision rule's full-id form) it must be one plain file name inside its type folder. Checked in
- * this order: a path separator, a control character (U+0000 to U+001F), `.` or `..`. The Python
- * package's writer refuses the same ids in the same words (test/fixtures/unsafe-ids.cases.json).
+ * this order: empty (`.json`, a hidden file), a path separator, a colon (on Windows `C:evil.json` is a
+ * path on drive C, and `a:b.json` names a stream of file `a`), a control character (U+0000 to U+001F),
+ * `.` or `..`. The Python package's writer refuses the same ids in the same words
+ * (test/fixtures/unsafe-ids.cases.json).
  */
 export function unsafeIdWhy(id: string): string | null {
+  if (!id) return 'it is empty';
   if (/[/\\]/.test(id)) return 'it holds a path separator, / or \\';
+  if (id.includes(':')) return 'it holds a colon';
   if (/[\x00-\x1f]/.test(id)) return 'it holds a control character';
   if (id === '.' || id === '..') return 'it is . or ..';
   return null;
@@ -204,7 +208,7 @@ export function folderFiles(world: PyDict, elements: Map<string, PyDict[]>): OwF
     const slot = byType.get(type)!;
     for (const body of bodies) {
       const id = body.get('id');
-      if (typeof id !== 'string' || !id) throw new Error(`${type} element without a non-empty string id`);
+      if (typeof id !== 'string') throw new Error(`${type} element without a non-empty string id`);
       const why = unsafeIdWhy(id);
       if (why) throw new TypeError(unsafeIdText(type, id, why));
       if ((owner.get(id) ?? type) !== type) throw new Error(`id ${id} appears under both ${owner.get(id)} and ${type}`);

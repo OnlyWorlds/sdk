@@ -73,9 +73,9 @@ function toPy(v: unknown, path: string, open: Set<object>): PyValue {
  *
  * Throws a TypeError, before any file is made, for a world or a body that is not a plain object, a
  * missing `id` or `name`, an element type that is not one of the 22, a list that is not an array, an
- * id under two types, an element id that cannot name a file (one that holds `/`, `\`, or a control
- * character, or is `.` or `..`: as `<id>.json` it would leave its folder or name no file, so it is
- * refused whatever the name; the world's id names no path), and a value a JSON file cannot hold (`undefined`, a function, a `Date`, a
+ * id under two types, an element id that cannot name a file (one that is empty, holds `/`, `\`, `:`
+ * or a control character, or is `.` or `..`: as `<id>.json` it would leave its folder or name a hidden
+ * file, so it is refused whatever the name; the world's id names no path), and a value a JSON file cannot hold (`undefined`, a function, a `Date`, a
  * `NaN`, a value that holds itself).
  *
  * Known limits against the Python writer: a number is written as JavaScript writes it, which is how
@@ -114,7 +114,7 @@ export function worldFolderFiles(
       const path = `${where}[${i}]`;
       if (!isPlainObject(body)) throw new TypeError(`${FN}: ${path} is an element body, an object; got ${kind(body)}.`);
       const id = body.id;
-      if (typeof id !== 'string' || !id) throw new TypeError(`${FN}: ${path}'s id is a non-empty string; got ${kind(id)}.`);
+      if (typeof id !== 'string') throw new TypeError(`${FN}: ${path}'s id is a non-empty string; got ${kind(id)}.`);
       const why = unsafeIdWhy(id);
       if (why) throw new TypeError(`${FN}: ${path}: ${unsafeIdText(type, id, why)}`);
       const first = owner.get(id) ?? type;
