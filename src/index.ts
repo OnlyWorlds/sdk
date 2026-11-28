@@ -26,7 +26,7 @@ export type {
   OwJoinPreview, OwJoinGlimpse, OwJoinGlimpseThing, OwJoinGlimpseLink, OwJoinedMembership, OwAskAnswer, OwPaidBy, OwAllowance, OwAiUse, OwAiMeter, OwAiRefusal, OwFieldsRefusal,OwAiAskAnswer, OwAiSortAnswer, OwAiAskBody, OwAiSortBody, OwMe, OwFrontDoor, OwFrontDoorCharter, OwFrontDoorSkill, OwMySeat, OwReadingAids, OwServedReadingAids, OwReadingAidsCharter, OwReadingAidsGuide, OwReadingAidsDomain, OwReadingAidsHub, OwMember, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwAccountToken, OwMintedAiToken, OwMintedKey, OwWorldKeyRow, OwWorldKeyMember, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwDraughtComponent, OwDraughtItem, OwDraughtLens, OwWorldLenses, OwWorldLens, OwWorldLensReading, OwJoined, OwAgentJoined, OwPlayerJoined, OwSignedIn,
   OwSortRef, OwSortNote, OwSortRow, OwSortMakeRow, OwSortAddToRow, OwSortLinkRow, OwSortAskRow, OwSortAnswer,
   OwWriteDoor, OwChangeUpsert, OwChangeDelete, OwDeleteReason, OwHiddenRow, OwResyncReason,
-  OwProposal, OwProposalState, OwProposalHouse, OwProposalList, OwProposed, OwProposalAccepted, OwProposalConflict, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
+  OwProposal, OwProposalState, OwProposalHouse, OwProposalList, OwProposed, OwProposalAccepted, OwProposalConflict, OwProposeInput, OwProposalQuery, OwWorldProposalQuery, OwListTagged, OwListUnchanged,
   OwProposedNewElement, OwWorldProposalRow, OwWorldProposalList, OwReviewInput, OwReviewed,
   OwCreateAccountWorldInput, OwCreatedAccountWorld,
 } from './v2';

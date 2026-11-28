@@ -585,6 +585,27 @@ export interface OwProposalQuery {
   limit?: number;
   /** A page's `next_cursor`. */
   cursor?: string;
+  /**
+   * The `etag` of an earlier read of this list, exactly as it came (since 4.221.0). While nothing in
+   * the list moved, keel answers 304 with no body, refunded against the request budget, and the call
+   * returns `{ unchanged: true, etag }`. keel's tag covers the key's whole visible list, whatever
+   * `state`, `since`, `element` or `cursor` asks, so one tag serves every query on the list.
+   */
+  ifNoneMatch?: string;
+}
+
+/** A list read's tag (since 4.221.0): every 200 of listProposals and worldProposals carries it. */
+export interface OwListTagged {
+  /** keel's ETag for the list, exactly as sent (`W/` and quotes included), or null when none came: pass it back as `ifNoneMatch`. */
+  etag: string | null;
+  unchanged: false;
+}
+
+/** A conditional list read that found nothing moved (since 4.221.0): keel's 304, with no rows. */
+export interface OwListUnchanged {
+  unchanged: true;
+  /** The tag the 304 carried, else the one sent: still the list's tag. */
+  etag: string;
 }
 
 /** worldProposals' query: the world's queue, optionally one element's rows. */

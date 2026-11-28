@@ -126,7 +126,7 @@ test('propose: an agent client sends no X-OW-Agent (the document lists none on t
 test('listProposals: GET /{type}/{id}/proposals with state, since, limit and cursor; the page as keel sends it', async () => {
   const { c, calls } = client({ body: LIST });
   const page = await c.listProposals('location', EL, { state: 'all', since: '2026-10-22T00:00:00Z', limit: 5, cursor: 'c1' });
-  assert.deepEqual(page, LIST);
+  assert.deepEqual(page, { ...LIST, etag: null, unchanged: false }); // no ETag in this answer: etag null
   const u = new URL(calls[0].url);
   assert.equal(`${u.origin}${u.pathname}`, `${API}/location/${EL}/proposals`);
   assert.equal(calls[0].init.method, 'GET');
@@ -144,7 +144,7 @@ test('listProposals: with no options, only the client\'s page size is sent', asy
 test('worldProposals: GET /world/proposals with state, since, element, limit and cursor', async () => {
   const { c, calls } = client({ body: LIST });
   const page = await c.worldProposals({ state: 'open', since: '2026-10-21T00:00:00Z', element: EL, limit: 10, cursor: 'c1' });
-  assert.deepEqual(page, LIST);
+  assert.deepEqual(page, { ...LIST, etag: null, unchanged: false });
   const u = new URL(calls[0].url);
   assert.equal(`${u.origin}${u.pathname}`, `${API}/world/proposals`);
   assert.equal(calls[0].init.method, 'GET');
@@ -157,13 +157,45 @@ test('worldProposals: GET /world/proposals with state, since, element, limit and
 test('worldProposals: both kinds of row come back as keel sends them, in its order; the cursor goes back exactly as it came', async () => {
   const { c, calls } = client({ body: QUEUE });
   const page = await c.worldProposals({ state: 'all' });
-  assert.deepEqual(page, QUEUE);
+  assert.deepEqual(page, { ...QUEUE, etag: null, unchanged: false });
   assert.deepEqual(page.data.map((r) => r.kind), ['new_element', 'proposal']);
   await c.worldProposals({ cursor: page.next_cursor });
   assert.equal(new URL(calls[1].url).searchParams.get('cursor'), QUEUE.next_cursor);
   // an old bare proposal id still reads as a cursor: sent as given
   await c.worldProposals({ cursor: PID });
   assert.equal(new URL(calls[2].url).searchParams.get('cursor'), PID);
+});
+
+test('a conditional poll of either list: the 200 hands back the tag, the same tag answers unchanged with no rows', async () => {
+  const TAG = 'W/"2026-11-28T04:38:17.066832Z:1:0"';
+  // keel's rule as measured on production: 304 to its own tag, 200 to any other
+  const answer = (url, init) => (init.headers?.['If-None-Match'] === TAG ? { status: 304, headers: { ETag: TAG } } : { body: LIST, headers: { ETag: TAG } });
+  for (const read of [(c, o) => c.listProposals('location', EL, o), (c, o) => c.worldProposals(o)]) {
+    const { c, calls } = client(answer);
+    const first = await read(c, { state: 'open' });
+    assert.deepEqual(first, { ...LIST, etag: TAG, unchanged: false });
+    assert.equal('If-None-Match' in calls[0].init.headers, false);
+    const again = await read(c, { state: 'all', ifNoneMatch: first.etag });
+    assert.deepEqual(again, { unchanged: true, etag: TAG });
+    assert.equal(calls[1].init.headers['If-None-Match'], TAG); // sent exactly as it came, W/ and quotes
+    assert.equal(new URL(calls[1].url).searchParams.has('ifNoneMatch'), false);
+    const moved = await read(c, { ifNoneMatch: 'W/"older"' });
+    assert.equal(moved.unchanged, false);
+    assert.deepEqual(moved.data, LIST.data);
+  }
+});
+
+test('a conditional poll refuses a tag that is not one, and a 304 nobody asked for is an error', async () => {
+  for (const bad of ['', 5, null]) {
+    const { c, calls } = client({ body: LIST });
+    await assert.rejects(() => c.worldProposals({ ifNoneMatch: bad }), (e) => e instanceof TypeError && /ifNoneMatch is the etag of an earlier read/.test(e.message) && /Nothing was sent/.test(e.message));
+    await assert.rejects(() => c.listProposals('location', EL, { ifNoneMatch: bad }), TypeError);
+    assert.equal(calls.length, 0);
+  }
+  const err = await thrown({ status: 304, headers: { ETag: 'W/"t"' } }, (c) => c.worldProposals());
+  assert.equal(err.name, 'OwApiError');
+  assert.equal(err.status, 304);
+  assert.match(err.message, /sent no If-None-Match/);
 });
 
 // -- a new element written as proposed -----------------------------------------
@@ -425,7 +457,12 @@ test('the published types: OwProposal has the document\'s twenty keys, the list 
   assert.match(block('OwProposedNewElement'), /\bexpires: unknown;/);
   assert.match(all, /type OwWorldProposalRow = OwProposal \| OwProposedNewElement;/);
   assert.match(block('OwWorldProposalList'), /\bdata: OwWorldProposalRow\[\];/);
-  assert.match(all, /worldProposals\(opts\?: OwWorldProposalQuery\): Promise<OwWorldProposalList>;/);
+  // Since 4.221.0 a read that may send a tag answers the union, one that cannot keeps the page's type
+  assert.match(all, /worldProposals\(opts\?: OwWorldProposalQuery\): Promise<\(OwWorldProposalList & OwListTagged\) \| OwListUnchanged>;/);
+  assert.match(all, /listProposals\(type: ElementType \| string, id: string, opts\?: OwProposalQuery\): Promise<\(OwProposalList & OwListTagged\) \| OwListUnchanged>;/);
+  assert.match(all, /worldProposals\(opts\?: OwWorldProposalQuery & \{\s*ifNoneMatch\?: undefined;\s*\}\): Promise<OwWorldProposalList & OwListTagged>;/);
+  assert.deepEqual(keys(block('OwListTagged')), ['etag', 'unchanged']);
+  assert.deepEqual(keys(block('OwListUnchanged')), ['unchanged', 'etag']);
   assert.match(all, /reviewNewElement\(type: ElementType \| string, id: string, opts: OwReviewInput\): Promise<OwReviewed>;/);
   assert.match(block('OwProposal'), /\bclient: string \| null;/);
   assert.deepEqual(keys(block('OwProposalList')), ['data', 'has_more', 'next_cursor']);

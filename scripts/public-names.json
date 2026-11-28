@@ -1,6 +1,6 @@
 {
  "about": "Every public name of @onlyworlds/sdk, by exports-map entry, and its deprecation: written by scripts/verify-promise.mjs --write, read by it in CI. A name leaves this file only in a major.",
- "version": "4.219.0",
+ "version": "4.221.0",
  "major": 4,
  "entries": {
   ".": {
@@ -744,6 +744,12 @@
    "OwLinked.degree": {},
    "OwLinked.id": {},
    "OwLinked.name": {},
+   "OwListTagged": {},
+   "OwListTagged.etag": {},
+   "OwListTagged.unchanged": {},
+   "OwListUnchanged": {},
+   "OwListUnchanged.etag": {},
+   "OwListUnchanged.unchanged": {},
    "OwLookupElement": {},
    "OwLookupElement.id": {},
    "OwLookupElement.name": {},
@@ -967,6 +973,7 @@
    "OwProposalList.next_cursor": {},
    "OwProposalQuery": {},
    "OwProposalQuery.cursor": {},
+   "OwProposalQuery.ifNoneMatch": {},
    "OwProposalQuery.limit": {},
    "OwProposalQuery.since": {},
    "OwProposalQuery.state": {},

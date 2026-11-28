@@ -5,6 +5,12 @@ earlier history lives in git log only.
 
 ## [Unreleased]
 
+## [4.221.0] - 2026-11-28
+
+### Added
+
+- **A poll of the proposals lists costs little when nothing moved.** `listProposals` and `worldProposals` take `ifNoneMatch`, and every 200 now carries `etag` (keel's ETag exactly as sent, or null) and `unchanged: false`. Pass the tag back and, while nothing in the list moved, keel answers 304 with no body, refunded against the request budget, and the call returns `{ unchanged: true, etag }` with no rows. keel's tag covers the key's whole visible list whatever `state`, `since`, `element` or `cursor` asks, so one tag serves every query on it; a new proposal or mark, a settled one or a lapse moves it (measured on the practice world: a proposal made moved the queue's tag, and withdrawn moved it back). The caller holds the tag; the client keeps none, unlike `changesHead`. An `ifNoneMatch` that is not a non-empty string is a TypeError before anything is sent, and a 304 to a read that sent no tag is an `OwApiError`. The types: a call that can send a tag answers `(OwProposalList & OwListTagged) | OwListUnchanged` (narrow on `unchanged` before reading `data`); one that cannot keeps its rows. New: `OwListTagged`, `OwListUnchanged`.
+
 ## [4.220.2] - 2026-11-28
 
 ### Fixed

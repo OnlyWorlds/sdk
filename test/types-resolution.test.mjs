@@ -65,6 +65,15 @@ export async function names(): Promise<string[]> {
   const strandWorld: OwStrandWorld = { elements: [] };
   const spokenToo = speakingCalendar(strandWorld, [one]);
   void said; void spoken; void spokenToo;
+  // A read that cannot send a tag keeps its rows; a poll is narrowed before them (4.221.0).
+  const queue = await client.worldProposals({ state: 'open' });
+  const rows: number = queue.data.length;
+  const tag: string | null = queue.etag;
+  const polled = await client.worldProposals({ ifNoneMatch: tag ?? 'W/"t"' });
+  // @ts-expect-error a poll may be unchanged, with no rows to read
+  void polled.data;
+  const moved: number = polled.unchanged ? 0 : polled.data.length;
+  void rows; void moved;
   return [kind];
 }
 `;

@@ -20,7 +20,7 @@ import type {
   OwSortAnswer, OwSortNote, OwSortRef, OwMemberRole, OwWorldLink, OwCreatedWorldLink, OwSeat, OwSeatCreated, OwMemberLenses, OwAccountWorld, OwAccountToken, OwMintedAiToken, OwMintedKey, OwWorldKeyRow, OwDraught, OwDraughtCompact, OwDraughtPolicy, OwHiddenRow, OwJoined, OwAgentJoined, OwPlayerJoined,
   OwSignedIn, OwFileKind, OwFileRow, OwWorldFiles, OwFileTicket, OwUploadedFile, OwFileDownload,
   OwResyncReason, OwProposal, OwProposalList, OwProposed, OwProposalAccepted, OwProposeInput, OwProposalQuery, OwWorldProposalQuery,
-  OwWorldProposalList, OwReviewInput, OwReviewed, OwCreateAccountWorldInput, OwCreatedAccountWorld,
+  OwWorldProposalList, OwListTagged, OwListUnchanged, OwReviewInput, OwReviewed, OwCreateAccountWorldInput, OwCreatedAccountWorld,
 } from './types';
 import { keyedId } from './keyed-id';
 import { unknownKey } from '../options';
@@ -1339,11 +1339,19 @@ export class OwV2Client {
    * default (not past `expires`), or `lapsed`, `accepted`, `declined`, `all`; `since` keeps rows
    * whose `updated_at` is at or after it; `limit` defaults to the client's pageSize. Any member
    * key that reads the element, a read key included; the owner's read key reads every row.
+   *
+   * A poll (4.221.0): every 200 carries `etag`; pass it back as `ifNoneMatch` and, while nothing in
+   * the list moved, keel answers 304 (refunded against the request budget) and this returns
+   * `{ unchanged: true, etag }` with no rows. The caller holds the tag; the client keeps none.
    */
-  async listProposals(type: ElementType | string, id: string, opts: OwProposalQuery = {}): Promise<OwProposalList> {
-    only('listProposals', opts, ['state', 'since', 'limit', 'cursor']);
+  listProposals(type: ElementType | string, id: string, opts: OwProposalQuery & { ifNoneMatch: string }): Promise<(OwProposalList & OwListTagged) | OwListUnchanged>;
+  listProposals(type: ElementType | string, id: string, opts?: OwProposalQuery & { ifNoneMatch?: undefined }): Promise<OwProposalList & OwListTagged>;
+  listProposals(type: ElementType | string, id: string, opts?: OwProposalQuery): Promise<(OwProposalList & OwListTagged) | OwListUnchanged>;
+  async listProposals(type: ElementType | string, id: string, opts: OwProposalQuery = {}): Promise<(OwProposalList & OwListTagged) | OwListUnchanged> {
+    only('listProposals', opts, ['state', 'since', 'limit', 'cursor', 'ifNoneMatch']);
     const query = buildQuery({ state: opts.state, since: opts.since, limit: opts.limit ?? this.pageSize, cursor: opts.cursor });
-    return this.request('GET', proposalsPath(type, id), { query }) as Promise<OwProposalList>;
+    const path = proposalsPath(type, id);
+    return taggedList<OwProposalList>('listProposals', path, opts.ifNoneMatch, (onEtag) => this.request('GET', path, { query, ifNoneMatch: opts.ifNoneMatch, onEtag }));
   }
 
   /**
@@ -1356,13 +1364,20 @@ export class OwV2Client {
    * listProposals', plus `element` (one element's rows, by id). The cursor is opaque: pass
    * `next_cursor` back as it came. Any member key, a read key included; the owner's read key (or
    * write key, no PIN needed) reads every row; a demo key and the keyless public view get a 404.
+   *
+   * A poll (4.221.0), as listProposals': every 200 carries `etag`, and `ifNoneMatch` with it answers
+   * `{ unchanged: true, etag }` while nothing moved. keel's tag covers the whole queue the key sees
+   * (a new proposal or mark, a settled one or a lapse moves it), whatever `element` or `state` asks.
    */
-  async worldProposals(opts: OwWorldProposalQuery = {}): Promise<OwWorldProposalList> {
-    only('worldProposals', opts, ['state', 'since', 'element', 'limit', 'cursor']);
+  worldProposals(opts: OwWorldProposalQuery & { ifNoneMatch: string }): Promise<(OwWorldProposalList & OwListTagged) | OwListUnchanged>;
+  worldProposals(opts?: OwWorldProposalQuery & { ifNoneMatch?: undefined }): Promise<OwWorldProposalList & OwListTagged>;
+  worldProposals(opts?: OwWorldProposalQuery): Promise<(OwWorldProposalList & OwListTagged) | OwListUnchanged>;
+  async worldProposals(opts: OwWorldProposalQuery = {}): Promise<(OwWorldProposalList & OwListTagged) | OwListUnchanged> {
+    only('worldProposals', opts, ['state', 'since', 'element', 'limit', 'cursor', 'ifNoneMatch']);
     const query = buildQuery({
       state: opts.state, since: opts.since, element: opts.element, limit: opts.limit ?? this.pageSize, cursor: opts.cursor,
     });
-    return this.request('GET', '/world/proposals', { query }) as Promise<OwWorldProposalList>;
+    return taggedList<OwWorldProposalList>('worldProposals', '/world/proposals', opts.ifNoneMatch, (onEtag) => this.request('GET', '/world/proposals', { query, ifNoneMatch: opts.ifNoneMatch, onEtag }));
   }
 
   /**
@@ -2191,6 +2206,28 @@ function checkKinds(type: string, payload: unknown, where: string): void {
 function shownValue(value: unknown): string {
   if (typeof value === 'number' && !Number.isFinite(value)) return String(value);
   return JSON.stringify(value) ?? String(value);
+}
+
+/**
+ * One conditional list read (4.221.0): the page with its tag, or `{ unchanged: true }` on keel's 304.
+ * A module function, not a method, so the client's method set stays its public calls.
+ */
+async function taggedList<T extends object>(
+  name: string, path: string, tag: string | undefined,
+  send: (onEtag: (etag: string | null, status: number) => void) => Promise<unknown>,
+): Promise<(T & OwListTagged) | OwListUnchanged> {
+  if (tag !== undefined && (typeof tag !== 'string' || tag === '')) {
+    throw new TypeError(`${name}: ifNoneMatch is the etag of an earlier read, a non-empty string; got ${typeof tag === 'string' ? '""' : typeof tag}. Nothing was sent.`);
+  }
+  const seen: { status: number; etag: string | null } = { status: 0, etag: null };
+  const page = await send((etag, status) => { seen.etag = etag; seen.status = status; }) as T | null;
+  if (seen.status === 304) {
+    if (tag === undefined) {
+      throw new OwApiError(304, null, `GET ${path} answered 304 Not Modified to a read that sent no If-None-Match: there is no list to return`, null, null);
+    }
+    return { unchanged: true, etag: seen.etag ?? tag };
+  }
+  return { ...(page as T), etag: seen.etag, unchanged: false };
 }
 
 function refuseKnownOf(payload: unknown, where: string): void {
